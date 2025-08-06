@@ -461,7 +461,7 @@ const Login = () => {
               <div className="text-center flex-1 flex flex-col justify-center">
                 <p className="text-gray-600 text-sm mb-6 leading-relaxed">
                   {activeTab === 'login'
-                    ? "Your personal data will be used to support your experience throughout this website, to manage access to your account, and for other purposes described in our privacy policy."
+                    ? "Registering for this site allows you to access your order status and history. Just fill in the fields below, and we'll get a new account set up for you in no time. We will only ask you for information necessary to make the purchase process faster and easier."
                     : "Already have an account? Sign in to access your order history and manage your account."
                   }
                 </p>
