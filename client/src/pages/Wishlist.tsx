@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGuest } from '@/contexts/GuestContext';
 import { Link } from 'react-router-dom';
 import { Heart, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,10 +30,12 @@ interface Product {
     };
     brand: string;
     createdAt: string;
+    specifications?: Record<string, string>;
 }
 
 const Wishlist = () => {
     const { isAuthenticated, user, updateUser } = useAuth();
+    const { guestWishlist, removeFromGuestWishlist } = useGuest();
     const [wishlist, setWishlist] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -85,20 +88,10 @@ const Wishlist = () => {
     };
 
 
-    if (!isAuthenticated && !loading) {
-        return (
-            <>
-                <Navigation />
-                <div className="container mx-auto px-4 py-20 text-center">
-                    <h2 className="text-2xl font-semibold">Please log in to see your wishlist.</h2>
-                    <Link to="/login">
-                        <Button variant="outline" className="mt-4">Login</Button>
-                    </Link>
-                </div>
-                <Footer />
-            </>
-        );
-    }
+    // Use guest wishlist if not authenticated
+    const displayWishlist = isAuthenticated ? wishlist : guestWishlist;
+    const displayLoading = isAuthenticated ? loading : false;
+    const displayError = isAuthenticated ? error : null;
 
     return (
         <div className="min-h-screen flex flex-col bg-muted/20">
@@ -114,7 +107,7 @@ const Wishlist = () => {
 
                 <section className="py-16">
                     <div className="container mx-auto px-4">
-                        {loading ? (
+                        {displayLoading ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {Array.from({ length: 4 }).map((_, index) => (
                                     <div key={index} className="space-y-4">
@@ -124,28 +117,28 @@ const Wishlist = () => {
                                     </div>
                                 ))}
                             </div>
-                        ) : error ? (
-                            <div className="text-center text-destructive py-10">{error}</div>
-                        ) : wishlist.length > 0 ? (
+                        ) : displayError ? (
+                            <div className="text-center text-destructive py-10">{displayError}</div>
+                        ) : displayWishlist.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                                {wishlist.map((product) => {
+                                {displayWishlist.map((product) => {
                                     const thirtyDaysAgo = new Date();
                                     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                                    const isNew = new Date(product.createdAt) > thirtyDaysAgo;
+                                    const isNew = isAuthenticated ? new Date(product.createdAt) > thirtyDaysAgo : false;
 
                                     return (
-                                        <div key={product._id} className="relative group">
+                                        <div key={product._id || product.id} className="relative group">
                                             <ProductCard
-                                                id={product._id}
+                                                id={product._id || product.id}
                                                 slug={product.slug}
                                                 name={product.name}
                                                 price={product.price}
                                                 originalPrice={product.originalPrice}
-                                                image={product.images[0]?.url || ''}
-                                                rating={product.ratings.average}
-                                                reviews={product.ratings.numOfReviews}
-                                                category={product.category.name}
-                                                volume={product.specifications?.volume}
+                                                image={isAuthenticated ? product.images[0]?.url || '' : product.image}
+                                                rating={isAuthenticated ? product.ratings.average : 0}
+                                                reviews={isAuthenticated ? product.ratings.numOfReviews : 0}
+                                                category={isAuthenticated ? product.category.name : 'Product'}
+                                                volume={isAuthenticated ? product.specifications?.volume : undefined}
                                                 isSale={!!(product.originalPrice && product.originalPrice > product.price)}
                                                 isNew={isNew}
                                             />
@@ -153,7 +146,7 @@ const Wishlist = () => {
                                                 variant="destructive"
                                                 size="icon"
                                                 className="absolute top-4 right-4 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                                                onClick={() => handleRemoveFromWishlist(product._id)}
+                                                onClick={() => isAuthenticated ? handleRemoveFromWishlist(product._id) : removeFromGuestWishlist(product.id)}
                                             >
                                                 <X className="h-4 w-4" />
                                                 <span className="sr-only">Remove from Wishlist</span>

@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { GuestProvider } from "@/contexts/GuestContext";
 import { AdminLayout } from "./components/Layout";
 import AdminRoute from "./AdminRoute";
 
@@ -39,52 +40,54 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <CartProvider>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter future={{ v7_relativeSplatPath: true }}>
-            <Suspense fallback={<div>Loading...</div>}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/shop" element={<Shop />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/otp-verification" element={<OtpVerification />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/category/:slug" element={<CategoryProductsPage />} />
-                <Route path="/product/:slug" element={<ProductDetailPage />} />
-                <Route path="/wishlist" element={<Wishlist />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/payment" element={<Payment />} />
-                <Route path="/contactus" element={<ContactUs />} />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="/shipping-info" element={<ShippingInfo />} />
-                <Route path="/returns" element={<Returns />} />
-                <Route path="/size-guide" element={<SizeGuide />} />
-                <Route
-                  path="/admin"
-                  element={
-                    <AdminRoute>
-                      <AdminLayout />
-                    </AdminRoute>
-                  }
-                >
-                  <Route path="overview" element={<AdminOverview />} />
-                  <Route path="category" element={<CategoryAdmin />} />
-                  <Route path="product" element={<ProductAdmin />} />
-                  <Route path="product/upload" element={<UploadProduct />} />
-                </Route>
+      <GuestProvider>
+        <CartProvider>
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter future={{ v7_relativeSplatPath: true }}>
+              <Suspense fallback={<div>Loading...</div>}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/shop" element={<Shop />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/otp-verification" element={<OtpVerification />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/category/:slug" element={<CategoryProductsPage />} />
+                  <Route path="/product/:slug" element={<ProductDetailPage />} />
+                  <Route path="/wishlist" element={<Wishlist />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/payment" element={<Payment />} />
+                  <Route path="/contactus" element={<ContactUs />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/shipping-info" element={<ShippingInfo />} />
+                  <Route path="/returns" element={<Returns />} />
+                  <Route path="/size-guide" element={<SizeGuide />} />
+                  <Route
+                    path="/admin"
+                    element={
+                      <AdminRoute>
+                        <AdminLayout />
+                      </AdminRoute>
+                    }
+                  >
+                    <Route path="overview" element={<AdminOverview />} />
+                    <Route path="category" element={<CategoryAdmin />} />
+                    <Route path="product" element={<ProductAdmin />} />
+                    <Route path="product/upload" element={<UploadProduct />} />
+                  </Route>
 
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
-        </AuthProvider>
-      </CartProvider>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </AuthProvider>
+        </CartProvider>
+      </GuestProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

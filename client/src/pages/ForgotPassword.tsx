@@ -5,7 +5,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Sparkles, Shield, Heart, Star, Mail } from 'lucide-react';
 import Axios from '@/utils/Axios';
 import SummaryApi from '../common/summaryApi';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import Navigation from '@/components/Navigation';
+import Footer from '@/components/Footer';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -39,59 +41,71 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-rose-50 relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-orange-200/30 to-pink-200/30 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-pink-200/30 to-rose-200/30 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-orange-100/20 to-pink-100/20 rounded-full blur-3xl"></div>
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <Navigation />
+
+      {/* Header Banner - Matching The Beer Beauty Design */}
+      <div className="relative bg-gradient-to-r from-orange-500 to-pink-500 py-24">
+        {/* Background Pattern */}
+        <div className="absolute inset-0">
+          <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-white/5 rounded-full blur-3xl"></div>
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 container mx-auto px-4 text-center">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
+            Reset Password
+          </h1>
+        </div>
       </div>
 
-      <div className="relative z-10 min-h-screen flex items-center justify-center py-12 px-4">
-        <div className="w-full max-w-md">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full mb-4 shadow-lg">
-              <Mail className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-4xl font-playfair font-bold text-transparent bg-gradient-to-r from-orange-600 via-pink-600 to-rose-600 bg-clip-text mb-2">
-              Reset Password
-            </h1>
-            <p className="text-lg text-gray-600 font-medium">
-              Enter your email to receive a reset link
-            </p>
-          </div>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-          {/* Forgot Password Card */}
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-2xl rounded-3xl overflow-hidden">
-            <CardContent className="p-8">
+            {/* Forgot Password Form */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 h-[450px] flex flex-col">
+              <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">RESET PASSWORD</h2>
+
+              <div className="mb-6">
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Enter your email address and we'll send you a link to reset your password.
+                </p>
+              </div>
+
               {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-                  <p className="text-red-600 text-sm text-center font-medium">{error}</p>
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-600 text-sm text-center">{error}</p>
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="email">
-                    Email Address
-                  </label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="Enter your email address"
-                    autoComplete="email"
-                    required
-                    className="h-12 border-2 border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 rounded-xl transition-all duration-200"
-                  />
+              <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="email">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="Enter your email address"
+                      autoComplete="email"
+                      required
+                      className="h-11 border-2 border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 rounded-lg transition-all duration-200"
+                    />
+                  </div>
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
+                  className="w-full h-11 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 mt-auto"
                   disabled={loading}
                 >
                   {loading ? (
@@ -100,26 +114,44 @@ const ForgotPassword = () => {
                       Sending reset link...
                     </div>
                   ) : (
-                    'Send Reset Link'
+                    'SEND RESET LINK'
                   )}
                 </Button>
               </form>
+            </div>
 
-              <div className="mt-8 text-center">
-                <p className="text-gray-600">
+            {/* Information Section */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 h-[450px] flex flex-col">
+              <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">NEED HELP?</h2>
+
+              <div className="text-center flex-1 flex flex-col justify-center">
+                <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+                  Don't worry! It happens to the best of us. Enter your email address and we'll send you a secure link to reset your password. The link will expire in 10 minutes for your security.
+                </p>
+
+                <div className="text-xs text-gray-500 mb-6">
+                  Make sure to check your spam folder if you don't receive the email within a few minutes.
+                </div>
+              </div>
+
+              <div className="text-center">
+                <p className="text-gray-600 text-sm">
                   Remember your password?{' '}
-                  <button
-                    onClick={() => navigate('/login')}
+                  <Link
+                    to="/login"
                     className="text-orange-600 hover:text-orange-700 font-semibold transition-colors duration-200"
                   >
                     Sign in here
-                  </button>
+                  </Link>
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

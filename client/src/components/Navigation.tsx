@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, Search, Menu, X, Heart } from "lucide-react";
+import { ShoppingBag, Search, Menu, X, Heart, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SearchDropdown from './ui/SearchDropdown';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,6 +9,13 @@ import Axios from '@/utils/Axios';
 import SummaryApi from "@/common/summaryApi";
 import UserDropdown from "@/components/UserDropdown"; // ✅ Import the fixed dropdown
 import { useAuth } from "@/contexts/AuthContext";
+import { useGuest } from "@/contexts/GuestContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Category {
   _id: string;
@@ -24,9 +31,13 @@ const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [navItems, setNavItems] = useState<NavItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cartCount, setCartCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const { isAuthenticated } = useAuth();
+  const { guestCartCount } = useGuest();
 
   const fetchCartCount = async () => {
     if (isAuthenticated) {
@@ -48,15 +59,10 @@ const Navigation = () => {
       try {
         const response = await Axios.get(`${SummaryApi.getAllCategories.url}?parent=main`);
         if (response.data.success && Array.isArray(response.data.data)) {
-          const dynamicCategories: NavItem[] = response.data.data.map((cat: Category) => ({
-            name: cat.name,
-            href: `/category/${cat.slug}`,
-          }));
-
+          setCategories(response.data.data);
           setNavItems([
             { name: "Home", href: "/" },
             { name: "Shop", href: "/shop" },
-            ...dynamicCategories,
             { name: "About Us", href: "/about" },
           ]);
         } else {
@@ -92,8 +98,32 @@ const Navigation = () => {
     return () => window.removeEventListener('cartUpdate', handleCartUpdate);
   }, [isAuthenticated]);
 
+  // Handle scroll events for navbar hide/show
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Show navbar when scrolling up or at the top
+      if (currentScrollY < lastScrollY || currentScrollY < 100) {
+        setIsVisible(true);
+      }
+      // Hide navbar when scrolling down and not at the top
+      else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
   return (
-    <nav className="sticky top-0 z-50 bg-transparent border-b-0 relative">
+    <nav className={cn(
+      "sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 transition-transform duration-300 ease-in-out",
+      isVisible ? "translate-y-0" : "-translate-y-full"
+    )}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -115,20 +145,44 @@ const Navigation = () => {
                 ))}
               </div>
             ) : (
-              navItems.map((item) => (
-                <NavLink
-                  key={item.href}
-                  to={item.href}
-                  className={({ isActive }) =>
-                    cn(
-                      "text-foreground hover:text-primary transition-colors font-medium",
-                      isActive && "text-primary"
-                    )
-                  }
-                >
-                  {item.name}
-                </NavLink>
-              ))
+              <>
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    to={item.href}
+                    className={({ isActive }) =>
+                      cn(
+                        "text-foreground hover:text-primary transition-colors font-medium",
+                        isActive && "text-primary"
+                      )
+                    }
+                  >
+                    {item.name}
+                  </NavLink>
+                ))}
+
+                {/* Categories Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1"
+                    >
+                      Categories
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-48">
+                    {categories.map((category) => (
+                      <DropdownMenuItem key={category._id} asChild>
+                        <Link to={`/category/${category.slug}`} className="cursor-pointer">
+                          {category.name}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             )}
           </div>
 
@@ -198,9 +252,9 @@ const Navigation = () => {
                 aria-label="Cart"
               >
                 <ShoppingBag className="h-5 w-5 text-black" />
-                {cartCount > 0 && (
+                {(isAuthenticated ? cartCount : guestCartCount) > 0 && (
                   <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {cartCount}
+                    {isAuthenticated ? cartCount : guestCartCount}
                   </span>
                 )}
               </Button>
@@ -223,6 +277,22 @@ const Navigation = () => {
                 {item.name}
               </Link>
             ))}
+
+            {/* Categories in Mobile Menu */}
+            <div className="pt-4 border-t">
+              <div className="text-sm font-medium text-gray-500 mb-2">Categories</div>
+              {categories.map((category) => (
+                <Link
+                  key={category._id}
+                  to={`/category/${category.slug}`}
+                  className="block text-foreground hover:text-primary transition-colors font-medium py-2 pl-4"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {category.name}
+                </Link>
+              ))}
+            </div>
+
             <div className="pt-4 border-t">
               <Button
                 variant="ghost"

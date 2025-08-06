@@ -5,6 +5,7 @@ import { Heart, ShoppingBag, Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
+import { useGuest } from '@/contexts/GuestContext';
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 import { toast } from '@/hooks/use-toast';
@@ -42,18 +43,31 @@ const ProductCard = ({
     const { isAuthenticated, user, updateUser } = useAuth();
     const navigate = useNavigate();
     const { addToCart } = useCart();
+    const { addToGuestWishlist, removeFromGuestWishlist, addToGuestCart, isInGuestWishlist } = useGuest();
 
-    const isLiked = user?.wishlist?.includes(id);
+    const isLiked = isAuthenticated ? user?.wishlist?.includes(id) : isInGuestWishlist(id);
 
     const handleLikeClick = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
         if (!isAuthenticated) {
-            navigate('/login');
+            // Handle guest wishlist
+            if (isInGuestWishlist(id)) {
+                removeFromGuestWishlist(id);
+            } else {
+                addToGuestWishlist({
+                    id,
+                    name,
+                    price,
+                    image,
+                    slug,
+                });
+            }
             return;
         }
 
+        // Handle authenticated user wishlist
         try {
             const response = await Axios.post(SummaryApi.toggleWishlist.url, { productId: id });
             if (response.data.success) {
@@ -76,10 +90,18 @@ const ProductCard = ({
         e.stopPropagation();
 
         if (!isAuthenticated) {
-            navigate('/login');
+            // Handle guest cart
+            addToGuestCart({
+                id,
+                name,
+                price,
+                image,
+                quantity: 1,
+            });
             return;
         }
 
+        // Handle authenticated user cart
         addToCart({
             productId: id,
             name,

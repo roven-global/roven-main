@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Minus, Plus, Trash2, Info, Check, ArrowRight, Trees, Shield, Leaf, MessageCircle } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGuest } from '@/contexts/GuestContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatRupees } from '@/lib/currency';
 import { toast } from '@/hooks/use-toast';
@@ -24,9 +25,10 @@ interface Offer {
 }
 
 const Cart = () => {
-    const { user } = useAuth();
+    const { user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const { cartItems, updateQuantity, removeFromCart, fetchUserCart } = useCart();
+    const { guestCart, removeFromGuestCart, updateGuestCartQuantity } = useGuest();
     const [loading, setLoading] = useState(true);
     const [couponCode, setCouponCode] = useState('');
     const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
@@ -54,22 +56,30 @@ const Cart = () => {
     ];
 
     useEffect(() => {
-        if (!user) {
-            navigate('/login');
-            return;
+        if (isAuthenticated) {
+            fetchUserCart().finally(() => setLoading(false));
+        } else {
+            setLoading(false);
         }
-        fetchUserCart().finally(() => setLoading(false));
-    }, [user, navigate, fetchUserCart]);
+    }, [isAuthenticated, fetchUserCart]);
 
     const handleUpdateQuantity = async (productId: string, newQuantity: number) => {
         if (newQuantity < 1) return;
-        await updateQuantity(productId, newQuantity);
+        if (isAuthenticated) {
+            await updateQuantity(productId, newQuantity);
+        } else {
+            updateGuestCartQuantity(productId, newQuantity);
+        }
     };
 
     const handleRemoveItem = async (productId: string) => {
         setRemovingId(productId);
         try {
-            await removeFromCart(productId);
+            if (isAuthenticated) {
+                await removeFromCart(productId);
+            } else {
+                removeFromGuestCart(productId);
+            }
             toast({
                 title: "Success",
                 description: "Item removed from cart",
@@ -123,7 +133,10 @@ const Cart = () => {
         });
     };
 
-    const subtotal = cartItems.reduce((acc, item) => acc + (item.productId.price * item.quantity), 0);
+    const displayCartItems = isAuthenticated ? cartItems : guestCart;
+    const subtotal = isAuthenticated
+        ? cartItems.reduce((acc, item) => acc + (item.productId.price * item.quantity), 0)
+        : guestCart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const shippingCost = subtotal > 500 ? 0 : 40;
     const onlinePaymentDiscount = subtotal * 0.05; // 5% discount
     const totalSavings = shippingCost + onlinePaymentDiscount + (appliedCoupon ? 39 : 0);
@@ -227,7 +240,7 @@ const Cart = () => {
                                 <CardTitle className="text-lg font-semibold text-gray-800">Cart details</CardTitle>
                             </CardHeader>
                             <CardContent className="p-6">
-                                {cartItems.length === 0 ? (
+                                {displayCartItems.length === 0 ? (
                                     <div className="text-center py-12">
                                         <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                             <MessageCircle className="h-12 w-12 text-gray-400" />
@@ -240,18 +253,18 @@ const Cart = () => {
                                     </div>
                                 ) : (
                                     <div className="space-y-4">
-                                        {cartItems.map((item) => (
+                                        {isAuthenticated ? cartItems.map((item) => (
                                             <div
                                                 key={item._id}
                                                 className={`flex items-start gap-4 p-4 border border-gray-200 rounded-lg transition-all duration-300 hover:shadow-md ${removingId === item._id ? 'opacity-0' : 'opacity-100'
                                                     }`}
                                             >
                                                 <img
-                                                    src={item.productId.images?.[0]?.url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik00MCAyMEMyOS41IDIwIDIxIDI4LjUgMjEgMzlDMjEgNDkuNSAyOS41IDU4IDQwIDU4QzUwLjUgNTggNTkgNDkuNSA1OSAzOUM1OSAyOC41IDUwLjUgMjAgNDAgMjBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0yMCA2MEMyMCA2MCAyNiA1NCA0MCA1NEM1NCA1NCA2MCA2MCA2MCA2MEgyMFoiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+Cg=='}
+                                                    src={item.productId.images?.[0]?.url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik00MCAyMEMyOS41IDIwIDIxIDI4LjUgMjEgMzlDMjEgNDkuNSAyOS41IDU4IDQwIDU4QzUwLjUgNTggNTkgNDkuNSA1OSAzOUM1OSAyOC41IDUwLjUgMjAgNDAgMjBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0yMCA2MEMyMCA2MCAyNiA1NCA0MCA1NCM1NCA1NCA2MCA2MCA2MCA2MEgyMFoiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+Cg=='}
                                                     alt={item.productId.name}
                                                     className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                                                     onError={(e) => {
-                                                        e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik00MCAyMEMyOS41IDIwIDIxIDI4LjUgMjEgMzlDMjEgNDkuNSAyOS41IDU4IDQwIDU4QzUwLjUgNTggNTkgNDkuNSA1OSAzOUM1OSAyOC41IDUwLjUgMjAgNDAgMjBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0yMCA2MEMyMCA2MCAyNiA1NCA0MCA1NEM1NCA1NCA2MCA2MCA2MCA2MEgyMFoiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+Cg==';
+                                                        e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik00MCAyMEMyOS41IDIwIDIxIDI4LjUgMjEgMzlDMjEgNDkuNSAyOS41IDU4IDQwIDU4QzUwLjUgNTggNTkgNDkuNSA1OSAzOUM1OSAyOC41IDUwLjUgMjAgNDAgMjBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0yMCA2MEMyMCA2MCAyNiA1NCA0MCA1NCM1NCA1NCA2MCA2MCA2MCA2MEgyMFoiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+Cg==';
                                                     }}
                                                 />
                                                 <div className="flex-1">
@@ -297,6 +310,67 @@ const Cart = () => {
                                                     size="icon"
                                                     className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
                                                     onClick={() => handleRemoveItem(item.productId._id)}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        )) : guestCart.map((item) => (
+                                            <div
+                                                key={item.id}
+                                                className={`flex items-start gap-4 p-4 border border-gray-200 rounded-lg transition-all duration-300 hover:shadow-md ${removingId === item.id ? 'opacity-0' : 'opacity-100'
+                                                    }`}
+                                            >
+                                                <img
+                                                    src={item.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik00MCAyMEMyOS41IDIwIDIxIDI4LjUgMjEgMzlDMjEgNDkuNSAyOS41IDU4IDQwIDU4QzUwLjUgNTggNTkgNDkuNSA1OSAzOUM1OSAyOC41IDUwLjUgMjAgNDAgMjBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0yMCA2MEMyMCA2MCAyNiA1NCA0MCA1NCM1NCA1NCA2MCA2MCA2MCA2MEgyMFoiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+Cg=='}
+                                                    alt={item.name}
+                                                    className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                                                    onError={(e) => {
+                                                        e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik00MCAyMEMyOS41IDIwIDIxIDI4LjUgMjEgMzlDMjEgNDkuNSAyOS41IDU4IDQwIDU4QzUwLjUgNTggNTkgNDkuNSA1OSAzOUM1OSAyOC41IDUwLjUgMjAgNDAgMjBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0yMCA2MEMyMCA2MCAyNiA1NCA0MCA1NCM1NCA1NCA2MCA2MCA2MCA2MEgyMFoiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+Cg==';
+                                                    }}
+                                                />
+                                                <div className="flex-1">
+                                                    <h3 className="font-semibold text-sm line-clamp-2 text-gray-800">
+                                                        {item.name}
+                                                    </h3>
+                                                    <p className="text-xs text-green-600 mt-1 font-medium">In Stock</p>
+                                                    <div className="flex items-center justify-between mt-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="h-8 w-8 border-gray-300 hover:border-orange-500"
+                                                                onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                                                                disabled={item.quantity === 1}
+                                                            >
+                                                                <Minus className="h-4 w-4" />
+                                                            </Button>
+                                                            <span className="font-medium text-sm w-8 text-center text-gray-800">
+                                                                {item.quantity}
+                                                            </span>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="h-8 w-8 border-gray-300 hover:border-orange-500"
+                                                                onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                                                            >
+                                                                <Plus className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="font-semibold text-sm text-gray-800">
+                                                                {formatRupees(item.price * item.quantity)}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {item.quantity} | To pay: {formatRupees(item.price * item.quantity)}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                                    onClick={() => handleRemoveItem(item.id)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

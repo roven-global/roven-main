@@ -8,19 +8,25 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, Info } from 'lucide-react';
 import { formatRupees } from '@/lib/currency';
 import { useCart } from '@/contexts/CartContext';
+import { useGuest } from '@/contexts/GuestContext';
+import { useAuth } from '@/contexts/AuthContext';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 
 const Checkout = () => {
     const navigate = useNavigate();
     const { cartItems } = useCart();
+    const { guestCart } = useGuest();
+    const { isAuthenticated } = useAuth();
+
+    const displayCartItems = isAuthenticated ? cartItems : guestCart;
 
     // Redirect to cart if empty
     React.useEffect(() => {
-        if (cartItems.length === 0) {
+        if (displayCartItems.length === 0) {
             navigate('/cart');
         }
-    }, [cartItems.length, navigate]);
+    }, [displayCartItems.length, navigate]);
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -42,12 +48,22 @@ const Checkout = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Check if user is authenticated
+        if (!isAuthenticated) {
+            // Redirect to login page
+            navigate('/login');
+            return;
+        }
+
         // Here you would typically save the address and proceed to payment
         navigate('/payment');
     };
 
     // Calculate totals from cart data
-    const orderTotal = cartItems.reduce((acc, item) => acc + (item.productId.price * item.quantity), 0);
+    const orderTotal = isAuthenticated
+        ? cartItems.reduce((acc, item) => acc + (item.productId.price * item.quantity), 0)
+        : guestCart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const shippingCost = orderTotal > 500 ? 0 : 40;
     const onlinePaymentDiscount = orderTotal * 0.05;
     const finalTotal = orderTotal + shippingCost - onlinePaymentDiscount;

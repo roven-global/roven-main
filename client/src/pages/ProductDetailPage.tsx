@@ -11,6 +11,7 @@ import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext'; // Import useCart
+import { useGuest } from '@/contexts/GuestContext'; // Import useGuest
 import { toast } from '@/hooks/use-toast';
 import { formatRupees } from '@/lib/currency'; // Import the new currency formatter
 
@@ -40,17 +41,30 @@ const ProductDetailPage = () => {
     const { isAuthenticated, user, updateUser } = useAuth();
     const navigate = useNavigate();
     const { addToCart } = useCart(); // Use the cart context
+    const { addToGuestWishlist, removeFromGuestWishlist, addToGuestCart, isInGuestWishlist } = useGuest(); // Use the guest context
 
-    const isLiked = user?.wishlist?.includes(product?._id);
+    const isLiked = isAuthenticated ? user?.wishlist?.includes(product?._id) : isInGuestWishlist(product?._id || '');
 
     const handleLikeClick = async () => {
+        if (!product) return;
+
         if (!isAuthenticated) {
-            navigate('/login');
+            // Handle guest wishlist
+            if (isInGuestWishlist(product._id)) {
+                removeFromGuestWishlist(product._id);
+            } else {
+                addToGuestWishlist({
+                    id: product._id,
+                    name: product.name,
+                    price: product.price,
+                    image: product.images[0]?.url || '',
+                    slug: product.slug,
+                });
+            }
             return;
         }
 
-        if (!product) return;
-
+        // Handle authenticated user wishlist
         try {
             const response = await Axios.post(SummaryApi.toggleWishlist.url, { productId: product._id });
             if (response.data.success) {
@@ -69,18 +83,26 @@ const ProductDetailPage = () => {
     };
 
     const handleAddToCart = () => {
+        if (!product) return;
+
         if (!isAuthenticated) {
-            navigate('/login');
+            // Handle guest cart
+            addToGuestCart({
+                id: product._id,
+                name: product.name,
+                price: product.price,
+                image: product.images[0]?.url || '',
+                quantity: quantity,
+            });
             return;
         }
 
-        if (product) {
-            addToCart({
-                productId: product._id,
-                name: product.name,
-                quantity: quantity,
-            });
-        }
+        // Handle authenticated user cart
+        addToCart({
+            productId: product._id,
+            name: product.name,
+            quantity: quantity,
+        });
     };
 
     useEffect(() => {

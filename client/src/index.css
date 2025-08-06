@@ -124,19 +124,19 @@ All colors MUST be HSL.
   .bg-gradient-primary {
     background: var(--gradient-primary);
   }
-  
+
   .bg-gradient-luxury {
     background: var(--gradient-luxury);
   }
-  
+
   .bg-gradient-subtle {
     background: var(--gradient-subtle);
   }
-  
+
   .shadow-elegant {
     box-shadow: var(--shadow-elegant);
   }
-  
+
   .shadow-luxury {
     box-shadow: var(--shadow-luxury);
   }
@@ -150,6 +150,7 @@ All colors MUST be HSL.
       opacity: 0;
       transform: translateY(20px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -159,23 +160,94 @@ All colors MUST be HSL.
   .animate-slide-up {
     animation: slideUp 0.4s ease-out;
   }
+
   .animate-slide-down {
     animation: slideDown 0.4s ease-in;
   }
+
   @keyframes slideUp {
     from {
       transform: translateY(100%);
     }
+
     to {
       transform: translateY(0);
     }
   }
+
   @keyframes slideDown {
     from {
       transform: translateY(0);
     }
+
     to {
       transform: translateY(100%);
+    }
+  }
+
+  /* Hero Section Animations */
+  .animate-fade-in-left {
+    animation: fadeInLeft 1s ease-out;
+  }
+
+  .animate-fade-in-right {
+    animation: fadeInRight 1s ease-out 0.3s both;
+  }
+
+  .animate-slow-zoom {
+    animation: slowZoom 20s ease-in-out infinite;
+  }
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradientShift 3s ease-in-out infinite;
+  }
+
+  @keyframes fadeInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-50px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes fadeInRight {
+    from {
+      opacity: 0;
+      transform: translateX(50px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slowZoom {
+
+    0%,
+    100% {
+      transform: scale(1.1);
+    }
+
+    50% {
+      transform: scale(1.15);
+    }
+  }
+
+  @keyframes gradientShift {
+
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
     }
   }
 }

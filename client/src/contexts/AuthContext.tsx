@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 import { useCart } from './CartContext'; // Import useCart
+import { useGuest } from './GuestContext'; // Import useGuest
 
 interface User {
   _id: string;
@@ -45,6 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const { fetchUserCart, clearCart } = useCart(); // Get cart functions
+  const { guestCart, guestWishlist, clearGuestData } = useGuest(); // Get guest functions
 
   const checkAuthStatus = async () => {
     try {
@@ -69,6 +71,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsAuthenticated(true);
         setUser(response.data.data);
         await fetchUserCart(); // Fetch cart if user is authenticated
+
+        // Merge guest data if any exists
+        if (guestCart.length > 0 || guestWishlist.length > 0) {
+          try {
+            // Merge guest cart
+            if (guestCart.length > 0) {
+              await Axios.post(SummaryApi.mergeCart.url, { localCart: guestCart });
+            }
+
+            // Merge guest wishlist
+            if (guestWishlist.length > 0) {
+              for (const item of guestWishlist) {
+                await Axios.post(SummaryApi.toggleWishlist.url, { productId: item.id });
+              }
+            }
+
+            // Clear guest data after successful merge
+            clearGuestData();
+          } catch (error) {
+            console.error('Error merging guest data:', error);
+          }
+        }
       } else {
         throw new Error('Invalid session');
       }
