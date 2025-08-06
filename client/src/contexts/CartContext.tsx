@@ -4,20 +4,22 @@ import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 
 interface CartItem {
-  id: string;
-  name: string;
-  price: number;
+  _id: string;
+  productId: {
+    _id: string;
+    name: string;
+    price: number;
+    images: Array<{ public_id: string; url: string }>;
+    description: string;
+  };
   quantity: number;
-  image: string;
 }
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
+  addToCart: (item: { productId: string; name: string; quantity?: number }) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
-  isCartOpen: boolean;
-  toggleCart: () => void;
   cartCount: number;
   fetchUserCart: () => Promise<void>;
   clearCart: () => void;
@@ -35,7 +37,6 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
 
   // Always clear cart on logout event
   const clearCart = useCallback(() => {
@@ -53,14 +54,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await Axios.get(SummaryApi.getCart.url);
       if (response.data.success) {
-        const serverCart = response.data.data.map((item: any) => ({
-          id: item.productId._id,
-          name: item.productId.name,
-          price: item.productId.price,
-          quantity: item.quantity,
-          image: item.productId.images[0]?.url || '',
-        }));
-        setCartItems(serverCart);
+        setCartItems(response.data.data);
       } else {
         setCartItems([]);
       }
@@ -79,19 +73,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return () => window.removeEventListener('loginStateChange', handleLogin);
   }, []);
 
-  const toggleCart = () => setIsCartOpen(prev => !prev);
-
-  const addToCart = async (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
+  const addToCart = async (item: { productId: string; name: string; quantity?: number }) => {
     try {
       await Axios.post(SummaryApi.addToCart.url, {
-        productId: item.id,
+        productId: item.productId,
         quantity: item.quantity || 1,
       });
       toast({ title: "Added to cart", description: `${item.name} has been added or updated.` });
       await fetchUserCart();
-      if (!isCartOpen) {
-        toggleCart();
-      }
+      // Dispatch cart update event
+      window.dispatchEvent(new Event('cartUpdate'));
     } catch (error) {
       toast({ title: "Error", description: "Failed to add item to cart." });
     }
@@ -102,6 +93,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       await Axios.delete(`${SummaryApi.deleteFromCart.url}/${id}`);
       toast({ title: "Item Removed", description: "The item has been removed from your cart." });
       await fetchUserCart();
+      // Dispatch cart update event
+      window.dispatchEvent(new Event('cartUpdate'));
     } catch (error) {
       toast({ title: "Error", description: "Failed to remove item from cart." });
     }
@@ -111,6 +104,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     try {
       await Axios.put(`${SummaryApi.updateCart.url}/${id}`, { quantity });
       await fetchUserCart();
+      // Dispatch cart update event
+      window.dispatchEvent(new Event('cartUpdate'));
     } catch (error) {
       toast({ title: "Error", description: "Failed to update item quantity." });
     }
@@ -125,8 +120,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         addToCart,
         removeFromCart,
         updateQuantity,
-        isCartOpen,
-        toggleCart,
         cartCount,
         fetchUserCart,
         clearCart,

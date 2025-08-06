@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
-import CartSidePanel from "@/components/CartSidePanel";
 import { AdminLayout } from "./components/Layout";
 import AdminRoute from "./AdminRoute";
 
@@ -26,6 +25,9 @@ const ProductAdmin = lazy(() => import("./pages/ProductAdmin"));
 const CategoryProductsPage = lazy(() => import("./pages/CategoryProductsPage"));
 const ProductDetailPage = lazy(() => import("./pages/ProductDetailPage"));
 const Wishlist = lazy(() => import("./pages/Wishlist"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const Payment = lazy(() => import("./pages/Payment"));
 const AdminOverview = lazy(() => import("./pages/AdminOverview"));
 const ContactUs = lazy(() => import("./pages/ContactUs"));
 const FAQ = lazy(() => import("./pages/FAQ"));
@@ -43,7 +45,6 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter future={{ v7_relativeSplatPath: true }}>
-            <CartSidePanel />
             <Suspense fallback={<div>Loading...</div>}>
               <Routes>
                 <Route path="/" element={<Index />} />
@@ -58,6 +59,9 @@ const App = () => (
                 <Route path="/category/:slug" element={<CategoryProductsPage />} />
                 <Route path="/product/:slug" element={<ProductDetailPage />} />
                 <Route path="/wishlist" element={<Wishlist />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/payment" element={<Payment />} />
                 <Route path="/contactus" element={<ContactUs />} />
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/shipping-info" element={<ShippingInfo />} />

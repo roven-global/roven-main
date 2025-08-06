@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { ShoppingBag, Search, Menu, X, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SearchDropdown from './ui/SearchDropdown';
-import { useCart } from "@/contexts/CartContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import Axios from '@/utils/Axios';
 import SummaryApi from "@/common/summaryApi";
@@ -28,8 +27,22 @@ const Navigation = () => {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [navItems, setNavItems] = useState<NavItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toggleCart, cartCount } = useCart();
+  const [cartCount, setCartCount] = useState(0);
   const { isAuthenticated } = useAuth();
+
+  const fetchCartCount = async () => {
+    if (isAuthenticated) {
+      try {
+        const response = await Axios.get(SummaryApi.getCart.url);
+        if (response.data.success && Array.isArray(response.data.data)) {
+          const totalItems = response.data.data.reduce((acc: number, item: any) => acc + item.quantity, 0);
+          setCartCount(totalItems);
+        }
+      } catch (error) {
+        console.error("Failed to fetch cart count:", error);
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -68,7 +81,18 @@ const Navigation = () => {
     };
 
     fetchCategories();
-  }, []);
+    fetchCartCount();
+  }, [isAuthenticated]);
+
+  // Listen for cart updates
+  useEffect(() => {
+    const handleCartUpdate = () => {
+      fetchCartCount();
+    };
+
+    window.addEventListener('cartUpdate', handleCartUpdate);
+    return () => window.removeEventListener('cartUpdate', handleCartUpdate);
+  }, [isAuthenticated]);
 
   return (
     <nav className="sticky top-0 z-50 bg-transparent border-b-0 relative">
@@ -154,20 +178,21 @@ const Navigation = () => {
             </Link>
 
             {/* Cart */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="bg-white rounded-full shadow w-10 h-10 flex items-center justify-center relative"
-              onClick={toggleCart}
-              aria-label="Cart"
-            >
-              <ShoppingBag className="h-5 w-5 text-black" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {cartCount}
-                </span>
-              )}
-            </Button>
+            <Link to="/cart">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="bg-white rounded-full shadow w-10 h-10 flex items-center justify-center relative"
+                aria-label="Cart"
+              >
+                <ShoppingBag className="h-5 w-5 text-black" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
           </div>
         </div>
 

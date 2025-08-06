@@ -81,10 +81,8 @@ const ProductCard = ({
         }
 
         addToCart({
-            id,
+            productId: id,
             name,
-            price,
-            image,
             quantity: 1,
         });
     };

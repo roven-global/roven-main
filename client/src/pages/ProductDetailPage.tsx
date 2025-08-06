@@ -76,10 +76,8 @@ const ProductDetailPage = () => {
 
         if (product) {
             addToCart({
-                id: product._id,
+                productId: product._id,
                 name: product.name,
-                price: product.price,
-                image: product.images[0]?.url || '',
                 quantity: quantity,
             });
         }
