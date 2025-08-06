@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Axios from '@/utils/Axios';
 import SummaryApi from "@/common/summaryApi";
 import UserDropdown from "@/components/UserDropdown"; // ✅ Import the fixed dropdown
-import LoginModal from "@/components/LoginModal";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Category {
@@ -24,7 +23,6 @@ interface NavItem {
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [navItems, setNavItems] = useState<NavItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cartCount, setCartCount] = useState(0);
@@ -99,40 +97,53 @@ const Navigation = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="font-playfair text-2xl font-bold text-primary">
-            Shimmer
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-lg">S</span>
+            </div>
+            <span className="text-2xl font-playfair font-bold text-transparent bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text">
+              Shimmer
+            </span>
           </Link>
 
-          {/* Main Nav */}
-          <div className="hidden md:flex items-center flex-1 justify-center">
-            <div className="bg-white rounded-full shadow-md flex items-center px-4 py-2 space-x-2">
-              {isLoading ? (
-                <>
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-4 w-24" />
-                </>
-              ) : (
-                navItems.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    to={item.href}
-                    className={({ isActive }) =>
-                      cn(
-                        "px-5 py-2 rounded-full font-bold text-sm transition-all",
-                        isActive
-                          ? "bg-orange-500 text-white shadow"
-                          : "text-black hover:bg-orange-100"
-                      )
-                    }
-                  >
-                    {item.name}
-                  </NavLink>
-                ))
-              )}
-            </div>
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            {isLoading ? (
+              <div className="flex space-x-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-4 w-16" />
+                ))}
+              </div>
+            ) : (
+              navItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  to={item.href}
+                  className={({ isActive }) =>
+                    cn(
+                      "text-foreground hover:text-primary transition-colors font-medium",
+                      isActive && "text-primary"
+                    )
+                  }
+                >
+                  {item.name}
+                </NavLink>
+              ))
+            )}
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden p-2"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+          </button>
 
           {/* Icon Buttons */}
           <div className="flex items-center space-x-3 ml-4">
@@ -152,17 +163,18 @@ const Navigation = () => {
             {isAuthenticated ? (
               <UserDropdown />
             ) : (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="bg-white rounded-full shadow w-10 h-10 flex items-center justify-center"
-                onClick={() => setLoginModalOpen(true)}
-                aria-label="Login"
-              >
-                <svg className="h-5 w-5 text-black" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
-              </Button>
+              <Link to="/login">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="bg-white rounded-full shadow w-10 h-10 flex items-center justify-center"
+                  aria-label="Login"
+                >
+                  <svg className="h-5 w-5 text-black" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                  </svg>
+                </Button>
+              </Link>
             )}
 
             {/* Wishlist */}
@@ -225,9 +237,6 @@ const Navigation = () => {
           </div>
         </div>
       </div>
-
-      {/* Login Modal */}
-      <LoginModal open={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
     </nav>
   );
 };

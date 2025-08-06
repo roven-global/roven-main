@@ -12,7 +12,6 @@ import AdminRoute from "./AdminRoute";
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Login = lazy(() => import("./pages/Login"));
-const Register = lazy(() => import("./pages/Register"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const OtpVerification = lazy(() => import("./pages/OtpVerification"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -51,7 +50,6 @@ const App = () => (
                 <Route path="/shop" element={<Shop />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/otp-verification" element={<OtpVerification />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
