@@ -140,7 +140,7 @@ const LoginModal = ({ open, onClose }: LoginModalProps) => {
             <DialogContent className="max-w-md p-0 bg-white">
                 <DialogHeader className="p-6 pb-0">
                     <div className="flex justify-center items-center">
-                        <DialogTitle className="text-2xl font-bold text-gray-900">My Account</DialogTitle>
+                        <DialogTitle className="text-2x1 font-bold text-gray-900">My Account</DialogTitle>
                     </div>
                 </DialogHeader>
 
