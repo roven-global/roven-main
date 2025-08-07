@@ -45,6 +45,7 @@ const ProductCard = ({
     reviews,
     category,
     volume,
+    variants,
     isNew,
     isSale,
     benefits,
@@ -55,6 +56,55 @@ const ProductCard = ({
     const { addToGuestWishlist, removeFromGuestWishlist, addToGuestCart, isInGuestWishlist } = useGuest();
 
     const isLiked = isAuthenticated ? user?.wishlist?.includes(id) : isInGuestWishlist(id);
+
+    // Get display price (minimum variant price or base price)
+    const getDisplayPrice = () => {
+        if (variants && variants.length > 0) {
+            return Math.min(...variants.map(v => v.price));
+        }
+        return price;
+    };
+
+    // Get display original price
+    const getDisplayOriginalPrice = () => {
+        if (variants && variants.length > 0) {
+            const variantsWithOriginal = variants.filter(v => v.originalPrice);
+            if (variantsWithOriginal.length > 0) {
+                return Math.min(...variantsWithOriginal.map(v => v.originalPrice!));
+            }
+            return undefined;
+        }
+        return originalPrice;
+    };
+
+    // Get volume display text
+    const getVolumeDisplay = () => {
+        if (variants && variants.length > 0) {
+            if (variants.length === 1) {
+                return variants[0].volume;
+            } else {
+                const volumes = variants.map(v => v.volume).sort();
+                return `${volumes[0]} - ${volumes[volumes.length - 1]}`;
+            }
+        }
+        return volume;
+    };
+
+    // Check if any variant is in stock
+    const isAnyVariantInStock = () => {
+        if (variants && variants.length > 0) {
+            return variants.some(v => v.stock > 0);
+        }
+        return true; // Default to true if no variants
+    };
+
+    // Get total stock across all variants
+    const getTotalStock = () => {
+        if (variants && variants.length > 0) {
+            return variants.reduce((total, v) => total + v.stock, 0);
+        }
+        return null;
+    };
 
     const handleLikeClick = async (e: React.MouseEvent) => {
         e.preventDefault();
