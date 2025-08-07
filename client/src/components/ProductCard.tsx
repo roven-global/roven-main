@@ -275,10 +275,13 @@ const ProductCard = ({
                     {/* Price */}
                     <div className="text-center mb-4">
                         <div className="flex items-center justify-center gap-2">
-                            <span className="font-bold text-2xl text-gray-900">{formatRupees(price)}</span>
-                            {originalPrice && (
+                            {variants && variants.length > 1 ? (
+                                <span className="text-sm text-gray-600">From </span>
+                            ) : null}
+                            <span className="font-bold text-2xl text-gray-900">{formatRupees(getDisplayPrice())}</span>
+                            {getDisplayOriginalPrice() && (
                                 <span className="text-sm text-gray-400 line-through">
-                                    {formatRupees(originalPrice)}
+                                    {formatRupees(getDisplayOriginalPrice())}
                                 </span>
                             )}
                         </div>
