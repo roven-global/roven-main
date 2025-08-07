@@ -15,13 +15,24 @@ import { useGuest } from '@/contexts/GuestContext'; // Import useGuest
 import { toast } from '@/hooks/use-toast';
 import { formatRupees } from '@/lib/currency'; // Import the new currency formatter
 
-// Define the Product interface for type safety
+// Define interfaces for type safety
+interface ProductVariant {
+    volume: string;
+    price: number;
+    originalPrice?: number;
+    stock: number;
+    sku: string;
+    lowStockThreshold: number;
+    isActive: boolean;
+}
+
 interface Product {
     _id: string;
     name: string;
     description: string;
     price: number;
     originalPrice?: number;
+    variants?: ProductVariant[];
     images: Array<{ url: string; public_id: string }>;
     category: { _id: string; name: string; slug: string };
     brand: string;
