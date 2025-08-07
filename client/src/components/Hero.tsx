@@ -98,12 +98,14 @@ const Hero = () => {
       {/* CTA Buttons - Bottom Right */}
       <div className="absolute bottom-10 right-10 md:bottom-12 md:right-12 z-20">
         <div className="flex flex-col sm:flex-row gap-3">
-          <Button
+          <Button asChild
             size="lg"
             className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white px-6 py-4 md:px-10 md:py-6 text-base md:text-lg font-bold rounded-xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 group"
           >
-            View Collections
-            <ArrowRight className="w-4 h-4 md:w-5 md:h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+            <Link to="/shop">
+              View Collections
+              <ArrowRight className="w-4 h-4 md:w-5 md:h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+            </Link>
           </Button>
           <Button
             size="lg"
