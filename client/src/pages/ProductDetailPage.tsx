@@ -315,11 +315,79 @@ const ProductDetailPage = () => {
                         <p className="text-muted-foreground text-base md:text-lg leading-relaxed break-words">{product.description.split('.')[0]}.</p>
 
                         <div className="flex flex-wrap items-baseline gap-2 md:gap-3">
-                            <span className="text-2xl md:text-4xl font-bold text-primary">{formatRupees(product.price)}</span>
-                            {product.originalPrice && (
-                                <span className="text-lg md:text-xl text-muted-foreground line-through">{formatRupees(product.originalPrice)}</span>
+                            <span className="text-2xl md:text-4xl font-bold text-primary">{formatRupees(getCurrentPrice())}</span>
+                            {getCurrentOriginalPrice() && (
+                                <span className="text-lg md:text-xl text-muted-foreground line-through">{formatRupees(getCurrentOriginalPrice())}</span>
+                            )}
+                            {selectedVariant && (
+                                <span className="text-sm text-muted-foreground">
+                                    {getPricePerUnit(selectedVariant)}
+                                </span>
                             )}
                         </div>
+
+                        {/* Volume Selection */}
+                        {product.variants && product.variants.length > 0 && (
+                            <div className="space-y-4">
+                                <div>
+                                    <h4 className="text-lg font-semibold mb-3">Select Size</h4>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {product.variants.map((variant) => {
+                                            const isOutOfStock = variant.stock === 0;
+                                            const isLowStock = variant.stock > 0 && variant.stock <= variant.lowStockThreshold;
+                                            const isSelected = selectedVariant?.sku === variant.sku;
+                                            
+                                            return (
+                                                <button
+                                                    key={variant.sku}
+                                                    onClick={() => !isOutOfStock && setSelectedVariant(variant)}
+                                                    disabled={isOutOfStock}
+                                                    className={`
+                                                        relative p-4 rounded-lg border-2 transition-all text-left
+                                                        ${isSelected 
+                                                            ? 'border-primary bg-primary/5' 
+                                                            : isOutOfStock 
+                                                                ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-60'
+                                                                : 'border-gray-200 hover:border-primary/50'
+                                                        }
+                                                    `}
+                                                >
+                                                    {isOutOfStock && (
+                                                        <div className="absolute top-2 right-2">
+                                                            <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">Out of stock</span>
+                                                        </div>
+                                                    )}
+                                                    {isLowStock && !isOutOfStock && (
+                                                        <div className="absolute top-2 right-2">
+                                                            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Low stock</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="space-y-1">
+                                                        <div className="font-semibold text-gray-900">{variant.volume}</div>
+                                                        <div className="text-lg font-bold text-primary">
+                                                            {formatRupees(variant.price)}
+                                                        </div>
+                                                        {variant.originalPrice && variant.originalPrice > variant.price && (
+                                                            <div className="text-sm text-gray-500 line-through">
+                                                                {formatRupees(variant.originalPrice)}
+                                                            </div>
+                                                        )}
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {getPricePerUnit(variant)}
+                                                        </div>
+                                                        {!isOutOfStock && (
+                                                            <div className="text-xs text-green-600 font-medium">
+                                                                In stock
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4">
                             <div className="flex items-center border rounded-lg w-max mx-auto sm:mx-0">
