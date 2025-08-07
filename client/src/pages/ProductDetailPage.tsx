@@ -395,17 +395,47 @@ const ProductDetailPage = () => {
                                     <Minus className="h-4 w-4" />
                                 </Button>
                                 <span className="w-10 md:w-12 text-center font-semibold">{quantity}</span>
-                                <Button variant="ghost" size="icon" onClick={() => setQuantity(q => q + 1)}>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    onClick={() => setQuantity(q => {
+                                        const maxQty = selectedVariant ? selectedVariant.stock : 10;
+                                        return Math.min(maxQty, q + 1);
+                                    })}
+                                    disabled={selectedVariant && quantity >= selectedVariant.stock}
+                                >
                                     <Plus className="h-4 w-4" />
                                 </Button>
                             </div>
-                            <Button size="lg" className="flex-1 bg-gradient-luxury" onClick={handleAddToCart}>
-                                <ShoppingBag className="mr-2 h-5 w-5" /> Add to Cart
+                            
+                            <Button 
+                                size="lg" 
+                                className="flex-1 bg-gradient-luxury" 
+                                onClick={handleAddToCart}
+                                disabled={!selectedVariant || selectedVariant.stock === 0}
+                            >
+                                <ShoppingBag className="mr-2 h-5 w-5" />
+                                {selectedVariant && selectedVariant.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
                             </Button>
+                            
                             <Button variant="outline" size="icon" onClick={handleLikeClick}>
                                 <Heart className={`h-5 w-5 ${isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
                             </Button>
                         </div>
+
+                        {/* Stock Status */}
+                        {selectedVariant && (
+                            <div className="flex items-center justify-center gap-2 p-3 rounded-lg bg-gray-50">
+                                <div className={`font-semibold ${getStockStatusColor()}`}>
+                                    {getStockStatus()}
+                                </div>
+                                {selectedVariant.stock > 0 && (
+                                    <div className="text-sm text-muted-foreground">
+                                        • {selectedVariant.stock} available
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <Accordion type="single" collapsible className="w-full">
                             <AccordionItem value="description">
