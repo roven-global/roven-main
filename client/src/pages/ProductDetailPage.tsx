@@ -140,24 +140,50 @@ const ProductDetailPage = () => {
 
     const handleAddToCart = () => {
         if (!product) return;
-
-        if (!isAuthenticated) {
-            // Handle guest cart
-            addToGuestCart({
-                id: product._id,
-                name: product.name,
-                price: product.price,
-                image: product.images[0]?.url || '',
-                quantity: quantity,
+        
+        if (!selectedVariant) {
+            toast({
+                title: "Please select a size",
+                description: "Choose a volume option before adding to cart.",
+                variant: "destructive",
             });
             return;
         }
 
-        // Handle authenticated user cart
+        if (selectedVariant.stock === 0) {
+            toast({
+                title: "Out of Stock",
+                description: "This variant is currently out of stock.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (!isAuthenticated) {
+            // Handle guest cart with variant info
+            addToGuestCart({
+                id: product._id,
+                name: `${product.name} - ${selectedVariant.volume}`,
+                price: selectedVariant.price,
+                image: product.images[0]?.url || '',
+                quantity: quantity,
+                variant: {
+                    volume: selectedVariant.volume,
+                    sku: selectedVariant.sku,
+                },
+            });
+            return;
+        }
+
+        // Handle authenticated user cart with variant info
         addToCart({
             productId: product._id,
-            name: product.name,
+            name: `${product.name} - ${selectedVariant.volume}`,
             quantity: quantity,
+            variant: {
+                volume: selectedVariant.volume,
+                sku: selectedVariant.sku,
+            },
         });
     };
 
