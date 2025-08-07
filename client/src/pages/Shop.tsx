@@ -20,6 +20,15 @@ interface Product {
   slug: string;
   price: number;
   originalPrice?: number;
+  variants?: Array<{
+    volume: string;
+    price: number;
+    originalPrice?: number;
+    stock: number;
+    sku: string;
+    lowStockThreshold: number;
+    isActive: boolean;
+  }>;
   images: Array<{ url: string }>;
   ratings: {
     average: number;
