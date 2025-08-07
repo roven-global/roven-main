@@ -22,9 +22,16 @@ interface ProductCardProps {
     reviews: number;
     category: string;
     volume?: string;
+    variants?: Array<{
+        volume: string;
+        price: number;
+        originalPrice?: number;
+        stock: number;
+        sku: string;
+    }>;
     isNew?: boolean;
     isSale?: boolean;
-    benefits?: string[]; // Array of product benefits/features
+    benefits?: string[];
 }
 
 const ProductCard = ({
