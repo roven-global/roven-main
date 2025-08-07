@@ -196,8 +196,18 @@ const ProductDetailPage = () => {
             try {
                 const response = await Axios.get(`${SummaryApi.getProductById.url}/${slug}`);
                 if (response.data.success) {
-                    setProduct(response.data.data);
-                    setSelectedImage(response.data.data.images[0]?.url || '');
+                    const productData = response.data.data;
+                    setProduct(productData);
+                    setSelectedImage(productData.images[0]?.url || '');
+                    
+                    // Set default variant if variants exist
+                    if (productData.variants && productData.variants.length > 0) {
+                        // Find the first active variant with stock, or just the first variant
+                        const defaultVariant = productData.variants.find((v: ProductVariant) => 
+                            v.isActive && v.stock > 0
+                        ) || productData.variants[0];
+                        setSelectedVariant(defaultVariant);
+                    }
                 } else {
                     throw new Error('Product not found.');
                 }
