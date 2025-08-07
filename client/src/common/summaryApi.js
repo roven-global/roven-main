@@ -101,6 +101,14 @@ const SummaryApi = {
     url: "/api/product",
     method: "get",
   },
+  getProductVariants: {
+    url: "/api/product",
+    method: "get",
+  },
+  updateVariantStock: {
+    url: "/api/product",
+    method: "put",
+  },
   searchProducts: {
     url: "/api/product/search",
     method: "get",

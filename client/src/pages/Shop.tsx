@@ -20,6 +20,15 @@ interface Product {
   slug: string;
   price: number;
   originalPrice?: number;
+  variants?: Array<{
+    volume: string;
+    price: number;
+    originalPrice?: number;
+    stock: number;
+    sku: string;
+    lowStockThreshold: number;
+    isActive: boolean;
+  }>;
   images: Array<{ url: string }>;
   ratings: {
     average: number;
@@ -321,7 +330,26 @@ const Shop = () => {
                   const thirtyDaysAgo = new Date();
                   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                   const isNew = new Date(product.createdAt) > thirtyDaysAgo;
-                  return <ProductCard key={product._id} id={product._id} slug={product.slug} name={product.name} price={product.price} originalPrice={product.originalPrice} image={product.images[0]?.url || ''} rating={product.ratings.average} reviews={product.ratings.numOfReviews} category={product.category.name} volume={product.volume} isSale={!!(product.originalPrice && product.originalPrice > product.price)} isNew={isNew} benefits={product.benefits} />;
+                  
+                  return (
+                    <ProductCard 
+                      key={product._id} 
+                      id={product._id} 
+                      slug={product.slug} 
+                      name={product.name} 
+                      price={product.price} 
+                      originalPrice={product.originalPrice} 
+                      image={product.images[0]?.url || ''} 
+                      rating={product.ratings.average} 
+                      reviews={product.ratings.numOfReviews} 
+                      category={product.category.name} 
+                      volume={product.volume} 
+                      variants={product.variants}
+                      isSale={!!(product.originalPrice && product.originalPrice > product.price)} 
+                      isNew={isNew} 
+                      benefits={product.benefits} 
+                    />
+                  );
                 })}
               </div>
             )}

@@ -22,9 +22,16 @@ interface ProductCardProps {
     reviews: number;
     category: string;
     volume?: string;
+    variants?: Array<{
+        volume: string;
+        price: number;
+        originalPrice?: number;
+        stock: number;
+        sku: string;
+    }>;
     isNew?: boolean;
     isSale?: boolean;
-    benefits?: string[]; // Array of product benefits/features
+    benefits?: string[];
 }
 
 const ProductCard = ({
@@ -38,6 +45,7 @@ const ProductCard = ({
     reviews,
     category,
     volume,
+    variants,
     isNew,
     isSale,
     benefits,
@@ -48,6 +56,55 @@ const ProductCard = ({
     const { addToGuestWishlist, removeFromGuestWishlist, addToGuestCart, isInGuestWishlist } = useGuest();
 
     const isLiked = isAuthenticated ? user?.wishlist?.includes(id) : isInGuestWishlist(id);
+
+    // Get display price (minimum variant price or base price)
+    const getDisplayPrice = () => {
+        if (variants && variants.length > 0) {
+            return Math.min(...variants.map(v => v.price));
+        }
+        return price;
+    };
+
+    // Get display original price
+    const getDisplayOriginalPrice = () => {
+        if (variants && variants.length > 0) {
+            const variantsWithOriginal = variants.filter(v => v.originalPrice);
+            if (variantsWithOriginal.length > 0) {
+                return Math.min(...variantsWithOriginal.map(v => v.originalPrice!));
+            }
+            return undefined;
+        }
+        return originalPrice;
+    };
+
+    // Get volume display text
+    const getVolumeDisplay = () => {
+        if (variants && variants.length > 0) {
+            if (variants.length === 1) {
+                return variants[0].volume;
+            } else {
+                const volumes = variants.map(v => v.volume).sort();
+                return `${volumes[0]} - ${volumes[volumes.length - 1]}`;
+            }
+        }
+        return volume;
+    };
+
+    // Check if any variant is in stock
+    const isAnyVariantInStock = () => {
+        if (variants && variants.length > 0) {
+            return variants.some(v => v.stock > 0);
+        }
+        return true; // Default to true if no variants
+    };
+
+    // Get total stock across all variants
+    const getTotalStock = () => {
+        if (variants && variants.length > 0) {
+            return variants.reduce((total, v) => total + v.stock, 0);
+        }
+        return null;
+    };
 
     const handleLikeClick = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -91,14 +148,32 @@ const ProductCard = ({
         e.preventDefault();
         e.stopPropagation();
 
+        // If product has multiple variants, redirect to product detail page for selection
+        if (variants && variants.length > 1) {
+            navigate(`/product/${slug}`);
+            return;
+        }
+
+        // For single variant or no variants, add to cart directly
+        const selectedVariant = variants && variants.length === 1 ? variants[0] : null;
+        
+        if (selectedVariant && selectedVariant.stock === 0) {
+            // Don't add to cart if out of stock
+            return;
+        }
+
         if (!isAuthenticated) {
             // Handle guest cart
             addToGuestCart({
                 id,
-                name,
-                price,
+                name: selectedVariant ? `${name} - ${selectedVariant.volume}` : name,
+                price: selectedVariant ? selectedVariant.price : price,
                 image,
                 quantity: 1,
+                variant: selectedVariant ? {
+                    volume: selectedVariant.volume,
+                    sku: selectedVariant.sku,
+                } : undefined,
             });
             return;
         }
@@ -106,8 +181,12 @@ const ProductCard = ({
         // Handle authenticated user cart
         addToCart({
             productId: id,
-            name,
+            name: selectedVariant ? `${name} - ${selectedVariant.volume}` : name,
             quantity: 1,
+            variant: selectedVariant ? {
+                volume: selectedVariant.volume,
+                sku: selectedVariant.sku,
+            } : undefined,
         });
     };
 
@@ -159,12 +238,27 @@ const ProductCard = ({
                         )}
                     </div>
 
-                    {/* Volume */}
-                    {volume && (
-                        <div className="text-center mb-3">
-                            <span className="text-sm text-gray-600 font-medium">{volume}</span>
-                        </div>
-                    )}
+                    {/* Volume and Stock Status */}
+                    <div className="text-center mb-3">
+                        {getVolumeDisplay() && (
+                            <span className="text-sm text-gray-600 font-medium">{getVolumeDisplay()}</span>
+                        )}
+                        {variants && variants.length > 1 && (
+                            <div className="text-xs text-blue-600 mt-1">
+                                {variants.length} sizes available
+                            </div>
+                        )}
+                        {getTotalStock() !== null && getTotalStock() === 0 && (
+                            <div className="text-xs text-red-500 mt-1 font-medium">
+                                Out of Stock
+                            </div>
+                        )}
+                        {getTotalStock() !== null && getTotalStock()! > 0 && getTotalStock()! <= 10 && (
+                            <div className="text-xs text-yellow-600 mt-1 font-medium">
+                                Only {getTotalStock()} left
+                            </div>
+                        )}
+                    </div>
 
                     {/* Rating and Reviews */}
                     <div className="flex items-center justify-center gap-2 mb-4">
@@ -181,10 +275,13 @@ const ProductCard = ({
                     {/* Price */}
                     <div className="text-center mb-4">
                         <div className="flex items-center justify-center gap-2">
-                            <span className="font-bold text-2xl text-gray-900">{formatRupees(price)}</span>
-                            {originalPrice && (
+                            {variants && variants.length > 1 ? (
+                                <span className="text-sm text-gray-600">From </span>
+                            ) : null}
+                            <span className="font-bold text-2xl text-gray-900">{formatRupees(getDisplayPrice())}</span>
+                            {getDisplayOriginalPrice() && (
                                 <span className="text-sm text-gray-400 line-through">
-                                    {formatRupees(originalPrice)}
+                                    {formatRupees(getDisplayOriginalPrice())}
                                 </span>
                             )}
                         </div>
@@ -195,8 +292,10 @@ const ProductCard = ({
                         variant="luxury"
                         className="w-full font-semibold py-3 rounded-lg transition-all duration-300 group-hover:shadow-luxury"
                         onClick={handleAddToCart}
+                        disabled={getTotalStock() === 0}
                     >
-                        ADD TO CART
+                        {getTotalStock() === 0 ? 'OUT OF STOCK' : 
+                         variants && variants.length > 1 ? 'SELECT OPTIONS' : 'ADD TO CART'}
                     </Button>
                 </CardContent>
             </Card>

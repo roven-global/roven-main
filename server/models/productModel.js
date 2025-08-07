@@ -20,6 +20,7 @@ const productSchema = new mongoose.Schema(
       trim: true,
       maxlength: [300, "Short description cannot exceed 300 characters"],
     },
+    // Base price - will be the minimum price from variants for display
     price: {
       type: Number,
       required: [true, "Price is required"],
@@ -29,6 +30,47 @@ const productSchema = new mongoose.Schema(
       type: Number,
       min: [0, "Original price cannot be negative"],
     },
+    // Volume variants with individual pricing and stock
+    variants: [
+      {
+        volume: {
+          type: String,
+          required: [true, "Volume is required for variant"],
+          trim: true,
+        },
+        price: {
+          type: Number,
+          required: [true, "Price is required for variant"],
+          min: [0, "Price cannot be negative"],
+        },
+        originalPrice: {
+          type: Number,
+          min: [0, "Original price cannot be negative"],
+        },
+        stock: {
+          type: Number,
+          required: [true, "Stock is required for variant"],
+          min: [0, "Stock cannot be negative"],
+          default: 0,
+        },
+        sku: {
+          type: String,
+          required: [true, "SKU is required for variant"],
+          unique: true,
+          trim: true,
+          uppercase: true,
+        },
+        lowStockThreshold: {
+          type: Number,
+          default: 10,
+          min: [0, "Low stock threshold cannot be negative"],
+        },
+        isActive: {
+          type: Boolean,
+          default: true,
+        },
+      },
+    ],
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
@@ -52,11 +94,6 @@ const productSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       uppercase: true,
-    },
-    volume: {
-      type: String,
-      trim: true,
-      maxlength: [20, "Volume cannot exceed 20 characters"],
     },
     images: [
       {
@@ -134,10 +171,22 @@ productSchema.pre("save", function (next) {
       strict: true,
     });
   }
+  
+  // Update base price to minimum variant price
+  if (this.variants && this.variants.length > 0) {
+    this.price = Math.min(...this.variants.map(v => v.price));
+    
+    // Update originalPrice to minimum originalPrice from variants if exists
+    const variantsWithOriginalPrice = this.variants.filter(v => v.originalPrice);
+    if (variantsWithOriginalPrice.length > 0) {
+      this.originalPrice = Math.min(...variantsWithOriginalPrice.map(v => v.originalPrice));
+    }
+  }
+  
   next();
 });
 
-// Virtual for discount percentage
+// Virtual for discount percentage (uses minimum price variant)
 productSchema.virtual("discountPercentage").get(function () {
   if (this.originalPrice && this.originalPrice > this.price) {
     return Math.round(
@@ -147,11 +196,34 @@ productSchema.virtual("discountPercentage").get(function () {
   return 0;
 });
 
-// Virtual for stock status
+// Virtual for stock status (based on all variants)
 productSchema.virtual("stockStatus").get(function () {
-  if (this.stock === 0) return "Out of Stock";
-  if (this.stock <= this.lowStockThreshold) return "Low Stock";
+  if (!this.variants || this.variants.length === 0) return "Out of Stock";
+  
+  const totalStock = this.variants.reduce((total, variant) => total + (variant.stock || 0), 0);
+  const minLowStockThreshold = Math.min(...this.variants.map(v => v.lowStockThreshold || 10));
+  
+  if (totalStock === 0) return "Out of Stock";
+  if (totalStock <= minLowStockThreshold) return "Low Stock";
   return "In Stock";
+});
+
+// Virtual for minimum price across variants
+productSchema.virtual("minPrice").get(function () {
+  if (!this.variants || this.variants.length === 0) return this.price;
+  return Math.min(...this.variants.map(v => v.price));
+});
+
+// Virtual for maximum price across variants
+productSchema.virtual("maxPrice").get(function () {
+  if (!this.variants || this.variants.length === 0) return this.price;
+  return Math.max(...this.variants.map(v => v.price));
+});
+
+// Virtual for available variants (only active variants with stock > 0)
+productSchema.virtual("availableVariants").get(function () {
+  if (!this.variants) return [];
+  return this.variants.filter(variant => variant.isActive && variant.stock > 0);
 });
 
 // Virtual for reviews
