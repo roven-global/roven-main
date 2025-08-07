@@ -292,8 +292,10 @@ const ProductCard = ({
                         variant="luxury"
                         className="w-full font-semibold py-3 rounded-lg transition-all duration-300 group-hover:shadow-luxury"
                         onClick={handleAddToCart}
+                        disabled={getTotalStock() === 0}
                     >
-                        ADD TO CART
+                        {getTotalStock() === 0 ? 'OUT OF STOCK' : 
+                         variants && variants.length > 1 ? 'SELECT OPTIONS' : 'ADD TO CART'}
                     </Button>
                 </CardContent>
             </Card>
