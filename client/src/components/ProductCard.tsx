@@ -148,14 +148,32 @@ const ProductCard = ({
         e.preventDefault();
         e.stopPropagation();
 
+        // If product has multiple variants, redirect to product detail page for selection
+        if (variants && variants.length > 1) {
+            navigate(`/product/${slug}`);
+            return;
+        }
+
+        // For single variant or no variants, add to cart directly
+        const selectedVariant = variants && variants.length === 1 ? variants[0] : null;
+        
+        if (selectedVariant && selectedVariant.stock === 0) {
+            // Don't add to cart if out of stock
+            return;
+        }
+
         if (!isAuthenticated) {
             // Handle guest cart
             addToGuestCart({
                 id,
-                name,
-                price,
+                name: selectedVariant ? `${name} - ${selectedVariant.volume}` : name,
+                price: selectedVariant ? selectedVariant.price : price,
                 image,
                 quantity: 1,
+                variant: selectedVariant ? {
+                    volume: selectedVariant.volume,
+                    sku: selectedVariant.sku,
+                } : undefined,
             });
             return;
         }
@@ -163,8 +181,12 @@ const ProductCard = ({
         // Handle authenticated user cart
         addToCart({
             productId: id,
-            name,
+            name: selectedVariant ? `${name} - ${selectedVariant.volume}` : name,
             quantity: 1,
+            variant: selectedVariant ? {
+                volume: selectedVariant.volume,
+                sku: selectedVariant.sku,
+            } : undefined,
         });
     };
 
