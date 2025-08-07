@@ -727,24 +727,72 @@ const searchProducts = asyncHandler(async (req, res) => {
 });
 
 /**
- * Get featured products
- * @route GET /api/product/featured
+ * Get product variants by product ID
+ * @route GET /api/product/:id/variants
  */
-const getFeaturedProducts = asyncHandler(async (req, res) => {
-  const { limit = 8 } = req.query;
+const getProductVariants = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
-  const products = await ProductModel.find({
-    isFeatured: true,
-    isActive: true
-  })
-    .populate('category', 'name slug')
-    .sort({ createdAt: -1 })
-    .limit(parseInt(limit));
+  const product = await ProductModel.findById(id).select('variants name');
+  if (!product) {
+    return res.status(404).json({
+      success: false,
+      message: "Product not found.",
+    });
+  }
 
   return res.json({
     success: true,
-    message: "Featured products retrieved successfully.",
-    data: products,
+    message: "Product variants retrieved successfully.",
+    data: {
+      productId: product._id,
+      productName: product.name,
+      variants: product.variants,
+    },
+  });
+});
+
+/**
+ * Update variant stock
+ * @route PUT /api/product/:id/variant/:variantSku/stock
+ */
+const updateVariantStock = asyncHandler(async (req, res) => {
+  const { id, variantSku } = req.params;
+  const { stock } = req.body;
+
+  if (stock === undefined || stock < 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Valid stock quantity is required.",
+    });
+  }
+
+  const product = await ProductModel.findById(id);
+  if (!product) {
+    return res.status(404).json({
+      success: false,
+      message: "Product not found.",
+    });
+  }
+
+  const variantIndex = product.variants.findIndex(
+    v => v.sku === variantSku.toUpperCase()
+  );
+
+  if (variantIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: "Variant not found.",
+    });
+  }
+
+  product.variants[variantIndex].stock = parseInt(stock);
+  await product.save();
+
+  return res.json({
+    success: true,
+    message: "Variant stock updated successfully.",
+    data: product.variants[variantIndex],
   });
 });
 
