@@ -48,13 +48,58 @@ const ProductDetailPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedImage, setSelectedImage] = useState<string>('');
+    const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
     const [quantity, setQuantity] = useState(1);
     const { isAuthenticated, user, updateUser } = useAuth();
     const navigate = useNavigate();
-    const { addToCart } = useCart(); // Use the cart context
-    const { addToGuestWishlist, removeFromGuestWishlist, addToGuestCart, isInGuestWishlist } = useGuest(); // Use the guest context
+    const { addToCart } = useCart();
+    const { addToGuestWishlist, removeFromGuestWishlist, addToGuestCart, isInGuestWishlist } = useGuest();
 
     const isLiked = isAuthenticated ? user?.wishlist?.includes(product?._id) : isInGuestWishlist(product?._id || '');
+
+    // Get current price based on selected variant
+    const getCurrentPrice = () => {
+        if (selectedVariant) {
+            return selectedVariant.price;
+        }
+        return product?.price || 0;
+    };
+
+    // Get current original price based on selected variant
+    const getCurrentOriginalPrice = () => {
+        if (selectedVariant) {
+            return selectedVariant.originalPrice;
+        }
+        return product?.originalPrice;
+    };
+
+    // Get stock status for selected variant
+    const getStockStatus = () => {
+        if (!selectedVariant) return 'Select Size';
+        
+        if (selectedVariant.stock === 0) return 'Out of Stock';
+        if (selectedVariant.stock <= selectedVariant.lowStockThreshold) return 'Low Stock';
+        return 'In Stock';
+    };
+
+    // Get stock status color
+    const getStockStatusColor = () => {
+        const status = getStockStatus();
+        if (status === 'Out of Stock') return 'text-red-500';
+        if (status === 'Low Stock') return 'text-yellow-500';
+        if (status === 'In Stock') return 'text-green-500';
+        return 'text-gray-500';
+    };
+
+    // Calculate price per ml if volume contains 'ml'
+    const getPricePerUnit = (variant: ProductVariant) => {
+        const volumeMatch = variant.volume.match(/(\d+)\s*ml/i);
+        if (volumeMatch) {
+            const ml = parseInt(volumeMatch[1]);
+            return `₹${(variant.price / ml).toFixed(2)}/ml`;
+        }
+        return '';
+    };
 
     const handleLikeClick = async () => {
         if (!product) return;
