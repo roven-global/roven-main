@@ -28,12 +28,10 @@ const createProduct = asyncHandler(async (req, res) => {
     name,
     description,
     shortDescription,
-    price,
-    originalPrice,
     category,
     brand,
     sku,
-    volume,
+    variants, // Now expects an array of variants
     specifications,
     tags,
     benefits,
@@ -42,10 +40,17 @@ const createProduct = asyncHandler(async (req, res) => {
 
   const images = req.files;
 
-  if (!name || !description || !price || !category || !brand || !sku) {
+  if (!name || !description || !category || !brand || !sku) {
     return res.status(400).json({
       success: false,
-      message: "Required fields: name, description, price, category, brand, sku.",
+      message: "Required fields: name, description, category, brand, sku.",
+    });
+  }
+
+  if (!variants || !Array.isArray(variants) || variants.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "At least one product variant is required.",
     });
   }
 
@@ -64,11 +69,52 @@ const createProduct = asyncHandler(async (req, res) => {
     });
   }
 
+  // Check if main SKU exists
   const existingProduct = await ProductModel.findOne({ sku });
   if (existingProduct) {
     return res.status(409).json({
       success: false,
       message: "Product with this SKU already exists.",
+    });
+  }
+
+  // Validate variants and check for duplicate variant SKUs
+  const variantSKUs = [];
+  let parsedVariants = [];
+  
+  try {
+    parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+    
+    for (let variant of parsedVariants) {
+      if (!variant.volume || !variant.price || !variant.sku) {
+        return res.status(400).json({
+          success: false,
+          message: "Each variant must have volume, price, and sku.",
+        });
+      }
+      
+      if (variantSKUs.includes(variant.sku.toUpperCase())) {
+        return res.status(400).json({
+          success: false,
+          message: "Duplicate variant SKUs not allowed.",
+        });
+      }
+      
+      // Check if variant SKU already exists in database
+      const existingVariant = await ProductModel.findOne({ "variants.sku": variant.sku.toUpperCase() });
+      if (existingVariant) {
+        return res.status(409).json({
+          success: false,
+          message: `Variant SKU '${variant.sku}' already exists.`,
+        });
+      }
+      
+      variantSKUs.push(variant.sku.toUpperCase());
+    }
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid variants format.",
     });
   }
 
@@ -116,19 +162,35 @@ const createProduct = asyncHandler(async (req, res) => {
     }
   }
 
+  // Process variants to ensure proper data types and defaults
+  const processedVariants = parsedVariants.map(variant => ({
+    volume: variant.volume,
+    price: parseFloat(variant.price),
+    originalPrice: variant.originalPrice ? parseFloat(variant.originalPrice) : undefined,
+    stock: parseInt(variant.stock) || 0,
+    sku: variant.sku.toUpperCase(),
+    lowStockThreshold: parseInt(variant.lowStockThreshold) || 10,
+    isActive: variant.isActive !== false, // default to true unless explicitly false
+  }));
+
   const slug = generateSlug(name);
+  const minPrice = Math.min(...processedVariants.map(v => v.price));
+  const minOriginalPrice = processedVariants.filter(v => v.originalPrice).length > 0 
+    ? Math.min(...processedVariants.filter(v => v.originalPrice).map(v => v.originalPrice)) 
+    : undefined;
+
   const productData = {
     name,
     slug,
     description,
     shortDescription,
-    price,
-    originalPrice,
+    price: minPrice, // Set to minimum variant price
+    originalPrice: minOriginalPrice,
     category,
-    categorySlug: categoryExists.slug, // **FIX**: Added categorySlug
+    categorySlug: categoryExists.slug,
     brand,
     sku: sku.toUpperCase(),
-    volume,
+    variants: processedVariants,
     images: uploadedImages,
     specifications: parsedSpecifications || {},
     tags: parsedTags || [],
