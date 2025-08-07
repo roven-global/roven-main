@@ -333,12 +333,10 @@ const updateProduct = asyncHandler(async (req, res) => {
     name,
     description,
     shortDescription,
-    price,
-    originalPrice,
     category,
     brand,
     sku,
-    volume,
+    variants,
     specifications,
     tags,
     benefits,
@@ -367,18 +365,15 @@ const updateProduct = asyncHandler(async (req, res) => {
 
   if (name) {
     updateFields.name = name;
-    updateFields.slug = generateSlug(name); // **FIX**: Update slug when name changes
+    updateFields.slug = generateSlug(name);
   }
   if (description) updateFields.description = description;
   if (shortDescription !== undefined) updateFields.shortDescription = shortDescription;
-  if (price) updateFields.price = price;
-  if (originalPrice !== undefined) updateFields.originalPrice = originalPrice;
   if (brand) updateFields.brand = brand;
   if (isActive !== undefined) updateFields.isActive = isActive === 'true';
   if (isFeatured !== undefined) {
     updateFields.isFeatured = isFeatured === 'true';
   }
-  if (volume !== undefined) updateFields.volume = volume;
 
   if (category && category !== String(product.category)) {
     const categoryExists = await CategoryModel.findById(category);
@@ -389,7 +384,7 @@ const updateProduct = asyncHandler(async (req, res) => {
       });
     }
     updateFields.category = category;
-    updateFields.categorySlug = categoryExists.slug; // **FIX**: Update categorySlug
+    updateFields.categorySlug = categoryExists.slug;
   }
 
   if (sku && sku !== product.sku) {
@@ -404,6 +399,81 @@ const updateProduct = asyncHandler(async (req, res) => {
       });
     }
     updateFields.sku = sku.toUpperCase();
+  }
+
+  // Handle variants update
+  if (variants) {
+    let parsedVariants = [];
+    try {
+      parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+      
+      if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "At least one product variant is required.",
+        });
+      }
+
+      // Validate variants and check for duplicate variant SKUs
+      const variantSKUs = [];
+      
+      for (let variant of parsedVariants) {
+        if (!variant.volume || !variant.price || !variant.sku) {
+          return res.status(400).json({
+            success: false,
+            message: "Each variant must have volume, price, and sku.",
+          });
+        }
+        
+        if (variantSKUs.includes(variant.sku.toUpperCase())) {
+          return res.status(400).json({
+            success: false,
+            message: "Duplicate variant SKUs not allowed.",
+          });
+        }
+        
+        // Check if variant SKU already exists in other products
+        const existingVariant = await ProductModel.findOne({ 
+          "variants.sku": variant.sku.toUpperCase(),
+          _id: { $ne: id }
+        });
+        if (existingVariant) {
+          return res.status(409).json({
+            success: false,
+            message: `Variant SKU '${variant.sku}' already exists.`,
+          });
+        }
+        
+        variantSKUs.push(variant.sku.toUpperCase());
+      }
+
+      // Process variants
+      updateFields.variants = parsedVariants.map(variant => ({
+        volume: variant.volume,
+        price: parseFloat(variant.price),
+        originalPrice: variant.originalPrice ? parseFloat(variant.originalPrice) : undefined,
+        stock: parseInt(variant.stock) || 0,
+        sku: variant.sku.toUpperCase(),
+        lowStockThreshold: parseInt(variant.lowStockThreshold) || 10,
+        isActive: variant.isActive !== false,
+      }));
+
+      // Update base price to minimum variant price
+      updateFields.price = Math.min(...updateFields.variants.map(v => v.price));
+      
+      const variantsWithOriginalPrice = updateFields.variants.filter(v => v.originalPrice);
+      if (variantsWithOriginalPrice.length > 0) {
+        updateFields.originalPrice = Math.min(...variantsWithOriginalPrice.map(v => v.originalPrice));
+      } else {
+        updateFields.originalPrice = undefined;
+      }
+
+    } catch (err) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid variants format.",
+      });
+    }
   }
 
   if (specifications) {
