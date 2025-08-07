@@ -155,11 +155,11 @@ const SummaryApi = {
     method: "post",
   },
   updateCart: {
-    url: "/api/cart",
+    url: "/api/cart/:cartItemId",
     method: "put",
   },
   deleteFromCart: {
-    url: "/api/cart",
+    url: "/api/cart/:cartItemId",
     method: "delete",
   },
   mergeCart: {

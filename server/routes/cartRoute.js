@@ -15,7 +15,7 @@ router.use(auth);
 router.route("/").get(getCart);
 router.route("/add").post(addToCart);
 router.route("/merge").post(mergeCart);
-router.route("/:productId").put(updateCartItem);
-router.route("/:productId").delete(removeCartItem);
+router.route("/:cartItemId").put(updateCartItem);
+router.route("/:cartItemId").delete(removeCartItem);
 
 module.exports = router;

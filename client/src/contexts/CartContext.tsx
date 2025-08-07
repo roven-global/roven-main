@@ -11,15 +11,26 @@ interface CartItem {
     price: number;
     images: Array<{ public_id: string; url: string }>;
     description: string;
+    variants?: Array<{
+      sku: string;
+      volume: string;
+      price: number;
+      stock: number;
+    }>;
   };
   quantity: number;
+  variant?: {
+    sku: string;
+    volume: string;
+    price: number;
+  };
 }
 
 interface CartContextType {
   cartItems: CartItem[];
   addToCart: (item: { productId: string; name: string; quantity?: number; variant?: { volume: string; sku: string } }) => void;
-  removeFromCart: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  removeFromCart: (cartItemId: string) => void;
+  updateQuantity: (cartItemId: string, quantity: number) => void;
   cartCount: number;
   fetchUserCart: () => Promise<void>;
   clearCart: () => void;
@@ -90,9 +101,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const removeFromCart = async (id: string) => {
+  const removeFromCart = async (cartItemId: string) => {
     try {
-      await Axios.delete(`${SummaryApi.deleteFromCart.url}/${id}`);
+      await Axios.delete(SummaryApi.deleteFromCart.url.replace(':cartItemId', cartItemId));
       toast({ title: "Item Removed", description: "The item has been removed from your cart." });
       await fetchUserCart();
       // Dispatch cart update event
@@ -102,9 +113,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateQuantity = async (id: string, quantity: number) => {
+  const updateQuantity = async (cartItemId: string, quantity: number) => {
     try {
-      await Axios.put(`${SummaryApi.updateCart.url}/${id}`, { quantity });
+      await Axios.put(SummaryApi.updateCart.url.replace(':cartItemId', cartItemId), { quantity });
       await fetchUserCart();
       // Dispatch cart update event
       window.dispatchEvent(new Event('cartUpdate'));

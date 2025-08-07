@@ -63,22 +63,22 @@ const Cart = () => {
         }
     }, [isAuthenticated, fetchUserCart]);
 
-    const handleUpdateQuantity = async (productId: string, newQuantity: number) => {
+    const handleUpdateQuantity = async (cartItemId: string, newQuantity: number, variant?: { volume: string; sku: string }) => {
         if (newQuantity < 1) return;
         if (isAuthenticated) {
-            await updateQuantity(productId, newQuantity);
+            await updateQuantity(cartItemId, newQuantity);
         } else {
-            updateGuestCartQuantity(productId, newQuantity);
+            updateGuestCartQuantity(cartItemId, newQuantity, variant);
         }
     };
 
-    const handleRemoveItem = async (productId: string) => {
-        setRemovingId(productId);
+    const handleRemoveItem = async (cartItemId: string, variant?: { volume: string; sku: string }) => {
+        setRemovingId(cartItemId);
         try {
             if (isAuthenticated) {
-                await removeFromCart(productId);
+                await removeFromCart(cartItemId);
             } else {
-                removeFromGuestCart(productId);
+                removeFromGuestCart(cartItemId, variant);
             }
             toast({
                 title: "Success",
@@ -135,7 +135,7 @@ const Cart = () => {
 
     const displayCartItems = isAuthenticated ? cartItems : guestCart;
     const subtotal = isAuthenticated
-        ? cartItems.reduce((acc, item) => acc + ((item.productId?.price || 0) * item.quantity), 0)
+        ? cartItems.reduce((acc, item) => acc + ((item.variant?.price || item.productId?.price || 0) * item.quantity), 0)
         : guestCart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const shippingCost = subtotal > 500 ? 0 : 40;
     const onlinePaymentDiscount = subtotal * 0.05; // 5% discount
@@ -271,6 +271,20 @@ const Cart = () => {
                                                     <h3 className="font-semibold text-sm line-clamp-2 text-gray-800">
                                                         {item.productId?.name || 'Product Name Unavailable'}
                                                     </h3>
+                                                    {/* Show variant information if available */}
+                                                    {item.variant && (
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <Badge variant="secondary" className="text-xs">
+                                                                {item.variant.volume}
+                                                            </Badge>
+                                                            {/* Only show SKU to admin users */}
+                                                            {user?.role === 'admin' && (
+                                                                <span className="text-xs text-gray-600">
+                                                                    SKU: {item.variant.sku}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                     <p className="text-xs text-green-600 mt-1 font-medium">In Stock</p>
                                                     <div className="flex items-center justify-between mt-3">
                                                         <div className="flex items-center gap-2">
@@ -278,7 +292,7 @@ const Cart = () => {
                                                                 variant="outline"
                                                                 size="icon"
                                                                 className="h-8 w-8 border-gray-300 hover:border-orange-500"
-                                                                onClick={() => handleUpdateQuantity(item.productId?._id || '', item.quantity - 1)}
+                                                                onClick={() => handleUpdateQuantity(item._id, item.quantity - 1)}
                                                                 disabled={item.quantity === 1}
                                                             >
                                                                 <Minus className="h-4 w-4" />
@@ -290,17 +304,17 @@ const Cart = () => {
                                                                 variant="outline"
                                                                 size="icon"
                                                                 className="h-8 w-8 border-gray-300 hover:border-orange-500"
-                                                                onClick={() => handleUpdateQuantity(item.productId?._id || '', item.quantity + 1)}
+                                                                onClick={() => handleUpdateQuantity(item._id, item.quantity + 1)}
                                                             >
                                                                 <Plus className="h-4 w-4" />
                                                             </Button>
                                                         </div>
                                                         <div className="text-right">
                                                             <p className="font-semibold text-sm text-gray-800">
-                                                                {formatRupees((item.productId?.price || 0) * item.quantity)}
+                                                                {formatRupees((item.variant?.price || item.productId?.price || 0) * item.quantity)}
                                                             </p>
                                                             <p className="text-xs text-gray-500">
-                                                                {item.quantity} | To pay: {formatRupees((item.productId?.price || 0) * item.quantity)}
+                                                                {item.quantity} × {formatRupees(item.variant?.price || item.productId?.price || 0)} each
                                                             </p>
                                                         </div>
                                                     </div>
@@ -309,14 +323,14 @@ const Cart = () => {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
-                                                    onClick={() => handleRemoveItem(item.productId?._id || '')}
+                                                    onClick={() => handleRemoveItem(item._id)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </div>
                                         )) : guestCart.map((item) => (
                                             <div
-                                                key={item.id}
+                                                key={`${item.id}-${JSON.stringify(item.variant)}`}
                                                 className={`flex items-start gap-4 p-4 border border-gray-200 rounded-lg transition-all duration-300 hover:shadow-md ${removingId === item.id ? 'opacity-0' : 'opacity-100'
                                                     }`}
                                             >
@@ -332,6 +346,20 @@ const Cart = () => {
                                                     <h3 className="font-semibold text-sm line-clamp-2 text-gray-800">
                                                         {item.name}
                                                     </h3>
+                                                    {/* Show variant information if available */}
+                                                    {item.variant && (
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <Badge variant="secondary" className="text-xs">
+                                                                {item.variant.volume}
+                                                            </Badge>
+                                                            {/* Only show SKU to admin users */}
+                                                            {user?.role === 'admin' && (
+                                                                <span className="text-xs text-gray-600">
+                                                                    SKU: {item.variant.sku}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                     <p className="text-xs text-green-600 mt-1 font-medium">In Stock</p>
                                                     <div className="flex items-center justify-between mt-3">
                                                         <div className="flex items-center gap-2">
@@ -339,7 +367,7 @@ const Cart = () => {
                                                                 variant="outline"
                                                                 size="icon"
                                                                 className="h-8 w-8 border-gray-300 hover:border-orange-500"
-                                                                onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                                                                onClick={() => handleUpdateQuantity(item.id, item.quantity - 1, item.variant)}
                                                                 disabled={item.quantity === 1}
                                                             >
                                                                 <Minus className="h-4 w-4" />
@@ -351,7 +379,7 @@ const Cart = () => {
                                                                 variant="outline"
                                                                 size="icon"
                                                                 className="h-8 w-8 border-gray-300 hover:border-orange-500"
-                                                                onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                                                                onClick={() => handleUpdateQuantity(item.id, item.quantity + 1, item.variant)}
                                                             >
                                                                 <Plus className="h-4 w-4" />
                                                             </Button>
@@ -361,7 +389,7 @@ const Cart = () => {
                                                                 {formatRupees(item.price * item.quantity)}
                                                             </p>
                                                             <p className="text-xs text-gray-500">
-                                                                {item.quantity} | To pay: {formatRupees(item.price * item.quantity)}
+                                                                {item.quantity} × {formatRupees(item.price)} each
                                                             </p>
                                                         </div>
                                                     </div>
@@ -370,7 +398,7 @@ const Cart = () => {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
-                                                    onClick={() => handleRemoveItem(item.id)}
+                                                    onClick={() => handleRemoveItem(item.id, item.variant)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
