@@ -174,7 +174,7 @@ productSchema.pre("save", function (next) {
   next();
 });
 
-// Virtual for discount percentage
+// Virtual for discount percentage (uses minimum price variant)
 productSchema.virtual("discountPercentage").get(function () {
   if (this.originalPrice && this.originalPrice > this.price) {
     return Math.round(
@@ -184,11 +184,34 @@ productSchema.virtual("discountPercentage").get(function () {
   return 0;
 });
 
-// Virtual for stock status
+// Virtual for stock status (based on all variants)
 productSchema.virtual("stockStatus").get(function () {
-  if (this.stock === 0) return "Out of Stock";
-  if (this.stock <= this.lowStockThreshold) return "Low Stock";
+  if (!this.variants || this.variants.length === 0) return "Out of Stock";
+  
+  const totalStock = this.variants.reduce((total, variant) => total + (variant.stock || 0), 0);
+  const minLowStockThreshold = Math.min(...this.variants.map(v => v.lowStockThreshold || 10));
+  
+  if (totalStock === 0) return "Out of Stock";
+  if (totalStock <= minLowStockThreshold) return "Low Stock";
   return "In Stock";
+});
+
+// Virtual for minimum price across variants
+productSchema.virtual("minPrice").get(function () {
+  if (!this.variants || this.variants.length === 0) return this.price;
+  return Math.min(...this.variants.map(v => v.price));
+});
+
+// Virtual for maximum price across variants
+productSchema.virtual("maxPrice").get(function () {
+  if (!this.variants || this.variants.length === 0) return this.price;
+  return Math.max(...this.variants.map(v => v.price));
+});
+
+// Virtual for available variants (only active variants with stock > 0)
+productSchema.virtual("availableVariants").get(function () {
+  if (!this.variants) return [];
+  return this.variants.filter(variant => variant.isActive && variant.stock > 0);
 });
 
 // Virtual for reviews
