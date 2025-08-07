@@ -56,7 +56,6 @@ const productSchema = new mongoose.Schema(
         sku: {
           type: String,
           required: [true, "SKU is required for variant"],
-          unique: true,
           trim: true,
           uppercase: true,
         },
@@ -171,18 +170,18 @@ productSchema.pre("save", function (next) {
       strict: true,
     });
   }
-  
+
   // Update base price to minimum variant price
   if (this.variants && this.variants.length > 0) {
     this.price = Math.min(...this.variants.map(v => v.price));
-    
+
     // Update originalPrice to minimum originalPrice from variants if exists
     const variantsWithOriginalPrice = this.variants.filter(v => v.originalPrice);
     if (variantsWithOriginalPrice.length > 0) {
       this.originalPrice = Math.min(...variantsWithOriginalPrice.map(v => v.originalPrice));
     }
   }
-  
+
   next();
 });
 
@@ -199,10 +198,10 @@ productSchema.virtual("discountPercentage").get(function () {
 // Virtual for stock status (based on all variants)
 productSchema.virtual("stockStatus").get(function () {
   if (!this.variants || this.variants.length === 0) return "Out of Stock";
-  
+
   const totalStock = this.variants.reduce((total, variant) => total + (variant.stock || 0), 0);
   const minLowStockThreshold = Math.min(...this.variants.map(v => v.lowStockThreshold || 10));
-  
+
   if (totalStock === 0) return "Out of Stock";
   if (totalStock <= minLowStockThreshold) return "Low Stock";
   return "In Stock";

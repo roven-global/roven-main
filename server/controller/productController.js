@@ -31,7 +31,12 @@ const createProduct = asyncHandler(async (req, res) => {
     category,
     brand,
     sku,
+    price,
+    originalPrice,
+    volume,
     variants, // Now expects an array of variants
+    hasVariants, // Flag to indicate if product uses variants
+    productType, // Additional flag for product type
     specifications,
     tags,
     benefits,
@@ -47,11 +52,25 @@ const createProduct = asyncHandler(async (req, res) => {
     });
   }
 
-  if (!variants || !Array.isArray(variants) || variants.length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: "At least one product variant is required.",
-    });
+  // Determine if this is a variant product or single product
+  const isVariantProduct = hasVariants === 'true' || productType === 'variant' || (variants && Array.isArray(variants) && variants.length > 0);
+
+  if (isVariantProduct) {
+    // For variant products, require at least one variant
+    if (!variants || !Array.isArray(variants) || variants.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one product variant is required for variant products.",
+      });
+    }
+  } else {
+    // For single products, require price
+    if (!price || parseFloat(price) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Price is required and must be greater than 0 for single products.",
+      });
+    }
   }
 
   if (!images || images.length === 0) {
@@ -78,44 +97,46 @@ const createProduct = asyncHandler(async (req, res) => {
     });
   }
 
-  // Validate variants and check for duplicate variant SKUs
+  // Validate variants and check for duplicate variant SKUs (only for variant products)
   const variantSKUs = [];
   let parsedVariants = [];
-  
-  try {
-    parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
-    
-    for (let variant of parsedVariants) {
-      if (!variant.volume || !variant.price || !variant.sku) {
-        return res.status(400).json({
-          success: false,
-          message: "Each variant must have volume, price, and sku.",
-        });
+
+  if (isVariantProduct) {
+    try {
+      parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+
+      for (let variant of parsedVariants) {
+        if (!variant.volume || !variant.price || !variant.sku) {
+          return res.status(400).json({
+            success: false,
+            message: "Each variant must have volume, price, and sku.",
+          });
+        }
+
+        if (variantSKUs.includes(variant.sku.toUpperCase())) {
+          return res.status(400).json({
+            success: false,
+            message: "Duplicate variant SKUs not allowed.",
+          });
+        }
+
+        // Check if variant SKU already exists in database
+        const existingVariant = await ProductModel.findOne({ "variants.sku": variant.sku.toUpperCase() });
+        if (existingVariant) {
+          return res.status(409).json({
+            success: false,
+            message: `Variant SKU '${variant.sku}' already exists.`,
+          });
+        }
+
+        variantSKUs.push(variant.sku.toUpperCase());
       }
-      
-      if (variantSKUs.includes(variant.sku.toUpperCase())) {
-        return res.status(400).json({
-          success: false,
-          message: "Duplicate variant SKUs not allowed.",
-        });
-      }
-      
-      // Check if variant SKU already exists in database
-      const existingVariant = await ProductModel.findOne({ "variants.sku": variant.sku.toUpperCase() });
-      if (existingVariant) {
-        return res.status(409).json({
-          success: false,
-          message: `Variant SKU '${variant.sku}' already exists.`,
-        });
-      }
-      
-      variantSKUs.push(variant.sku.toUpperCase());
+    } catch (err) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid variants format.",
+      });
     }
-  } catch (err) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid variants format.",
-    });
   }
 
   let uploadedImages = [];
@@ -162,41 +183,67 @@ const createProduct = asyncHandler(async (req, res) => {
     }
   }
 
-  // Process variants to ensure proper data types and defaults
-  const processedVariants = parsedVariants.map(variant => ({
-    volume: variant.volume,
-    price: parseFloat(variant.price),
-    originalPrice: variant.originalPrice ? parseFloat(variant.originalPrice) : undefined,
-    stock: parseInt(variant.stock) || 0,
-    sku: variant.sku.toUpperCase(),
-    lowStockThreshold: parseInt(variant.lowStockThreshold) || 10,
-    isActive: variant.isActive !== false, // default to true unless explicitly false
-  }));
-
   const slug = generateSlug(name);
-  const minPrice = Math.min(...processedVariants.map(v => v.price));
-  const minOriginalPrice = processedVariants.filter(v => v.originalPrice).length > 0 
-    ? Math.min(...processedVariants.filter(v => v.originalPrice).map(v => v.originalPrice)) 
-    : undefined;
 
-  const productData = {
-    name,
-    slug,
-    description,
-    shortDescription,
-    price: minPrice, // Set to minimum variant price
-    originalPrice: minOriginalPrice,
-    category,
-    categorySlug: categoryExists.slug,
-    brand,
-    sku: sku.toUpperCase(),
-    variants: processedVariants,
-    images: uploadedImages,
-    specifications: parsedSpecifications || {},
-    tags: parsedTags || [],
-    benefits: parsedBenefits || [],
-    isFeatured: isFeatured === 'true',
-  };
+  let productData;
+
+  if (isVariantProduct) {
+    // Process variants to ensure proper data types and defaults
+    const processedVariants = parsedVariants.map(variant => ({
+      volume: variant.volume,
+      price: parseFloat(variant.price),
+      originalPrice: variant.originalPrice ? parseFloat(variant.originalPrice) : undefined,
+      stock: parseInt(variant.stock) || 0,
+      sku: variant.sku.toUpperCase(),
+      lowStockThreshold: parseInt(variant.lowStockThreshold) || 10,
+      isActive: variant.isActive !== false, // default to true unless explicitly false
+    }));
+
+    const minPrice = Math.min(...processedVariants.map(v => v.price));
+    const minOriginalPrice = processedVariants.filter(v => v.originalPrice).length > 0
+      ? Math.min(...processedVariants.filter(v => v.originalPrice).map(v => v.originalPrice))
+      : undefined;
+
+    productData = {
+      name,
+      slug,
+      description,
+      shortDescription,
+      price: minPrice, // Set to minimum variant price
+      originalPrice: minOriginalPrice,
+      category,
+      categorySlug: categoryExists.slug,
+      brand,
+      sku: sku.toUpperCase(),
+      variants: processedVariants,
+      images: uploadedImages,
+      specifications: parsedSpecifications || {},
+      tags: parsedTags || [],
+      benefits: parsedBenefits || [],
+      isFeatured: isFeatured === 'true',
+    };
+  } else {
+    // Single product - use the provided price and volume
+    productData = {
+      name,
+      slug,
+      description,
+      shortDescription,
+      price: parseFloat(price),
+      originalPrice: originalPrice ? parseFloat(originalPrice) : undefined,
+      volume: volume || undefined,
+      category,
+      categorySlug: categoryExists.slug,
+      brand,
+      sku: sku.toUpperCase(),
+      variants: [], // Empty array for single products
+      images: uploadedImages,
+      specifications: parsedSpecifications || {},
+      tags: parsedTags || [],
+      benefits: parsedBenefits || [],
+      isFeatured: isFeatured === 'true',
+    };
+  }
 
   const newProduct = new ProductModel(productData);
   await newProduct.save();
@@ -336,7 +383,12 @@ const updateProduct = asyncHandler(async (req, res) => {
     category,
     brand,
     sku,
+    price,
+    originalPrice,
+    volume,
     variants,
+    hasVariants,
+    productType,
     specifications,
     tags,
     benefits,
@@ -401,22 +453,25 @@ const updateProduct = asyncHandler(async (req, res) => {
     updateFields.sku = sku.toUpperCase();
   }
 
+  // Determine if this is a variant product or single product
+  const isVariantProduct = hasVariants === 'true' || productType === 'variant' || (variants && Array.isArray(variants) && variants.length > 0);
+
   // Handle variants update
   if (variants) {
     let parsedVariants = [];
     try {
       parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
-      
-      if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) {
+
+      if (isVariantProduct && (!Array.isArray(parsedVariants) || parsedVariants.length === 0)) {
         return res.status(400).json({
           success: false,
-          message: "At least one product variant is required.",
+          message: "At least one product variant is required for variant products.",
         });
       }
 
       // Validate variants and check for duplicate variant SKUs
       const variantSKUs = [];
-      
+
       for (let variant of parsedVariants) {
         if (!variant.volume || !variant.price || !variant.sku) {
           return res.status(400).json({
@@ -424,16 +479,16 @@ const updateProduct = asyncHandler(async (req, res) => {
             message: "Each variant must have volume, price, and sku.",
           });
         }
-        
+
         if (variantSKUs.includes(variant.sku.toUpperCase())) {
           return res.status(400).json({
             success: false,
             message: "Duplicate variant SKUs not allowed.",
           });
         }
-        
+
         // Check if variant SKU already exists in other products
-        const existingVariant = await ProductModel.findOne({ 
+        const existingVariant = await ProductModel.findOne({
           "variants.sku": variant.sku.toUpperCase(),
           _id: { $ne: id }
         });
@@ -443,7 +498,7 @@ const updateProduct = asyncHandler(async (req, res) => {
             message: `Variant SKU '${variant.sku}' already exists.`,
           });
         }
-        
+
         variantSKUs.push(variant.sku.toUpperCase());
       }
 
@@ -460,7 +515,7 @@ const updateProduct = asyncHandler(async (req, res) => {
 
       // Update base price to minimum variant price
       updateFields.price = Math.min(...updateFields.variants.map(v => v.price));
-      
+
       const variantsWithOriginalPrice = updateFields.variants.filter(v => v.originalPrice);
       if (variantsWithOriginalPrice.length > 0) {
         updateFields.originalPrice = Math.min(...variantsWithOriginalPrice.map(v => v.originalPrice));
@@ -474,6 +529,29 @@ const updateProduct = asyncHandler(async (req, res) => {
         message: "Invalid variants format.",
       });
     }
+  } else if (!isVariantProduct) {
+    // Handle single product updates
+    if (price !== undefined) {
+      const parsedPrice = parseFloat(price);
+      if (parsedPrice <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Price must be greater than 0 for single products.",
+        });
+      }
+      updateFields.price = parsedPrice;
+    }
+
+    if (originalPrice !== undefined) {
+      updateFields.originalPrice = originalPrice ? parseFloat(originalPrice) : undefined;
+    }
+
+    if (volume !== undefined) {
+      updateFields.volume = volume || undefined;
+    }
+
+    // Clear variants for single products
+    updateFields.variants = [];
   }
 
   if (specifications) {

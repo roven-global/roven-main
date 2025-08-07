@@ -15,6 +15,10 @@ interface GuestCartItem {
     price: number;
     image: string;
     quantity: number;
+    variant?: {
+        volume: string;
+        sku: string;
+    };
 }
 
 interface GuestContextType {
@@ -23,8 +27,8 @@ interface GuestContextType {
     addToGuestWishlist: (item: GuestWishlistItem) => void;
     removeFromGuestWishlist: (id: string) => void;
     addToGuestCart: (item: GuestCartItem) => void;
-    removeFromGuestCart: (id: string) => void;
-    updateGuestCartQuantity: (id: string, quantity: number) => void;
+    removeFromGuestCart: (id: string, variant?: { volume: string; sku: string }) => void;
+    updateGuestCartQuantity: (id: string, quantity: number, variant?: { volume: string; sku: string }) => void;
     clearGuestData: () => void;
     guestCartCount: number;
     isInGuestWishlist: (id: string) => boolean;
@@ -112,10 +116,15 @@ export const GuestProvider = ({ children }: { children: ReactNode }) => {
 
     const addToGuestCart = (item: GuestCartItem) => {
         setGuestCart(prev => {
-            const existingItem = prev.find(cartItem => cartItem.id === item.id);
+            // Check for existing item with same ID and variant
+            const existingItem = prev.find(cartItem =>
+                cartItem.id === item.id &&
+                JSON.stringify(cartItem.variant) === JSON.stringify(item.variant)
+            );
+
             if (existingItem) {
                 const newCart = prev.map(cartItem =>
-                    cartItem.id === item.id
+                    cartItem.id === item.id && JSON.stringify(cartItem.variant) === JSON.stringify(item.variant)
                         ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
                         : cartItem
                 );
@@ -135,10 +144,15 @@ export const GuestProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
-    const removeFromGuestCart = (id: string) => {
+    const removeFromGuestCart = (id: string, variant?: { volume: string; sku: string }) => {
         setGuestCart(prev => {
-            const item = prev.find(cartItem => cartItem.id === id);
-            const newCart = prev.filter(cartItem => cartItem.id !== id);
+            const item = prev.find(cartItem =>
+                cartItem.id === id &&
+                JSON.stringify(cartItem.variant) === JSON.stringify(variant)
+            );
+            const newCart = prev.filter(cartItem =>
+                !(cartItem.id === id && JSON.stringify(cartItem.variant) === JSON.stringify(variant))
+            );
             if (item) {
                 toast({
                     title: "Removed from cart",
@@ -149,15 +163,17 @@ export const GuestProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
-    const updateGuestCartQuantity = (id: string, quantity: number) => {
+    const updateGuestCartQuantity = (id: string, quantity: number, variant?: { volume: string; sku: string }) => {
         if (quantity < 1) {
-            removeFromGuestCart(id);
+            removeFromGuestCart(id, variant);
             return;
         }
 
         setGuestCart(prev =>
             prev.map(cartItem =>
-                cartItem.id === id ? { ...cartItem, quantity } : cartItem
+                cartItem.id === id && JSON.stringify(cartItem.variant) === JSON.stringify(variant)
+                    ? { ...cartItem, quantity }
+                    : cartItem
             )
         );
     };

@@ -17,7 +17,7 @@ interface CartItem {
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (item: { productId: string; name: string; quantity?: number }) => void;
+  addToCart: (item: { productId: string; name: string; quantity?: number; variant?: { volume: string; sku: string } }) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   cartCount: number;
@@ -74,11 +74,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return () => window.removeEventListener('loginStateChange', handleLogin);
   }, [fetchUserCart]);
 
-  const addToCart = async (item: { productId: string; name: string; quantity?: number }) => {
+  const addToCart = async (item: { productId: string; name: string; quantity?: number; variant?: { volume: string; sku: string } }) => {
     try {
       await Axios.post(SummaryApi.addToCart.url, {
         productId: item.productId,
         quantity: item.quantity || 1,
+        variant: item.variant,
       });
       toast({ title: "Added to cart", description: `${item.name} has been added or updated.` });
       await fetchUserCart();

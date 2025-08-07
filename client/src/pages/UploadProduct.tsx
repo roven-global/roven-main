@@ -24,6 +24,16 @@ interface Category {
   };
 }
 
+interface ProductVariant {
+  volume: string;
+  price: number;
+  originalPrice?: number;
+  stock: number;
+  sku: string;
+  lowStockThreshold: number;
+  isActive: boolean;
+}
+
 interface Product {
   _id: string;
   name: string;
@@ -31,6 +41,7 @@ interface Product {
   shortDescription?: string;
   price: number;
   originalPrice?: number;
+  variants?: ProductVariant[];
   category: {
     _id: string;
     name: string;
@@ -69,6 +80,8 @@ const UploadProduct = () => {
   const [newTag, setNewTag] = useState('');
   const [benefits, setBenefits] = useState<string[]>([]);
   const [newBenefit, setNewBenefit] = useState('');
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [useVariants, setUseVariants] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -148,6 +161,12 @@ const UploadProduct = () => {
 
         // Set benefits
         setBenefits(product.benefits || []);
+
+        // Set variants
+        if (product.variants && product.variants.length > 0) {
+          setVariants(product.variants);
+          setUseVariants(true);
+        }
       }
     } catch (error) {
       console.error('Error fetching product:', error);
@@ -227,13 +246,118 @@ const UploadProduct = () => {
     setBenefits(benefits.filter(benefit => benefit !== benefitToRemove));
   };
 
+  // Variant management functions
+  const addVariant = () => {
+    const newVariant: ProductVariant = {
+      volume: '',
+      price: 0,
+      originalPrice: 0,
+      stock: 0,
+      sku: '',
+      lowStockThreshold: 5,
+      isActive: true,
+    };
+    setVariants([...variants, newVariant]);
+  };
+
+  const updateVariant = (index: number, field: keyof ProductVariant, value: any) => {
+    const updatedVariants = [...variants];
+    updatedVariants[index] = { ...updatedVariants[index], [field]: value };
+    setVariants(updatedVariants);
+  };
+
+  const removeVariant = (index: number) => {
+    setVariants(variants.filter((_, i) => i !== index));
+  };
+
+  const validateVariants = () => {
+    if (!useVariants) return true;
+
+    if (variants.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please add at least one variant when using variants.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const skus = variants.map(v => v.sku).filter(sku => sku.trim() !== '');
+    const uniqueSkus = new Set(skus);
+
+    if (skus.length !== uniqueSkus.size) {
+      toast({
+        title: "Validation Error",
+        description: "All variants must have unique SKUs.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    for (let i = 0; i < variants.length; i++) {
+      const variant = variants[i];
+      if (!variant.volume.trim()) {
+        toast({
+          title: "Validation Error",
+          description: `Variant ${i + 1}: Volume is required.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      if (variant.price <= 0) {
+        toast({
+          title: "Validation Error",
+          description: `Variant ${i + 1}: Price must be greater than 0.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      if (!variant.sku.trim()) {
+        toast({
+          title: "Validation Error",
+          description: `Variant ${i + 1}: SKU is required.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.description || !formData.price || !formData.category || !formData.brand || !formData.sku) {
+    // Basic form validation
+    if (!formData.name || !formData.description || !formData.category || !formData.brand || !formData.sku) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Price validation based on variant usage
+    if (!useVariants && (!formData.price || parseFloat(formData.price) <= 0)) {
+      toast({
+        title: "Error",
+        description: "Price is required and must be greater than 0 for single products.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate variants if using variants
+    if (!validateVariants()) {
+      return;
+    }
+
+    // Additional check to ensure we have proper data for the backend
+    if (useVariants && variants.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please add at least one variant or disable the variant option.",
         variant: "destructive",
       });
       return;
@@ -252,18 +376,41 @@ const UploadProduct = () => {
     try {
       const formDataToSend = new FormData();
 
+      // Ensure we have the right data structure based on variant usage
+      const isUsingVariants = useVariants && variants.length > 0;
+
       // Add basic product data
       formDataToSend.append('name', formData.name);
       formDataToSend.append('description', formData.description);
       formDataToSend.append('shortDescription', formData.shortDescription);
-      formDataToSend.append('price', formData.price);
-      if (formData.originalPrice) formDataToSend.append('originalPrice', formData.originalPrice);
       formDataToSend.append('category', formData.category);
       formDataToSend.append('brand', formData.brand);
       formDataToSend.append('sku', formData.sku);
-      formDataToSend.append('volume', formData.volume);
       formDataToSend.append('isActive', formData.isActive.toString());
       formDataToSend.append('isFeatured', formData.isFeatured.toString());
+
+      // Handle price, original price, and volume based on variant usage
+      if (isUsingVariants) {
+        // When using variants, set base price to 0 and clear volume
+        formDataToSend.append('price', '0');
+        formDataToSend.append('volume', '');
+        if (formData.originalPrice) formDataToSend.append('originalPrice', '0');
+      } else {
+        // When not using variants, use the form data and ensure price is valid
+        const price = parseFloat(formData.price) || 0;
+        if (price <= 0) {
+          toast({
+            title: "Error",
+            description: "Price must be greater than 0 for single products.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+        formDataToSend.append('price', formData.price);
+        formDataToSend.append('volume', formData.volume || '');
+        if (formData.originalPrice) formDataToSend.append('originalPrice', formData.originalPrice);
+      }
 
       // Add specifications
       const specsObject = specifications.reduce((acc, spec) => {
@@ -279,6 +426,36 @@ const UploadProduct = () => {
 
       // Add benefits
       formDataToSend.append('benefits', JSON.stringify(benefits));
+
+      // Handle variants - be very explicit about the data structure
+      if (isUsingVariants) {
+        formDataToSend.append('variants', JSON.stringify(variants));
+        formDataToSend.append('hasVariants', 'true');
+        formDataToSend.append('productType', 'variant');
+      } else {
+        formDataToSend.append('variants', JSON.stringify([]));
+        formDataToSend.append('hasVariants', 'false');
+        formDataToSend.append('productType', 'single');
+        // Ensure we have a valid single product structure
+        if (!formData.price || parseFloat(formData.price) <= 0) {
+          toast({
+            title: "Error",
+            description: "Price is required and must be greater than 0 for single products.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Debug: Log what we're sending
+      console.log('Form data being sent:', {
+        useVariants,
+        variantsCount: variants.length,
+        isUsingVariants,
+        price: formData.price,
+        hasVariants: isUsingVariants ? 'true' : 'false'
+      });
 
       // Add images (only new ones for editing)
       const newImages = imageFiles.filter(img => !img.id.startsWith('existing-'));
@@ -491,6 +668,139 @@ const UploadProduct = () => {
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Variants Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Product Variants
+              </CardTitle>
+              <CardDescription>
+                Add multiple sizes/volumes for this product (optional)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="use-variants"
+                  checked={useVariants}
+                  onCheckedChange={setUseVariants}
+                />
+                <Label htmlFor="use-variants">Enable product variants</Label>
+              </div>
+
+              {useVariants && variants.length === 0 && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Action Required:</strong> You've enabled variants but haven't added any yet.
+                    Click "Add Variant" below to create your first variant, or disable the variant option above.
+                  </p>
+                </div>
+              )}
+
+              {useVariants && (
+                <div className="space-y-4">
+                  <div className="text-sm text-muted-foreground">
+                    When variants are enabled, the base price and volume fields above will be ignored.
+                    <strong className="text-red-600"> You must add at least one variant below.</strong>
+                  </div>
+
+                  {variants.map((variant, index) => (
+                    <div key={index} className="border rounded-lg p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">Variant {index + 1}</h4>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeVariant(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label>Volume *</Label>
+                          <Input
+                            placeholder="e.g., 100ml, 200ml"
+                            value={variant.volume}
+                            onChange={(e) => updateVariant(index, 'volume', e.target.value)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Price (₹) *</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={variant.price}
+                            onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Original Price (₹)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={variant.originalPrice || ''}
+                            onChange={(e) => updateVariant(index, 'originalPrice', parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Stock Quantity *</Label>
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            value={variant.stock}
+                            onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value) || 0)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>SKU *</Label>
+                          <Input
+                            placeholder="Unique SKU"
+                            value={variant.sku}
+                            onChange={(e) => updateVariant(index, 'sku', e.target.value)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Low Stock Threshold</Label>
+                          <Input
+                            type="number"
+                            placeholder="5"
+                            value={variant.lowStockThreshold}
+                            onChange={(e) => updateVariant(index, 'lowStockThreshold', parseInt(e.target.value) || 5)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id={`variant-active-${index}`}
+                          checked={variant.isActive}
+                          onCheckedChange={(checked) => updateVariant(index, 'isActive', checked)}
+                        />
+                        <Label htmlFor={`variant-active-${index}`}>Active</Label>
+                      </div>
+                    </div>
+                  ))}
+
+                  <Button type="button" variant="outline" onClick={addVariant}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Variant
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
