@@ -35,6 +35,7 @@ const createProduct = asyncHandler(async (req, res) => {
     sku,
     specifications,
     tags,
+    benefits,
     isFeatured,
   } = req.body;
 
@@ -105,6 +106,15 @@ const createProduct = asyncHandler(async (req, res) => {
     }
   }
 
+  let parsedBenefits = benefits;
+  if (typeof benefits === 'string') {
+    try {
+      parsedBenefits = JSON.parse(benefits);
+    } catch (err) {
+      parsedBenefits = benefits ? benefits.split(',').map(benefit => benefit.trim()) : [];
+    }
+  }
+
   const slug = generateSlug(name);
   const productData = {
     name,
@@ -120,6 +130,7 @@ const createProduct = asyncHandler(async (req, res) => {
     images: uploadedImages,
     specifications: parsedSpecifications || {},
     tags: parsedTags || [],
+    benefits: parsedBenefits || [],
     isFeatured: isFeatured === 'true',
   };
 
@@ -265,6 +276,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     sku,
     specifications,
     tags,
+    benefits,
     isActive,
     isFeatured,
   } = req.body;
@@ -289,8 +301,8 @@ const updateProduct = asyncHandler(async (req, res) => {
   let updateFields = {};
 
   if (name) {
-      updateFields.name = name;
-      updateFields.slug = generateSlug(name); // **FIX**: Update slug when name changes
+    updateFields.name = name;
+    updateFields.slug = generateSlug(name); // **FIX**: Update slug when name changes
   }
   if (description) updateFields.description = description;
   if (shortDescription !== undefined) updateFields.shortDescription = shortDescription;
@@ -350,6 +362,18 @@ const updateProduct = asyncHandler(async (req, res) => {
       }
     }
     updateFields.tags = parsedTags;
+  }
+
+  if (benefits) {
+    let parsedBenefits = benefits;
+    if (typeof benefits === 'string') {
+      try {
+        parsedBenefits = JSON.parse(benefits);
+      } catch (err) {
+        parsedBenefits = benefits ? benefits.split(',').map(benefit => benefit.trim()) : [];
+      }
+    }
+    updateFields.benefits = parsedBenefits;
   }
 
   if (images && images.length > 0) {
@@ -420,28 +444,28 @@ const deleteProduct = asyncHandler(async (req, res) => {
  * @route DELETE /api/product/bulk-delete
  */
 const bulkDeleteProducts = asyncHandler(async (req, res) => {
-    const { ids } = req.body;
+  const { ids } = req.body;
 
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-        return res.status(400).json({
-            success: false,
-            message: "Product IDs must be provided as a non-empty array.",
-        });
-    }
-
-    const result = await ProductModel.deleteMany({ _id: { $in: ids } });
-
-    if (result.deletedCount === 0) {
-        return res.status(404).json({
-            success: false,
-            message: "No products found with the provided IDs.",
-        });
-    }
-
-    return res.json({
-        success: true,
-        message: `${result.deletedCount} products deleted successfully.`,
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Product IDs must be provided as a non-empty array.",
     });
+  }
+
+  const result = await ProductModel.deleteMany({ _id: { $in: ids } });
+
+  if (result.deletedCount === 0) {
+    return res.status(404).json({
+      success: false,
+      message: "No products found with the provided IDs.",
+    });
+  }
+
+  return res.json({
+    success: true,
+    message: `${result.deletedCount} products deleted successfully.`,
+  });
 });
 
 /**

@@ -22,6 +22,10 @@ interface Product {
     _id: string;
     name: string;
   };
+  specifications?: {
+    volume?: string;
+  };
+  benefits?: string[];
   isFeatured?: boolean;
 }
 
@@ -94,6 +98,7 @@ const FeaturedProducts = () => {
                 category={product.category.name}
                 volume={product.specifications?.volume}
                 isSale={product.originalPrice && product.originalPrice > product.price}
+                benefits={product.benefits}
               />
             ))}
           </div>

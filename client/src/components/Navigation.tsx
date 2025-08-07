@@ -121,69 +121,67 @@ const Navigation = () => {
 
   return (
     <nav className={cn(
-      "sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 transition-transform duration-300 ease-in-out",
+      "sticky top-0 z-50 bg-transparent border-b-0 transition-transform duration-300 ease-in-out",
       isVisible ? "translate-y-0" : "-translate-y-full"
     )}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">S</span>
-            </div>
-            <span className="text-2xl font-playfair font-bold text-transparent bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text">
-              Shimmer
-            </span>
+          <Link to="/" className="font-playfair text-2xl font-bold text-primary">
+            Shimmer
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {isLoading ? (
-              <div className="flex space-x-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-4 w-16" />
-                ))}
-              </div>
-            ) : (
-              <>
-                {navItems.map((item) => (
+          {/* Main Nav */}
+          <div className="hidden md:flex items-center flex-1 justify-center">
+            <div className="bg-white rounded-full shadow-md flex items-center px-4 py-2 space-x-2">
+              {isLoading ? (
+                <>
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                </>
+              ) : (
+                navItems.map((item) => (
                   <NavLink
                     key={item.href}
                     to={item.href}
                     className={({ isActive }) =>
                       cn(
-                        "text-foreground hover:text-primary transition-colors font-medium",
-                        isActive && "text-primary"
+                        "px-5 py-2 rounded-full font-bold text-sm transition-all",
+                        isActive
+                          ? "bg-orange-500 text-white shadow"
+                          : "text-black hover:bg-orange-100"
                       )
                     }
                   >
                     {item.name}
                   </NavLink>
-                ))}
+                ))
+              )}
 
-                {/* Categories Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1"
-                    >
-                      Categories
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-48">
-                    {categories.map((category) => (
-                      <DropdownMenuItem key={category._id} asChild>
-                        <Link to={`/category/${category.slug}`} className="cursor-pointer">
-                          {category.name}
-                        </Link>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            )}
+              {/* Categories Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="px-5 py-2 rounded-full font-bold text-sm text-black hover:bg-orange-100 transition-all flex items-center gap-1"
+                  >
+                    Categories
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  {categories.map((category) => (
+                    <DropdownMenuItem key={category._id} asChild>
+                      <Link to={`/category/${category.slug}`} className="cursor-pointer">
+                        {category.name}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {/* Mobile Menu Button */}

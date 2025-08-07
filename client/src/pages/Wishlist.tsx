@@ -31,6 +31,7 @@ interface Product {
     brand: string;
     createdAt: string;
     specifications?: Record<string, string>;
+    benefits?: string[];
 }
 
 const Wishlist = () => {
@@ -139,6 +140,7 @@ const Wishlist = () => {
                                                 reviews={isAuthenticated ? product.ratings.numOfReviews : 0}
                                                 category={isAuthenticated ? product.category.name : 'Product'}
                                                 volume={isAuthenticated ? product.specifications?.volume : undefined}
+                                                benefits={isAuthenticated ? product.benefits : undefined}
                                                 isSale={!!(product.originalPrice && product.originalPrice > product.price)}
                                                 isNew={isNew}
                                             />

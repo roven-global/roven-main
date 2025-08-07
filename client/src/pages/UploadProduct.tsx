@@ -43,6 +43,7 @@ interface Product {
   }>;
   specifications: Record<string, any>;
   tags: string[];
+  benefits?: string[];
   isActive: boolean;
   isFeatured: boolean;
 }
@@ -58,14 +59,16 @@ const UploadProduct = () => {
   const navigate = useNavigate();
   const editProductId = searchParams.get('edit');
   const isEditing = Boolean(editProductId);
-  
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState<ImagePreview[]>([]);
-  const [specifications, setSpecifications] = useState<Array<{key: string, value: string}>>([]);
+  const [specifications, setSpecifications] = useState<Array<{ key: string, value: string }>>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
-  
+  const [benefits, setBenefits] = useState<string[]>([]);
+  const [newBenefit, setNewBenefit] = useState('');
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -121,7 +124,7 @@ const UploadProduct = () => {
           isActive: product.isActive,
           isFeatured: product.isFeatured,
         });
-        
+
         // Set existing images
         const existingImages: ImagePreview[] = product.images.map((img, index) => ({
           file: new File([], `existing-${index}`),
@@ -129,16 +132,19 @@ const UploadProduct = () => {
           id: `existing-${index}`,
         }));
         setImageFiles(existingImages);
-        
+
         // Set specifications
         const specs = Object.entries(product.specifications).map(([key, value]) => ({
           key,
           value: value.toString(),
         }));
         setSpecifications(specs);
-        
+
         // Set tags
         setTags(product.tags);
+
+        // Set benefits
+        setBenefits(product.benefits || []);
       }
     } catch (error) {
       console.error('Error fetching product:', error);
@@ -154,7 +160,7 @@ const UploadProduct = () => {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    
+
     files.forEach(file => {
       if (file.size > 10 * 1024 * 1024) { // 10MB limit
         toast({
@@ -164,7 +170,7 @@ const UploadProduct = () => {
         });
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const imagePreview: ImagePreview = {
@@ -187,7 +193,7 @@ const UploadProduct = () => {
   };
 
   const updateSpecification = (index: number, field: 'key' | 'value', value: string) => {
-    setSpecifications(prev => prev.map((spec, i) => 
+    setSpecifications(prev => prev.map((spec, i) =>
       i === index ? { ...spec, [field]: value } : spec
     ));
   };
@@ -207,9 +213,20 @@ const UploadProduct = () => {
     setTags(prev => prev.filter(tag => tag !== tagToRemove));
   };
 
+  const addBenefit = () => {
+    if (newBenefit.trim() && !benefits.includes(newBenefit.trim())) {
+      setBenefits([...benefits, newBenefit.trim()]);
+      setNewBenefit('');
+    }
+  };
+
+  const removeBenefit = (benefitToRemove: string) => {
+    setBenefits(benefits.filter(benefit => benefit !== benefitToRemove));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.description || !formData.price || !formData.category || !formData.brand || !formData.sku) {
       toast({
         title: "Error",
@@ -231,7 +248,7 @@ const UploadProduct = () => {
     setLoading(true);
     try {
       const formDataToSend = new FormData();
-      
+
       // Add basic product data
       formDataToSend.append('name', formData.name);
       formDataToSend.append('description', formData.description);
@@ -243,7 +260,7 @@ const UploadProduct = () => {
       formDataToSend.append('sku', formData.sku);
       formDataToSend.append('isActive', formData.isActive.toString());
       formDataToSend.append('isFeatured', formData.isFeatured.toString());
-      
+
       // Add specifications
       const specsObject = specifications.reduce((acc, spec) => {
         if (spec.key.trim() && spec.value.trim()) {
@@ -252,10 +269,13 @@ const UploadProduct = () => {
         return acc;
       }, {} as Record<string, string>);
       formDataToSend.append('specifications', JSON.stringify(specsObject));
-      
+
       // Add tags
       formDataToSend.append('tags', JSON.stringify(tags));
-      
+
+      // Add benefits
+      formDataToSend.append('benefits', JSON.stringify(benefits));
+
       // Add images (only new ones for editing)
       const newImages = imageFiles.filter(img => !img.id.startsWith('existing-'));
       newImages.forEach(img => {
@@ -344,7 +364,7 @@ const UploadProduct = () => {
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Enter product name"
                     required
                   />
@@ -354,7 +374,7 @@ const UploadProduct = () => {
                   <Input
                     id="brand"
                     value={formData.brand}
-                    onChange={(e) => setFormData({...formData, brand: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
                     placeholder="Enter brand name"
                     required
                   />
@@ -366,7 +386,7 @@ const UploadProduct = () => {
                 <Input
                   id="shortDescription"
                   value={formData.shortDescription}
-                  onChange={(e) => setFormData({...formData, shortDescription: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
                   placeholder="Brief description for product listings"
                 />
               </div>
@@ -376,7 +396,7 @@ const UploadProduct = () => {
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Detailed product description"
                   rows={4}
                   required
@@ -386,7 +406,7 @@ const UploadProduct = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="category">Category *</Label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -404,7 +424,7 @@ const UploadProduct = () => {
                   <Input
                     id="sku"
                     value={formData.sku}
-                    onChange={(e) => setFormData({...formData, sku: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                     placeholder="Enter SKU"
                     required
                   />
@@ -435,7 +455,7 @@ const UploadProduct = () => {
                       type="number"
                       step="0.01"
                       value={formData.price}
-                      onChange={(e) => setFormData({...formData, price: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       placeholder="1,499.00"
                       className="pl-7"
                       required
@@ -445,13 +465,13 @@ const UploadProduct = () => {
                 <div className="space-y-2">
                   <Label htmlFor="originalPrice">Original Price (₹) (Optional)</Label>
                   <div className="relative">
-                     <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">₹</span>
-                     <Input
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">₹</span>
+                    <Input
                       id="originalPrice"
                       type="number"
                       step="0.01"
                       value={formData.originalPrice}
-                      onChange={(e) => setFormData({...formData, originalPrice: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
                       placeholder="1,999.00"
                       className="pl-7"
                     />
@@ -477,9 +497,9 @@ const UploadProduct = () => {
                 {imageFiles.map((image) => (
                   <div key={image.id} className="relative group">
                     <div className="aspect-square rounded-lg overflow-hidden border">
-                      <img 
-                        src={image.url} 
-                        alt="Product preview" 
+                      <img
+                        src={image.url}
+                        alt="Product preview"
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -494,7 +514,7 @@ const UploadProduct = () => {
                     </Button>
                   </div>
                 ))}
-                
+
                 <div className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center">
                   <Label htmlFor="images" className="cursor-pointer flex flex-col items-center gap-2 text-muted-foreground hover:text-foreground">
                     <Upload className="h-8 w-8" />
@@ -593,6 +613,48 @@ const UploadProduct = () => {
             </CardContent>
           </Card>
 
+          {/* Benefits */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Benefits
+              </CardTitle>
+              <CardDescription>
+                Add key benefits of your product
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {benefits.map((benefit) => (
+                  <Badge key={benefit} variant="secondary" className="flex items-center gap-1">
+                    {benefit}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() => removeBenefit(benefit)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add a benefit"
+                  value={newBenefit}
+                  onChange={(e) => setNewBenefit(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addBenefit())}
+                />
+                <Button type="button" variant="outline" onClick={addBenefit}>
+                  Add
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Settings */}
           <Card>
             <CardHeader>
@@ -612,7 +674,7 @@ const UploadProduct = () => {
                 <Switch
                   id="isActive"
                   checked={formData.isActive}
-                  onCheckedChange={(checked) => setFormData({...formData, isActive: checked})}
+                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                 />
               </div>
               <Separator />
@@ -626,7 +688,7 @@ const UploadProduct = () => {
                 <Switch
                   id="isFeatured"
                   checked={formData.isFeatured}
-                  onCheckedChange={(checked) => setFormData({...formData, isFeatured: checked})}
+                  onCheckedChange={(checked) => setFormData({ ...formData, isFeatured: checked })}
                 />
               </div>
             </CardContent>

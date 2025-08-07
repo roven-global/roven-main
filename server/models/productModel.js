@@ -36,9 +36,9 @@ const productSchema = new mongoose.Schema(
     },
     // **FIX ADDED**: Storing the category slug on the product
     categorySlug: {
-        type: String,
-        required: [true, "Category slug is required"],
-        lowercase: true,
+      type: String,
+      required: [true, "Category slug is required"],
+      lowercase: true,
     },
     brand: {
       type: String,
@@ -85,6 +85,13 @@ const productSchema = new mongoose.Schema(
       },
       fragrance: { type: String, trim: true },
     },
+    benefits: [
+      {
+        type: String,
+        trim: true,
+        maxlength: [100, "Benefit cannot exceed 100 characters"],
+      },
+    ],
     tags: [{ type: String, trim: true, lowercase: true }],
     isActive: { type: Boolean, default: true },
     isFeatured: { type: Boolean, default: false },
@@ -117,9 +124,9 @@ const productSchema = new mongoose.Schema(
 productSchema.pre("save", function (next) {
   if (this.isModified("name")) {
     this.slug = slugify(this.name, {
-        lower: true,
-        remove: /[*+~.()'"!:@]/g,
-        strict: true,
+      lower: true,
+      remove: /[*+~.()'"!:@]/g,
+      strict: true,
     });
   }
   next();

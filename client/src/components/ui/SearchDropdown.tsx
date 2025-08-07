@@ -163,6 +163,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({ open, onClose }) => {
                               volume={prod.specifications?.volume}
                               isNew={prod.isNew}
                               isSale={prod.isSale}
+                              benefits={prod.benefits}
                             />
                           ))}
                         </div>

@@ -27,11 +27,15 @@ interface Product {
   };
   brand: string;
   createdAt: string;
+  specifications?: {
+    volume?: string;
+  };
+  benefits?: string[];
 }
 
 const CategoryProductsPage = () => {
   // This now correctly reads the 'slug' from the URL, as defined in your App.tsx router
-  const { slug } = useParams<{ slug: string }>(); 
+  const { slug } = useParams<{ slug: string }>();
   const [products, setProducts] = useState<Product[]>([]);
   const [categoryName, setCategoryName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -40,9 +44,9 @@ const CategoryProductsPage = () => {
   useEffect(() => {
     // If slug is not present in the URL, stop loading and show an error.
     if (!slug) {
-        setLoading(false);
-        setError("Category not specified in the URL.");
-        return;
+      setLoading(false);
+      setError("Category not specified in the URL.");
+      return;
     }
 
     const fetchProductsByCategory = async () => {
@@ -133,6 +137,7 @@ const CategoryProductsPage = () => {
                       volume={product.specifications?.volume}
                       isSale={!!(product.originalPrice && product.originalPrice > product.price)}
                       isNew={isNew}
+                      benefits={product.benefits}
                     />
                   );
                 })}

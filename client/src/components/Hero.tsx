@@ -15,13 +15,14 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative flex items-center justify-center overflow-hidden" style={{ height: '60vh', minHeight: '400px' }}>
+    <section className="relative flex items-center justify-center mt-10" style={{ height: '60vh', minHeight: '400px' }}>
       {/* Background Image with Parallax Effect */}
       <div className="absolute inset-0 z-0">
         <img
           src={heroImage}
           alt="Beauty products with natural elements"
-          className="w-full h-full object-cover scale-110 animate-slow-zoom"
+          className="w-full h-full object-cover scale-110"
+          style={{ objectPosition: 'center 60%' }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/30 to-black/40" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60" />
@@ -29,15 +30,15 @@ const Hero = () => {
 
       {/* Enhanced Floating Elements */}
       <div className="absolute inset-0 z-5">
-        <div className="absolute top-20 left-10 w-4 h-4 bg-orange-400/30 rounded-full animate-pulse delay-100 shadow-lg"></div>
-        <div className="absolute top-40 right-20 w-6 h-6 bg-pink-400/20 rounded-full animate-pulse delay-300 shadow-lg"></div>
-        <div className="absolute bottom-32 left-20 w-3 h-3 bg-white/30 rounded-full animate-pulse delay-500 shadow-lg"></div>
-        <div className="absolute top-1/2 left-1/4 w-2 h-2 bg-yellow-400/40 rounded-full animate-bounce delay-700"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-5 h-5 bg-purple-400/25 rounded-full animate-pulse delay-1000"></div>
+        <div className="absolute top-20 left-10 w-4 h-4 bg-orange-400/30 rounded-full shadow-lg"></div>
+        <div className="absolute top-40 right-20 w-6 h-6 bg-pink-400/20 rounded-full shadow-lg"></div>
+        <div className="absolute bottom-32 left-20 w-3 h-3 bg-white/30 rounded-full shadow-lg"></div>
+        <div className="absolute top-1/2 left-1/4 w-2 h-2 bg-yellow-400/40 rounded-full"></div>
+        <div className="absolute bottom-1/3 right-1/4 w-5 h-5 bg-purple-400/25 rounded-full shadow-lg"></div>
 
         {/* Sparkle Effects */}
-        <Sparkles className="absolute top-1/4 right-1/3 text-orange-400/60 w-6 h-6 animate-pulse" />
-        <Sparkles className="absolute bottom-1/4 left-1/3 text-pink-400/60 w-4 h-4 animate-pulse delay-500" />
+        <Sparkles className="absolute top-1/4 right-1/3 text-orange-400/60 w-6 h-6" />
+        <Sparkles className="absolute bottom-1/4 left-1/3 text-pink-400/60 w-4 h-4" />
       </div>
 
       {/* Content */}
@@ -79,7 +80,7 @@ const Hero = () => {
           </div>
           <div className="text-right">
             <div className="flex items-center gap-1 mb-1">
-              <span className="text-white font-bold text-sm md:text-lg">+27K</span>
+              <span className="text-white font-bold text-sm md:text-lg">+1K</span>
               <span className="text-white/70 text-xs md:text-sm">happy customers</span>
             </div>
             <div className="flex items-center gap-2">

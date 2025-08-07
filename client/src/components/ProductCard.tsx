@@ -24,6 +24,7 @@ interface ProductCardProps {
     volume?: string;
     isNew?: boolean;
     isSale?: boolean;
+    benefits?: string[]; // Array of product benefits/features
 }
 
 const ProductCard = ({
@@ -39,6 +40,7 @@ const ProductCard = ({
     volume,
     isNew,
     isSale,
+    benefits,
 }: ProductCardProps) => {
     const { isAuthenticated, user, updateUser } = useAuth();
     const navigate = useNavigate();
@@ -121,59 +123,80 @@ const ProductCard = ({
 
                     <div className="absolute top-3 left-3 flex flex-col gap-2">
                         {isNew && (
-                            <span className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs px-3 py-1 rounded-full font-medium shadow-sm">
-                                New
+                            <span className="bg-green-500 text-white text-xs px-3 py-1 rounded-md font-medium shadow-sm">
+                                MUST TRY
                             </span>
                         )}
                         {isSale && (
-                            <span className="bg-orange-500 text-white text-xs px-3 py-1 rounded-full font-medium shadow-sm">
-                                Sale
+                            <span className="bg-orange-500 text-white text-xs px-3 py-1 rounded-md font-medium shadow-sm">
+                                SALE
                             </span>
                         )}
                     </div>
 
-                    <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <Button variant="ghost" size="icon" className="bg-white/90 hover:bg-white shadow-sm" onClick={handleLikeClick}>
                             <Heart className={`h-4 w-4 ${isLiked ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}`} />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="bg-white/90 hover:bg-white shadow-sm" onClick={handleAddToCart}>
-                            <ShoppingBag className="h-4 w-4 text-gray-600" />
                         </Button>
                     </div>
                 </div>
 
                 <CardContent className="p-4 flex flex-col flex-grow">
-                    <div className="text-sm text-gray-500 mb-1 font-medium">{category}</div>
-                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 flex-grow text-base leading-tight">{name}</h3>
+                    <div className="text-sm text-gray-500 mb-2 font-medium">{category}</div>
+                    <h3 className="font-bold text-gray-900 mb-3 line-clamp-2 flex-grow text-base leading-tight">{name}</h3>
 
-                    <div className="flex items-center gap-1 mb-3">
-                        <div className="flex">
-                            {[...Array(5)].map((_, i) => (
-                                <Star
-                                    key={i}
-                                    className={`h-3 w-3 ${i < Math.floor(rating)
-                                        ? "fill-yellow-400 text-yellow-400"
-                                        : "text-gray-300"
-                                        }`}
-                                />
-                            ))}
-                        </div>
-                        <span className="text-xs text-gray-500">({reviews})</span>
-                    </div>
-
-                    <div className="flex items-center gap-2 mt-auto">
-                        <div className="flex items-center gap-1">
-                            <span className="font-bold text-lg text-orange-600">{formatRupees(price)}</span>
-                            {volume && (
-                                <span className="text-sm text-gray-500 font-medium">/ {volume}</span>
-                            )}
-                        </div>
-                        {originalPrice && (
-                            <span className="text-sm text-gray-400 line-through">
-                                {formatRupees(originalPrice)}
-                            </span>
+                    {/* Product Benefits */}
+                    <div className="flex flex-wrap gap-1 mb-3 text-sm justify-center">
+                        {benefits && benefits.length > 0 ? (
+                            benefits.map((benefit, index) => (
+                                <React.Fragment key={index}>
+                                    <span className="text-green-600 font-medium">{benefit}</span>
+                                    {index < benefits.length - 1 && <span className="text-gray-400">|</span>}
+                                </React.Fragment>
+                            ))
+                        ) : (
+                            <span className="text-gray-400 text-sm">No benefits listed</span>
                         )}
                     </div>
+
+                    {/* Volume */}
+                    {volume && (
+                        <div className="text-center mb-3">
+                            <span className="text-sm text-gray-600 font-medium">{volume}</span>
+                        </div>
+                    )}
+
+                    {/* Rating and Reviews */}
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                        <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="font-semibold text-gray-900">{rating.toFixed(1)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="text-blue-500">✓</span>
+                            <span className="text-sm text-gray-600">{reviews} Reviews</span>
+                        </div>
+                    </div>
+
+                    {/* Price */}
+                    <div className="text-center mb-4">
+                        <div className="flex items-center justify-center gap-2">
+                            <span className="font-bold text-2xl text-gray-900">{formatRupees(price)}</span>
+                            {originalPrice && (
+                                <span className="text-sm text-gray-400 line-through">
+                                    {formatRupees(originalPrice)}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Add to Cart Button */}
+                    <Button
+                        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-all duration-300 group-hover:shadow-lg"
+                        onClick={handleAddToCart}
+                    >
+                        ADD TO CART
+                    </Button>
                 </CardContent>
             </Card>
         </Link>
