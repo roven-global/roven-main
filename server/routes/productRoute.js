@@ -10,6 +10,8 @@ const {
   getProductsByCategory,
   searchProducts,
   getFeaturedProducts,
+  getProductVariants,
+  updateVariantStock,
 } = require("../controller/productController");
 const auth = require("../middleware/auth");
 const adminOnly = require("../middleware/adminOnly");
