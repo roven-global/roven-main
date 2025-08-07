@@ -238,12 +238,27 @@ const ProductCard = ({
                         )}
                     </div>
 
-                    {/* Volume */}
-                    {volume && (
-                        <div className="text-center mb-3">
-                            <span className="text-sm text-gray-600 font-medium">{volume}</span>
-                        </div>
-                    )}
+                    {/* Volume and Stock Status */}
+                    <div className="text-center mb-3">
+                        {getVolumeDisplay() && (
+                            <span className="text-sm text-gray-600 font-medium">{getVolumeDisplay()}</span>
+                        )}
+                        {variants && variants.length > 1 && (
+                            <div className="text-xs text-blue-600 mt-1">
+                                {variants.length} sizes available
+                            </div>
+                        )}
+                        {getTotalStock() !== null && getTotalStock() === 0 && (
+                            <div className="text-xs text-red-500 mt-1 font-medium">
+                                Out of Stock
+                            </div>
+                        )}
+                        {getTotalStock() !== null && getTotalStock()! > 0 && getTotalStock()! <= 10 && (
+                            <div className="text-xs text-yellow-600 mt-1 font-medium">
+                                Only {getTotalStock()} left
+                            </div>
+                        )}
+                    </div>
 
                     {/* Rating and Reviews */}
                     <div className="flex items-center justify-center gap-2 mb-4">
