@@ -20,6 +20,7 @@ const productSchema = new mongoose.Schema(
       trim: true,
       maxlength: [300, "Short description cannot exceed 300 characters"],
     },
+    // Base price - will be the minimum price from variants for display
     price: {
       type: Number,
       required: [true, "Price is required"],
@@ -29,6 +30,47 @@ const productSchema = new mongoose.Schema(
       type: Number,
       min: [0, "Original price cannot be negative"],
     },
+    // Volume variants with individual pricing and stock
+    variants: [
+      {
+        volume: {
+          type: String,
+          required: [true, "Volume is required for variant"],
+          trim: true,
+        },
+        price: {
+          type: Number,
+          required: [true, "Price is required for variant"],
+          min: [0, "Price cannot be negative"],
+        },
+        originalPrice: {
+          type: Number,
+          min: [0, "Original price cannot be negative"],
+        },
+        stock: {
+          type: Number,
+          required: [true, "Stock is required for variant"],
+          min: [0, "Stock cannot be negative"],
+          default: 0,
+        },
+        sku: {
+          type: String,
+          required: [true, "SKU is required for variant"],
+          unique: true,
+          trim: true,
+          uppercase: true,
+        },
+        lowStockThreshold: {
+          type: Number,
+          default: 10,
+          min: [0, "Low stock threshold cannot be negative"],
+        },
+        isActive: {
+          type: Boolean,
+          default: true,
+        },
+      },
+    ],
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
