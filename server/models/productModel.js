@@ -53,6 +53,11 @@ const productSchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
     },
+    volume: {
+      type: String,
+      trim: true,
+      maxlength: [20, "Volume cannot exceed 20 characters"],
+    },
     images: [
       {
         public_id: {

@@ -29,6 +29,7 @@ interface Product {
   };
   brand: string;
   sku: string;
+  volume?: string;
   images: Array<{
     url: string;
     public_id: string;
@@ -369,6 +370,7 @@ const ProductAdmin = () => {
                     <TableHead>Product</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Price</TableHead>
+                    <TableHead>Volume</TableHead>
                     <TableHead>SKU</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
@@ -413,6 +415,11 @@ const ProductAdmin = () => {
                             </span>
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">
+                          {product.volume || 'Not specified'}
+                        </span>
                       </TableCell>
                       <TableCell className="font-mono text-sm">{product.sku}</TableCell>
                       <TableCell>

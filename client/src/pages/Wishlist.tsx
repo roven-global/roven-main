@@ -28,10 +28,10 @@ interface Product {
         _id: string;
         name: string;
     };
-    brand: string;
-    createdAt: string;
-    specifications?: Record<string, string>;
+    volume?: string;
     benefits?: string[];
+    isActive: boolean;
+    isFeatured: boolean;
 }
 
 const Wishlist = () => {
@@ -139,7 +139,7 @@ const Wishlist = () => {
                                                 rating={isAuthenticated ? product.ratings.average : 0}
                                                 reviews={isAuthenticated ? product.ratings.numOfReviews : 0}
                                                 category={isAuthenticated ? product.category.name : 'Product'}
-                                                volume={isAuthenticated ? product.specifications?.volume : undefined}
+                                                volume={isAuthenticated ? product.volume : undefined}
                                                 benefits={isAuthenticated ? product.benefits : undefined}
                                                 isSale={!!(product.originalPrice && product.originalPrice > product.price)}
                                                 isNew={isNew}

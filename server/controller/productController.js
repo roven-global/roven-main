@@ -33,6 +33,7 @@ const createProduct = asyncHandler(async (req, res) => {
     category,
     brand,
     sku,
+    volume,
     specifications,
     tags,
     benefits,
@@ -127,6 +128,7 @@ const createProduct = asyncHandler(async (req, res) => {
     categorySlug: categoryExists.slug, // **FIX**: Added categorySlug
     brand,
     sku: sku.toUpperCase(),
+    volume,
     images: uploadedImages,
     specifications: parsedSpecifications || {},
     tags: parsedTags || [],
@@ -274,6 +276,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     category,
     brand,
     sku,
+    volume,
     specifications,
     tags,
     benefits,
@@ -313,6 +316,7 @@ const updateProduct = asyncHandler(async (req, res) => {
   if (isFeatured !== undefined) {
     updateFields.isFeatured = isFeatured === 'true';
   }
+  if (volume !== undefined) updateFields.volume = volume;
 
   if (category && category !== String(product.category)) {
     const categoryExists = await CategoryModel.findById(category);

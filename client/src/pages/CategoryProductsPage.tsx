@@ -25,12 +25,10 @@ interface Product {
     _id: string;
     name: string;
   };
-  brand: string;
-  createdAt: string;
-  specifications?: {
-    volume?: string;
-  };
+  volume?: string;
   benefits?: string[];
+  isActive: boolean;
+  isFeatured: boolean;
 }
 
 const CategoryProductsPage = () => {
@@ -134,7 +132,7 @@ const CategoryProductsPage = () => {
                       rating={product.ratings ? product.ratings.average : 0}
                       reviews={product.ratings ? product.ratings.numOfReviews : 0}
                       category={product.category ? product.category.name : ''}
-                      volume={product.specifications?.volume}
+                      volume={product.volume}
                       isSale={!!(product.originalPrice && product.originalPrice > product.price)}
                       isNew={isNew}
                       benefits={product.benefits}

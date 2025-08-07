@@ -37,6 +37,7 @@ interface Product {
   };
   brand: string;
   sku: string;
+  volume?: string;
   images: Array<{
     url: string;
     public_id: string;
@@ -78,6 +79,7 @@ const UploadProduct = () => {
     category: '',
     brand: '',
     sku: '',
+    volume: '',
     isActive: true,
     isFeatured: false,
   });
@@ -121,6 +123,7 @@ const UploadProduct = () => {
           category: product.category._id,
           brand: product.brand,
           sku: product.sku,
+          volume: product.volume || '',
           isActive: product.isActive,
           isFeatured: product.isFeatured,
         });
@@ -258,6 +261,7 @@ const UploadProduct = () => {
       formDataToSend.append('category', formData.category);
       formDataToSend.append('brand', formData.brand);
       formDataToSend.append('sku', formData.sku);
+      formDataToSend.append('volume', formData.volume);
       formDataToSend.append('isActive', formData.isActive.toString());
       formDataToSend.append('isFeatured', formData.isFeatured.toString());
 
@@ -427,6 +431,15 @@ const UploadProduct = () => {
                     onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                     placeholder="Enter SKU"
                     required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="volume">Volume</Label>
+                  <Input
+                    id="volume"
+                    value={formData.volume}
+                    onChange={(e) => setFormData({ ...formData, volume: e.target.value })}
+                    placeholder="e.g., 100ml, 250ml, 1L"
                   />
                 </div>
               </div>
