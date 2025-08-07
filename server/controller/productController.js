@@ -796,6 +796,28 @@ const updateVariantStock = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Get featured products
+ * @route GET /api/product/featured
+ */
+const getFeaturedProducts = asyncHandler(async (req, res) => {
+  const { limit = 8 } = req.query;
+
+  const products = await ProductModel.find({
+    isFeatured: true,
+    isActive: true
+  })
+    .populate('category', 'name slug')
+    .sort({ createdAt: -1 })
+    .limit(parseInt(limit));
+
+  return res.json({
+    success: true,
+    message: "Featured products retrieved successfully.",
+    data: products,
+  });
+});
+
 module.exports = {
   createProduct,
   getAllProducts,
@@ -806,4 +828,6 @@ module.exports = {
   getProductsByCategory,
   searchProducts,
   getFeaturedProducts,
+  getProductVariants,
+  updateVariantStock,
 };
