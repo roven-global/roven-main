@@ -171,6 +171,18 @@ productSchema.pre("save", function (next) {
       strict: true,
     });
   }
+  
+  // Update base price to minimum variant price
+  if (this.variants && this.variants.length > 0) {
+    this.price = Math.min(...this.variants.map(v => v.price));
+    
+    // Update originalPrice to minimum originalPrice from variants if exists
+    const variantsWithOriginalPrice = this.variants.filter(v => v.originalPrice);
+    if (variantsWithOriginalPrice.length > 0) {
+      this.originalPrice = Math.min(...variantsWithOriginalPrice.map(v => v.originalPrice));
+    }
+  }
+  
   next();
 });
 
