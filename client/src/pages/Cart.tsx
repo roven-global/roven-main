@@ -135,7 +135,7 @@ const Cart = () => {
 
     const displayCartItems = isAuthenticated ? cartItems : guestCart;
     const subtotal = isAuthenticated
-        ? cartItems.reduce((acc, item) => acc + (item.productId.price * item.quantity), 0)
+        ? cartItems.reduce((acc, item) => acc + ((item.productId?.price || 0) * item.quantity), 0)
         : guestCart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const shippingCost = subtotal > 500 ? 0 : 40;
     const onlinePaymentDiscount = subtotal * 0.05; // 5% discount
@@ -260,8 +260,8 @@ const Cart = () => {
                                                     }`}
                                             >
                                                 <img
-                                                    src={item.productId.images?.[0]?.url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik00MCAyMEMyOS41IDIwIDIxIDI4LjUgMjEgMzlDMjEgNDkuNSAyOS41IDU4IDQwIDU4QzUwLjUgNTggNTkgNDkuNSA1OSAzOUM1OSAyOC41IDUwLjUgMjAgNDAgMjBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0yMCA2MEMyMCA2MCAyNiA1NCA0MCA1NCM1NCA1NCA2MCA2MCA2MCA2MEgyMFoiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+Cg=='}
-                                                    alt={item.productId.name}
+                                                    src={item.productId?.images?.[0]?.url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik00MCAyMEMyOS41IDIwIDIxIDI4LjUgMjEgMzlDMjEgNDkuNSAyOS41IDU4IDQwIDU4QzUwLjUgNTggNTkgNDkuNSA1OSAzOUM1OSAyOC41IDUwLjUgMjAgNDAgMjBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0yMCA2MEMyMCA2MCAyNiA1NCA0MCA1NCM1NCA1NCA2MCA2MCA2MCA2MEgyMFoiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+Cg=='}
+                                                    alt={item.productId?.name || 'Product'}
                                                     className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                                                     onError={(e) => {
                                                         e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik00MCAyMEMyOS41IDIwIDIxIDI4LjUgMjEgMzlDMjEgNDkuNSAyOS41IDU4IDQwIDU4QzUwLjUgNTggNTkgNDkuNSA1OSAzOUM1OSAyOC41IDUwLjUgMjAgNDAgMjBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0yMCA2MEMyMCA2MCAyNiA1NCA0MCA1NCM1NCA1NCA2MCA2MCA2MCA2MEgyMFoiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+Cg==';
@@ -269,7 +269,7 @@ const Cart = () => {
                                                 />
                                                 <div className="flex-1">
                                                     <h3 className="font-semibold text-sm line-clamp-2 text-gray-800">
-                                                        {item.productId.name}
+                                                        {item.productId?.name || 'Product Name Unavailable'}
                                                     </h3>
                                                     <p className="text-xs text-green-600 mt-1 font-medium">In Stock</p>
                                                     <div className="flex items-center justify-between mt-3">
@@ -278,7 +278,7 @@ const Cart = () => {
                                                                 variant="outline"
                                                                 size="icon"
                                                                 className="h-8 w-8 border-gray-300 hover:border-orange-500"
-                                                                onClick={() => handleUpdateQuantity(item.productId._id, item.quantity - 1)}
+                                                                onClick={() => handleUpdateQuantity(item.productId?._id || '', item.quantity - 1)}
                                                                 disabled={item.quantity === 1}
                                                             >
                                                                 <Minus className="h-4 w-4" />
@@ -290,17 +290,17 @@ const Cart = () => {
                                                                 variant="outline"
                                                                 size="icon"
                                                                 className="h-8 w-8 border-gray-300 hover:border-orange-500"
-                                                                onClick={() => handleUpdateQuantity(item.productId._id, item.quantity + 1)}
+                                                                onClick={() => handleUpdateQuantity(item.productId?._id || '', item.quantity + 1)}
                                                             >
                                                                 <Plus className="h-4 w-4" />
                                                             </Button>
                                                         </div>
                                                         <div className="text-right">
                                                             <p className="font-semibold text-sm text-gray-800">
-                                                                {formatRupees(item.productId.price * item.quantity)}
+                                                                {formatRupees((item.productId?.price || 0) * item.quantity)}
                                                             </p>
                                                             <p className="text-xs text-gray-500">
-                                                                {item.quantity} | To pay: {formatRupees(item.productId.price * item.quantity)}
+                                                                {item.quantity} | To pay: {formatRupees((item.productId?.price || 0) * item.quantity)}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -309,7 +309,7 @@ const Cart = () => {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
-                                                    onClick={() => handleRemoveItem(item.productId._id)}
+                                                    onClick={() => handleRemoveItem(item.productId?._id || '')}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

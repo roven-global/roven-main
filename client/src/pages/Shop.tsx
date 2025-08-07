@@ -258,93 +258,82 @@ const Shop = () => {
 
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
-
-            {/* Desktop Sidebar */}
-            <aside className="hidden lg:block lg:w-1/4 sticky top-24">
-              <div className="bg-card rounded-xl border p-6">
-                <FilterContent />
-              </div>
-            </aside>
-
-            {/* Products Section */}
-            <main className="w-full lg:w-3/4">
-              <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-                <div>
-                  <h2 className="text-3xl font-playfair font-bold">
-                    {activeCategory === 'all' ? 'Products' : categories.find(c => c._id === activeCategory)?.name || 'Products'}
-                  </h2>
-                  <p className="text-muted-foreground mt-1">
-                    Showing {displayedProducts.length} of {totalFiltered} products
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-4 w-full sm:w-auto">
-                  {/* Mobile Filter Trigger */}
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <Button variant="outline" className="lg:hidden w-full sm:w-auto">
-                        <Filter className="mr-2 h-4 w-4" /> Filters
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent className="w-[300px] sm:w-[400px]">
-                      <SheetHeader>
-                        <SheetTitle>Filter Products</SheetTitle>
-                      </SheetHeader>
-                      <div className="p-4">
-                        <FilterContent />
-                      </div>
-                    </SheetContent>
-                  </Sheet>
-
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="featured-desc">Featured</SelectItem>
-                      <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                      <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                      <SelectItem value="createdAt-desc">Newest</SelectItem>
-                      <SelectItem value="rating-desc">Rating</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          <main className="w-full">
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+              <div>
+                <h2 className="text-3xl font-playfair font-bold">
+                  {activeCategory === 'all' ? 'Products' : categories.find(c => c._id === activeCategory)?.name || 'Products'}
+                </h2>
+                <p className="text-muted-foreground mt-1">
+                  Showing {displayedProducts.length} of {totalFiltered} products
+                </p>
               </div>
 
-              {loading ? (
-                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
-                  {Array.from({ length: 9 }).map((_, i) => (
-                    <div key={i} className="space-y-2"><Skeleton className="h-64 w-full" /><Skeleton className="h-4 w-2/3" /><Skeleton className="h-4 w-1/2" /></div>
-                  ))}
-                </div>
-              ) : error ? (
-                <div className="text-center text-destructive py-10">{error}</div>
-              ) : computedProducts.length === 0 ? (
-                <div className="text-center text-muted-foreground py-20 rounded-lg bg-muted/50">
-                  <h3 className="text-2xl font-semibold mb-2">No Products Found</h3>
-                  <p>Try adjusting your filters to find what you're looking for.</p>
-                </div>
-              ) : (
-                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
-                  {displayedProducts.map((product) => {
-                    const thirtyDaysAgo = new Date();
-                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                    const isNew = new Date(product.createdAt) > thirtyDaysAgo;
-                    return <ProductCard key={product._id} id={product._id} slug={product.slug} name={product.name} price={product.price} originalPrice={product.originalPrice} image={product.images[0]?.url || ''} rating={product.ratings.average} reviews={product.ratings.numOfReviews} category={product.category.name} volume={product.volume} isSale={!!(product.originalPrice && product.originalPrice > product.price)} isNew={isNew} benefits={product.benefits} />;
-                  })}
-                </div>
-              )}
+              <div className="flex items-center gap-4 w-full sm:w-auto">
+                {/* Filter Trigger - Works for both mobile and desktop */}
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" className="w-full sm:w-auto">
+                      <Filter className="mr-2 h-4 w-4" /> Filters
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-[300px] sm:w-[400px] lg:w-[400px]">
+                    <SheetHeader>
+                      <SheetTitle>Filter Products</SheetTitle>
+                    </SheetHeader>
+                    <div className="p-4">
+                      <FilterContent />
+                    </div>
+                  </SheetContent>
+                </Sheet>
 
-              {hasMore && (
-                <div className="text-center mt-12">
-                  <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={loadingMore}>
-                    {loadingMore ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading...</> : 'Load More Products'}
-                  </Button>
-                </div>
-              )}
-            </main>
-          </div>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="featured-desc">Featured</SelectItem>
+                    <SelectItem value="price-asc">Price: Low to High</SelectItem>
+                    <SelectItem value="price-desc">Price: High to Low</SelectItem>
+                    <SelectItem value="createdAt-desc">Newest</SelectItem>
+                    <SelectItem value="rating-desc">Rating</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="space-y-2"><Skeleton className="h-64 w-full" /><Skeleton className="h-4 w-2/3" /><Skeleton className="h-4 w-1/2" /></div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="text-center text-destructive py-10">{error}</div>
+            ) : computedProducts.length === 0 ? (
+              <div className="text-center text-muted-foreground py-20 rounded-lg bg-muted/50">
+                <h3 className="text-2xl font-semibold mb-2">No Products Found</h3>
+                <p>Try adjusting your filters to find what you're looking for.</p>
+              </div>
+            ) : (
+              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+                {displayedProducts.map((product) => {
+                  const thirtyDaysAgo = new Date();
+                  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                  const isNew = new Date(product.createdAt) > thirtyDaysAgo;
+                  return <ProductCard key={product._id} id={product._id} slug={product.slug} name={product.name} price={product.price} originalPrice={product.originalPrice} image={product.images[0]?.url || ''} rating={product.ratings.average} reviews={product.ratings.numOfReviews} category={product.category.name} volume={product.volume} isSale={!!(product.originalPrice && product.originalPrice > product.price)} isNew={isNew} benefits={product.benefits} />;
+                })}
+              </div>
+            )}
+
+            {hasMore && (
+              <div className="text-center mt-12">
+                <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={loadingMore}>
+                  {loadingMore ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading...</> : 'Load More Products'}
+                </Button>
+              </div>
+            )}
+          </main>
         </div>
       </section>
 
