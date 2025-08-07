@@ -49,52 +49,51 @@ const Categories = () => {
   }, []);
 
   return (
-    <section id="categories" className="py-16 bg-muted/30">
+    <section id="categories" className="py-20 bg-warm-cream">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-4">
+          <h2 className="font-playfair text-4xl md:text-5xl font-bold text-deep-forest mb-4">
             Shop by Category
           </h2>
-          <p className="text-muted-foreground text-lg">
-            Explore our curated collections designed for your beauty journey
+          <p className="text-forest text-lg max-w-2xl mx-auto text-balance">
+            Explore our curated collections, each designed to elevate your unique beauty journey.
           </p>
         </div>
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} className="h-80 w-full rounded-lg" />
+              <div key={index} className="space-y-3">
+                <Skeleton className="h-96 w-full bg-soft-beige rounded-lg" />
+                <Skeleton className="h-6 w-3/4 bg-soft-beige rounded-md" />
+              </div>
             ))}
           </div>
         ) : error ? (
-          <div className="text-center text-destructive">{error}</div>
+          <div className="text-center text-destructive py-10">{error}</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {categories.map((category) => (
-              <Card key={category._id} className="group cursor-pointer overflow-hidden hover:shadow-elegant transition-all duration-300">
-                <Link to={`/category/${category.slug}`} className="block">
-                  <div className="relative h-80 overflow-hidden">
+              <Link key={category._id} to={`/category/${category.slug}`} className="block group">
+                <Card className="overflow-hidden rounded-lg shadow-sm hover:shadow-xl transition-shadow duration-300 border-warm-taupe/50">
+                  <div className="relative h-96">
                     <img
                       src={category.image.url}
                       alt={category.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                    
-                    <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                      <h3 className="font-playfair text-3xl font-bold mb-2">
-                        {category.name}
-                      </h3>
-                      <p className="text-white/90 mb-4 line-clamp-2">
-                        {category.description || `Explore our ${category.name} collection`}
-                      </p>
-                      <Button variant="hero" className="opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                        Shop Now
-                      </Button>
-                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                   </div>
-                </Link>
-              </Card>
+                  <div className="p-6 bg-white">
+                    <h3 className="font-playfair text-2xl font-bold text-deep-forest mb-1">
+                      {category.name}
+                    </h3>
+                    <p className="text-forest group-hover:text-sage transition-colors">
+                      Explore Collection &rarr;
+                    </p>
+                  </div>
+                </Card>
+              </Link>
             ))}
           </div>
         )}

@@ -25,6 +25,7 @@ interface Product {
   volume?: string;
   benefits?: string[];
   isFeatured?: boolean;
+  createdAt: string;
 }
 
 const FeaturedProducts = () => {
@@ -55,38 +56,37 @@ const FeaturedProducts = () => {
   }, []);
 
   return (
-    <section id="featured-products" className="py-16 bg-background">
+    <section id="featured-products" className="py-20 bg-white">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-4">
+          <h2 className="font-playfair text-4xl md:text-5xl font-bold text-deep-forest mb-4">
             Featured Products
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-forest text-lg max-w-2xl mx-auto text-balance">
             Discover our handpicked selection of premium beauty products,
             crafted with the finest ingredients for exceptional results.
           </p>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             {Array.from({ length: 4 }).map((_, index) => (
               <div key={index} className="space-y-4">
-                <Skeleton className="h-64 w-full" />
-                <Skeleton className="h-4 w-2/3" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-4 w-1/4" />
+                <Skeleton className="h-72 w-full bg-soft-beige rounded-lg" />
+                <Skeleton className="h-4 w-5/6 bg-soft-beige rounded-md" />
+                <Skeleton className="h-4 w-1/2 bg-soft-beige rounded-md" />
               </div>
             ))}
           </div>
         ) : error ? (
           <div className="text-center text-destructive py-10">{error}</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12 mb-12">
             {products.map((product) => (
               <ProductCard
                 key={product._id}
                 id={product._id}
-                slug={product.slug} // Passing the slug to the ProductCard
+                slug={product.slug}
                 name={product.name}
                 price={product.price}
                 originalPrice={product.originalPrice}
@@ -95,8 +95,9 @@ const FeaturedProducts = () => {
                 reviews={product.ratings.numOfReviews}
                 category={product.category.name}
                 volume={product.volume}
-                isSale={product.originalPrice && product.originalPrice > product.price}
+                isSale={!!(product.originalPrice && product.originalPrice > product.price)}
                 benefits={product.benefits}
+                isNew={new Date(product.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}
               />
             ))}
           </div>
@@ -104,7 +105,7 @@ const FeaturedProducts = () => {
 
         <div className="text-center">
           <Link to="/shop">
-            <Button size="lg" variant="outline" className="px-8">
+            <Button size="lg" variant="outline" className="border-2 border-warm-taupe text-forest bg-transparent hover:bg-warm-taupe/20 hover:border-warm-taupe transition-all duration-300 rounded-full px-8 py-6 text-base font-semibold">
               View All Products
             </Button>
           </Link>

@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
 import Axios from "@/utils/Axios";
+import { AdminLayout } from "@/components/Layout/AdminLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DollarSign, Users, ShoppingBag } from "lucide-react";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({ totalBrands: 0, brands: [], totalSales: 0, totalCustomers: 0 });
@@ -12,7 +16,7 @@ const AdminDashboard = () => {
         const res = await Axios.get("/api/admin/dashboard-stats");
         setStats(res.data.data);
       } catch (err) {
-        // handle error
+        console.error("Failed to fetch admin stats:", err);
       } finally {
         setLoading(false);
       }
@@ -20,37 +24,43 @@ const AdminDashboard = () => {
     fetchStats();
   }, []);
 
+  const StatCard = ({ title, value, icon, children }: { title: string, value: string | number, icon: React.ReactNode, children?: React.ReactNode }) => (
+    <Card className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-forest">{title}</CardTitle>
+        {icon}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold text-deep-forest">{value}</div>
+        {children}
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+    <>
+      <h1 className="text-3xl font-playfair font-bold text-deep-forest mb-6">Dashboard</h1>
+
       {loading ? (
-        <div>Loading...</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Skeleton className="h-36 rounded-lg bg-soft-beige" />
+          <Skeleton className="h-36 rounded-lg bg-soft-beige" />
+          <Skeleton className="h-36 rounded-lg bg-soft-beige" />
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-6 bg-white rounded shadow">
-            <h2 className="text-lg font-semibold">Total Brands</h2>
-            <p className="text-2xl mb-2">{stats.totalBrands}</p>
-            <ul className="list-disc list-inside text-sm text-gray-700">
-              {stats.brands && stats.brands.length > 0 ? (
-                stats.brands.map((brand, idx) => (
-                  <li key={idx}>{brand}</li>
-                ))
-              ) : (
-                <li>No brands found</li>
-              )}
-            </ul>
-          </div>
-          <div className="p-6 bg-white rounded shadow">
-            <h2 className="text-lg font-semibold">Total Sales</h2>
-            <p className="text-2xl">{stats.totalSales}</p>
-          </div>
-          <div className="p-6 bg-white rounded shadow">
-            <h2 className="text-lg font-semibold">Total Customers</h2>
-            <p className="text-2xl">{stats.totalCustomers}</p>
-          </div>
+          <StatCard title="Total Sales" value={`₹${stats.totalSales.toLocaleString()}`} icon={<DollarSign className="h-5 w-5 text-warm-taupe" />}>
+            <p className="text-xs text-forest/70 mt-2">All-time revenue</p>
+          </StatCard>
+          <StatCard title="Total Customers" value={stats.totalCustomers} icon={<Users className="h-5 w-5 text-warm-taupe" />}>
+            <p className="text-xs text-forest/70 mt-2">Registered users</p>
+          </StatCard>
+          <StatCard title="Total Brands" value={stats.totalBrands} icon={<ShoppingBag className="h-5 w-5 text-warm-taupe" />}>
+            <p className="text-xs text-forest/70 mt-2">Available brands</p>
+          </StatCard>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

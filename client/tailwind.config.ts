@@ -66,6 +66,47 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Botanical Color Palette
+				sage: {
+					DEFAULT: '#8B9D94',
+					light: '#A3B1A8',
+					dark: '#6B7A72'
+				},
+				forest: {
+					DEFAULT: '#5C6B62',
+					light: '#7A8A80',
+					dark: '#4A5750'
+				},
+				'deep-forest': {
+					DEFAULT: '#2C3E37',
+					light: '#3D4F48',
+					dark: '#1B2D26'
+				},
+				'warm-cream': {
+					DEFAULT: '#F5F1EB',
+					light: '#FAF8F5',
+					dark: '#E8E0D6'
+				},
+				'soft-beige': {
+					DEFAULT: '#E8E0D6',
+					light: '#F0E9E0',
+					dark: '#D4C8BC'
+				},
+				'warm-taupe': {
+					DEFAULT: '#C8B5A0',
+					light: '#D4C3B0',
+					dark: '#B8A590'
+				},
+				'gold-accent': {
+					DEFAULT: '#D4B896',
+					light: '#E0C8A8',
+					dark: '#C8A884'
+				},
+				'soft-bronze': {
+					DEFAULT: '#A68B5B',
+					light: '#B89A6F',
+					dark: '#947A4F'
 				}
 			},
 			backgroundImage: {

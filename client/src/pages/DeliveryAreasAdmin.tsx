@@ -21,31 +21,35 @@ const DeliveryAreasAdmin = () => {
   }, []);
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Delivery Areas</h1>
+    <div className="container mx-auto p-6 bg-warm-cream min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-deep-forest font-playfair">Delivery Areas</h1>
       {loading ? (
-        <div>Loading...</div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-forest text-lg font-medium">Loading...</div>
+        </div>
       ) : (
-        <table className="min-w-full bg-white border">
-          <thead>
-            <tr>
-              <th className="py-2 px-4 border">City</th>
-              <th className="py-2 px-4 border">State</th>
-              <th className="py-2 px-4 border">Pincode</th>
-              <th className="py-2 px-4 border">Count</th>
-            </tr>
-          </thead>
-          <tbody>
-            {areas.map((area, idx) => (
-              <tr key={idx}>
-                <td className="py-2 px-4 border">{area.city}</td>
-                <td className="py-2 px-4 border">{area.state}</td>
-                <td className="py-2 px-4 border">{area.pincode}</td>
-                <td className="py-2 px-4 border">{area.count}</td>
+        <div className="bg-white rounded-lg shadow-elegant border border-warm-taupe overflow-hidden">
+          <table className="min-w-full">
+            <thead className="bg-sage/10">
+              <tr>
+                <th className="py-4 px-6 text-left text-sm font-semibold text-deep-forest border-b border-warm-taupe">City</th>
+                <th className="py-4 px-6 text-left text-sm font-semibold text-deep-forest border-b border-warm-taupe">State</th>
+                <th className="py-4 px-6 text-left text-sm font-semibold text-deep-forest border-b border-warm-taupe">Pincode</th>
+                <th className="py-4 px-6 text-left text-sm font-semibold text-deep-forest border-b border-warm-taupe">Count</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-warm-taupe/30">
+              {areas.map((area, idx) => (
+                <tr key={idx} className="hover:bg-warm-cream/50 transition-colors duration-200">
+                  <td className="py-4 px-6 text-sm text-forest font-medium">{area.city}</td>
+                  <td className="py-4 px-6 text-sm text-forest">{area.state}</td>
+                  <td className="py-4 px-6 text-sm text-forest">{area.pincode}</td>
+                  <td className="py-4 px-6 text-sm text-gold-accent font-semibold">{area.count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

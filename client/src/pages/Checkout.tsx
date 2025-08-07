@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, Info, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, ShoppingBag } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { formatRupees } from '@/lib/currency';
 import { useCart } from '@/contexts/CartContext';
 import { useGuest } from '@/contexts/GuestContext';
@@ -18,88 +20,69 @@ import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 import { useIndianStatesAndCities } from '@/lib/cities';
 
-
-
 const Checkout = () => {
     const navigate = useNavigate();
-    const { cartItems, clearCart, fetchUserCart, refreshCart } = useCart();
-    const { guestCart } = useGuest();
+    const { cartItems, clearCart, refreshCart } = useCart();
+    const { guestCart, clearGuestData } = useGuest();
     const { isAuthenticated, user } = useAuth();
-
-    // Add this hook to get states and cities data
     const { reactSelectData, getCitiesByState } = useIndianStatesAndCities();
 
     const [loading, setLoading] = useState(false);
     const [addressLoading, setAddressLoading] = useState(false);
     const [cartLoading, setCartLoading] = useState(true);
-    const [savedAddresses, setSavedAddresses] = useState([]);
-    const [selectedAddress, setSelectedAddress] = useState(null);
-    const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-    const [addressSaved, setAddressSaved] = useState(false);
+    const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+    const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+
+    const [formData, setFormData] = useState({
+        firstName: '', lastName: '', phone: '', email: user?.email || '', address: '',
+        city: '', state: '', pincode: '', country: 'India', saveForFuture: true
+    });
     const [availableCities, setAvailableCities] = useState<string[]>([]);
 
     const displayCartItems = isAuthenticated ? cartItems : guestCart;
 
-    // Fetch cart data when component mounts
     useEffect(() => {
-        const initializeCart = async () => {
+        const initialize = async () => {
             if (isAuthenticated) {
-                try {
-                    await refreshCart(); // Use refreshCart to ensure cart is up to date
-                } catch (error) {
-                    console.error('Error fetching cart:', error);
-                }
+                await loadSavedAddresses();
             }
             setCartLoading(false);
         };
+        initialize();
+    }, [isAuthenticated]); // Removed refreshCart from dependencies to prevent infinite loops
 
-        initializeCart();
+    // Separate useEffect for cart refresh
+    useEffect(() => {
+        if (isAuthenticated) {
+            refreshCart();
+        }
     }, [isAuthenticated, refreshCart]);
 
-    // Redirect to cart if empty (only after cart is loaded)
     useEffect(() => {
         if (!cartLoading && displayCartItems.length === 0) {
             navigate('/cart');
         }
     }, [displayCartItems.length, navigate, cartLoading]);
 
-    // Load saved addresses if user is authenticated
-    useEffect(() => {
-        if (isAuthenticated) {
-            loadSavedAddresses();
-        }
-    }, [isAuthenticated]);
-
     const loadSavedAddresses = async () => {
+        if (!isAuthenticated) return;
         try {
-            const response = await Axios({
-                method: SummaryApi.getUserAddresses.method,
-                url: SummaryApi.getUserAddresses.url,
-            });
+            const response = await Axios.get(SummaryApi.getUserAddresses.url);
             if (response.data.success) {
-                setSavedAddresses(response.data.data);
-                // Set default address if available
-                const defaultAddress = response.data.data.find(addr => addr.isDefault);
-                if (defaultAddress) {
-                    setSelectedAddress(defaultAddress);
-                    setFormData({
-                        firstName: defaultAddress.firstName,
-                        lastName: defaultAddress.lastName,
-                        phone: defaultAddress.phone,
-                        email: defaultAddress.email,
-                        address: defaultAddress.address,
-                        city: defaultAddress.city,
-                        state: defaultAddress.state,
-                        pincode: defaultAddress.pincode,
-                        country: defaultAddress.country
-                    });
+                const addresses = response.data.data;
+                console.log('Loaded addresses:', addresses); // Debug log
+                setSavedAddresses(addresses);
 
-                    // Update available cities for the default state using utility
-                    const cities = getCitiesByState(defaultAddress.state);
-                    setAvailableCities([...cities]);
-
-                    // Mark address as saved when default address is loaded
-                    setAddressSaved(true);
+                // Only set default address if no address is currently selected
+                if (!selectedAddressId) {
+                    const defaultAddress = addresses.find((addr: any) => addr.isDefault) || addresses[0];
+                    if (defaultAddress) {
+                        setSelectedAddressId(defaultAddress._id);
+                        console.log('Selected default address:', defaultAddress._id); // Debug log
+                    } else {
+                        setShowNewAddressForm(true);
+                    }
                 }
             }
         } catch (error) {
@@ -107,650 +90,233 @@ const Checkout = () => {
         }
     };
 
-    const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
-        phone: '',
-        email: '',
-        address: '',
-        city: '',
-        state: '',
-        pincode: '',
-        country: 'India'
-    });
-
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value } = e.target;
-        setFormData({
-            ...formData,
-            [id]: value
-        });
-
-        // Clear validation error for this field when user starts typing
-        if (validationErrors[id]) {
-            setValidationErrors(prev => ({
-                ...prev,
-                [id]: ''
-            }));
-        }
-
-        // Reset address saved status when user modifies the form
-        if (addressSaved) {
-            setAddressSaved(false);
-        }
+        setFormData(prev => ({ ...prev, [id]: value }));
     };
 
     const handleStateChange = (stateName: string) => {
-        setFormData({
-            ...formData,
-            state: stateName,
-            city: '' // Reset city when state changes
-        });
-
-        // Update available cities for the selected state using the utility
-        const cities = getCitiesByState(stateName);
-        setAvailableCities([...cities]); // Convert readonly array to regular array
-
-        // Clear validation errors
-        if (validationErrors.state) {
-            setValidationErrors(prev => ({
-                ...prev,
-                state: ''
-            }));
-        }
-        if (validationErrors.city) {
-            setValidationErrors(prev => ({
-                ...prev,
-                city: ''
-            }));
-        }
-
-        // Reset address saved status
-        if (addressSaved) {
-            setAddressSaved(false);
-        }
+        setFormData(prev => ({ ...prev, state: stateName, city: '' }));
+        setAvailableCities([...getCitiesByState(stateName)]);
     };
 
-    const handleCityChange = (cityName: string) => {
-        setFormData({
-            ...formData,
-            city: cityName
-        });
-
-        // Clear validation error
-        if (validationErrors.city) {
-            setValidationErrors(prev => ({
-                ...prev,
-                city: ''
-            }));
-        }
-
-        // Reset address saved status
-        if (addressSaved) {
-            setAddressSaved(false);
-        }
-    };
-
-    const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { value } = e.target;
-        // Only allow numbers and limit to 6 digits
-        const numericValue = value.replace(/\D/g, '').slice(0, 6);
-
-        setFormData({
-            ...formData,
-            pincode: numericValue
-        });
-
-        // Clear validation error
-        if (validationErrors.pincode) {
-            setValidationErrors(prev => ({
-                ...prev,
-                pincode: ''
-            }));
-        }
-
-        // Reset address saved status
-        if (addressSaved) {
-            setAddressSaved(false);
-        }
-    };
-
-    const handleAddressSelect = (address) => {
-        setSelectedAddress(address);
-        setFormData({
-            firstName: address.firstName,
-            lastName: address.lastName,
-            phone: address.phone,
-            email: address.email,
-            address: address.address,
-            city: address.city,
-            state: address.state,
-            pincode: address.pincode,
-            country: address.country
-        });
-
-        // Update available cities for the selected state using utility
-        const cities = getCitiesByState(address.state);
-        setAvailableCities([...cities]);
-
-        // Mark address as saved when selecting a saved address
-        setAddressSaved(true);
-        // Clear any validation errors
-        setValidationErrors({});
-    };
-
-    const handleSaveAddress = async () => {
-        // Clear previous validation errors
-        setValidationErrors({});
-
-        // Validate form data
-        if (!formData.firstName || !formData.lastName || !formData.phone ||
-            !formData.email || !formData.address || !formData.city ||
-            !formData.state || !formData.pincode) {
-            toast({
-                title: "Error",
-                description: "Please fill in all required fields",
-                variant: "destructive",
-            });
-            return;
-        }
-
+    const handleSaveAddress = async (e: React.FormEvent) => {
+        e.preventDefault();
         setAddressLoading(true);
-
         try {
-            const saveForFuture = (document.getElementById('saveAddress') as HTMLInputElement)?.checked;
-
-            await Axios({
-                method: SummaryApi.saveAddress.method,
-                url: SummaryApi.saveAddress.url,
-                data: {
-                    ...formData,
-                    saveForFuture: saveForFuture ? "true" : "false"
-                }
-            });
-
-            setAddressSaved(true);
-            toast({
-                title: "Success",
-                description: "Address saved successfully!",
-            });
-
-            // Reload saved addresses to show the new one
-            await loadSavedAddresses();
-
-        } catch (error: any) {
-            console.error('Error saving address:', error);
-
-            // Handle validation errors from address save
-            if (error.response?.data?.errors) {
-                setValidationErrors(error.response.data.errors);
-            } else {
-                toast({
-                    title: "Error",
-                    description: error.response?.data?.message || "Failed to save address",
-                    variant: "destructive",
-                });
+            const response = await Axios.post(SummaryApi.saveAddress.url, formData);
+            if (response.data.success) {
+                toast({ title: "Address saved successfully!" });
+                await loadSavedAddresses();
+                setShowNewAddressForm(false);
             }
+        } catch (error: any) {
+            toast({ title: "Failed to save address", description: error.response?.data?.message, variant: "destructive" });
         } finally {
             setAddressLoading(false);
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        // Check if user is authenticated
-        if (!isAuthenticated) {
-            // Redirect to home page
-            navigate('/');
+    const handleProceedToPayment = async () => {
+        if (!selectedAddressId) {
+            toast({ title: "Please select a shipping address.", variant: "destructive" });
             return;
         }
-
-        // Refresh cart before proceeding to ensure we have the latest data
-        try {
-            await refreshCart();
-        } catch (error) {
-            console.error('Error refreshing cart:', error);
-        }
-
-        // Check if cart is still empty after refresh
-        if (cartItems.length === 0) {
-            toast({
-                title: "Error",
-                description: "Your cart is empty. Please add items before proceeding.",
-                variant: "destructive",
-            });
-            navigate('/cart');
-            return;
-        }
-
-        // Validate form data
-        if (!formData.firstName || !formData.lastName || !formData.phone ||
-            !formData.email || !formData.address || !formData.city ||
-            !formData.state || !formData.pincode) {
-            toast({
-                title: "Error",
-                description: "Please fill in all required fields",
-                variant: "destructive",
-            });
-            return;
-        }
-
         setLoading(true);
-
         try {
-            // Create order
-            const orderResponse = await Axios({
-                method: SummaryApi.createOrder.method,
-                url: SummaryApi.createOrder.url,
-                data: {
-                    shippingAddress: formData,
-                    paymentMethod: "online",
-                    notes: ""
-                }
+            const selectedAddr = savedAddresses.find(addr => addr._id === selectedAddressId);
+            const orderResponse = await Axios.post(SummaryApi.createOrder.url, {
+                shippingAddress: selectedAddr,
+                paymentMethod: "online",
             });
 
             if (orderResponse.data.success) {
-                // Clear cart after successful order creation
-                clearCart();
-
-                toast({
-                    title: "Success",
-                    description: "Order created successfully!",
-                });
-
-                // Navigate to payment page with order ID
+                isAuthenticated ? clearCart() : clearGuestData();
                 navigate(`/payment?orderId=${orderResponse.data.data._id}`);
             }
         } catch (error: any) {
-            console.error('Error creating order:', error);
-            toast({
-                title: "Error",
-                description: error.response?.data?.message || "Failed to create order",
-                variant: "destructive",
-            });
+            toast({ title: "Failed to create order", description: error.response?.data?.message, variant: "destructive" });
         } finally {
             setLoading(false);
         }
     };
 
-    // Calculate totals from cart data
-    const orderTotal = isAuthenticated
-        ? cartItems.reduce((acc, item) => acc + (item.productId.price * item.quantity), 0)
-        : guestCart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    const shippingCost = orderTotal > 500 ? 0 : 40;
-    const onlinePaymentDiscount = orderTotal * 0.05;
-    const finalTotal = orderTotal + shippingCost - onlinePaymentDiscount;
+    const subtotal = displayCartItems.reduce((acc, item: any) => acc + (isAuthenticated ? (item.variant?.price || item.productId?.price) : item.price) * item.quantity, 0);
+    const shippingCost = subtotal > 499 ? 0 : 50;
+    const finalTotal = subtotal + shippingCost;
 
-    // Show loading state while cart is being fetched
     if (cartLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                    <p className="text-gray-600">Loading your cart...</p>
-                </div>
+            <div className="min-h-screen bg-warm-cream flex items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-sage" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-warm-cream">
             <Navigation />
-
-            {/* Header Navigation */}
-            <div className="bg-white border-b shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-center h-16">
-                        <div className="flex items-center space-x-8">
-                            <Link to="/cart" className="text-sm text-gray-500 hover:text-primary">
-                                Cart
-                            </Link>
-                            <span className="text-sm font-medium text-primary border-b-2 border-primary pb-1">
-                                Address
-                            </span>
-                            <span className="text-sm text-gray-500">Payment</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="flex items-center gap-4 mb-8">
-                    <Button variant="ghost" size="icon" asChild>
-                        <Link to="/cart">
-                            <ArrowLeft className="h-5 w-5" />
-                        </Link>
-                    </Button>
-                    <h1 className="text-3xl font-bold text-gray-800 font-playfair">Shipping Address</h1>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Left Column - Address Form */}
-                    <div className="lg:col-span-2 space-y-6">
-                        {/* Saved Addresses */}
+            <div className="container mx-auto px-4 py-12">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    {/* Left side: Shipping Details */}
+                    <div>
+                        <h1 className="font-playfair text-3xl font-bold text-deep-forest mb-6">Shipping Information</h1>
                         {isAuthenticated && savedAddresses.length > 0 && (
-                            <Card className="border-0 shadow-lg">
-                                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-                                    <CardTitle className="text-lg font-semibold text-gray-800">Saved Addresses</CardTitle>
+                            <Card className="bg-white rounded-lg shadow-md mb-6">
+                                <CardHeader>
+                                    <CardTitle className="text-deep-forest">Select a saved address</CardTitle>
+                                    {selectedAddressId && (
+                                        <p className="text-sm text-forest">Selected address ID: {selectedAddressId}</p>
+                                    )}
                                 </CardHeader>
-                                <CardContent className="p-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {savedAddresses.map((address) => (
-                                            <div
-                                                key={address._id}
-                                                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedAddress?._id === address._id
-                                                    ? 'border-orange-500 bg-orange-50'
-                                                    : 'border-gray-200 hover:border-gray-300'
-                                                    }`}
-                                                onClick={() => handleAddressSelect(address)}
-                                            >
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <div className="font-medium text-gray-900">
-                                                            {address.firstName} {address.lastName}
+                                <CardContent className="space-y-4">
+                                    {savedAddresses.map((addr) => (
+                                        <div
+                                            key={addr._id}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                console.log('Clicking address:', addr._id, 'Current selected:', selectedAddressId);
+                                                setSelectedAddressId(addr._id);
+                                                setShowNewAddressForm(false);
+                                                console.log('Address selected:', addr._id); // Debug log
+                                            }}
+                                            onMouseDown={(e) => {
+                                                e.preventDefault();
+                                            }}
+                                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 select-none ${selectedAddressId === addr._id
+                                                ? 'border-sage bg-sage/10 shadow-md'
+                                                : 'border-warm-taupe/50 hover:border-sage/50 hover:bg-sage/5'
+                                                }`}
+                                        >
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex-1">
+                                                    <p className="font-semibold text-deep-forest">{addr.firstName} {addr.lastName}</p>
+                                                    <p className="text-forest text-sm">{addr.address}, {addr.city}, {addr.state} - {addr.pincode}</p>
+                                                    <p className="text-forest text-sm">{addr.phone}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {selectedAddressId === addr._id && (
+                                                        <div className="text-sage">
+                                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                            </svg>
                                                         </div>
-                                                        <div className="text-sm text-gray-600 mt-1">
-                                                            {address.phone}
-                                                        </div>
-                                                        <div className="text-sm text-gray-600 mt-1">
-                                                            {address.address}
-                                                        </div>
-                                                        <div className="text-sm text-gray-600">
-                                                            {address.city}, {address.state} {address.pincode}
-                                                        </div>
-                                                    </div>
-                                                    {address.isDefault && (
-                                                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                                                            Default
-                                                        </span>
                                                     )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            console.log('Button clicked for address:', addr._id);
+                                                            setSelectedAddressId(addr._id);
+                                                            setShowNewAddressForm(false);
+                                                        }}
+                                                        className={`px-3 py-1 text-xs rounded-md transition-colors ${selectedAddressId === addr._id
+                                                            ? 'bg-sage text-white'
+                                                            : 'bg-warm-taupe/20 text-forest hover:bg-sage/20'
+                                                            }`}
+                                                    >
+                                                        {selectedAddressId === addr._id ? 'Selected' : 'Select'}
+                                                    </button>
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
+                                        </div>
+                                    ))}
+                                    <Button variant="link" onClick={() => setShowNewAddressForm(!showNewAddressForm)}>
+                                        {showNewAddressForm ? 'Cancel' : '+ Add a new address'}
+                                    </Button>
                                 </CardContent>
                             </Card>
                         )}
 
-                        <Card className="border-0 shadow-lg">
-                            <CardHeader className="bg-gradient-to-r from-orange-50 to-pink-50 border-b">
-                                <CardTitle className="text-lg font-semibold text-gray-800">
-                                    {isAuthenticated && savedAddresses.length > 0 ? 'New Delivery Address' : 'Delivery Address'}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-6">
-                                <form onSubmit={handleSubmit} className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">First Name</Label>
-                                            <Input
-                                                id="firstName"
-                                                placeholder="Enter first name"
-                                                value={formData.firstName}
-                                                onChange={handleInputChange}
-                                                className={`border-gray-300 focus:border-orange-500 ${validationErrors.firstName ? 'border-red-500' : ''}`}
-                                                required
-                                            />
-                                            {validationErrors.firstName && <p className="text-red-500 text-xs mt-1">{validationErrors.firstName}</p>}
+                        {(showNewAddressForm || !isAuthenticated || savedAddresses.length === 0) && (
+                            <Card className="bg-white rounded-lg shadow-md">
+                                <CardHeader>
+                                    <CardTitle>Enter your shipping details</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <form onSubmit={handleSaveAddress} className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><Label htmlFor="firstName">First Name</Label><Input id="firstName" value={formData.firstName} onChange={handleInputChange} required /></div>
+                                            <div><Label htmlFor="lastName">Last Name</Label><Input id="lastName" value={formData.lastName} onChange={handleInputChange} required /></div>
                                         </div>
-                                        <div>
-                                            <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">Last Name</Label>
-                                            <Input
-                                                id="lastName"
-                                                placeholder="Enter last name"
-                                                value={formData.lastName}
-                                                onChange={handleInputChange}
-                                                className={`border-gray-300 focus:border-orange-500 ${validationErrors.lastName ? 'border-red-500' : ''}`}
-                                                required
-                                            />
-                                            {validationErrors.lastName && <p className="text-red-500 text-xs mt-1">{validationErrors.lastName}</p>}
+                                        <div><Label htmlFor="email">Email</Label><Input id="email" type="email" value={formData.email} onChange={handleInputChange} required /></div>
+                                        <div><Label htmlFor="phone">Phone</Label><Input id="phone" value={formData.phone} onChange={handleInputChange} required /></div>
+                                        <div><Label htmlFor="address">Address</Label><Textarea id="address" value={formData.address} onChange={handleInputChange} required /></div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label htmlFor="state">State</Label>
+                                                <Select onValueChange={handleStateChange} value={formData.state}><SelectTrigger><SelectValue placeholder="Select State" /></SelectTrigger>
+                                                    <SelectContent>{reactSelectData.map(s => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}</SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="city">City</Label>
+                                                <Select onValueChange={(value) => setFormData(prev => ({ ...prev, city: value }))} value={formData.city}><SelectTrigger><SelectValue placeholder="Select City" /></SelectTrigger>
+                                                    <SelectContent>{availableCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                                                </Select>
+                                            </div>
                                         </div>
-                                    </div>
-
-                                    <div>
-                                        <Label htmlFor="phone" className="text-sm font-medium text-gray-700">Phone Number</Label>
-                                        <Input
-                                            id="phone"
-                                            placeholder="Enter phone number"
-                                            value={formData.phone}
-                                            onChange={handleInputChange}
-                                            className={`border-gray-300 focus:border-orange-500 ${validationErrors.phone ? 'border-red-500' : ''}`}
-                                            required
-                                        />
-                                        {validationErrors.phone && <p className="text-red-500 text-xs mt-1">{validationErrors.phone}</p>}
-                                    </div>
-
-                                    <div>
-                                        <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
-                                        <Input
-                                            id="email"
-                                            type="email"
-                                            placeholder="Enter email address"
-                                            value={formData.email}
-                                            onChange={handleInputChange}
-                                            className={`border-gray-300 focus:border-orange-500 ${validationErrors.email ? 'border-red-500' : ''}`}
-                                            required
-                                        />
-                                        {validationErrors.email && <p className="text-red-500 text-xs mt-1">{validationErrors.email}</p>}
-                                    </div>
-
-                                    <div>
-                                        <Label htmlFor="address" className="text-sm font-medium text-gray-700">Street Address</Label>
-                                        <Textarea
-                                            id="address"
-                                            placeholder="Enter your street address"
-                                            value={formData.address}
-                                            onChange={handleInputChange}
-                                            className={`border-gray-300 focus:border-orange-500 ${validationErrors.address ? 'border-red-500' : ''}`}
-                                            required
-                                        />
-                                        {validationErrors.address && <p className="text-red-500 text-xs mt-1">{validationErrors.address}</p>}
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <Label htmlFor="city" className="text-sm font-medium text-gray-700">City</Label>
-                                            <Select onValueChange={handleCityChange} defaultValue={formData.city} value={formData.city}>
-                                                <SelectTrigger className="border-gray-300 focus:border-orange-500">
-                                                    <SelectValue placeholder="Select a city" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {availableCities.map(city => (
-                                                        <SelectItem key={city} value={city}>{city}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            {validationErrors.city && <p className="text-red-500 text-xs mt-1">{validationErrors.city}</p>}
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="state" className="text-sm font-medium text-gray-700">State</Label>
-                                            <Select onValueChange={handleStateChange} defaultValue={formData.state} value={formData.state}>
-                                                <SelectTrigger className="border-gray-300 focus:border-orange-500">
-                                                    <SelectValue placeholder="Select a state" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {reactSelectData.map(state => (
-                                                        <SelectItem key={state.name} value={state.name}>{state.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            {validationErrors.state && <p className="text-red-500 text-xs mt-1">{validationErrors.state}</p>}
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <Label htmlFor="pincode" className="text-sm font-medium text-gray-700">Pincode</Label>
-                                            <Input
-                                                id="pincode"
-                                                placeholder="Enter 6-digit pincode"
-                                                value={formData.pincode}
-                                                onChange={handlePincodeChange}
-                                                className={`border-gray-300 focus:border-orange-500 ${validationErrors.pincode ? 'border-red-500' : ''}`}
-                                                required
-                                            />
-                                            <p className="text-xs text-gray-500 mt-1">Enter your 6-digit postal code</p>
-                                            {validationErrors.pincode && <p className="text-red-500 text-xs mt-1">{validationErrors.pincode}</p>}
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="country" className="text-sm font-medium text-gray-700">Country</Label>
-                                            <Select onValueChange={(value) => setFormData({ ...formData, country: value })} defaultValue={formData.country} value={formData.country}>
-                                                <SelectTrigger className="border-gray-300 focus:border-orange-500">
-                                                    <SelectValue placeholder="Select country" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="India">India</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            {validationErrors.country && <p className="text-red-500 text-xs mt-1">{validationErrors.country}</p>}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center space-x-2 pt-4">
-                                        <input type="checkbox" id="saveAddress" className="rounded border-gray-300 text-orange-500 focus:ring-orange-500" />
-                                        <Label htmlFor="saveAddress" className="text-sm text-gray-700">
-                                            Save this address for future orders
-                                        </Label>
-                                    </div>
-
-                                    {/* Address Saved Indicator */}
-                                    {addressSaved && (
-                                        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                                            <Check className="h-4 w-4 text-green-600" />
-                                            <span className="text-sm text-green-700 font-medium">
-                                                {selectedAddress ?
-                                                    "Address selected! You can now proceed to payment." :
-                                                    "Address saved successfully! You can now proceed to payment."
-                                                }
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    {/* Save Address Button */}
-                                    <Button
-                                        type="button"
-                                        onClick={handleSaveAddress}
-                                        size="lg"
-                                        className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                                        disabled={addressLoading}
-                                    >
-                                        {addressLoading ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Saving Address...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Save className="mr-2 h-4 w-4" />
-                                                Save Address
-                                            </>
+                                        <div><Label htmlFor="pincode">Pincode</Label><Input id="pincode" value={formData.pincode} onChange={handleInputChange} required /></div>
+                                        {isAuthenticated && (
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox
+                                                    id="saveForFuture"
+                                                    checked={formData.saveForFuture}
+                                                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, saveForFuture: checked as boolean }))}
+                                                />
+                                                <Label htmlFor="saveForFuture" className="text-sm text-forest">Save this address for future orders</Label>
+                                            </div>
                                         )}
-                                    </Button>
-                                </form>
-                            </CardContent>
-                        </Card>
-
-                        {/* Delivery Info */}
-                        <Card className="border-0 shadow-lg">
-                            <CardHeader className="bg-gradient-to-r from-orange-50 to-pink-50 border-b">
-                                <CardTitle className="text-lg font-semibold text-gray-800">Delivery Information</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-6 space-y-4">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mt-0.5">
-                                        <Check className="h-4 w-4 text-white" />
-                                    </div>
-                                    <div>
-                                        <p className="font-medium text-gray-800">Free Delivery</p>
-                                        <p className="text-sm text-gray-600">Standard delivery within 3-5 business days</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mt-0.5">
-                                        <Check className="h-4 w-4 text-white" />
-                                    </div>
-                                    <div>
-                                        <p className="font-medium text-gray-800">Easy Returns</p>
-                                        <p className="text-sm text-gray-600">30-day return policy for unused items</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mt-0.5">
-                                        <Check className="h-4 w-4 text-white" />
-                                    </div>
-                                    <div>
-                                        <p className="font-medium text-gray-800">Secure Payment</p>
-                                        <p className="text-sm text-gray-600">100% secure payment processing</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                        {isAuthenticated &&
+                                            <Button type="submit" className="w-full bg-forest text-white" disabled={addressLoading}>
+                                                {addressLoading ? <Loader2 className="animate-spin" /> : <Save className="mr-2" />} Save Address
+                                            </Button>
+                                        }
+                                    </form>
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
 
-                    {/* Right Column - Order Summary */}
-                    <div className="lg:col-span-1">
-                        <Card className="sticky top-8 border-0 shadow-xl">
-                            <CardHeader className="bg-gradient-to-r from-orange-50 to-pink-50 border-b">
-                                <CardTitle className="text-lg font-semibold text-gray-800">Order Summary</CardTitle>
+                    {/* Right side: Order Summary */}
+                    <div className="sticky top-24">
+                        <Card className="bg-white rounded-lg shadow-lg border border-warm-taupe/50">
+                            <CardHeader>
+                                <CardTitle className="font-playfair text-2xl text-deep-forest">Order Summary</CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4 p-6">
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-700">Order Total</span>
-                                        <span className="font-semibold text-gray-800">{formatRupees(orderTotal)}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex items-center gap-1">
-                                            <span className="text-gray-700">Shipping</span>
-                                            <Info className="h-4 w-4 text-gray-400" />
+                            <CardContent>
+                                <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                                    {displayCartItems.map((item: any) => (
+                                        <div key={item._id || item.id} className="flex items-center gap-4">
+                                            <img src={isAuthenticated ? item.productId.images[0].url : item.image} alt={isAuthenticated ? item.productId.name : item.name} className="w-16 h-16 rounded-md object-cover" />
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-deep-forest text-sm">{isAuthenticated ? item.productId.name : item.name}</p>
+                                                <p className="text-sm text-forest">Qty: {item.quantity}</p>
+                                            </div>
+                                            <p className="font-medium text-deep-forest">{formatRupees((isAuthenticated ? (item.variant?.price || item.productId.price) : item.price) * item.quantity)}</p>
                                         </div>
-                                        <div className="text-right">
-                                            <span className="text-green-600 font-semibold">Free</span>
-                                            <span className="text-gray-400 line-through ml-1">₹40</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-between items-center text-green-600">
-                                        <span>5% online payment discount</span>
-                                        <span>-{formatRupees(onlinePaymentDiscount)}</span>
-                                    </div>
-                                    <div className="border-t border-gray-200 pt-3">
-                                        <div className="flex justify-between items-center text-lg font-bold text-gray-800">
-                                            <span>To Pay</span>
-                                            <span>{formatRupees(finalTotal)}</span>
-                                        </div>
-                                    </div>
+                                    ))}
                                 </div>
-
-                                <Button
-                                    onClick={handleSubmit}
-                                    size="lg"
-                                    className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={loading || !addressSaved}
-                                >
-                                    {loading ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Processing...
-                                        </>
-                                    ) : !addressSaved ? (
-                                        "Please Save Address First"
-                                    ) : (
-                                        "Proceed to Payment"
-                                    )}
+                                <Separator className="my-4 bg-warm-taupe/50" />
+                                <div className="space-y-2 text-forest">
+                                    <div className="flex justify-between"><span>Subtotal</span><span className="font-medium text-deep-forest">{formatRupees(subtotal)}</span></div>
+                                    <div className="flex justify-between"><span>Shipping</span><span className="font-medium text-deep-forest">{shippingCost > 0 ? formatRupees(shippingCost) : 'Free'}</span></div>
+                                </div>
+                                <Separator className="my-4 bg-warm-taupe/50" />
+                                <div className="flex justify-between font-bold text-lg text-deep-forest">
+                                    <span>Total</span>
+                                    <span>{formatRupees(finalTotal)}</span>
+                                </div>
+                                <Button size="lg" className="w-full mt-6 bg-sage text-white hover:bg-forest rounded-full font-semibold" onClick={handleProceedToPayment} disabled={loading || (isAuthenticated && !selectedAddressId)}>
+                                    {loading ? <Loader2 className="animate-spin" /> : 'Proceed to Payment'}
                                 </Button>
-
-                                {!addressSaved && (
-                                    <p className="text-sm text-gray-500 text-center mt-2">
-                                        Please save your address before proceeding to payment
-                                    </p>
-                                )}
                             </CardContent>
                         </Card>
                     </div>
                 </div>
             </div>
-
             <Footer />
         </div>
     );

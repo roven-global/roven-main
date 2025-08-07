@@ -42,33 +42,33 @@ const AdminOverview = () => {
   }, []);
 
   const summaryCards = [
-    { title: "Total Sales", value: stats?.totalSales.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }), icon: FaRupeeSign, color: "bg-green-100 text-green-700" },
-    { title: "Pending Orders", value: stats?.pendingOrders, icon: Clock, color: "bg-yellow-100 text-yellow-700" },
-    { title: "Accepted Orders", value: stats?.acceptedOrders, icon: AlertTriangle, color: "bg-blue-100 text-blue-700" },
-    { title: "Rejected Orders", value: stats?.rejectedOrders, icon: XCircle, color: "bg-red-100 text-red-700" },
-    { title: "Completed Orders", value: stats?.completedOrders, icon: CheckCircle, color: "bg-purple-100 text-purple-700" },
-    { title: "Total Customers", value: stats?.totalCustomers, icon: Users, color: "bg-indigo-100 text-indigo-700" },
-    { title: "Total Categories", value: stats?.totalCategories, icon: Layers, color: "bg-pink-100 text-pink-700" },
-    { title: "Total Subcategories", value: stats?.totalSubcategories, icon: Layers, color: "bg-rose-100 text-rose-700" },
-    { title: "Total Brands", value: stats?.totalBrands, icon: Tag, color: "bg-teal-100 text-teal-700" },
-    { title: "Delivery Areas", value: stats?.deliveryAreas, icon: MapPin, color: "bg-orange-100 text-orange-700" },
+    { title: "Total Sales", value: stats?.totalSales.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }), icon: FaRupeeSign, color: "bg-gold-accent/20 text-gold-accent border-gold-accent/30" },
+    { title: "Pending Orders", value: stats?.pendingOrders, icon: Clock, color: "bg-soft-bronze/20 text-soft-bronze border-soft-bronze/30" },
+    { title: "Accepted Orders", value: stats?.acceptedOrders, icon: AlertTriangle, color: "bg-sage/20 text-sage border-sage/30" },
+    { title: "Rejected Orders", value: stats?.rejectedOrders, icon: XCircle, color: "bg-red-500/20 text-red-500 border-red-500/30" },
+    { title: "Completed Orders", value: stats?.completedOrders, icon: CheckCircle, color: "bg-forest/20 text-forest border-forest/30" },
+    { title: "Total Customers", value: stats?.totalCustomers, icon: Users, color: "bg-sage/20 text-sage border-sage/30" },
+    { title: "Total Categories", value: stats?.totalCategories, icon: Layers, color: "bg-gold-accent/20 text-gold-accent border-gold-accent/30" },
+    { title: "Total Subcategories", value: stats?.totalSubcategories, icon: Layers, color: "bg-soft-bronze/20 text-soft-bronze border-soft-bronze/30" },
+    { title: "Total Brands", value: stats?.totalBrands, icon: Tag, color: "bg-forest/20 text-forest border-forest/30" },
+    { title: "Delivery Areas", value: stats?.deliveryAreas, icon: MapPin, color: "bg-sage/20 text-sage border-sage/30" },
   ];
 
   return (
-    <>
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Overview</h2>
+    <div className="bg-warm-cream min-h-screen p-6">
+      <div className="flex items-center justify-between space-y-2 mb-8">
+        <h2 className="text-3xl font-bold tracking-tight text-deep-forest font-playfair">Overview</h2>
       </div>
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
             {Array(10).fill(0).map((_, i) => (
-              <Card key={i}>
+              <Card key={i} className="bg-white border-warm-taupe shadow-elegant">
                 <CardHeader>
-                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-6 w-3/4 bg-warm-taupe/20" />
                 </CardHeader>
                 <CardContent>
-                  <Skeleton className="h-8 w-1/2" />
+                  <Skeleton className="h-8 w-1/2 bg-warm-taupe/20" />
                 </CardContent>
               </Card>
             ))}
@@ -78,23 +78,23 @@ const AdminOverview = () => {
             {summaryCards.map((card, index) => (
               <Card
                 key={index}
-                className="border-muted hover:shadow-lg transition-shadow"
+                className="bg-white border-warm-taupe hover:shadow-luxury transition-all duration-300 hover:scale-105"
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
-                  <div className={`p-2 rounded-full ${card.color}`}>
+                  <CardTitle className="text-sm font-medium text-forest">{card.title}</CardTitle>
+                  <div className={`p-2 rounded-full border ${card.color}`}>
                     <card.icon className="h-4 w-4" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{card.value}</div>
+                  <div className="text-2xl font-bold text-deep-forest">{card.value}</div>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 };
 

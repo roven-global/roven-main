@@ -48,7 +48,6 @@ const ProductCard = ({
     variants,
     isNew,
     isSale,
-    benefits,
 }: ProductCardProps) => {
     const { isAuthenticated, user, updateUser } = useAuth();
     const navigate = useNavigate();
@@ -57,7 +56,6 @@ const ProductCard = ({
 
     const isLiked = isAuthenticated ? user?.wishlist?.includes(id) : isInGuestWishlist(id);
 
-    // Get display price (minimum variant price or base price)
     const getDisplayPrice = () => {
         if (variants && variants.length > 0) {
             return Math.min(...variants.map(v => v.price));
@@ -65,40 +63,16 @@ const ProductCard = ({
         return price;
     };
 
-    // Get display original price
     const getDisplayOriginalPrice = () => {
         if (variants && variants.length > 0) {
             const variantsWithOriginal = variants.filter(v => v.originalPrice);
             if (variantsWithOriginal.length > 0) {
                 return Math.min(...variantsWithOriginal.map(v => v.originalPrice!));
             }
-            return undefined;
         }
         return originalPrice;
     };
 
-    // Get volume display text
-    const getVolumeDisplay = () => {
-        if (variants && variants.length > 0) {
-            if (variants.length === 1) {
-                return variants[0].volume;
-            } else {
-                const volumes = variants.map(v => v.volume).sort();
-                return `${volumes[0]} - ${volumes[volumes.length - 1]}`;
-            }
-        }
-        return volume;
-    };
-
-    // Check if any variant is in stock
-    const isAnyVariantInStock = () => {
-        if (variants && variants.length > 0) {
-            return variants.some(v => v.stock > 0);
-        }
-        return true; // Default to true if no variants
-    };
-
-    // Get total stock across all variants
     const getTotalStock = () => {
         if (variants && variants.length > 0) {
             return variants.reduce((total, v) => total + v.stock, 0);
@@ -111,22 +85,18 @@ const ProductCard = ({
         e.stopPropagation();
 
         if (!isAuthenticated) {
-            // Handle guest wishlist
             if (isInGuestWishlist(id)) {
                 removeFromGuestWishlist(id);
             } else {
-                addToGuestWishlist({
-                    id,
-                    name,
-                    price,
-                    image,
-                    slug,
-                });
+                addToGuestWishlist({ id, name, price, image, slug });
             }
+            toast({
+                title: isInGuestWishlist(id) ? "Removed from Wishlist" : "Added to Wishlist",
+                description: name,
+            });
             return;
         }
 
-        // Handle authenticated user wishlist
         try {
             const response = await Axios.post(SummaryApi.toggleWishlist.url, { productId: id });
             if (response.data.success) {
@@ -148,158 +118,98 @@ const ProductCard = ({
         e.preventDefault();
         e.stopPropagation();
 
-        // If product has multiple variants, redirect to product detail page for selection
         if (variants && variants.length > 1) {
             navigate(`/product/${slug}`);
             return;
         }
 
-        // For single variant or no variants, add to cart directly
         const selectedVariant = variants && variants.length === 1 ? variants[0] : null;
-        
+
         if (selectedVariant && selectedVariant.stock === 0) {
-            // Don't add to cart if out of stock
             return;
         }
 
         if (!isAuthenticated) {
-            // Handle guest cart
             addToGuestCart({
                 id,
                 name: selectedVariant ? `${name} - ${selectedVariant.volume}` : name,
                 price: selectedVariant ? selectedVariant.price : price,
                 image,
                 quantity: 1,
-                variant: selectedVariant ? {
-                    volume: selectedVariant.volume,
-                    sku: selectedVariant.sku,
-                } : undefined,
+                variant: selectedVariant ? { volume: selectedVariant.volume, sku: selectedVariant.sku } : undefined,
             });
             return;
         }
 
-        // Handle authenticated user cart
         addToCart({
             productId: id,
             name: selectedVariant ? `${name} - ${selectedVariant.volume}` : name,
             quantity: 1,
-            variant: selectedVariant ? {
-                volume: selectedVariant.volume,
-                sku: selectedVariant.sku,
-            } : undefined,
+            variant: selectedVariant ? { volume: selectedVariant.volume, sku: selectedVariant.sku } : undefined,
         });
     };
 
     return (
-        <Link to={`/product/${slug}`}>
-            <Card className="group cursor-pointer hover:shadow-elegant transition-all duration-300 overflow-hidden h-full flex flex-col bg-white rounded-xl">
-                <div className="relative overflow-hidden">
+        <Card className="group relative w-full h-full flex flex-col bg-white border border-transparent hover:border-warm-taupe/50 rounded-lg shadow-sm hover:shadow-lg transition-all duration-300">
+            <Link to={`/product/${slug}`} className="flex flex-col h-full">
+                <div className="relative overflow-hidden rounded-t-lg">
                     <img
                         src={image}
                         alt={name}
-                        className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-72 object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-
                     <div className="absolute top-3 left-3 flex flex-col gap-2">
                         {isNew && (
-                            <span className="bg-green-500 text-white text-xs px-3 py-1 rounded-md font-medium shadow-sm">
-                                MUST TRY
+                            <span className="bg-sage/90 text-white text-xs px-2.5 py-1 rounded-full font-semibold shadow-sm backdrop-blur-sm">
+                                NEW
                             </span>
                         )}
                         {isSale && (
-                            <span className="bg-orange-500 text-white text-xs px-3 py-1 rounded-md font-medium shadow-sm">
+                            <span className="bg-gold-accent/90 text-deep-forest text-xs px-2.5 py-1 rounded-full font-semibold shadow-sm backdrop-blur-sm">
                                 SALE
                             </span>
                         )}
                     </div>
-
-                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <Button variant="ghost" size="icon" className="bg-white/90 hover:bg-white shadow-sm" onClick={handleLikeClick}>
-                            <Heart className={`h-4 w-4 ${isLiked ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}`} />
-                        </Button>
-                    </div>
+                    <Button variant="ghost" size="icon" className="absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full shadow-md w-9 h-9" onClick={handleLikeClick}>
+                        <Heart className={`h-4 w-4 transition-all ${isLiked ? 'fill-sage text-sage' : 'text-deep-forest'}`} />
+                    </Button>
                 </div>
 
                 <CardContent className="p-4 flex flex-col flex-grow">
-                    <div className="text-sm text-gray-500 mb-2 font-medium">{category}</div>
-                    <h3 className="font-bold text-gray-900 mb-3 line-clamp-2 flex-grow text-base leading-tight">{name}</h3>
-
-                    {/* Product Benefits */}
-                    <div className="flex flex-wrap gap-1 mb-3 text-sm justify-center">
-                        {benefits && benefits.length > 0 ? (
-                            benefits.map((benefit, index) => (
-                                <React.Fragment key={index}>
-                                    <span className="text-green-600 font-medium">{benefit}</span>
-                                    {index < benefits.length - 1 && <span className="text-gray-400">|</span>}
-                                </React.Fragment>
-                            ))
-                        ) : (
-                            <span className="text-gray-400 text-sm">No benefits listed</span>
-                        )}
-                    </div>
-
-                    {/* Volume and Stock Status */}
-                    <div className="text-center mb-3">
-                        {getVolumeDisplay() && (
-                            <span className="text-sm text-gray-600 font-medium">{getVolumeDisplay()}</span>
-                        )}
-                        {variants && variants.length > 1 && (
-                            <div className="text-xs text-blue-600 mt-1">
-                                {variants.length} sizes available
-                            </div>
-                        )}
-                        {getTotalStock() !== null && getTotalStock() === 0 && (
-                            <div className="text-xs text-red-500 mt-1 font-medium">
-                                Out of Stock
-                            </div>
-                        )}
-                        {getTotalStock() !== null && getTotalStock()! > 0 && getTotalStock()! <= 10 && (
-                            <div className="text-xs text-yellow-600 mt-1 font-medium">
-                                Only {getTotalStock()} left
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Rating and Reviews */}
-                    <div className="flex items-center justify-center gap-2 mb-4">
+                    <div className="flex justify-between items-center text-sm mb-2">
+                        <span className="text-forest font-medium">{category}</span>
                         <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            <span className="font-semibold text-gray-900">{rating.toFixed(1)}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <span className="text-blue-500">✓</span>
-                            <span className="text-sm text-gray-600">{reviews} Reviews</span>
+                            <Star className="h-4 w-4 text-gold-accent fill-current" />
+                            <span className="font-semibold text-deep-forest">{rating.toFixed(1)}</span>
+                            <span className="text-forest/70">({reviews})</span>
                         </div>
                     </div>
+                    <h3 className="font-playfair font-bold text-lg text-deep-forest mb-3 line-clamp-2 flex-grow">{name}</h3>
 
-                    {/* Price */}
-                    <div className="text-center mb-4">
-                        <div className="flex items-center justify-center gap-2">
-                            {variants && variants.length > 1 ? (
-                                <span className="text-sm text-gray-600">From </span>
-                            ) : null}
-                            <span className="font-bold text-2xl text-gray-900">{formatRupees(getDisplayPrice())}</span>
-                            {getDisplayOriginalPrice() && (
-                                <span className="text-sm text-gray-400 line-through">
-                                    {formatRupees(getDisplayOriginalPrice())}
-                                </span>
-                            )}
-                        </div>
+                    <div className="flex justify-center items-baseline gap-2 text-center mt-auto mb-4">
+                        {variants && variants.length > 1 && <span className="text-sm text-forest">From</span>}
+                        <span className="font-bold text-2xl text-deep-forest">{formatRupees(getDisplayPrice())}</span>
+                        {getDisplayOriginalPrice() && (
+                            <span className="text-base text-warm-taupe line-through">
+                                {formatRupees(getDisplayOriginalPrice())}
+                            </span>
+                        )}
                     </div>
 
-                    {/* Add to Cart Button */}
-                    <Button
-                        variant="luxury"
-                        className="w-full font-semibold py-3 rounded-lg transition-all duration-300 group-hover:shadow-luxury"
-                        onClick={handleAddToCart}
-                        disabled={getTotalStock() === 0}
-                    >
-                        {getTotalStock() === 0 ? 'OUT OF STOCK' : 
-                         variants && variants.length > 1 ? 'SELECT OPTIONS' : 'ADD TO CART'}
-                    </Button>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <Button
+                            variant="default"
+                            className="w-full bg-forest text-white hover:bg-deep-forest font-semibold py-3 rounded-lg transition-all duration-300"
+                            onClick={handleAddToCart}
+                            disabled={getTotalStock() === 0}
+                        >
+                            {getTotalStock() === 0 ? 'OUT OF STOCK' :
+                                variants && variants.length > 1 ? 'SELECT OPTIONS' : 'ADD TO CART'}
+                        </Button>
+                    </div>
                 </CardContent>
-            </Card>
-        </Link>
+            </Link>
+        </Card>
     );
 };
 

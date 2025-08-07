@@ -121,97 +121,78 @@ const Navigation = () => {
 
   return (
     <nav className={cn(
-      "sticky top-0 z-50 bg-transparent border-b-0 transition-transform duration-300 ease-in-out",
-      isVisible ? "translate-y-0" : "-translate-y-full"
+      "sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-warm-taupe/50 transition-all duration-300 ease-in-out",
+      isVisible ? "translate-y-0 shadow-sm" : "-translate-y-full"
     )}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="font-playfair text-2xl font-bold text-primary">
-            Shimmer
+          <Link to="/" className="font-playfair text-3xl font-bold text-deep-forest">
+            Roven
           </Link>
 
           {/* Main Nav */}
-          <div className="hidden md:flex items-center flex-1 justify-center">
-            <div className="bg-white rounded-full shadow-md flex items-center px-4 py-2 space-x-2">
-              {isLoading ? (
-                <>
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-4 w-24" />
-                </>
-              ) : (
-                navItems.map((item) => (
+          <div className="hidden md:flex items-center space-x-6">
+            {isLoading ? (
+              <>
+                <Skeleton className="h-4 w-16 bg-soft-beige" />
+                <Skeleton className="h-4 w-16 bg-soft-beige" />
+                <Skeleton className="h-4 w-20 bg-soft-beige" />
+                <Skeleton className="h-4 w-24 bg-soft-beige" />
+              </>
+            ) : (
+              <>
+                {navItems.map((item) => (
                   <NavLink
                     key={item.href}
                     to={item.href}
                     className={({ isActive }) =>
                       cn(
-                        "px-5 py-2 rounded-full font-bold text-sm transition-all",
-                        isActive
-                          ? "bg-orange-500 text-white shadow"
-                          : "text-black hover:bg-orange-100"
+                        "font-medium text-forest transition-colors hover:text-sage relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-0.5 after:bg-sage after:transition-all after:duration-300",
+                        isActive ? "text-sage after:w-full" : ""
                       )
                     }
                   >
                     {item.name}
                   </NavLink>
-                ))
-              )}
-
-              {/* Categories Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="px-5 py-2 rounded-full font-bold text-sm text-black hover:bg-orange-100 transition-all flex items-center gap-1"
-                  >
-                    Categories
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-48">
-                  {categories.map((category) => (
-                    <DropdownMenuItem key={category._id} asChild>
-                      <Link to={`/category/${category.slug}`} className="cursor-pointer">
-                        {category.name}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                ))}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="font-medium text-forest transition-colors hover:text-sage hover:bg-transparent flex items-center gap-1 p-0"
+                    >
+                      Categories
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-48 bg-white border-warm-taupe shadow-lg rounded-lg mt-2">
+                    {categories.map((category) => (
+                      <DropdownMenuItem key={category._id} asChild>
+                        <Link to={`/category/${category.slug}`} className="cursor-pointer text-forest hover:bg-warm-cream">
+                          {category.name}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {isMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </button>
-
-          {/* Icon Buttons */}
-          <div className="flex items-center space-x-3 ml-4">
-            {/* Search */}
+          {/* Icon Buttons & Mobile Menu */}
+          <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
               size="icon"
-              className="bg-white rounded-full shadow w-10 h-10 flex items-center justify-center"
+              className="rounded-full hover:bg-warm-cream"
               onClick={() => setSearchOpen(true)}
               aria-label="Search"
             >
-              <Search className="h-5 w-5 text-black" />
+              <Search className="h-5 w-5 text-forest" />
             </Button>
             <SearchDropdown open={searchOpen} onClose={() => setSearchOpen(false)} />
 
-            {/* User Dropdown or Login Button */}
             {isAuthenticated ? (
               <UserDropdown />
             ) : (
@@ -219,88 +200,85 @@ const Navigation = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="bg-white rounded-full shadow w-10 h-10 flex items-center justify-center"
+                  className="rounded-full hover:bg-warm-cream"
                   aria-label="Login"
                 >
-                  <svg className="h-5 w-5 text-black" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                  <svg className="h-6 w-6 text-forest" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </Button>
               </Link>
             )}
 
-            {/* Wishlist */}
             <Link to="/wishlist">
               <Button
                 variant="ghost"
                 size="icon"
-                className="bg-white rounded-full shadow w-10 h-10 flex items-center justify-center"
+                className="rounded-full hover:bg-warm-cream relative"
                 aria-label="Wishlist"
               >
-                <Heart className="h-5 w-5 text-black" />
+                <Heart className="h-5 w-5 text-forest" />
               </Button>
             </Link>
 
-            {/* Cart */}
             <Link to="/cart">
               <Button
                 variant="ghost"
                 size="icon"
-                className="bg-white rounded-full shadow w-10 h-10 flex items-center justify-center relative"
+                className="rounded-full hover:bg-warm-cream relative"
                 aria-label="Cart"
               >
-                <ShoppingBag className="h-5 w-5 text-black" />
+                <ShoppingBag className="h-5 w-5 text-forest" />
                 {(isAuthenticated ? cartCount : guestCartCount) > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {isAuthenticated ? cartCount : guestCartCount}
-                  </span>
+                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-sage ring-2 ring-white" />
                 )}
               </Button>
             </Link>
+
+            <button
+              className="md:hidden p-2 rounded-full hover:bg-warm-cream"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {isMenuOpen ? (
+                <X className="h-6 w-6 text-forest" />
+              ) : (
+                <Menu className="h-6 w-6 text-forest" />
+              )}
+            </button>
           </div>
         </div>
+      </div>
 
-        <div className={cn(
-          "md:hidden transition-all duration-300 ease-in-out overflow-hidden",
-          isMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        )}>
-          <div className="py-4 space-y-4">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className="block text-foreground hover:text-primary transition-colors font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
-
-            {/* Categories in Mobile Menu */}
-            <div className="pt-4 border-t">
-              <div className="text-sm font-medium text-gray-500 mb-2">Categories</div>
+      {/* Mobile Menu Panel */}
+      <div className={cn(
+        "md:hidden bg-white border-t border-warm-taupe/50",
+        isMenuOpen ? "block" : "hidden"
+      )}>
+        <div className="px-4 pt-2 pb-3 space-y-1">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              to={item.href}
+              className="block px-3 py-2 rounded-md text-base font-medium text-forest hover:bg-warm-cream"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              {item.name}
+            </Link>
+          ))}
+          <div className="border-t border-warm-taupe/50 pt-4 mt-4">
+            <h3 className="px-3 text-xs font-semibold text-warm-taupe uppercase tracking-wider">Categories</h3>
+            <div className="mt-2 space-y-1">
               {categories.map((category) => (
                 <Link
                   key={category._id}
                   to={`/category/${category.slug}`}
-                  className="block text-foreground hover:text-primary transition-colors font-medium py-2 pl-4"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-forest hover:bg-warm-cream"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {category.name}
                 </Link>
               ))}
-            </div>
-
-            <div className="pt-4 border-t">
-              <Button
-                variant="ghost"
-                className="w-full justify-start"
-                onClick={() => { setSearchOpen(true); setIsMenuOpen(false); }}
-                aria-label="Search"
-              >
-                <Search className="h-5 w-5 mr-2" />
-                Search
-              </Button>
             </div>
           </div>
         </div>

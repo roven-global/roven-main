@@ -20,10 +20,10 @@ const Slider = React.forwardRef<
       {/* The selected range, styled with a luxurious gradient */}
       <SliderPrimitive.Range className="absolute h-full bg-gradient-to-r from-rose-400 to-pink-500" />
     </SliderPrimitive.Track>
-    
+
     {/* The slider handle (thumb) with enhanced styling and hover effects */}
     <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full border-2 border-rose-500 bg-white shadow-md ring-offset-background transition-all duration-200 ease-in-out group-hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
-    
+
     {/* The Radix UI slider component handles rendering one or two thumbs based on the value prop automatically. 
         This second thumb is a template for when a range (an array with two values) is provided. */}
     <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full border-2 border-rose-500 bg-white shadow-md ring-offset-background transition-all duration-200 ease-in-out group-hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />

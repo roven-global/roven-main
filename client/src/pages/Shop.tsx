@@ -167,25 +167,25 @@ const Shop = () => {
   const FilterContent = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="font-semibold text-lg flex items-center gap-2">
-          <SlidersHorizontal className="h-5 w-5" />
+        <h3 className="font-semibold text-lg flex items-center gap-2 text-deep-forest">
+          <SlidersHorizontal className="h-5 w-5 text-sage" />
           Filters
         </h3>
-        <Button variant="ghost" size="sm" onClick={resetFilters} className="text-sm">
+        <Button variant="ghost" size="sm" onClick={resetFilters} className="text-sm text-forest hover:text-sage hover:bg-warm-cream">
           <X className="h-4 w-4 mr-1" /> Clear All
         </Button>
       </div>
 
-      <Separator />
+      <Separator className="bg-warm-taupe" />
 
       <div>
-        <h4 className="font-medium mb-3">Categories</h4>
+        <h4 className="font-medium mb-3 text-deep-forest">Categories</h4>
         <div className="space-y-1 max-h-60 overflow-y-auto pr-2">
           <button
             onClick={() => setActiveCategory('all')}
             className={`w-full text-left p-2 rounded-md transition-colors text-sm ${activeCategory === 'all'
-              ? 'bg-primary/10 text-primary font-semibold'
-              : 'hover:bg-muted/50'
+              ? 'bg-sage/20 text-sage font-semibold border border-sage/30'
+              : 'hover:bg-warm-cream text-forest'
               }`}
           >
             All Categories
@@ -196,23 +196,23 @@ const Shop = () => {
                 key={category._id}
                 onClick={() => setActiveCategory(category._id)}
                 className={`w-full text-left p-2 rounded-md transition-colors text-sm ${activeCategory === category._id
-                  ? 'bg-primary/10 text-primary font-semibold'
-                  : 'hover:bg-muted/50'
+                  ? 'bg-sage/20 text-sage font-semibold border border-sage/30'
+                  : 'hover:bg-warm-cream text-forest'
                   }`}
               >
                 {category.name}
               </button>
             ))
           ) : (
-            Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full mt-1" />)
+            Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full mt-1 bg-warm-taupe/20" />)
           )}
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-warm-taupe" />
 
       <div>
-        <h4 className="font-medium mb-4">Price Range</h4>
+        <h4 className="font-medium mb-4 text-deep-forest">Price Range</h4>
         <Slider
           value={priceRange}
           onValueChange={setPriceRange}
@@ -220,29 +220,29 @@ const Shop = () => {
           step={10}
           className="w-full"
         />
-        <div className="flex justify-between text-sm text-muted-foreground mt-2">
+        <div className="flex justify-between text-sm text-forest mt-2">
           <span>₹{priceRange[0]}</span>
           <span>₹{priceRange[1]}</span>
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-warm-taupe" />
 
       <div>
-        <h4 className="font-medium mb-4">Rating</h4>
+        <h4 className="font-medium mb-4 text-deep-forest">Rating</h4>
         <div className="flex items-center space-x-1">
           <button
             onClick={() => setRating(0)}
-            className={`flex items-center p-2 rounded-md transition-colors border ${rating === 0 ? 'bg-amber-100 border-amber-300' : 'hover:bg-muted/50'}`}
+            className={`flex items-center p-2 rounded-md transition-colors border ${rating === 0 ? 'bg-gold-accent/20 border-gold-accent/30 text-gold-accent' : 'hover:bg-warm-cream border-warm-taupe text-forest'}`}
           >
             <span className="text-sm">Any</span>
           </button>
           {[5, 4, 3, 2, 1].map(star => (
             <button key={star} onClick={() => setRating(star)}
-              className={`flex items-center p-2 rounded-md transition-colors border ${rating === star ? 'bg-amber-100 border-amber-300' : 'hover:bg-muted/50'}`}
+              className={`flex items-center p-2 rounded-md transition-colors border ${rating === star ? 'bg-gold-accent/20 border-gold-accent/30 text-gold-accent' : 'hover:bg-warm-cream border-warm-taupe text-forest'}`}
             >
               <span className="text-sm">{star}</span>
-              <Star className={`h-4 w-4 ml-1 ${rating >= star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+              <Star className={`h-4 w-4 ml-1 ${rating >= star ? 'text-gold-accent fill-gold-accent' : 'text-warm-taupe'}`} />
             </button>
           ))}
         </div>
@@ -251,15 +251,15 @@ const Shop = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-warm-cream">
       <Navigation />
 
-      <section className="relative bg-gradient-to-r from-rose-50 to-pink-50 py-20">
+      <section className="relative bg-gradient-to-r from-sage/10 to-forest/10 py-20">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="font-playfair text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+          <h1 className="font-playfair text-5xl md:text-6xl font-bold text-deep-forest mb-6">
             Shop Our Collection
           </h1>
-          <p className="text-xl text-muted-foreground leading-relaxed">
+          <p className="text-xl text-forest leading-relaxed">
             Discover luxury beauty products crafted with the finest ingredients.
           </p>
         </div>
@@ -270,10 +270,10 @@ const Shop = () => {
           <main className="w-full">
             <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
               <div>
-                <h2 className="text-3xl font-playfair font-bold">
+                <h2 className="text-3xl font-playfair font-bold text-deep-forest">
                   {activeCategory === 'all' ? 'Products' : categories.find(c => c._id === activeCategory)?.name || 'Products'}
                 </h2>
-                <p className="text-muted-foreground mt-1">
+                <p className="text-forest mt-1">
                   Showing {displayedProducts.length} of {totalFiltered} products
                 </p>
               </div>
@@ -282,13 +282,13 @@ const Shop = () => {
                 {/* Filter Trigger - Works for both mobile and desktop */}
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="outline" className="w-full sm:w-auto">
+                    <Button variant="outline" className="w-full sm:w-auto border-warm-taupe text-forest hover:bg-warm-cream hover:text-sage">
                       <Filter className="mr-2 h-4 w-4" /> Filters
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="w-[300px] sm:w-[400px] lg:w-[400px]">
+                  <SheetContent side="left" className="w-[300px] sm:w-[400px] lg:w-[400px] bg-white border-warm-taupe">
                     <SheetHeader>
-                      <SheetTitle>Filter Products</SheetTitle>
+                      <SheetTitle className="text-deep-forest">Filter Products</SheetTitle>
                     </SheetHeader>
                     <div className="p-4">
                       <FilterContent />
@@ -297,15 +297,15 @@ const Shop = () => {
                 </Sheet>
 
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[180px] border-warm-taupe text-forest">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="featured-desc">Featured</SelectItem>
-                    <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                    <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                    <SelectItem value="createdAt-desc">Newest</SelectItem>
-                    <SelectItem value="rating-desc">Rating</SelectItem>
+                  <SelectContent className="bg-white border-warm-taupe">
+                    <SelectItem value="featured-desc" className="text-forest hover:bg-warm-cream">Featured</SelectItem>
+                    <SelectItem value="price-asc" className="text-forest hover:bg-warm-cream">Price: Low to High</SelectItem>
+                    <SelectItem value="price-desc" className="text-forest hover:bg-warm-cream">Price: High to Low</SelectItem>
+                    <SelectItem value="createdAt-desc" className="text-forest hover:bg-warm-cream">Newest</SelectItem>
+                    <SelectItem value="rating-desc" className="text-forest hover:bg-warm-cream">Rating</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -314,14 +314,14 @@ const Shop = () => {
             {loading ? (
               <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
                 {Array.from({ length: 9 }).map((_, i) => (
-                  <div key={i} className="space-y-2"><Skeleton className="h-64 w-full" /><Skeleton className="h-4 w-2/3" /><Skeleton className="h-4 w-1/2" /></div>
+                  <div key={i} className="space-y-2"><Skeleton className="h-64 w-full bg-warm-taupe/20" /><Skeleton className="h-4 w-2/3 bg-warm-taupe/20" /><Skeleton className="h-4 w-1/2 bg-warm-taupe/20" /></div>
                 ))}
               </div>
             ) : error ? (
-              <div className="text-center text-destructive py-10">{error}</div>
+              <div className="text-center text-red-500 py-10">{error}</div>
             ) : computedProducts.length === 0 ? (
-              <div className="text-center text-muted-foreground py-20 rounded-lg bg-muted/50">
-                <h3 className="text-2xl font-semibold mb-2">No Products Found</h3>
+              <div className="text-center text-forest py-20 rounded-lg bg-soft-beige/50 border border-warm-taupe">
+                <h3 className="text-2xl font-semibold mb-2 text-deep-forest">No Products Found</h3>
                 <p>Try adjusting your filters to find what you're looking for.</p>
               </div>
             ) : (
@@ -330,24 +330,24 @@ const Shop = () => {
                   const thirtyDaysAgo = new Date();
                   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                   const isNew = new Date(product.createdAt) > thirtyDaysAgo;
-                  
+
                   return (
-                    <ProductCard 
-                      key={product._id} 
-                      id={product._id} 
-                      slug={product.slug} 
-                      name={product.name} 
-                      price={product.price} 
-                      originalPrice={product.originalPrice} 
-                      image={product.images[0]?.url || ''} 
-                      rating={product.ratings.average} 
-                      reviews={product.ratings.numOfReviews} 
-                      category={product.category.name} 
-                      volume={product.volume} 
+                    <ProductCard
+                      key={product._id}
+                      id={product._id}
+                      slug={product.slug}
+                      name={product.name}
+                      price={product.price}
+                      originalPrice={product.originalPrice}
+                      image={product.images[0]?.url || ''}
+                      rating={product.ratings.average}
+                      reviews={product.ratings.numOfReviews}
+                      category={product.category.name}
+                      volume={product.volume}
                       variants={product.variants}
-                      isSale={!!(product.originalPrice && product.originalPrice > product.price)} 
-                      isNew={isNew} 
-                      benefits={product.benefits} 
+                      isSale={!!(product.originalPrice && product.originalPrice > product.price)}
+                      isNew={isNew}
+                      benefits={product.benefits}
                     />
                   );
                 })}
@@ -356,7 +356,7 @@ const Shop = () => {
 
             {hasMore && (
               <div className="text-center mt-12">
-                <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={loadingMore}>
+                <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={loadingMore} className="border-warm-taupe text-forest hover:bg-warm-cream hover:text-sage">
                   {loadingMore ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading...</> : 'Load More Products'}
                 </Button>
               </div>
