@@ -147,16 +147,66 @@ const SummaryApi = {
     method: "post",
   },
   updateCart: {
-    url: "/api/cart", 
+    url: "/api/cart",
     method: "put",
   },
   deleteFromCart: {
-    url: "/api/cart", 
+    url: "/api/cart",
     method: "delete",
   },
   mergeCart: {
     url: "/api/cart/merge",
     method: "post",
+  },
+  // Address endpoints
+  saveAddress: {
+    url: "/api/address/save",
+    method: "post",
+  },
+  getUserAddresses: {
+    url: "/api/address/user",
+    method: "get",
+  },
+  getDefaultAddress: {
+    url: "/api/address/default",
+    method: "get",
+  },
+  updateAddress: {
+    url: "/api/address",
+    method: "put",
+  },
+  deleteAddress: {
+    url: "/api/address",
+    method: "delete",
+  },
+  setDefaultAddress: {
+    url: "/api/address/default",
+    method: "put",
+  },
+  // Order endpoints
+  createOrder: {
+    url: "/api/order/create",
+    method: "post",
+  },
+  getUserOrders: {
+    url: "/api/order/user",
+    method: "get",
+  },
+  getOrderById: {
+    url: "/api/order",
+    method: "get",
+  },
+  cancelOrder: {
+    url: "/api/order/cancel",
+    method: "put",
+  },
+  getAllOrders: {
+    url: "/api/order/all",
+    method: "get",
+  },
+  updateOrderStatus: {
+    url: "/api/order/status",
+    method: "put",
   },
   googleLogin: {
     url: `${baseURL}/api/auth/google`,

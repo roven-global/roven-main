@@ -47,8 +47,10 @@ const addToCart = asyncHandler(async (req, res) => {
       quantity,
     });
     await newCartItem.save();
-    user.shopping_cart.push(newCartItem);
-    await user.save();
+    // Ensure the cart item is added to user's shopping_cart array
+    await UserModel.findByIdAndUpdate(userId, {
+      $addToSet: { shopping_cart: newCartItem._id }
+    });
   }
 
   res.json({ success: true, message: "Item added to cart." });
@@ -115,37 +117,39 @@ const removeCartItem = asyncHandler(async (req, res) => {
  * @route POST /api/cart/merge
  */
 const mergeCart = asyncHandler(async (req, res) => {
-    const { localCart } = req.body;
-    const userId = req.user._id;
+  const { localCart } = req.body;
+  const userId = req.user._id;
 
-    if (!localCart || !Array.isArray(localCart)) {
-        return res.status(400).json({ success: false, message: "Local cart data is required." });
+  if (!localCart || !Array.isArray(localCart)) {
+    return res.status(400).json({ success: false, message: "Local cart data is required." });
+  }
+
+  const user = await UserModel.findById(userId);
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found." });
+  }
+
+  for (const localItem of localCart) {
+    const existingCartItem = await CartProductModel.findOne({ userId, productId: localItem.id });
+
+    if (existingCartItem) {
+      existingCartItem.quantity += localItem.quantity;
+      await existingCartItem.save();
+    } else {
+      const newCartItem = new CartProductModel({
+        userId,
+        productId: localItem.id,
+        quantity: localItem.quantity,
+      });
+      await newCartItem.save();
+      // Ensure the cart item is added to user's shopping_cart array
+      await UserModel.findByIdAndUpdate(userId, {
+        $addToSet: { shopping_cart: newCartItem._id }
+      });
     }
+  }
 
-    const user = await UserModel.findById(userId);
-    if (!user) {
-        return res.status(404).json({ success: false, message: "User not found." });
-    }
-
-    for (const localItem of localCart) {
-        const existingCartItem = await CartProductModel.findOne({ userId, productId: localItem.id });
-
-        if (existingCartItem) {
-            existingCartItem.quantity += localItem.quantity;
-            await existingCartItem.save();
-        } else {
-            const newCartItem = new CartProductModel({
-                userId,
-                productId: localItem.id,
-                quantity: localItem.quantity,
-            });
-            await newCartItem.save();
-            user.shopping_cart.push(newCartItem);
-        }
-    }
-    await user.save();
-
-    res.json({ success: true, message: "Carts merged successfully." });
+  res.json({ success: true, message: "Carts merged successfully." });
 });
 
 /**
@@ -153,28 +157,34 @@ const mergeCart = asyncHandler(async (req, res) => {
  * @route GET /api/cart/
  */
 const getCart = asyncHandler(async (req, res) => {
-    const userId = req.user._id;
+  const userId = req.user._id;
 
-    const userWithCart = await UserModel.findById(userId).populate({
-        path: 'shopping_cart',
-        populate: {
-            path: 'productId',
-            model: 'Product'
-        }
-    });
+  // Check if user exists
+  const user = await UserModel.findById(userId);
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found." });
+  }
 
-    if (!userWithCart) {
-        return res.status(404).json({ success: false, message: "User not found." });
-    }
+  // First, get all cart items for this user directly from CartProductModel
+  const cartItems = await CartProductModel.find({ userId }).populate({
+    path: 'productId',
+    model: 'Product'
+  });
 
-    res.json({ success: true, data: userWithCart.shopping_cart });
+  // Update user's shopping_cart array to match actual cart items
+  const cartItemIds = cartItems.map(item => item._id);
+  await UserModel.findByIdAndUpdate(userId, {
+    $set: { shopping_cart: cartItemIds }
+  });
+
+  res.json({ success: true, data: cartItems });
 });
 
 
 module.exports = {
-    addToCart,
-    updateCartItem,
-    removeCartItem,
-    mergeCart,
-    getCart, // Export the new function
+  addToCart,
+  updateCartItem,
+  removeCartItem,
+  mergeCart,
+  getCart, // Export the new function
 };

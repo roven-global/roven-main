@@ -23,6 +23,7 @@ interface CartContextType {
   cartCount: number;
   fetchUserCart: () => Promise<void>;
   clearCart: () => void;
+  refreshCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -54,7 +55,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await Axios.get(SummaryApi.getCart.url);
       if (response.data.success) {
-        setCartItems(response.data.data);
+        setCartItems(response.data.data || []);
       } else {
         setCartItems([]);
       }
@@ -71,7 +72,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     };
     window.addEventListener('loginStateChange', handleLogin);
     return () => window.removeEventListener('loginStateChange', handleLogin);
-  }, []);
+  }, [fetchUserCart]);
 
   const addToCart = async (item: { productId: string; name: string; quantity?: number }) => {
     try {
@@ -113,6 +114,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
+  // Refresh cart function that can be called to ensure cart is up to date
+  const refreshCart = async () => {
+    await fetchUserCart();
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -123,6 +129,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         cartCount,
         fetchUserCart,
         clearCart,
+        refreshCart,
       }}
     >
       {children}

@@ -192,7 +192,8 @@ const ProductCard = ({
 
                     {/* Add to Cart Button */}
                     <Button
-                        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-all duration-300 group-hover:shadow-lg"
+                        variant="luxury"
+                        className="w-full font-semibold py-3 rounded-lg transition-all duration-300 group-hover:shadow-luxury"
                         onClick={handleAddToCart}
                     >
                         ADD TO CART
