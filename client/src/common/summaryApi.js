@@ -188,7 +188,7 @@ const SummaryApi = {
     method: "put",
   },
   deleteAddress: {
-    url: "/api/address",
+    url: "/api/address/:id",
     method: "delete",
   },
   setDefaultAddress: {

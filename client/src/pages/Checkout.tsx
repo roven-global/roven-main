@@ -7,8 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, Save, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, ShoppingBag, Trash2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+
 import { formatRupees } from '@/lib/currency';
 import { useCart } from '@/contexts/CartContext';
 import { useGuest } from '@/contexts/GuestContext';
@@ -141,6 +142,46 @@ const Checkout = () => {
         }
     };
 
+    const handleDeleteAddress = async (addressId: string) => {
+        console.log('Deleting address with ID:', addressId);
+        try {
+            const deleteUrl = SummaryApi.deleteAddress.url.replace(':id', addressId);
+            console.log('Delete URL:', deleteUrl);
+            const response = await Axios.delete(deleteUrl);
+
+            if (response.data.success) {
+                toast({
+                    title: "Address deleted successfully",
+                    description: "The address has been removed from your saved addresses."
+                });
+
+                // Remove the address from local state
+                setSavedAddresses(prev => prev.filter(addr => addr._id !== addressId));
+
+                // If the deleted address was selected, clear the selection
+                if (selectedAddressId === addressId) {
+                    setSelectedAddressId(null);
+
+                    // If there are other addresses, select the first one
+                    const remainingAddresses = savedAddresses.filter(addr => addr._id !== addressId);
+                    if (remainingAddresses.length > 0) {
+                        const defaultAddress = remainingAddresses.find(addr => addr.isDefault) || remainingAddresses[0];
+                        setSelectedAddressId(defaultAddress._id);
+                    } else {
+                        // No addresses left, show the form
+                        setShowNewAddressForm(true);
+                    }
+                }
+            }
+        } catch (error: any) {
+            toast({
+                title: "Failed to delete address",
+                description: error.response?.data?.message || "Please try again.",
+                variant: "destructive"
+            });
+        }
+    };
+
     const subtotal = displayCartItems.reduce((acc, item: any) => acc + (isAuthenticated ? (item.variant?.price || item.productId?.price) : item.price) * item.quantity, 0);
     const shippingCost = subtotal > 499 ? 0 : 50;
     const finalTotal = subtotal + shippingCost;
@@ -165,9 +206,6 @@ const Checkout = () => {
                             <Card className="bg-white rounded-lg shadow-md mb-6">
                                 <CardHeader>
                                     <CardTitle className="text-deep-forest">Select a saved address</CardTitle>
-                                    {selectedAddressId && (
-                                        <p className="text-sm text-forest">Selected address ID: {selectedAddressId}</p>
-                                    )}
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     {savedAddresses.map((addr) => (
@@ -219,6 +257,24 @@ const Checkout = () => {
                                                     >
                                                         {selectedAddressId === addr._id ? 'Selected' : 'Select'}
                                                     </button>
+
+                                                    {/* Delete Address Button */}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-warm-taupe hover:text-destructive hover:bg-red-50 rounded-full"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            console.log('Delete button clicked for address:', addr._id);
+                                                            if (window.confirm('Are you sure you want to delete this address? This action cannot be undone.')) {
+                                                                handleDeleteAddress(addr._id);
+                                                            }
+                                                        }}
+                                                        title="Delete address"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </div>
@@ -281,10 +337,11 @@ const Checkout = () => {
                     </div>
 
                     {/* Right side: Order Summary */}
-                    <div className="sticky top-24">
+                    <div>
+                        <h1 className="font-playfair text-3xl font-bold text-deep-forest mb-6">Order Summary</h1>
                         <Card className="bg-white rounded-lg shadow-lg border border-warm-taupe/50">
                             <CardHeader>
-                                <CardTitle className="font-playfair text-2xl text-deep-forest">Order Summary</CardTitle>
+                                <CardTitle className="font-playfair text-xl text-deep-forest">Items</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
