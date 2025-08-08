@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, Save, ShoppingBag, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, ShoppingBag, Trash2, X } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 import { formatRupees } from '@/lib/currency';
@@ -23,7 +23,15 @@ import { useIndianStatesAndCities } from '@/lib/cities';
 
 const Checkout = () => {
     const navigate = useNavigate();
-    const { cartItems, clearCart, refreshCart } = useCart();
+    const {
+        cartItems,
+        clearCart,
+        refreshCart,
+        appliedCoupon,
+        applyCoupon,
+        removeCoupon,
+        clearCoupon
+    } = useCart();
     const { guestCart, clearGuestData } = useGuest();
     const { isAuthenticated, user } = useAuth();
     const { reactSelectData, getCitiesByState } = useIndianStatesAndCities();
@@ -40,6 +48,11 @@ const Checkout = () => {
         city: '', state: '', pincode: '', country: 'India', saveForFuture: true
     });
     const [availableCities, setAvailableCities] = useState<string[]>([]);
+
+    // Coupon states
+    const [couponCode, setCouponCode] = useState('');
+    const [couponLoading, setCouponLoading] = useState(false);
+    const [couponError, setCouponError] = useState('');
 
     const displayCartItems = isAuthenticated ? cartItems : guestCart;
 
@@ -92,12 +105,11 @@ const Checkout = () => {
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { id, value } = e.target;
-        setFormData(prev => ({ ...prev, [id]: value }));
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleStateChange = (stateName: string) => {
-        setFormData(prev => ({ ...prev, state: stateName, city: '' }));
+        setFormData({ ...formData, state: stateName, city: '' });
         setAvailableCities([...getCitiesByState(stateName)]);
     };
 
@@ -110,6 +122,10 @@ const Checkout = () => {
                 toast({ title: "Address saved successfully!" });
                 await loadSavedAddresses();
                 setShowNewAddressForm(false);
+                setFormData({
+                    firstName: '', lastName: '', phone: '', email: user?.email || '', address: '',
+                    city: '', state: '', pincode: '', country: 'India', saveForFuture: true
+                });
             }
         } catch (error: any) {
             toast({ title: "Failed to save address", description: error.response?.data?.message, variant: "destructive" });
@@ -129,10 +145,12 @@ const Checkout = () => {
             const orderResponse = await Axios.post(SummaryApi.createOrder.url, {
                 shippingAddress: selectedAddr,
                 paymentMethod: "online",
+                couponCode: appliedCoupon ? appliedCoupon.coupon.code : undefined,
             });
 
             if (orderResponse.data.success) {
                 isAuthenticated ? clearCart() : clearGuestData();
+                clearCoupon(); // Clear coupon after successful order
                 navigate(`/payment?orderId=${orderResponse.data.data._id}`);
             }
         } catch (error: any) {
@@ -182,9 +200,38 @@ const Checkout = () => {
         }
     };
 
+    const handleApplyCoupon = async () => {
+        if (!couponCode.trim()) {
+            setCouponError('Please enter a coupon code');
+            return;
+        }
+
+        setCouponLoading(true);
+        setCouponError('');
+
+        try {
+            const subtotal = displayCartItems.reduce((acc, item: any) => acc + (isAuthenticated ? (item.variant?.price || item.productId?.price) : item.price) * item.quantity, 0);
+            const success = await applyCoupon(couponCode, subtotal, displayCartItems);
+            if (success) {
+                setCouponCode('');
+            }
+        } catch (error: any) {
+            setCouponError(error.response?.data?.message || 'Invalid coupon code');
+        } finally {
+            setCouponLoading(false);
+        }
+    };
+
+    const handleRemoveCoupon = () => {
+        removeCoupon();
+        setCouponCode('');
+        setCouponError('');
+    };
+
     const subtotal = displayCartItems.reduce((acc, item: any) => acc + (isAuthenticated ? (item.variant?.price || item.productId?.price) : item.price) * item.quantity, 0);
     const shippingCost = subtotal > 499 ? 0 : 50;
-    const finalTotal = subtotal + shippingCost;
+    const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+    const finalTotal = subtotal + shippingCost - discountAmount;
 
     if (cartLoading) {
         return (
@@ -241,37 +288,15 @@ const Checkout = () => {
                                                             </svg>
                                                         </div>
                                                     )}
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            console.log('Button clicked for address:', addr._id);
-                                                            setSelectedAddressId(addr._id);
-                                                            setShowNewAddressForm(false);
-                                                        }}
-                                                        className={`px-3 py-1 text-xs rounded-md transition-colors ${selectedAddressId === addr._id
-                                                            ? 'bg-sage text-white'
-                                                            : 'bg-warm-taupe/20 text-forest hover:bg-sage/20'
-                                                            }`}
-                                                    >
-                                                        {selectedAddressId === addr._id ? 'Selected' : 'Select'}
-                                                    </button>
-
-                                                    {/* Delete Address Button */}
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-8 w-8 text-warm-taupe hover:text-destructive hover:bg-red-50 rounded-full"
                                                         onClick={(e) => {
                                                             e.preventDefault();
                                                             e.stopPropagation();
-                                                            console.log('Delete button clicked for address:', addr._id);
-                                                            if (window.confirm('Are you sure you want to delete this address? This action cannot be undone.')) {
-                                                                handleDeleteAddress(addr._id);
-                                                            }
+                                                            handleDeleteAddress(addr._id);
                                                         }}
-                                                        title="Delete address"
+                                                        className="h-8 w-8 text-warm-taupe hover:text-destructive hover:bg-red-50 rounded-full"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
@@ -279,95 +304,247 @@ const Checkout = () => {
                                             </div>
                                         </div>
                                     ))}
-                                    <Button variant="link" onClick={() => setShowNewAddressForm(!showNewAddressForm)}>
-                                        {showNewAddressForm ? 'Cancel' : '+ Add a new address'}
-                                    </Button>
                                 </CardContent>
                             </Card>
                         )}
 
-                        {(showNewAddressForm || !isAuthenticated || savedAddresses.length === 0) && (
-                            <Card className="bg-white rounded-lg shadow-md">
+                        {/* New Address Form */}
+                        {showNewAddressForm && (
+                            <Card className="bg-white rounded-lg shadow-md mb-6">
                                 <CardHeader>
-                                    <CardTitle>Enter your shipping details</CardTitle>
+                                    <CardTitle className="text-deep-forest">Add New Address</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <form onSubmit={handleSaveAddress} className="space-y-4">
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div><Label htmlFor="firstName">First Name</Label><Input id="firstName" value={formData.firstName} onChange={handleInputChange} required /></div>
-                                            <div><Label htmlFor="lastName">Last Name</Label><Input id="lastName" value={formData.lastName} onChange={handleInputChange} required /></div>
+                                            <div>
+                                                <Label htmlFor="firstName">First Name</Label>
+                                                <Input
+                                                    id="firstName"
+                                                    name="firstName"
+                                                    value={formData.firstName}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="lastName">Last Name</Label>
+                                                <Input
+                                                    id="lastName"
+                                                    name="lastName"
+                                                    value={formData.lastName}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                />
+                                            </div>
                                         </div>
-                                        <div><Label htmlFor="email">Email</Label><Input id="email" type="email" value={formData.email} onChange={handleInputChange} required /></div>
-                                        <div><Label htmlFor="phone">Phone</Label><Input id="phone" value={formData.phone} onChange={handleInputChange} required /></div>
-                                        <div><Label htmlFor="address">Address</Label><Textarea id="address" value={formData.address} onChange={handleInputChange} required /></div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
+                                                <Label htmlFor="phone">Phone</Label>
+                                                <Input
+                                                    id="phone"
+                                                    name="phone"
+                                                    value={formData.phone}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="email">Email</Label>
+                                                <Input
+                                                    id="email"
+                                                    name="email"
+                                                    type="email"
+                                                    value={formData.email}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="address">Address</Label>
+                                            <Textarea
+                                                id="address"
+                                                name="address"
+                                                value={formData.address}
+                                                onChange={handleInputChange}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div>
                                                 <Label htmlFor="state">State</Label>
-                                                <Select onValueChange={handleStateChange} value={formData.state}><SelectTrigger><SelectValue placeholder="Select State" /></SelectTrigger>
-                                                    <SelectContent>{reactSelectData.map(s => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}</SelectContent>
+                                                <Select value={formData.state} onValueChange={handleStateChange}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select state" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {reactSelectData.map((state) => (
+                                                            <SelectItem key={state.name} value={state.name}>
+                                                                {state.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
                                                 </Select>
                                             </div>
                                             <div>
                                                 <Label htmlFor="city">City</Label>
-                                                <Select onValueChange={(value) => setFormData(prev => ({ ...prev, city: value }))} value={formData.city}><SelectTrigger><SelectValue placeholder="Select City" /></SelectTrigger>
-                                                    <SelectContent>{availableCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                                                <Select value={formData.city} onValueChange={(city) => setFormData({ ...formData, city })}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select city" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {availableCities.map((city) => (
+                                                            <SelectItem key={city} value={city}>
+                                                                {city}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
                                                 </Select>
                                             </div>
-                                        </div>
-                                        <div><Label htmlFor="pincode">Pincode</Label><Input id="pincode" value={formData.pincode} onChange={handleInputChange} required /></div>
-                                        {isAuthenticated && (
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id="saveForFuture"
-                                                    checked={formData.saveForFuture}
-                                                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, saveForFuture: checked as boolean }))}
+                                            <div>
+                                                <Label htmlFor="pincode">Pincode</Label>
+                                                <Input
+                                                    id="pincode"
+                                                    name="pincode"
+                                                    value={formData.pincode}
+                                                    onChange={handleInputChange}
+                                                    required
                                                 />
-                                                <Label htmlFor="saveForFuture" className="text-sm text-forest">Save this address for future orders</Label>
                                             </div>
-                                        )}
-                                        {isAuthenticated &&
-                                            <Button type="submit" className="w-full bg-forest text-white" disabled={addressLoading}>
-                                                {addressLoading ? <Loader2 className="animate-spin" /> : <Save className="mr-2" />} Save Address
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id="saveForFuture"
+                                                name="saveForFuture"
+                                                checked={formData.saveForFuture}
+                                                onCheckedChange={(checked) => setFormData({ ...formData, saveForFuture: checked as boolean })}
+                                            />
+                                            <Label htmlFor="saveForFuture">Save this address for future orders</Label>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button type="submit" disabled={addressLoading} className="bg-sage hover:bg-forest text-white">
+                                                {addressLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                                Save Address
                                             </Button>
-                                        }
+                                            <Button type="button" variant="outline" onClick={() => setShowNewAddressForm(false)}>
+                                                Cancel
+                                            </Button>
+                                        </div>
                                     </form>
                                 </CardContent>
                             </Card>
+                        )}
+
+                        {!showNewAddressForm && (
+                            <Button onClick={() => setShowNewAddressForm(true)} className="bg-sage hover:bg-forest text-white">
+                                Add New Address
+                            </Button>
                         )}
                     </div>
 
                     {/* Right side: Order Summary */}
                     <div>
                         <h1 className="font-playfair text-3xl font-bold text-deep-forest mb-6">Order Summary</h1>
-                        <Card className="bg-white rounded-lg shadow-lg border border-warm-taupe/50">
+                        <Card className="bg-white rounded-lg shadow-md">
                             <CardHeader>
-                                <CardTitle className="font-playfair text-xl text-deep-forest">Items</CardTitle>
+                                <CardTitle className="text-deep-forest">Items</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-                                    {displayCartItems.map((item: any) => (
-                                        <div key={item._id || item.id} className="flex items-center gap-4">
-                                            <img src={isAuthenticated ? item.productId.images[0].url : item.image} alt={isAuthenticated ? item.productId.name : item.name} className="w-16 h-16 rounded-md object-cover" />
-                                            <div className="flex-1">
-                                                <p className="font-semibold text-deep-forest text-sm">{isAuthenticated ? item.productId.name : item.name}</p>
-                                                <p className="text-sm text-forest">Qty: {item.quantity}</p>
-                                            </div>
-                                            <p className="font-medium text-deep-forest">{formatRupees((isAuthenticated ? (item.variant?.price || item.productId.price) : item.price) * item.quantity)}</p>
+                            <CardContent className="space-y-4">
+                                {displayCartItems.map((item: any) => (
+                                    <div key={item._id || item.id} className="flex items-center gap-3">
+                                        <img
+                                            src={isAuthenticated ? item.productId?.images?.[0]?.url : item.image}
+                                            alt={isAuthenticated ? item.productId?.name : item.name}
+                                            className="w-12 h-12 object-cover rounded-md"
+                                        />
+                                        <div className="flex-1">
+                                            <p className="font-medium text-deep-forest">{isAuthenticated ? item.productId?.name : item.name}</p>
+                                            <p className="text-sm text-forest">Qty: {item.quantity}</p>
                                         </div>
-                                    ))}
+                                        <p className="font-semibold text-deep-forest">
+                                            {formatRupees((isAuthenticated ? (item.variant?.price || item.productId?.price) : item.price) * item.quantity)}
+                                        </p>
+                                    </div>
+                                ))}
+                                <Separator />
+
+                                {/* Coupon Section */}
+                                <div className="space-y-3">
+                                    <h3 className="font-semibold text-deep-forest">Apply Coupon</h3>
+                                    {appliedCoupon ? (
+                                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="font-semibold text-green-800">{appliedCoupon.coupon.code}</p>
+                                                    <p className="text-sm text-green-600">{appliedCoupon.coupon.name}</p>
+                                                    <p className="text-xs text-green-500">Discount: {formatRupees(appliedCoupon.discountAmount)}</p>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={handleRemoveCoupon}
+                                                    className="text-green-600 hover:text-green-700"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    placeholder="Enter coupon code"
+                                                    value={couponCode}
+                                                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                                    className="flex-1"
+                                                />
+                                                <Button
+                                                    onClick={handleApplyCoupon}
+                                                    disabled={couponLoading || !couponCode.trim()}
+                                                    className="bg-sage hover:bg-forest text-white"
+                                                >
+                                                    {couponLoading ? 'Applying...' : 'Apply'}
+                                                </Button>
+                                            </div>
+                                            {couponError && (
+                                                <p className="text-sm text-red-600">{couponError}</p>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
-                                <Separator className="my-4 bg-warm-taupe/50" />
-                                <div className="space-y-2 text-forest">
-                                    <div className="flex justify-between"><span>Subtotal</span><span className="font-medium text-deep-forest">{formatRupees(subtotal)}</span></div>
-                                    <div className="flex justify-between"><span>Shipping</span><span className="font-medium text-deep-forest">{shippingCost > 0 ? formatRupees(shippingCost) : 'Free'}</span></div>
+
+                                <Separator />
+
+                                {/* Price Summary */}
+                                <div className="space-y-2">
+                                    <div className="flex justify-between">
+                                        <span>Subtotal</span>
+                                        <span>{formatRupees(subtotal)}</span>
+                                    </div>
+                                    {discountAmount > 0 && (
+                                        <div className="flex justify-between text-green-600">
+                                            <span>Coupon Discount</span>
+                                            <span>-{formatRupees(discountAmount)}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between">
+                                        <span>Shipping</span>
+                                        <span>{shippingCost === 0 ? 'Free' : formatRupees(shippingCost)}</span>
+                                    </div>
+                                    <Separator />
+                                    <div className="flex justify-between font-bold text-lg">
+                                        <span>Total</span>
+                                        <span>{formatRupees(finalTotal)}</span>
+                                    </div>
                                 </div>
-                                <Separator className="my-4 bg-warm-taupe/50" />
-                                <div className="flex justify-between font-bold text-lg text-deep-forest">
-                                    <span>Total</span>
-                                    <span>{formatRupees(finalTotal)}</span>
-                                </div>
-                                <Button size="lg" className="w-full mt-6 bg-sage text-white hover:bg-forest rounded-full font-semibold" onClick={handleProceedToPayment} disabled={loading || (isAuthenticated && !selectedAddressId)}>
-                                    {loading ? <Loader2 className="animate-spin" /> : 'Proceed to Payment'}
+
+                                <Button
+                                    onClick={handleProceedToPayment}
+                                    disabled={loading || !selectedAddressId}
+                                    className="w-full bg-sage hover:bg-forest text-white"
+                                >
+                                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Proceed to Payment'}
                                 </Button>
                             </CardContent>
                         </Card>

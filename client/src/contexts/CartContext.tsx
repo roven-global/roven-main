@@ -26,8 +26,23 @@ interface CartItem {
   };
 }
 
+interface AppliedCoupon {
+  coupon: {
+    _id: string;
+    code: string;
+    name: string;
+    description?: string;
+    type: 'percentage' | 'fixed';
+    value: number;
+    maxDiscount?: number;
+  };
+  discountAmount: number;
+  finalAmount: number;
+}
+
 interface CartContextType {
   cartItems: CartItem[];
+  appliedCoupon: AppliedCoupon | null;
   addToCart: (item: { productId: string; name: string; quantity?: number; variant?: { volume: string; sku: string } }) => void;
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, quantity: number) => void;
@@ -35,6 +50,9 @@ interface CartContextType {
   fetchUserCart: () => Promise<void>;
   clearCart: () => void;
   refreshCart: () => Promise<void>;
+  applyCoupon: (couponCode: string, orderAmount: number, cartItems: any[]) => Promise<boolean>;
+  removeCoupon: () => void;
+  clearCoupon: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -49,10 +67,34 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+
+  // Load applied coupon from localStorage on mount
+  useEffect(() => {
+    const savedCoupon = localStorage.getItem('appliedCoupon');
+    if (savedCoupon) {
+      try {
+        setAppliedCoupon(JSON.parse(savedCoupon));
+      } catch (error) {
+        console.error('Error parsing saved coupon:', error);
+        localStorage.removeItem('appliedCoupon');
+      }
+    }
+  }, []);
+
+  // Save applied coupon to localStorage whenever it changes
+  useEffect(() => {
+    if (appliedCoupon) {
+      localStorage.setItem('appliedCoupon', JSON.stringify(appliedCoupon));
+    } else {
+      localStorage.removeItem('appliedCoupon');
+    }
+  }, [appliedCoupon]);
 
   // Always clear cart on logout event
   const clearCart = useCallback(() => {
     setCartItems([]);
+    setAppliedCoupon(null);
   }, []);
 
   // Listen for logout event to clear cart
@@ -104,7 +146,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const removeFromCart = async (cartItemId: string) => {
     try {
       await Axios.delete(SummaryApi.deleteFromCart.url.replace(':cartItemId', cartItemId));
-      toast({ title: "Item Removed", description: "The item has been removed from your cart." });
       await fetchUserCart();
       // Dispatch cart update event
       window.dispatchEvent(new Event('cartUpdate'));
@@ -120,30 +161,70 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       // Dispatch cart update event
       window.dispatchEvent(new Event('cartUpdate'));
     } catch (error) {
-      toast({ title: "Error", description: "Failed to update item quantity." });
+      toast({ title: "Error", description: "Failed to update quantity." });
     }
   };
 
-  const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
-
-  // Refresh cart function that can be called to ensure cart is up to date
   const refreshCart = async () => {
     await fetchUserCart();
   };
 
+  const applyCoupon = async (couponCode: string, orderAmount: number, cartItems: any[]): Promise<boolean> => {
+    try {
+      const response = await Axios.post(SummaryApi.validateCoupon.url, {
+        code: couponCode.toUpperCase(),
+        orderAmount,
+        cartItems
+      });
+
+      if (response.data.success) {
+        setAppliedCoupon(response.data.data);
+        toast({
+          title: "Coupon applied successfully!",
+          description: `You saved ${response.data.data.discountAmount}₹`,
+        });
+        return true;
+      }
+      return false;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Invalid coupon code";
+      toast({
+        title: "Coupon error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    toast({
+      title: "Coupon removed",
+    });
+  };
+
+  const clearCoupon = () => {
+    setAppliedCoupon(null);
+  };
+
+  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+
   return (
-    <CartContext.Provider
-      value={{
-        cartItems,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        cartCount,
-        fetchUserCart,
-        clearCart,
-        refreshCart,
-      }}
-    >
+    <CartContext.Provider value={{
+      cartItems,
+      appliedCoupon,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      cartCount,
+      fetchUserCart,
+      clearCart,
+      refreshCart,
+      applyCoupon,
+      removeCoupon,
+      clearCoupon,
+    }}>
       {children}
     </CartContext.Provider>
   );

@@ -220,6 +220,39 @@ const SummaryApi = {
     url: "/api/order/status",
     method: "put",
   },
+  // Coupon endpoints
+  validateCoupon: {
+    url: "/api/coupon/validate",
+    method: "post",
+  },
+  getAllCoupons: {
+    url: "/api/coupon/all",
+    method: "get",
+  },
+  getCouponById: {
+    url: "/api/coupon/:id",
+    method: "get",
+  },
+  createCoupon: {
+    url: "/api/coupon/create",
+    method: "post",
+  },
+  updateCoupon: {
+    url: "/api/coupon/:id",
+    method: "put",
+  },
+  deleteCoupon: {
+    url: "/api/coupon/:id",
+    method: "delete",
+  },
+  toggleCouponStatus: {
+    url: "/api/coupon/:id/toggle",
+    method: "patch",
+  },
+  getCouponUsage: {
+    url: "/api/coupon/:id/usage",
+    method: "get",
+  },
   googleLogin: {
     url: `${baseURL}/api/auth/google`,
     method: "get",

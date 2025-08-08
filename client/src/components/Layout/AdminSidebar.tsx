@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom"
-import { BarChart, Boxes, PanelsTopLeft } from "lucide-react"
+import { BarChart, Boxes, PanelsTopLeft, Tag } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -28,6 +28,11 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
       title: "Product",
       href: "/admin/product",
       icon: <Boxes size={20} />
+    },
+    {
+      title: "Coupons",
+      href: "/admin/coupons",
+      icon: <Tag size={20} />
     }
   ]
   return (
@@ -63,10 +68,10 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
       </div>
       <div className="mt-auto p-4">
         <Link to="/">
-        <Button size="sm" className="w-full">
-          Home
-        </Button>
-        </Link> 
+          <Button size="sm" className="w-full">
+            Home
+          </Button>
+        </Link>
       </div>
     </nav>
   )

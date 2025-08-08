@@ -1,6 +1,8 @@
 const OrderModel = require("../models/orderModel");
 const CartModel = require("../models/cartProductModel");
 const ProductModel = require("../models/productModel");
+const CouponModel = require("../models/couponModel");
+const CouponUsageModel = require("../models/couponUsageModel");
 const asyncHandler = require("express-async-handler");
 
 /**
@@ -12,6 +14,7 @@ const createOrder = asyncHandler(async (req, res) => {
         shippingAddress,
         paymentMethod = "online",
         notes,
+        couponCode,
     } = req.body;
 
     if (!shippingAddress) {
@@ -37,7 +40,38 @@ const createOrder = asyncHandler(async (req, res) => {
     // Calculate totals
     const subtotal = cartItems.reduce((acc, item) => acc + (item.productId.price * item.quantity), 0);
     const shippingCost = subtotal > 500 ? 0 : 40;
-    const discount = subtotal * 0.05; // 5% online payment discount
+
+    // Handle coupon discount
+    let discount = 0;
+    let appliedCoupon = null;
+
+    if (couponCode) {
+        const coupon = await CouponModel.findOne({
+            code: couponCode.toUpperCase(),
+            isActive: true
+        });
+
+        if (coupon && coupon.isValid) {
+            // Check if user can use this coupon
+            const canUserUse = await CouponUsageModel.canUserUseCoupon(
+                coupon._id,
+                req.user._id,
+                coupon.perUserLimit
+            );
+
+            if (canUserUse) {
+                // Check if coupon can be applied to this order
+                const userOrderCount = await OrderModel.countDocuments({ user: req.user._id });
+                const canBeApplied = coupon.canBeApplied(subtotal, req.user._id, userOrderCount);
+
+                if (canBeApplied.valid) {
+                    discount = coupon.calculateDiscount(subtotal);
+                    appliedCoupon = coupon._id;
+                }
+            }
+        }
+    }
+
     const total = subtotal + shippingCost - discount;
 
     // Prepare order items
@@ -108,6 +142,23 @@ const createOrder = asyncHandler(async (req, res) => {
             });
         }
         throw error;
+    }
+
+    // Track coupon usage if coupon was applied
+    if (appliedCoupon) {
+        const couponUsage = new CouponUsageModel({
+            coupon: appliedCoupon,
+            user: req.user._id,
+            order: newOrder._id,
+            discountAmount: discount,
+            orderAmount: subtotal,
+        });
+        await couponUsage.save();
+
+        // Update coupon usage count
+        await CouponModel.findByIdAndUpdate(appliedCoupon, {
+            $inc: { usedCount: 1 }
+        });
     }
 
     // Clear user's cart after successful order creation

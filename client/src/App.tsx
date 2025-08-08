@@ -30,6 +30,7 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const Payment = lazy(() => import("./pages/Payment"));
 const AdminOverview = lazy(() => import("./pages/AdminOverview"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const CouponAdmin = lazy(() => import("./pages/CouponAdmin"));
 const ContactUs = lazy(() => import("./pages/ContactUs"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const ShippingInfo = lazy(() => import("./pages/ShippingInfo"));
@@ -81,6 +82,7 @@ const App = () => (
                     <Route path="category" element={<CategoryAdmin />} />
                     <Route path="product" element={<ProductAdmin />} />
                     <Route path="product/upload" element={<UploadProduct />} />
+                    <Route path="coupons" element={<CouponAdmin />} />
                   </Route>
 
                   <Route path="*" element={<NotFound />} />
