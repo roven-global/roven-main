@@ -29,6 +29,7 @@ interface Product {
   benefits?: string[];
   isActive: boolean;
   isFeatured: boolean;
+  createdAt: string;
 }
 
 const CategoryProductsPage = () => {

@@ -77,7 +77,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const verifyEmailUrl = `${process.env.FRONTEND_URL}/verify-email?code=${newUser._id}`;
     await sendEmail({
       sendTo: email,
-      subject: "Verify your email from Blinkit",
+      subject: "Verify your email from Roven Global",
       html: verifyEmailTemplate({
         name,
         url: verifyEmailUrl,
@@ -342,7 +342,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
     await sendEmail({
       sendTo: email,
-      subject: "Forgot password from Blinkit",
+      subject: "Forgot password from Roven Global",
       html: forgotPasswordTemplate({ name: user.name, otp }),
     });
     return res.json({
@@ -467,7 +467,7 @@ const refreshToken = asyncHandler(async (req, res) => {
 
   try {
     // Verify the refresh token
-    const payload = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+    const payload = jwt.verify(token, process.env.SECRET_KEY_REFRESH_TOKEN);
 
     // Issue a new access token
     const newAccessToken = await generateAccessToken(
