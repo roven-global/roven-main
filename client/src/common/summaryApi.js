@@ -225,6 +225,10 @@ const SummaryApi = {
     url: "/api/coupon/validate",
     method: "post",
   },
+  getActiveCoupons: {
+    url: "/api/coupon/active",
+    method: "get",
+  },
   getAllCoupons: {
     url: "/api/coupon/all",
     method: "get",

@@ -104,7 +104,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, [clearCart]);
 
   // Fetch user cart from backend
-  const fetchUserCart = async () => {
+  const fetchUserCart = useCallback(async () => {
     try {
       const response = await Axios.get(SummaryApi.getCart.url);
       if (response.data.success) {
@@ -116,7 +116,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       console.error("Failed to fetch user cart:", error);
       setCartItems([]);
     }
-  };
+  }, []);
 
   // Listen for login event to fetch user cart
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, Search, Menu, X, Heart, ChevronDown } from "lucide-react";
@@ -39,19 +39,18 @@ const Navigation = () => {
   const { isAuthenticated } = useAuth();
   const { guestCartCount } = useGuest();
 
-  const fetchCartCount = async () => {
+  const fetchCartCount = useCallback(async () => {
     if (isAuthenticated) {
       try {
         const response = await Axios.get(SummaryApi.getCart.url);
-        if (response.data.success && Array.isArray(response.data.data)) {
-          const totalItems = response.data.data.reduce((acc: number, item: any) => acc + item.quantity, 0);
-          setCartCount(totalItems);
+        if (response.data.success) {
+          setCartCount(response.data.data?.length || 0);
         }
       } catch (error) {
         console.error("Failed to fetch cart count:", error);
       }
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -86,7 +85,7 @@ const Navigation = () => {
 
     fetchCategories();
     fetchCartCount();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchCartCount]);
 
   // Listen for cart updates
   useEffect(() => {
@@ -96,7 +95,7 @@ const Navigation = () => {
 
     window.addEventListener('cartUpdate', handleCartUpdate);
     return () => window.removeEventListener('cartUpdate', handleCartUpdate);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchCartCount]);
 
   // Handle scroll events for navbar hide/show
   useEffect(() => {

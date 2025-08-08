@@ -91,6 +91,26 @@ const validateCoupon = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Get active coupons (public)
+ * @route GET /api/coupon/active
+ */
+const getActiveCoupons = asyncHandler(async (req, res) => {
+    const currentDate = new Date();
+
+    const coupons = await CouponModel.find({
+        isActive: true,
+        validFrom: { $lte: currentDate },
+        validTo: { $gte: currentDate },
+        $expr: { $lt: ["$usedCount", "$usageLimit"] }
+    }).select('code name description type value maxDiscount minOrderAmount validTo firstTimeUserOnly');
+
+    return res.json({
+        success: true,
+        data: coupons,
+    });
+});
+
+/**
  * Get all coupons (admin only)
  * @route GET /api/coupon/all
  */
@@ -370,6 +390,48 @@ const toggleCouponStatus = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Remove applied coupon from cart/order
+ * @route POST /api/coupon/remove
+ */
+const removeCoupon = asyncHandler(async (req, res) => {
+    const { couponCode } = req.body;
+
+    if (!couponCode) {
+        return res.status(400).json({
+            success: false,
+            message: "Coupon code is required",
+        });
+    }
+
+    // Find the coupon
+    const coupon = await CouponModel.findOne({
+        code: couponCode.toUpperCase(),
+        isActive: true
+    });
+
+    if (!coupon) {
+        return res.status(404).json({
+            success: false,
+            message: "Coupon not found",
+        });
+    }
+
+    // For now, we'll just return success since the frontend will handle the state
+    // In a real implementation, you might want to track applied coupons in the database
+    return res.json({
+        success: true,
+        message: "Coupon removed successfully",
+        data: {
+            coupon: {
+                _id: coupon._id,
+                code: coupon.code,
+                name: coupon.name,
+            },
+        },
+    });
+});
+
+/**
  * Get coupon usage statistics (admin only)
  * @route GET /api/coupon/:id/usage
  */
@@ -424,6 +486,7 @@ const getCouponUsage = asyncHandler(async (req, res) => {
 
 module.exports = {
     validateCoupon,
+    getActiveCoupons,
     getAllCoupons,
     getCouponById,
     createCoupon,
@@ -431,4 +494,5 @@ module.exports = {
     deleteCoupon,
     toggleCouponStatus,
     getCouponUsage,
+    removeCoupon,
 };

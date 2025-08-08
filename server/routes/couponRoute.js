@@ -4,6 +4,7 @@ const auth = require("../middleware/auth");
 const adminOnly = require("../middleware/adminOnly");
 const {
     validateCoupon,
+    getActiveCoupons,
     getAllCoupons,
     getCouponById,
     createCoupon,
@@ -11,10 +12,13 @@ const {
     deleteCoupon,
     toggleCouponStatus,
     getCouponUsage,
+    removeCoupon,
 } = require("../controller/couponController");
 
-// Public route - validate coupon (no auth required)
+// Public routes (no auth required)
 router.post("/validate", validateCoupon);
+router.get("/active", getActiveCoupons);
+router.post("/remove", removeCoupon);
 
 // Admin routes - require authentication and admin privileges
 router.use(auth);

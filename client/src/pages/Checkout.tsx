@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, Save, ShoppingBag, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, ShoppingBag, Trash2, X, Tag, Calendar, Percent, DollarSign, Gift, Truck, ArrowRight, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 import { formatRupees } from '@/lib/currency';
@@ -53,6 +54,9 @@ const Checkout = () => {
     const [couponCode, setCouponCode] = useState('');
     const [couponLoading, setCouponLoading] = useState(false);
     const [couponError, setCouponError] = useState('');
+    const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
+    const [showAvailableCoupons, setShowAvailableCoupons] = useState(false);
+    const [scrollContainerRef, setScrollContainerRef] = useState<HTMLDivElement | null>(null);
 
     const displayCartItems = isAuthenticated ? cartItems : guestCart;
 
@@ -65,6 +69,33 @@ const Checkout = () => {
         };
         initialize();
     }, [isAuthenticated]); // Removed refreshCart from dependencies to prevent infinite loops
+
+    // Fetch available coupons
+    useEffect(() => {
+        let timeoutId: NodeJS.Timeout;
+
+        const fetchAvailableCoupons = async () => {
+            try {
+                const response = await Axios.get(SummaryApi.getActiveCoupons.url);
+                if (response.data.success) {
+                    setAvailableCoupons(response.data.data);
+                }
+            } catch (error) {
+                console.error('Error fetching available coupons:', error);
+            }
+        };
+
+        // Debounce the API call to prevent rapid successive requests
+        timeoutId = setTimeout(() => {
+            fetchAvailableCoupons();
+        }, 300);
+
+        return () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+        };
+    }, []);
 
     // Separate useEffect for cart refresh
     useEffect(() => {
@@ -120,7 +151,17 @@ const Checkout = () => {
             const response = await Axios.post(SummaryApi.saveAddress.url, formData);
             if (response.data.success) {
                 toast({ title: "Address saved successfully!" });
-                await loadSavedAddresses();
+                // Force reload addresses and select the newly saved one
+                const addressesResponse = await Axios.get(SummaryApi.getUserAddresses.url);
+                if (addressesResponse.data.success) {
+                    const addresses = addressesResponse.data.data;
+                    setSavedAddresses(addresses);
+                    // Select the newly saved address (should be the last one)
+                    if (addresses.length > 0) {
+                        const newAddress = addresses[addresses.length - 1];
+                        setSelectedAddressId(newAddress._id);
+                    }
+                }
                 setShowNewAddressForm(false);
                 setFormData({
                     firstName: '', lastName: '', phone: '', email: user?.email || '', address: '',
@@ -200,8 +241,9 @@ const Checkout = () => {
         }
     };
 
-    const handleApplyCoupon = async () => {
-        if (!couponCode.trim()) {
+    const handleApplyCoupon = async (code?: string) => {
+        const couponToApply = code || couponCode.trim();
+        if (!couponToApply) {
             setCouponError('Please enter a coupon code');
             return;
         }
@@ -211,7 +253,7 @@ const Checkout = () => {
 
         try {
             const subtotal = displayCartItems.reduce((acc, item: any) => acc + (isAuthenticated ? (item.variant?.price || item.productId?.price) : item.price) * item.quantity, 0);
-            const success = await applyCoupon(couponCode, subtotal, displayCartItems);
+            const success = await applyCoupon(couponToApply, subtotal, displayCartItems);
             if (success) {
                 setCouponCode('');
             }
@@ -228,15 +270,32 @@ const Checkout = () => {
         setCouponError('');
     };
 
+    const scrollLeft = () => {
+        if (scrollContainerRef) {
+            scrollContainerRef.scrollBy({ left: -300, behavior: 'smooth' });
+        }
+    };
+
+    const scrollRight = () => {
+        if (scrollContainerRef) {
+            scrollContainerRef.scrollBy({ left: 300, behavior: 'smooth' });
+        }
+    };
+
     const subtotal = displayCartItems.reduce((acc, item: any) => acc + (isAuthenticated ? (item.variant?.price || item.productId?.price) : item.price) * item.quantity, 0);
     const shippingCost = subtotal > 499 ? 0 : 50;
     const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
     const finalTotal = subtotal + shippingCost - discountAmount;
 
+    // Calculate total savings
+    const originalShippingCost = 50; // Original shipping cost before free shipping
+    const shippingSavings = subtotal > 499 ? originalShippingCost : 0;
+    const totalSavings = discountAmount + shippingSavings;
+
     if (cartLoading) {
         return (
-            <div className="min-h-screen bg-warm-cream flex items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-sage" />
+            <div className="min-h-screen flex items-center justify-center bg-warm-cream">
+                <div className="animate-spin rounded-full h-24 w-24 border-b-2 border-sage"></div>
             </div>
         );
     }
@@ -244,313 +303,300 @@ const Checkout = () => {
     return (
         <div className="min-h-screen bg-warm-cream">
             <Navigation />
-            <div className="container mx-auto px-4 py-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    {/* Left side: Shipping Details */}
-                    <div>
-                        <h1 className="font-playfair text-3xl font-bold text-deep-forest mb-6">Shipping Information</h1>
-                        {isAuthenticated && savedAddresses.length > 0 && (
-                            <Card className="bg-white rounded-lg shadow-md mb-6">
-                                <CardHeader>
-                                    <CardTitle className="text-deep-forest">Select a saved address</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    {savedAddresses.map((addr) => (
-                                        <div
-                                            key={addr._id}
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                console.log('Clicking address:', addr._id, 'Current selected:', selectedAddressId);
-                                                setSelectedAddressId(addr._id);
-                                                setShowNewAddressForm(false);
-                                                console.log('Address selected:', addr._id); // Debug log
-                                            }}
-                                            onMouseDown={(e) => {
-                                                e.preventDefault();
-                                            }}
-                                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 select-none ${selectedAddressId === addr._id
-                                                ? 'border-sage bg-sage/10 shadow-md'
-                                                : 'border-warm-taupe/50 hover:border-sage/50 hover:bg-sage/5'
-                                                }`}
-                                        >
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex-1">
-                                                    <p className="font-semibold text-deep-forest">{addr.firstName} {addr.lastName}</p>
-                                                    <p className="text-forest text-sm">{addr.address}, {addr.city}, {addr.state} - {addr.pincode}</p>
-                                                    <p className="text-forest text-sm">{addr.phone}</p>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    {selectedAddressId === addr._id && (
-                                                        <div className="text-sage">
-                                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                            </svg>
-                                                        </div>
-                                                    )}
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            handleDeleteAddress(addr._id);
-                                                        }}
-                                                        className="h-8 w-8 text-warm-taupe hover:text-destructive hover:bg-red-50 rounded-full"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </CardContent>
-                            </Card>
-                        )}
 
-                        {/* New Address Form */}
-                        {showNewAddressForm && (
-                            <Card className="bg-white rounded-lg shadow-md mb-6">
-                                <CardHeader>
-                                    <CardTitle className="text-deep-forest">Add New Address</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <form onSubmit={handleSaveAddress} className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <Label htmlFor="firstName">First Name</Label>
-                                                <Input
-                                                    id="firstName"
-                                                    name="firstName"
-                                                    value={formData.firstName}
-                                                    onChange={handleInputChange}
-                                                    required
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="lastName">Last Name</Label>
-                                                <Input
-                                                    id="lastName"
-                                                    name="lastName"
-                                                    value={formData.lastName}
-                                                    onChange={handleInputChange}
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <Label htmlFor="phone">Phone</Label>
-                                                <Input
-                                                    id="phone"
-                                                    name="phone"
-                                                    value={formData.phone}
-                                                    onChange={handleInputChange}
-                                                    required
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="email">Email</Label>
-                                                <Input
-                                                    id="email"
-                                                    name="email"
-                                                    type="email"
-                                                    value={formData.email}
-                                                    onChange={handleInputChange}
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="address">Address</Label>
-                                            <Textarea
-                                                id="address"
-                                                name="address"
-                                                value={formData.address}
-                                                onChange={handleInputChange}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-4">
-                                            <div>
-                                                <Label htmlFor="state">State</Label>
-                                                <Select value={formData.state} onValueChange={handleStateChange}>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select state" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {reactSelectData.map((state) => (
-                                                            <SelectItem key={state.name} value={state.name}>
-                                                                {state.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="city">City</Label>
-                                                <Select value={formData.city} onValueChange={(city) => setFormData({ ...formData, city })}>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select city" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {availableCities.map((city) => (
-                                                            <SelectItem key={city} value={city}>
-                                                                {city}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="pincode">Pincode</Label>
-                                                <Input
-                                                    id="pincode"
-                                                    name="pincode"
-                                                    value={formData.pincode}
-                                                    onChange={handleInputChange}
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                            <Checkbox
-                                                id="saveForFuture"
-                                                name="saveForFuture"
-                                                checked={formData.saveForFuture}
-                                                onCheckedChange={(checked) => setFormData({ ...formData, saveForFuture: checked as boolean })}
-                                            />
-                                            <Label htmlFor="saveForFuture">Save this address for future orders</Label>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <Button type="submit" disabled={addressLoading} className="bg-sage hover:bg-forest text-white">
-                                                {addressLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                                Save Address
-                                            </Button>
-                                            <Button type="button" variant="outline" onClick={() => setShowNewAddressForm(false)}>
-                                                Cancel
-                                            </Button>
-                                        </div>
-                                    </form>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        {!showNewAddressForm && (
-                            <Button onClick={() => setShowNewAddressForm(true)} className="bg-sage hover:bg-forest text-white">
-                                Add New Address
-                            </Button>
-                        )}
-                    </div>
-
-                    {/* Right side: Order Summary */}
-                    <div>
-                        <h1 className="font-playfair text-3xl font-bold text-deep-forest mb-6">Order Summary</h1>
-                        <Card className="bg-white rounded-lg shadow-md">
-                            <CardHeader>
-                                <CardTitle className="text-deep-forest">Items</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                {displayCartItems.map((item: any) => (
-                                    <div key={item._id || item.id} className="flex items-center gap-3">
-                                        <img
-                                            src={isAuthenticated ? item.productId?.images?.[0]?.url : item.image}
-                                            alt={isAuthenticated ? item.productId?.name : item.name}
-                                            className="w-12 h-12 object-cover rounded-md"
-                                        />
-                                        <div className="flex-1">
-                                            <p className="font-medium text-deep-forest">{isAuthenticated ? item.productId?.name : item.name}</p>
-                                            <p className="text-sm text-forest">Qty: {item.quantity}</p>
-                                        </div>
-                                        <p className="font-semibold text-deep-forest">
-                                            {formatRupees((isAuthenticated ? (item.variant?.price || item.productId?.price) : item.price) * item.quantity)}
-                                        </p>
-                                    </div>
-                                ))}
-                                <Separator />
-
-                                {/* Coupon Section */}
-                                <div className="space-y-3">
-                                    <h3 className="font-semibold text-deep-forest">Apply Coupon</h3>
-                                    {appliedCoupon ? (
-                                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="font-semibold text-green-800">{appliedCoupon.coupon.code}</p>
-                                                    <p className="text-sm text-green-600">{appliedCoupon.coupon.name}</p>
-                                                    <p className="text-xs text-green-500">Discount: {formatRupees(appliedCoupon.discountAmount)}</p>
-                                                </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={handleRemoveCoupon}
-                                                    className="text-green-600 hover:text-green-700"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            <div className="flex gap-2">
-                                                <Input
-                                                    placeholder="Enter coupon code"
-                                                    value={couponCode}
-                                                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                                                    className="flex-1"
-                                                />
-                                                <Button
-                                                    onClick={handleApplyCoupon}
-                                                    disabled={couponLoading || !couponCode.trim()}
-                                                    className="bg-sage hover:bg-forest text-white"
-                                                >
-                                                    {couponLoading ? 'Applying...' : 'Apply'}
-                                                </Button>
-                                            </div>
-                                            {couponError && (
-                                                <p className="text-sm text-red-600">{couponError}</p>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <Separator />
-
-                                {/* Price Summary */}
-                                <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                        <span>Subtotal</span>
-                                        <span>{formatRupees(subtotal)}</span>
-                                    </div>
-                                    {discountAmount > 0 && (
-                                        <div className="flex justify-between text-green-600">
-                                            <span>Coupon Discount</span>
-                                            <span>-{formatRupees(discountAmount)}</span>
-                                        </div>
-                                    )}
-                                    <div className="flex justify-between">
-                                        <span>Shipping</span>
-                                        <span>{shippingCost === 0 ? 'Free' : formatRupees(shippingCost)}</span>
-                                    </div>
-                                    <Separator />
-                                    <div className="flex justify-between font-bold text-lg">
-                                        <span>Total</span>
-                                        <span>{formatRupees(finalTotal)}</span>
-                                    </div>
-                                </div>
-
-                                <Button
-                                    onClick={handleProceedToPayment}
-                                    disabled={loading || !selectedAddressId}
-                                    className="w-full bg-sage hover:bg-forest text-white"
-                                >
-                                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Proceed to Payment'}
-                                </Button>
-                            </CardContent>
-                        </Card>
+            {/* Breadcrumb Navigation */}
+            <div className="bg-white border-b">
+                <div className="container mx-auto px-4 py-3">
+                    <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                        <Link to="/cart" className="hover:text-gray-900">Cart</Link>
+                        <ArrowRight className="w-4 h-4" />
+                        <span>Address</span>
+                        <ArrowRight className="w-4 h-4" />
+                        <span className="text-gray-400">Payment</span>
                     </div>
                 </div>
             </div>
+
+            <section className="py-8">
+                <div className="container mx-auto px-4">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {/* Left Column */}
+                            <div className="lg:col-span-2 space-y-6">
+
+
+
+                                {/* Shipping Address Section */}
+                                <div className="bg-white rounded-lg border shadow-sm">
+                                    <div className="p-4 border-b">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-semibold text-gray-900 flex items-center gap-2">
+                                                <Truck className="w-5 h-5" />
+                                                Shipping Address
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 space-y-4">
+
+                                        {isAuthenticated && savedAddresses.length > 0 && (
+                                            <div className="space-y-3">
+                                                {savedAddresses.map((addr) => (
+                                                    <div
+                                                        key={addr._id}
+                                                        onClick={() => {
+                                                            setSelectedAddressId(addr._id);
+                                                            setShowNewAddressForm(false);
+                                                        }}
+                                                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${selectedAddressId === addr._id
+                                                            ? 'border-orange-500 bg-orange-50'
+                                                            : 'border-gray-200 hover:border-orange-300'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-start justify-between">
+                                                            <div className="flex-1">
+                                                                <p className="font-semibold text-gray-900">{addr.firstName} {addr.lastName}</p>
+                                                                <p className="text-gray-600 text-sm">{addr.address}, {addr.city}, {addr.state} - {addr.pincode}</p>
+                                                                <p className="text-gray-600 text-sm">{addr.phone}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                {selectedAddressId === addr._id && (
+                                                                    <div className="text-orange-500">
+                                                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                                        </svg>
+                                                                    </div>
+                                                                )}
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleDeleteAddress(addr._id);
+                                                                    }}
+                                                                    className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Show Add New Address button when no saved addresses */}
+                                        {isAuthenticated && savedAddresses.length === 0 && !showNewAddressForm && (
+                                            <div className="text-center py-4">
+                                                <p className="text-gray-600 mb-4">No saved addresses found.</p>
+                                                <Button onClick={() => setShowNewAddressForm(true)} className="bg-orange-500 hover:bg-orange-600 text-white rounded-md px-6 py-2">
+                                                    Add New Address
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        {/* New Address Form */}
+                                        {showNewAddressForm && (
+                                            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                                <h3 className="font-semibold text-gray-900 mb-4">Add New Address</h3>
+                                                <form onSubmit={handleSaveAddress} className="space-y-4">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">First Name</Label>
+                                                            <Input
+                                                                id="firstName"
+                                                                name="firstName"
+                                                                value={formData.firstName}
+                                                                onChange={handleInputChange}
+                                                                required
+                                                                className="mt-1"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">Last Name</Label>
+                                                            <Input
+                                                                id="lastName"
+                                                                name="lastName"
+                                                                value={formData.lastName}
+                                                                onChange={handleInputChange}
+                                                                required
+                                                                className="mt-1"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <Label htmlFor="phone" className="text-sm font-medium text-gray-700">Phone</Label>
+                                                            <Input
+                                                                id="phone"
+                                                                name="phone"
+                                                                value={formData.phone}
+                                                                onChange={handleInputChange}
+                                                                required
+                                                                className="mt-1"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+                                                            <Input
+                                                                id="email"
+                                                                name="email"
+                                                                type="email"
+                                                                value={formData.email}
+                                                                onChange={handleInputChange}
+                                                                required
+                                                                className="mt-1"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <Label htmlFor="address" className="text-sm font-medium text-gray-700">Address</Label>
+                                                        <Textarea
+                                                            id="address"
+                                                            name="address"
+                                                            value={formData.address}
+                                                            onChange={handleInputChange}
+                                                            required
+                                                            className="mt-1"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-3 gap-4">
+                                                        <div>
+                                                            <Label htmlFor="state" className="text-sm font-medium text-gray-700">State</Label>
+                                                            <Select value={formData.state} onValueChange={handleStateChange}>
+                                                                <SelectTrigger className="mt-1">
+                                                                    <SelectValue placeholder="Select state" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {reactSelectData.map((state) => (
+                                                                        <SelectItem key={state.name} value={state.name}>
+                                                                            {state.name}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        <div>
+                                                            <Label htmlFor="city" className="text-sm font-medium text-gray-700">City</Label>
+                                                            <Select value={formData.city} onValueChange={(city) => setFormData({ ...formData, city })}>
+                                                                <SelectTrigger className="mt-1">
+                                                                    <SelectValue placeholder="Select city" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {availableCities.map((city) => (
+                                                                        <SelectItem key={city} value={city}>
+                                                                            {city}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        <div>
+                                                            <Label htmlFor="pincode" className="text-sm font-medium text-gray-700">Pincode</Label>
+                                                            <Input
+                                                                id="pincode"
+                                                                name="pincode"
+                                                                value={formData.pincode}
+                                                                onChange={handleInputChange}
+                                                                required
+                                                                className="mt-1"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center space-x-2">
+                                                        <Checkbox
+                                                            id="saveForFuture"
+                                                            name="saveForFuture"
+                                                            checked={formData.saveForFuture}
+                                                            onCheckedChange={(checked) => setFormData({ ...formData, saveForFuture: checked as boolean })}
+                                                        />
+                                                        <Label htmlFor="saveForFuture" className="text-sm text-gray-700">Save this address for future orders</Label>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <Button type="submit" disabled={addressLoading} className="bg-orange-500 hover:bg-orange-600 text-white">
+                                                            {addressLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                                            Save Address
+                                                        </Button>
+                                                        <Button type="button" variant="outline" onClick={() => setShowNewAddressForm(false)}>
+                                                            Cancel
+                                                        </Button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        )}
+
+                                        {!showNewAddressForm && (
+                                            <Button onClick={() => setShowNewAddressForm(true)} className="bg-orange-500 hover:bg-orange-600 text-white rounded-md px-6 py-2">
+                                                Add New Address
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+
+
+                            </div>
+
+                            {/* Right Column - Price Summary */}
+                            <div className="space-y-6">
+                                <div className="bg-white rounded-lg border shadow-sm sticky top-4">
+                                    <div className="p-4 border-b">
+                                        <span className="font-semibold text-gray-900 flex items-center gap-2">
+                                            <ShieldCheck className="w-5 h-5" />
+                                            Price Summary
+                                        </span>
+                                    </div>
+                                    <div className="p-4 space-y-3">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600">Order Total</span>
+                                            <span className="text-gray-900 font-bold">{formatRupees(subtotal)}</span>
+                                        </div>
+                                        {discountAmount > 0 && (
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-600">Offer Discount</span>
+                                                <span className="text-green-600 font-bold">-{formatRupees(discountAmount)}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600">Shipping <span className="text-xs text-gray-400">ⓘ</span></span>
+                                            <div className="text-right">
+                                                <span className="text-green-600 font-bold">Free</span>
+                                                <div className="text-xs text-gray-500 line-through">₹50</div>
+                                            </div>
+                                        </div>
+
+                                        <Separator />
+                                        <div className="flex justify-between font-bold text-lg">
+                                            <span className="text-gray-900">To Pay</span>
+                                            <span className="text-gray-900">{formatRupees(finalTotal)}</span>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 border-t">
+                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center gap-2">
+                                            <span className="text-blue-600">✓</span>
+                                            <p className="text-sm text-blue-700 font-medium">
+                                                You are saving {formatRupees(totalSavings)} on this order
+                                            </p>
+                                        </div>
+                                        <Button
+                                            onClick={handleProceedToPayment}
+                                            className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-md py-3 font-medium"
+                                            disabled={loading || !selectedAddressId}
+                                        >
+                                            {loading ? (
+                                                <div className="flex items-center gap-2">
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    Processing...
+                                                </div>
+                                            ) : (
+                                                'Proceed to Payment'
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
             <Footer />
         </div>
     );
