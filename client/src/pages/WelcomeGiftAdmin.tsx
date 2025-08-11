@@ -41,6 +41,10 @@ interface WelcomeGift {
   color: string;
   bgColor: string;
   reward: string;
+  rewardType: string;
+  rewardValue: number;
+  maxDiscount?: number;
+  minOrderAmount: number;
   isActive: boolean;
   order: number;
   usageCount: number;
