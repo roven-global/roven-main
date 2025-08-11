@@ -177,6 +177,10 @@ const WelcomeGiftAdmin = () => {
       color: 'text-blue-600',
       bgColor: 'bg-blue-50 hover:bg-blue-100',
       reward: '',
+      rewardType: 'percentage',
+      rewardValue: 10,
+      maxDiscount: null,
+      minOrderAmount: 0,
       order: 1,
       isActive: true
     });
