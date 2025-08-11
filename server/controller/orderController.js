@@ -90,19 +90,32 @@ const createOrder = asyncHandler(async (req, res) => {
     // Handle welcome gift discount
     let welcomeGiftDiscount = 0;
     let appliedWelcomeGiftId = null;
+    let freeShipping = false;
 
     if (appliedWelcomeGift) {
         const userReward = await UserReward.findOne({
             userId: req.user._id,
             _id: appliedWelcomeGift.rewardId,
             isUsed: false
-        });
+        }).populate('giftId');
 
-        if (userReward) {
-            welcomeGiftDiscount = appliedWelcomeGift.discountAmount;
+        if (userReward && userReward.giftId) {
+            const gift = userReward.giftId;
+            const discountResult = gift.calculateDiscount(subtotal, cartItems);
+            
+            if (gift.rewardType === 'free_shipping') {
+                freeShipping = true;
+                welcomeGiftDiscount = 0; // Discount will be applied to shipping
+            } else {
+                welcomeGiftDiscount = discountResult.discount;
+            }
+            
             appliedWelcomeGiftId = userReward._id;
         }
     }
+
+    // Apply free shipping from welcome gift
+    const finalShippingCost = (freeShipping || subtotal > 499) ? 0 : shippingCost;
 
     // 3. ADD THIS BLOCK: Welcome Gift Logic
     if (applyWelcomeGift && user.rewardClaimed && !user.rewardUsed) {
