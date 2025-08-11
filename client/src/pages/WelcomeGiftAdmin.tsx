@@ -423,6 +423,67 @@ const WelcomeGiftAdmin = () => {
                   />
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="rewardType">Reward Type</Label>
+                    <Select value={formData.rewardType} onValueChange={(value) => handleSelectChange('rewardType', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {rewardTypeOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="rewardValue">
+                      Reward Value {formData.rewardType === 'percentage' ? '(%)' : formData.rewardType === 'fixed_amount' ? '(₹)' : ''}
+                    </Label>
+                    <Input
+                      id="rewardValue"
+                      name="rewardValue"
+                      type="number"
+                      min="0"
+                      value={formData.rewardValue}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="maxDiscount">Max Discount (₹) - Optional</Label>
+                    <Input
+                      id="maxDiscount"
+                      name="maxDiscount"
+                      type="number"
+                      min="0"
+                      value={formData.maxDiscount || ''}
+                      onChange={handleInputChange}
+                      placeholder="Leave empty for no limit"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="minOrderAmount">Min Order Amount (₹)</Label>
+                    <Input
+                      id="minOrderAmount"
+                      name="minOrderAmount"
+                      type="number"
+                      min="0"
+                      value={formData.minOrderAmount}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="isActive"
