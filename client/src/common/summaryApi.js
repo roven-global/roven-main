@@ -204,6 +204,10 @@ const SummaryApi = {
     url: "/api/order/user",
     method: "get",
   },
+  getLifetimeSavings: {
+    url: "/api/order/lifetime-savings",
+    method: "get",
+  },
   getOrderById: {
     url: "/api/order",
     method: "get",
@@ -264,6 +268,59 @@ const SummaryApi = {
   adminOverview: {
     url: "/api/admin/overview",
     method: "get",
+  },
+  // Welcome Gift endpoints
+  getAllWelcomeGifts: {
+    url: "/api/welcome-gifts",
+    method: "get",
+  },
+  getAllWelcomeGiftsAdmin: {
+    url: "/api/welcome-gifts/admin/all",
+    method: "get",
+  },
+  getWelcomeGiftById: {
+    url: "/api/welcome-gifts/admin/:id",
+    method: "get",
+  },
+  createWelcomeGift: {
+    url: "/api/welcome-gifts/admin",
+    method: "post",
+  },
+  updateWelcomeGift: {
+    url: "/api/welcome-gifts/admin/:id",
+    method: "put",
+  },
+  deleteWelcomeGift: {
+    url: "/api/welcome-gifts/admin/:id",
+    method: "delete",
+  },
+  toggleWelcomeGiftStatus: {
+    url: "/api/welcome-gifts/admin/:id/toggle",
+    method: "patch",
+  },
+  reorderWelcomeGifts: {
+    url: "/api/welcome-gifts/admin/reorder",
+    method: "put",
+  },
+  getWelcomeGiftsAnalytics: {
+    url: "/api/welcome-gifts/admin/analytics",
+    method: "get",
+  },
+  claimWelcomeGift: {
+    url: "/api/welcome-gifts/:id/claim",
+    method: "post",
+  },
+  checkWelcomeGiftEligibility: {
+    url: "/api/welcome-gifts/check-eligibility",
+    method: "get",
+  },
+  getUserRewards: {
+    url: "/api/welcome-gifts/user-rewards",
+    method: "get",
+  },
+  markRewardAsUsed: {
+    url: "/api/welcome-gifts/mark-used",
+    method: "post",
   },
 };
 

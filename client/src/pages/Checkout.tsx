@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import WelcomeGiftReward from '@/components/WelcomeGiftReward';
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 import { useIndianStatesAndCities } from '@/lib/cities';
@@ -29,9 +30,12 @@ const Checkout = () => {
         clearCart,
         refreshCart,
         appliedCoupon,
+        appliedWelcomeGift,
         applyCoupon,
         removeCoupon,
-        clearCoupon
+        clearCoupon,
+        applyWelcomeGift,
+        removeWelcomeGift
     } = useCart();
     const { guestCart, clearGuestData } = useGuest();
     const { isAuthenticated, user } = useAuth();
@@ -57,6 +61,8 @@ const Checkout = () => {
     const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
     const [showAvailableCoupons, setShowAvailableCoupons] = useState(false);
     const [scrollContainerRef, setScrollContainerRef] = useState<HTMLDivElement | null>(null);
+    const [lifetimeSavings, setLifetimeSavings] = useState<number>(0);
+    const [lifetimeSavingsLoading, setLifetimeSavingsLoading] = useState(false);
 
     const displayCartItems = isAuthenticated ? cartItems : guestCart;
 
@@ -187,6 +193,10 @@ const Checkout = () => {
                 shippingAddress: selectedAddr,
                 paymentMethod: "online",
                 couponCode: appliedCoupon ? appliedCoupon.coupon.code : undefined,
+                appliedWelcomeGift: appliedWelcomeGift ? {
+                    rewardId: appliedWelcomeGift.reward._id,
+                    discountAmount: appliedWelcomeGift.discountAmount
+                } : undefined,
             });
 
             if (orderResponse.data.success) {
@@ -283,14 +293,15 @@ const Checkout = () => {
     };
 
     const subtotal = displayCartItems.reduce((acc, item: any) => acc + (isAuthenticated ? (item.variant?.price || item.productId?.price) : item.price) * item.quantity, 0);
-    const shippingCost = subtotal > 499 ? 0 : 50;
+    const shippingCost = subtotal > 499 ? 0 : 40;
     const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
-    const finalTotal = subtotal + shippingCost - discountAmount;
+    const welcomeGiftDiscount = appliedWelcomeGift ? appliedWelcomeGift.discountAmount : 0;
+    const finalTotal = subtotal + shippingCost - discountAmount - welcomeGiftDiscount;
 
     // Calculate total savings
-    const originalShippingCost = 50; // Original shipping cost before free shipping
+    const originalShippingCost = 40; // Original shipping cost before free shipping
     const shippingSavings = subtotal > 499 ? originalShippingCost : 0;
-    const totalSavings = discountAmount + shippingSavings;
+    const totalSavings = discountAmount + welcomeGiftDiscount + shippingSavings;
 
     if (cartLoading) {
         return (
@@ -537,6 +548,16 @@ const Checkout = () => {
 
                             {/* Right Column - Price Summary */}
                             <div className="space-y-6">
+                                {/* Welcome Gift Reward */}
+                                <WelcomeGiftReward
+                                    subtotal={subtotal}
+                                    shippingCost={40}
+                                    onRewardApplied={applyWelcomeGift}
+                                    onRewardRemoved={removeWelcomeGift}
+                                    appliedReward={appliedWelcomeGift?.reward}
+                                    isCheckout={true}
+                                />
+
                                 <div className="bg-white rounded-lg border shadow-sm sticky top-4">
                                     <div className="p-4 border-b">
                                         <span className="font-semibold text-gray-900 flex items-center gap-2">
@@ -551,15 +572,21 @@ const Checkout = () => {
                                         </div>
                                         {discountAmount > 0 && (
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">Offer Discount</span>
+                                                <span className="text-gray-600">Coupon Discount</span>
                                                 <span className="text-green-600 font-bold">-{formatRupees(discountAmount)}</span>
+                                            </div>
+                                        )}
+                                        {welcomeGiftDiscount > 0 && (
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-600">Welcome Gift</span>
+                                                <span className="text-green-600 font-bold">-{formatRupees(welcomeGiftDiscount)}</span>
                                             </div>
                                         )}
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-600">Shipping <span className="text-xs text-gray-400">ⓘ</span></span>
                                             <div className="text-right">
                                                 <span className="text-green-600 font-bold">Free</span>
-                                                <div className="text-xs text-gray-500 line-through">₹50</div>
+                                                <div className="text-xs text-gray-500 line-through">₹40</div>
                                             </div>
                                         </div>
 

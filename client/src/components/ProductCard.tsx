@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Heart, ShoppingBag, Star } from 'lucide-react';
+import { Heart, ShoppingBag, Star, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { useGuest } from '@/contexts/GuestContext';
@@ -80,6 +81,28 @@ const ProductCard = ({
         return null;
     };
 
+    const calculateDiscount = () => {
+        const currentPrice = getDisplayPrice();
+        const originalPrice = getDisplayOriginalPrice();
+        if (originalPrice && originalPrice > currentPrice) {
+            return Math.round(((originalPrice - currentPrice) / originalPrice) * 100);
+        }
+        return 0;
+    };
+
+    const getDisplayVolume = () => {
+        if (variants && variants.length === 1) {
+            return variants[0].volume;
+        }
+        if (volume) {
+            return volume;
+        }
+        if (variants && variants.length > 1) {
+            return `${variants.length} variants`;
+        }
+        return null;
+    };
+
     const handleLikeClick = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -149,60 +172,110 @@ const ProductCard = ({
         });
     };
 
+    const discount = calculateDiscount();
+
     return (
-        <Card className="group relative w-full h-full flex flex-col bg-white border border-transparent hover:border-warm-taupe/50 rounded-lg shadow-sm hover:shadow-lg transition-all duration-300">
+        <Card className="group relative w-full h-full flex flex-col bg-white border border-gray-100 hover:border-sage/30 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
             <Link to={`/product/${slug}`} className="flex flex-col h-full">
-                <div className="relative overflow-hidden rounded-t-lg">
-                    <img
-                        src={image}
-                        alt={name}
-                        className="w-full h-72 object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    <div className="absolute top-3 left-3 flex flex-col gap-2">
-                        {isNew && (
-                            <span className="bg-sage/90 text-white text-xs px-2.5 py-1 rounded-full font-semibold shadow-sm backdrop-blur-sm">
-                                NEW
-                            </span>
-                        )}
-                        {isSale && (
-                            <span className="bg-gold-accent/90 text-deep-forest text-xs px-2.5 py-1 rounded-full font-semibold shadow-sm backdrop-blur-sm">
-                                SALE
-                            </span>
-                        )}
+                {/* Large Product Image */}
+                <div className="relative overflow-hidden bg-gray-50">
+                    <div className="aspect-[4/5] w-full">
+                        <img
+                            src={image}
+                            alt={name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
                     </div>
-                    <Button variant="ghost" size="icon" className="absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full shadow-md w-9 h-9" onClick={handleLikeClick}>
-                        <Heart className={`h-4 w-4 transition-all ${isLiked ? 'fill-sage text-sage' : 'text-deep-forest'}`} />
+
+                    {/* Discount Badge - Top Left */}
+                    {discount > 0 && (
+                        <div className="absolute top-3 left-3">
+                            <Badge className="bg-red-500 text-white text-xs px-2 py-1 rounded-md font-semibold shadow-sm border-0">
+                                {discount}% OFF
+                            </Badge>
+                        </div>
+                    )}
+
+                    {/* NEW Badge - Top Left (if no discount) */}
+                    {isNew && !discount && (
+                        <div className="absolute top-3 left-3">
+                            <Badge className="bg-sage text-white text-xs px-2 py-1 rounded-md font-semibold shadow-sm border-0">
+                                <Sparkles className="w-3 h-3 mr-1" />
+                                NEW
+                            </Badge>
+                        </div>
+                    )}
+
+                    {/* Wishlist Button - Top Right */}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-3 right-3 bg-white/90 hover:bg-white rounded-full shadow-sm w-8 h-8 backdrop-blur-sm transition-all duration-300 hover:scale-110"
+                        onClick={handleLikeClick}
+                    >
+                        <Heart className={`h-4 w-4 transition-all duration-300 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600 hover:text-red-500'}`} />
                     </Button>
                 </div>
 
-                <CardContent className="p-4 flex flex-col flex-grow">
-                    <div className="flex justify-between items-center text-sm mb-2">
-                        <span className="text-forest font-medium">{category}</span>
-                        <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-gold-accent fill-current" />
-                            <span className="font-semibold text-deep-forest">{rating.toFixed(1)}</span>
-                            <span className="text-forest/70">({reviews})</span>
-                        </div>
+                {/* Compact Content Layout */}
+                <CardContent className="p-4 flex flex-col flex-grow bg-white">
+                    {/* Category */}
+                    <div className="mb-2">
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                            {category}
+                        </span>
                     </div>
-                    <h3 className="font-playfair font-bold text-lg text-deep-forest mb-3 line-clamp-2 flex-grow">{name}</h3>
 
-                    <div className="flex justify-center items-baseline gap-2 text-center mt-auto mb-4">
-                        {variants && variants.length > 1 && <span className="text-sm text-forest">From</span>}
-                        <span className="font-bold text-2xl text-deep-forest">{formatRupees(getDisplayPrice())}</span>
-                        {getDisplayOriginalPrice() && (
-                            <span className="text-base text-warm-taupe line-through">
-                                {formatRupees(getDisplayOriginalPrice())}
+                    {/* Product Title */}
+                    <h3 className="font-playfair font-bold text-lg text-gray-900 mb-2 line-clamp-2 leading-tight flex-grow">
+                        {name}
+                    </h3>
+
+                    {/* Rating and Volume Row */}
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                                <Star
+                                    key={i}
+                                    className={`w-3 h-3 ${i < Math.floor(rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'}`}
+                                />
+                            ))}
+                            <span className="text-xs font-medium text-gray-700 ml-1">{rating.toFixed(1)}</span>
+                            <span className="text-xs text-gray-500">({reviews})</span>
+                        </div>
+                        {getDisplayVolume() && (
+                            <span className="text-xs text-gray-600 font-medium">
+                                {getDisplayVolume()}
                             </span>
                         )}
                     </div>
 
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    {/* Price Section */}
+                    <div className="mb-4">
+                        <div className="flex items-baseline gap-2">
+                            {variants && variants.length > 1 && (
+                                <span className="text-xs text-gray-500 font-medium">From</span>
+                            )}
+                            <span className="font-playfair font-bold text-xl text-gray-900">
+                                {formatRupees(getDisplayPrice())}
+                            </span>
+                            {getDisplayOriginalPrice() && (
+                                <span className="text-sm text-gray-400 line-through">
+                                    {formatRupees(getDisplayOriginalPrice())}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Add to Cart Button */}
+                    <div className="mt-auto">
                         <Button
                             variant="default"
-                            className="w-full bg-forest text-white hover:bg-deep-forest font-semibold py-3 rounded-lg transition-all duration-300"
+                            className="w-full bg-sage hover:bg-forest text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                             onClick={handleAddToCart}
                             disabled={getTotalStock() === 0}
                         >
+                            <ShoppingBag className="w-4 h-4 mr-2" />
                             {getTotalStock() === 0 ? 'OUT OF STOCK' :
                                 variants && variants.length > 1 ? 'SELECT OPTIONS' : 'ADD TO CART'}
                         </Button>

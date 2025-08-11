@@ -9,6 +9,7 @@ const {
     updateOrderStatus,
     cancelOrder,
     getAllOrders,
+    getLifetimeSavings,
 } = require("../controller/orderController");
 
 // Create new order (requires auth)
@@ -16,6 +17,9 @@ router.post("/create", auth, createOrder);
 
 // Get user orders (requires auth)
 router.get("/user", auth, getUserOrders);
+
+// Get lifetime savings (requires auth)
+router.get("/lifetime-savings", auth, getLifetimeSavings);
 
 // Admin routes (requires auth + admin) - must come before /:id routes
 router.get("/all", auth, adminOnly, getAllOrders);

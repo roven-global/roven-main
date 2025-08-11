@@ -15,6 +15,7 @@ const adminRouter = require("./routes/adminRoute");
 const addressRouter = require("./routes/addressRoute");
 const orderRouter = require("./routes/orderRoute");
 const couponRouter = require("./routes/couponRoute");
+const welcomeGiftRouter = require("./routes/welcomeGiftRoute");
 const session = require('express-session');
 const passport = require('passport');
 require('./config/passport-setup');
@@ -98,6 +99,7 @@ app.use("/api/admin", adminRouter);
 app.use("/api/address", addressRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/coupon", couponRouter);
+app.use("/api/welcome-gifts", welcomeGiftRouter);
 
 // Connect to DB and start server
 const startServer = async () => {

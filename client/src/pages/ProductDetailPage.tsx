@@ -14,6 +14,7 @@ import { useGuest } from '@/contexts/GuestContext';
 import { toast } from '@/hooks/use-toast';
 import { formatRupees } from '@/lib/currency';
 import { cn } from '@/lib/utils';
+import SizeSelector from '@/components/SizeSelector';
 
 interface ProductVariant {
     volume: string;
@@ -271,26 +272,11 @@ const ProductDetailPage = () => {
                         <p className="text-forest leading-relaxed">{product.description.split('.')[0]}.</p>
 
                         {product.variants && product.variants.length > 0 && (
-                            <div className="space-y-3">
-                                <h4 className="text-md font-semibold text-deep-forest">Size: <span className="font-normal text-forest">{selectedVariant?.volume}</span></h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {product.variants.map((variant) => (
-                                        <Button
-                                            key={variant.sku}
-                                            onClick={() => setSelectedVariant(variant)}
-                                            disabled={variant.stock === 0}
-                                            variant={selectedVariant?.sku === variant.sku ? 'default' : 'outline'}
-                                            className={cn(
-                                                'rounded-full',
-                                                selectedVariant?.sku === variant.sku && 'bg-sage text-white border-sage',
-                                                variant.stock === 0 && 'cursor-not-allowed opacity-50'
-                                            )}
-                                        >
-                                            {variant.volume}
-                                        </Button>
-                                    ))}
-                                </div>
-                            </div>
+                            <SizeSelector
+                                variants={product.variants}
+                                selectedVariant={selectedVariant}
+                                onVariantChange={setSelectedVariant}
+                            />
                         )}
 
                         <div className="flex items-center gap-4">

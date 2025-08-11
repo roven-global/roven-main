@@ -13,6 +13,7 @@ import { formatRupees } from '@/lib/currency';
 import { toast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import WelcomeGiftReward from '@/components/WelcomeGiftReward';
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 
@@ -25,8 +26,11 @@ const Cart = () => {
         removeFromCart,
         fetchUserCart,
         appliedCoupon,
+        appliedWelcomeGift,
         applyCoupon,
-        removeCoupon
+        removeCoupon,
+        applyWelcomeGift,
+        removeWelcomeGift
     } = useCart();
     const { guestCart, removeFromGuestCart, updateGuestCartQuantity } = useGuest();
     const [loading, setLoading] = useState(true);
@@ -37,6 +41,8 @@ const Cart = () => {
     const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
     const [scrollContainerRef, setScrollContainerRef] = useState<HTMLDivElement | null>(null);
     const [removingCouponId, setRemovingCouponId] = useState<string | null>(null);
+    const [lifetimeSavings, setLifetimeSavings] = useState<number>(0);
+    const [lifetimeSavingsLoading, setLifetimeSavingsLoading] = useState(false);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -45,6 +51,26 @@ const Cart = () => {
             setLoading(false);
         }
     }, [isAuthenticated, fetchUserCart]);
+
+    // Fetch lifetime savings
+    useEffect(() => {
+        const fetchLifetimeSavings = async () => {
+            if (!isAuthenticated) return;
+            setLifetimeSavingsLoading(true);
+            try {
+                const response = await Axios.get(SummaryApi.getLifetimeSavings.url);
+                if (response.data.success) {
+                    setLifetimeSavings(response.data.data.totalSavings);
+                }
+            } catch (error) {
+                console.error('Error loading lifetime savings:', error);
+            } finally {
+                setLifetimeSavingsLoading(false);
+            }
+        };
+
+        fetchLifetimeSavings();
+    }, [isAuthenticated]);
 
     // Fetch available coupons
     useEffect(() => {
@@ -178,9 +204,20 @@ const Cart = () => {
         ? cartItems.reduce((acc, item) => acc + ((item.variant?.price || item.productId?.price || 0) * item.quantity), 0)
         : guestCart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
-    const shippingCost = subtotal > 499 ? 0 : 50;
+    // Calculate cart summary metrics
+    const totalUniqueItems = displayCartItems.length;
+    const totalQuantity = displayCartItems.reduce((acc, item) => acc + item.quantity, 0);
+    const totalAmount = subtotal;
+
+    const shippingCost = subtotal > 499 ? 0 : 40;
     const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
-    const finalTotal = subtotal - couponDiscount + shippingCost;
+    const welcomeGiftDiscount = appliedWelcomeGift ? appliedWelcomeGift.discountAmount : 0;
+    const finalTotal = subtotal - couponDiscount - welcomeGiftDiscount + shippingCost;
+
+    // Calculate total savings including shipping savings
+    const originalShippingCost = 40; // Original shipping cost before free shipping
+    const shippingSavings = subtotal > 499 ? originalShippingCost : 0;
+    const totalSavings = couponDiscount + welcomeGiftDiscount + shippingSavings;
 
     if (loading) {
         return (
@@ -332,11 +369,28 @@ const Cart = () => {
                                                     <ShoppingBag className="w-5 h-5" />
                                                     Cart details
                                                 </span>
-                                                <span className="text-sm text-gray-600">
-                                                    Total Items: {displayCartItems.length} | To pay: {formatRupees(finalTotal)}
-                                                </span>
+                                                <div className="text-sm text-gray-600 hidden sm:block">
+                                                    <span className="font-medium">Cart Summary:</span>
+                                                    <span className="ml-2">Items - {totalUniqueItems}</span>
+                                                    <span className="mx-2">|</span>
+                                                    <span>Quantity - {totalQuantity}</span>
+                                                    <span className="mx-2">|</span>
+                                                    <span className="font-semibold">Total - {formatRupees(totalAmount)}</span>
+                                                </div>
                                             </div>
                                         </div>
+                                        {/* Mobile Cart Summary */}
+                                        <div className="p-3 bg-gray-50 border-b sm:hidden">
+                                            <div className="text-sm text-gray-600 text-center">
+                                                <span className="font-medium">Cart Summary:</span>
+                                                <span className="ml-2">Items - {totalUniqueItems}</span>
+                                                <span className="mx-2">|</span>
+                                                <span>Quantity - {totalQuantity}</span>
+                                                <span className="mx-2">|</span>
+                                                <span className="font-semibold">Total - {formatRupees(totalAmount)}</span>
+                                            </div>
+                                        </div>
+
                                         <div className="divide-y">
                                             {displayCartItems.map((item: any) => (
                                                 <div key={item._id || `${item.id}-${JSON.stringify(item.variant)}`}
@@ -348,9 +402,20 @@ const Cart = () => {
                                                             className="w-16 h-16 object-cover rounded-lg border"
                                                         />
                                                         <div className="flex-1 min-w-0">
-                                                            <h3 className="font-medium text-gray-900 text-sm line-clamp-2 mb-1">
-                                                                {isAuthenticated ? item.productId?.name : item.name}
-                                                            </h3>
+                                                            <div className="flex items-start justify-between mb-1">
+                                                                <h3 className="font-medium text-gray-900 text-sm line-clamp-2 flex-1">
+                                                                    {isAuthenticated ? item.productId?.name : item.name}
+                                                                </h3>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => handleRemoveItem(item._id || item.id, item.variant)}
+                                                                    disabled={removingId === (item._id || item.id)}
+                                                                    className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 ml-2"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
                                                             {item.variant && (
                                                                 <p className="text-xs text-gray-600 mb-2">{item.variant.volume}</p>
                                                             )}
@@ -396,6 +461,15 @@ const Cart = () => {
 
                                 {/* Right Column - Price Summary */}
                                 <div className="space-y-6">
+                                    {/* Welcome Gift Reward */}
+                                    <WelcomeGiftReward
+                                        subtotal={subtotal}
+                                        shippingCost={40}
+                                        onRewardApplied={applyWelcomeGift}
+                                        onRewardRemoved={removeWelcomeGift}
+                                        appliedReward={appliedWelcomeGift?.reward}
+                                    />
+
                                     <div className="bg-white rounded-lg border shadow-sm sticky top-4">
                                         <div className="p-4 border-b">
                                             <span className="font-semibold text-gray-900 flex items-center gap-2">
@@ -408,10 +482,18 @@ const Cart = () => {
                                                 <span className="text-gray-600">Order Total</span>
                                                 <span className="text-gray-900 font-bold">{formatRupees(subtotal)}</span>
                                             </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">Offer Discount</span>
-                                                <span className="text-green-600 font-bold">-{formatRupees(couponDiscount)}</span>
-                                            </div>
+                                            {couponDiscount > 0 && (
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-600">Coupon Discount</span>
+                                                    <span className="text-green-600 font-bold">-{formatRupees(couponDiscount)}</span>
+                                                </div>
+                                            )}
+                                            {appliedWelcomeGift && (
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-600">Welcome Gift</span>
+                                                    <span className="text-green-600 font-bold">-{formatRupees(appliedWelcomeGift.discountAmount)}</span>
+                                                </div>
+                                            )}
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-gray-600">Shipping <span className="text-xs text-gray-400">ⓘ</span></span>
                                                 <div className="text-right">
@@ -427,12 +509,37 @@ const Cart = () => {
                                             </div>
                                         </div>
                                         <div className="p-4 border-t">
-                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center gap-2">
-                                                <span className="text-blue-600">✓</span>
-                                                <p className="text-sm text-blue-700 font-medium">
-                                                    You are saving {formatRupees(couponDiscount)} on this order
-                                                </p>
-                                            </div>
+                                            {totalSavings > 0 && (
+                                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center gap-2">
+                                                    <span className="text-blue-600">✓</span>
+                                                    <p className="text-sm text-blue-700 font-medium">
+                                                        You are saving {formatRupees(totalSavings)} on this order
+                                                    </p>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Lifetime Savings Section */}
+                                            {isAuthenticated && (
+                                                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 flex items-center gap-2">
+                                                    <span className="text-green-600">🏆</span>
+                                                    <div className="flex-1">
+                                                        <p className="text-sm text-green-700 font-medium">
+                                                            Your lifetime savings with Roven Beauty
+                                                        </p>
+                                                        {lifetimeSavingsLoading ? (
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-600"></div>
+                                                                <span className="text-xs text-green-600">Calculating...</span>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-lg font-bold text-green-800 mt-1">
+                                                                {formatRupees(lifetimeSavings)}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
                                             <Button
                                                 onClick={() => navigate('/checkout')}
                                                 className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-md py-3 font-medium"

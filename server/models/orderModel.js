@@ -114,6 +114,11 @@ const orderSchema = new mongoose.Schema(
       required: true,
       default: 0,
     },
+    welcomeGiftDiscount: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
     total: {
       type: Number,
       required: true,

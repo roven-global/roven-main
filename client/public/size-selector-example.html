@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Size Selector Example</title>
+    <link rel="stylesheet" href="size-selector.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Product Name</h1>
+
+        <!-- Price Display -->
+        <div class="price-display">
+            <span class="current-price" id="current-price">₹430</span>
+            <span class="original-price" id="original-price">₹499</span>
+        </div>
+
+        <!-- Size Selector -->
+        <div class="size-selector" id="size-selector">
+            <div class="size-selector-header">
+                <h4>Select Size</h4>
+                <span class="stock-info" id="stock-info">12 units available</span>
+            </div>
+
+            <div class="size-grid" id="size-grid">
+                <!-- Size options will be populated by JavaScript -->
+            </div>
+
+            <!-- Fallback for no JS -->
+            <noscript>
+                <div class="fallback-select">
+                    <label for="size-select">Select Size</label>
+                    <select id="size-select">
+                        <option value="">Choose a size...</option>
+                        <option value="100ml">100ml - ₹399</option>
+                        <option value="200ml" selected>200ml - ₹430</option>
+                        <option value="300ml">300ml - ₹599</option>
+                    </select>
+                </div>
+            </noscript>
+        </div>
+
+        <!-- Add to Cart Button -->
+        <button class="add-to-cart-btn" id="add-to-cart-btn">
+            Add to Cart
+        </button>
+    </div>
+
+    <script src="size-selector.js"></script>
+    <script>
+        // Example usage
+        const sizeSelector = new SizeSelector({
+            container: '#size-selector',
+            priceElement: '#current-price',
+            originalPriceElement: '#original-price',
+            stockElement: '#stock-info',
+            variants: [
+                {
+                    volume: '100ml',
+                    price: 399,
+                    originalPrice: 450,
+                    stock: 10,
+                    sku: '100ml',
+                    isActive: true
+                },
+                {
+                    volume: '200ml',
+                    price: 430,
+                    originalPrice: 499,
+                    stock: 12,
+                    sku: '200ml',
+                    isActive: true
+                },
+                {
+                    volume: '300ml',
+                    price: 599,
+                    originalPrice: 699,
+                    stock: 5,
+                    sku: '300ml',
+                    isActive: true
+                },
+                {
+                    volume: '400ml',
+                    price: 750,
+                    originalPrice: 899,
+                    stock: 0,
+                    sku: '400ml',
+                    isActive: true
+                }
+            ],
+            defaultSku: '200ml'
+        });
+
+        // Listen for size changes
+        sizeSelector.on('sizeChanged', (variant) => {
+            console.log('Size changed to:', variant);
+        });
+    </script>
+</body>
+
+</html>

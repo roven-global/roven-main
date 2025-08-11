@@ -40,9 +40,21 @@ interface AppliedCoupon {
   finalAmount: number;
 }
 
+interface AppliedWelcomeGift {
+  reward: {
+    _id: string;
+    rewardTitle: string;
+    rewardText: string;
+    giftId: string;
+  };
+  discountAmount: number;
+  type: 'discount' | 'shipping' | 'sample';
+}
+
 interface CartContextType {
   cartItems: CartItem[];
   appliedCoupon: AppliedCoupon | null;
+  appliedWelcomeGift: AppliedWelcomeGift | null;
   addToCart: (item: { productId: string; name: string; quantity?: number; variant?: { volume: string; sku: string } }) => void;
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, quantity: number) => void;
@@ -53,6 +65,9 @@ interface CartContextType {
   applyCoupon: (couponCode: string, orderAmount: number, cartItems: any[]) => Promise<boolean>;
   removeCoupon: () => void;
   clearCoupon: () => void;
+  applyWelcomeGift: (reward: any, discountAmount: number) => void;
+  removeWelcomeGift: () => void;
+  clearWelcomeGift: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -68,6 +83,7 @@ export const useCart = () => {
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [appliedWelcomeGift, setAppliedWelcomeGift] = useState<AppliedWelcomeGift | null>(null);
 
   // Load applied coupon from localStorage on mount
   useEffect(() => {
@@ -95,6 +111,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const clearCart = useCallback(() => {
     setCartItems([]);
     setAppliedCoupon(null);
+    setAppliedWelcomeGift(null);
   }, []);
 
   // Listen for logout event to clear cart
@@ -208,12 +225,43 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setAppliedCoupon(null);
   };
 
+  const applyWelcomeGift = (reward: any, discountAmount: number) => {
+    const rewardText = reward.rewardText.toLowerCase();
+    let type: 'discount' | 'shipping' | 'sample' = 'discount';
+
+    if (rewardText.includes('free shipping') || rewardText.includes('shipping')) {
+      type = 'shipping';
+    } else if (rewardText.includes('free sample') || rewardText.includes('sample')) {
+      type = 'sample';
+    }
+
+    setAppliedWelcomeGift({
+      reward: {
+        _id: reward._id,
+        rewardTitle: reward.rewardTitle,
+        rewardText: reward.rewardText,
+        giftId: reward.giftId
+      },
+      discountAmount,
+      type
+    });
+  };
+
+  const removeWelcomeGift = () => {
+    setAppliedWelcomeGift(null);
+  };
+
+  const clearWelcomeGift = () => {
+    setAppliedWelcomeGift(null);
+  };
+
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
   return (
     <CartContext.Provider value={{
       cartItems,
       appliedCoupon,
+      appliedWelcomeGift,
       addToCart,
       removeFromCart,
       updateQuantity,
@@ -224,6 +272,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       applyCoupon,
       removeCoupon,
       clearCoupon,
+      applyWelcomeGift,
+      removeWelcomeGift,
+      clearWelcomeGift,
     }}>
       {children}
     </CartContext.Provider>

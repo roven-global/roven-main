@@ -3,6 +3,7 @@ const CartModel = require("../models/cartProductModel");
 const ProductModel = require("../models/productModel");
 const CouponModel = require("../models/couponModel");
 const CouponUsageModel = require("../models/couponUsageModel");
+const UserReward = require("../models/userRewardModel");
 const asyncHandler = require("express-async-handler");
 
 /**
@@ -15,6 +16,7 @@ const createOrder = asyncHandler(async (req, res) => {
         paymentMethod = "online",
         notes,
         couponCode,
+        appliedWelcomeGift,
     } = req.body;
 
     if (!shippingAddress) {
@@ -39,7 +41,7 @@ const createOrder = asyncHandler(async (req, res) => {
 
     // Calculate totals
     const subtotal = cartItems.reduce((acc, item) => acc + (item.productId.price * item.quantity), 0);
-    const shippingCost = subtotal > 500 ? 0 : 40;
+    const shippingCost = subtotal > 499 ? 0 : 40;
 
     // Handle coupon discount
     let discount = 0;
@@ -72,7 +74,24 @@ const createOrder = asyncHandler(async (req, res) => {
         }
     }
 
-    const total = subtotal + shippingCost - discount;
+    // Handle welcome gift discount
+    let welcomeGiftDiscount = 0;
+    let appliedWelcomeGiftId = null;
+
+    if (appliedWelcomeGift) {
+        const userReward = await UserReward.findOne({
+            userId: req.user._id,
+            _id: appliedWelcomeGift.rewardId,
+            isUsed: false
+        });
+
+        if (userReward) {
+            welcomeGiftDiscount = appliedWelcomeGift.discountAmount;
+            appliedWelcomeGiftId = userReward._id;
+        }
+    }
+
+    const total = subtotal + shippingCost - discount - welcomeGiftDiscount;
 
     // Prepare order items
     const orderItems = cartItems.map(item => ({
@@ -125,6 +144,7 @@ const createOrder = asyncHandler(async (req, res) => {
         subtotal,
         shippingCost,
         discount,
+        welcomeGiftDiscount,
         total,
         notes,
     };
@@ -158,6 +178,14 @@ const createOrder = asyncHandler(async (req, res) => {
         // Update coupon usage count
         await CouponModel.findByIdAndUpdate(appliedCoupon, {
             $inc: { usedCount: 1 }
+        });
+    }
+
+    // Mark welcome gift as used if applied
+    if (appliedWelcomeGiftId) {
+        await UserReward.findByIdAndUpdate(appliedWelcomeGiftId, {
+            isUsed: true,
+            usedAt: new Date()
         });
     }
 
@@ -350,6 +378,63 @@ const getAllOrders = asyncHandler(async (req, res) => {
     });
 });
 
+/**
+ * Get lifetime savings for a user
+ * @route GET /api/order/lifetime-savings
+ */
+const getLifetimeSavings = asyncHandler(async (req, res) => {
+    try {
+        // Get all completed orders for the user
+        const orders = await OrderModel.find({
+            user: req.user._id,
+            orderStatus: { $in: ["delivered", "shipped", "processing"] }, // Only count orders that are not cancelled/pending
+            isActive: true
+        });
+
+        let totalSavings = 0;
+        let totalCouponSavings = 0;
+        let totalWelcomeGiftSavings = 0;
+        let totalShippingSavings = 0;
+
+        orders.forEach(order => {
+            // Add coupon discounts
+            totalCouponSavings += order.discount || 0;
+            
+            // Add welcome gift discounts
+            totalWelcomeGiftSavings += order.welcomeGiftDiscount || 0;
+            
+            // Calculate shipping savings (original shipping cost - actual charged shipping)
+            // If subtotal > 499, shipping was free, so savings = 40
+            // If subtotal <= 499, shipping was charged, so savings = 0
+            const originalShippingCost = 40;
+            const shippingSavings = order.subtotal > 499 ? originalShippingCost : 0;
+            totalShippingSavings += shippingSavings;
+        });
+
+        totalSavings = totalCouponSavings + totalWelcomeGiftSavings + totalShippingSavings;
+
+        return res.json({
+            success: true,
+            message: "Lifetime savings calculated successfully",
+            data: {
+                totalSavings,
+                breakdown: {
+                    couponSavings: totalCouponSavings,
+                    welcomeGiftSavings: totalWelcomeGiftSavings,
+                    shippingSavings: totalShippingSavings
+                },
+                totalOrders: orders.length
+            }
+        });
+    } catch (error) {
+        console.error("Error calculating lifetime savings:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to calculate lifetime savings"
+        });
+    }
+});
+
 module.exports = {
     createOrder,
     getUserOrders,
@@ -357,4 +442,5 @@ module.exports = {
     updateOrderStatus,
     cancelOrder,
     getAllOrders,
+    getLifetimeSavings,
 };
