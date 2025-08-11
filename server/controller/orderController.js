@@ -102,14 +102,14 @@ const createOrder = asyncHandler(async (req, res) => {
         if (userReward && userReward.giftId) {
             const gift = userReward.giftId;
             const discountResult = gift.calculateDiscount(subtotal, cartItems);
-            
+
             if (gift.rewardType === 'free_shipping') {
                 freeShipping = true;
                 welcomeGiftDiscount = 0; // Discount will be applied to shipping
             } else {
                 welcomeGiftDiscount = discountResult.discount;
             }
-            
+
             appliedWelcomeGiftId = userReward._id;
         }
     }
@@ -119,21 +119,26 @@ const createOrder = asyncHandler(async (req, res) => {
 
     // 3. ADD THIS BLOCK: Welcome Gift Logic
     if (applyWelcomeGift && user.rewardClaimed && !user.rewardUsed) {
-        const userReward = await UserReward.findOne({
-            userId: req.user._id,
-            isUsed: false
-        }).populate('reward');
-
+        const userReward = await UserReward.findOne({ userId: req.user._id, used: false }).populate('reward');
         if (userReward && userReward.reward) {
             const gift = userReward.reward;
-            if (gift.rewardType === 'discount' && gift.value) {
-                welcomeGiftDiscount = (subtotal * gift.value) / 100;
+
+            // Use the enhanced calculation method from the model
+            const validationResult = gift.canBeApplied(subtotal, orderItems);
+
+            if (validationResult.canApply) {
+                welcomeGiftDiscount = validationResult.discount;
+
+                // For free shipping, handle shipping charges
+                if (gift.rewardType === 'free_shipping') {
+                    const shippingCost = subtotal < 1000 ? 49 : 0;
+                    welcomeGiftDiscount = shippingCost; // The discount is the shipping cost saved
+                }
+
+                console.log(`Welcome gift applied: ${validationResult.reason}, Discount: ₹${welcomeGiftDiscount}`);
+            } else {
+                console.log(`Welcome gift cannot be applied: ${validationResult.reason}`);
             }
-            if (gift.rewardType === 'free_shipping') {
-                // Note: We're keeping the existing shipping logic for now
-                // but this could be extended to handle free shipping rewards
-            }
-            // 'free_sample' logic can be handled on the frontend cart
         }
     }
 

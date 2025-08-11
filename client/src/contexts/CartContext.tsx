@@ -46,9 +46,19 @@ interface AppliedWelcomeGift {
     rewardTitle: string;
     rewardText: string;
     giftId: string;
+    couponCode?: string;
+    rewardType?: string;
+    rewardValue?: number;
+    maxDiscount?: number;
+    minOrderAmount?: number;
+    displayText?: string;
   };
   discountAmount: number;
   type: 'discount' | 'shipping' | 'sample';
+  reason?: string;
+  finalAmount?: number;
+  shippingDiscount?: number;
+  productDiscount?: number;
 }
 
 interface CartContextType {
@@ -65,7 +75,7 @@ interface CartContextType {
   applyCoupon: (couponCode: string, orderAmount: number, cartItems: any[]) => Promise<boolean>;
   removeCoupon: () => void;
   clearCoupon: () => void;
-  applyWelcomeGift: (reward: any, discountAmount: number) => void;
+  applyWelcomeGift: (reward: any, discountAmount: number, additionalData?: any) => void;
   removeWelcomeGift: () => void;
   clearWelcomeGift: () => void;
 }
@@ -88,9 +98,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   // Load applied coupon from localStorage on mount
   useEffect(() => {
     const savedCoupon = localStorage.getItem('appliedCoupon');
+    console.log('CartContext: Loading saved coupon from localStorage:', savedCoupon);
     if (savedCoupon) {
       try {
-        setAppliedCoupon(JSON.parse(savedCoupon));
+        const parsedCoupon = JSON.parse(savedCoupon);
+        console.log('CartContext: Parsed saved coupon:', parsedCoupon);
+        setAppliedCoupon(parsedCoupon);
       } catch (error) {
         console.error('Error parsing saved coupon:', error);
         localStorage.removeItem('appliedCoupon');
@@ -100,10 +113,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   // Save applied coupon to localStorage whenever it changes
   useEffect(() => {
+    console.log('CartContext: Saving applied coupon to localStorage:', appliedCoupon);
     if (appliedCoupon) {
       localStorage.setItem('appliedCoupon', JSON.stringify(appliedCoupon));
+      console.log('CartContext: Coupon saved to localStorage');
     } else {
       localStorage.removeItem('appliedCoupon');
+      console.log('CartContext: Coupon removed from localStorage');
     }
   }, [appliedCoupon]);
 
@@ -188,13 +204,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const applyCoupon = async (couponCode: string, orderAmount: number, cartItems: any[]): Promise<boolean> => {
     try {
+      console.log('CartContext: Applying coupon:', couponCode);
+      console.log('CartContext: Order amount:', orderAmount);
+      console.log('CartContext: Cart items:', cartItems);
+
       const response = await Axios.post(SummaryApi.validateCoupon.url, {
         code: couponCode.toUpperCase(),
         orderAmount,
         cartItems
       });
 
+      console.log('CartContext: API response:', response.data);
+
       if (response.data.success) {
+        console.log('CartContext: Setting applied coupon:', response.data.data);
         setAppliedCoupon(response.data.data);
         toast({
           title: "Coupon applied successfully!",
@@ -202,8 +225,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         });
         return true;
       }
+      console.log('CartContext: Coupon application failed');
       return false;
     } catch (error: any) {
+      console.error('CartContext: Error applying coupon:', error);
       const errorMessage = error.response?.data?.message || "Invalid coupon code";
       toast({
         title: "Coupon error",
@@ -225,26 +250,41 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setAppliedCoupon(null);
   };
 
-  const applyWelcomeGift = (reward: any, discountAmount: number) => {
-    const rewardText = reward.rewardText.toLowerCase();
+  const applyWelcomeGift = (reward: any, discountAmount: number, additionalData?: any) => {
+    console.log('CartContext: applyWelcomeGift called with:', { reward, discountAmount, additionalData });
+
     let type: 'discount' | 'shipping' | 'sample' = 'discount';
 
-    if (rewardText.includes('free shipping') || rewardText.includes('shipping')) {
+    // Determine type based on reward type or additional data
+    if (additionalData?.rewardType === 'free_shipping') {
       type = 'shipping';
-    } else if (rewardText.includes('free sample') || rewardText.includes('sample')) {
+    } else if (additionalData?.rewardType === 'buy_one_get_one') {
       type = 'sample';
     }
 
-    setAppliedWelcomeGift({
+    const appliedGift: AppliedWelcomeGift = {
       reward: {
         _id: reward._id,
         rewardTitle: reward.rewardTitle,
         rewardText: reward.rewardText,
-        giftId: reward.giftId
+        giftId: reward.giftId,
+        couponCode: reward.couponCode,
+        rewardType: additionalData?.rewardType,
+        rewardValue: additionalData?.rewardValue,
+        maxDiscount: additionalData?.maxDiscount,
+        minOrderAmount: additionalData?.minOrderAmount,
+        displayText: additionalData?.displayText
       },
       discountAmount,
-      type
-    });
+      type,
+      reason: additionalData?.reason,
+      finalAmount: additionalData?.finalAmount,
+      shippingDiscount: additionalData?.shippingDiscount,
+      productDiscount: additionalData?.productDiscount
+    };
+
+    console.log('CartContext: Setting appliedWelcomeGift:', appliedGift);
+    setAppliedWelcomeGift(appliedGift);
   };
 
   const removeWelcomeGift = () => {

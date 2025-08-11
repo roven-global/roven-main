@@ -15,6 +15,9 @@ interface User {
   status: string;
   role?: string;
   wishlist?: string[];
+  rewardClaimed?: boolean;
+  rewardUsed?: boolean;
+  reward?: string;
 }
 
 interface AuthContextType {

@@ -319,6 +319,10 @@ const SummaryApi = {
     url: "/api/welcome-gifts/:id/claim",
     method: "post",
   },
+  validateWelcomeGiftCoupon: {
+    url: "/api/welcome-gifts/validate-coupon",
+    method: "post",
+  },
   checkWelcomeGiftEligibility: {
     url: "/api/welcome-gifts/check-eligibility",
     method: "get",

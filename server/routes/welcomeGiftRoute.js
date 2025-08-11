@@ -13,7 +13,8 @@ const {
   claimWelcomeGift,
   checkWelcomeGiftEligibility,
   markRewardAsUsed,
-  getUserRewards
+  getUserRewards,
+  validateWelcomeGiftCoupon
 } = require("../controller/welcomeGiftController");
 const auth = require("../middleware/auth");
 const adminOnly = require("../middleware/adminOnly");
@@ -22,6 +23,7 @@ const adminOnly = require("../middleware/adminOnly");
 router.get("/", getAllWelcomeGifts);
 router.get("/check-eligibility", checkWelcomeGiftEligibility);
 router.post("/:id/claim", claimWelcomeGift);
+router.post("/validate-coupon", validateWelcomeGiftCoupon);
 
 // Admin routes - specific routes first, then parameterized routes
 router.get("/admin/all", auth, adminOnly, getAllWelcomeGiftsAdmin);

@@ -1,149 +1,108 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Reward } from '@/types/reward';
-import { getAnonymousId, clearAnonymousId, hasAnonymousId } from '@/utils/anonymousId';
+import { generateAnonymousId } from '@/utils/anonymousId';
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
+import { toast } from '@/hooks/use-toast';
 
-interface UseRewardPopupReturn {
-    isPopupOpen: boolean;
-    setIsPopupOpen: (open: boolean) => void;
-    handleRewardClaimed: (reward: Reward) => void;
-    closePopup: () => void;
-    getClaimedRewardDetails: () => Reward | null;
-    resetRewardState: () => void;
-    shouldShowPopup: boolean;
-    loading: boolean;
-}
+export const useRewardPopup = () => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [gifts, setGifts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [selectedGift, setSelectedGift] = useState<any>(null);
+    const { user, checkAuthStatus } = useAuth();
 
-export const useRewardPopup = (): UseRewardPopupReturn => {
-    const { user } = useAuth();
-    const [isPopupOpen, setIsPopupOpen] = useState(false);
-    const [shouldShowPopup, setShouldShowPopup] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [claimedReward, setClaimedReward] = useState<Reward | null>(null);
+    useEffect(() => {
+        fetchWelcomeGifts();
+    }, []);
 
-    const checkEligibility = useCallback(async () => {
-        setLoading(true);
+    const fetchWelcomeGifts = async () => {
         try {
-            const anonymousId = getAnonymousId();
-            const url = `${SummaryApi.checkWelcomeGiftEligibility.url}?anonymousId=${anonymousId}`;
-
-            const response = await Axios.get(url);
-
+            const response = await Axios.get(SummaryApi.getAllWelcomeGifts.url);
             if (response.data.success) {
-                const { shouldShowPopup: eligible } = response.data.data;
-                setShouldShowPopup(eligible);
+                setGifts(response.data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching welcome gifts:', error);
+        }
+    };
 
-                // If eligible, show popup after a short delay
-                if (eligible) {
-                    setTimeout(() => {
-                        setIsPopupOpen(true);
-                    }, 1000); // 1 second delay
-                }
+    const checkEligibility = async () => {
+        try {
+            const anonymousId = generateAnonymousId();
+            const response = await Axios.get(SummaryApi.checkWelcomeGiftEligibility.url, {
+                params: { anonymousId }
+            });
+
+            if (response.data.success && response.data.data.shouldShowPopup) {
+                setIsOpen(true);
             }
         } catch (error) {
             console.error('Error checking eligibility:', error);
-            // Fallback: show popup if no localStorage flag exists
-            const hasVisitedBefore = localStorage.getItem('hasVisitedBefore');
-            const hasClaimedReward = localStorage.getItem('rewardClaimed');
+        }
+    };
 
-            if (!hasVisitedBefore && !hasClaimedReward) {
-                setShouldShowPopup(true);
-                setTimeout(() => {
-                    setIsPopupOpen(true);
-                }, 1000);
+    const claimReward = async (giftId: string) => {
+        try {
+            setLoading(true);
+            const anonymousId = generateAnonymousId();
+
+            const response = await Axios.post(
+                SummaryApi.claimWelcomeGift.url.replace(':id', giftId),
+                { anonymousId }
+            );
+
+            if (response.data.success) {
+                const { gift, claimed, anonymousId: claimedAnonymousId } = response.data.data;
+
+                // Store in localStorage for anonymous users
+                localStorage.setItem('rewardClaimed', 'true');
+                localStorage.setItem('claimedRewardDetails', JSON.stringify({
+                    id: gift._id,
+                    title: gift.title,
+                    reward: gift.reward,
+                    couponCode: gift.couponCode || ''
+                }));
+
+                // If user is logged in, refresh their data to update rewardClaimed status
+                if (user && checkAuthStatus) {
+                    await checkAuthStatus();
+                }
+
+                toast({
+                    title: "Reward claimed successfully!",
+                    description: `${gift.title} has been added to your account.`,
+                });
+
+                console.log('Reward claimed successfully:', gift.reward);
+                setIsOpen(false);
+                return true;
             }
+        } catch (error: any) {
+            console.error('Error claiming reward:', error);
+            toast({
+                title: "Error claiming reward",
+                description: error.response?.data?.message || "Please try again.",
+                variant: "destructive",
+            });
         } finally {
             setLoading(false);
         }
-    }, []);
-
-    // Check eligibility on mount and when user changes
-    useEffect(() => {
-        checkEligibility();
-    }, [user, checkEligibility]);
-
-    const handleRewardClaimed = async (reward: Reward) => {
-        try {
-            // Store in localStorage for immediate feedback
-            localStorage.setItem('rewardClaimed', 'true');
-            localStorage.setItem('claimedRewardDetails', JSON.stringify(reward));
-            setClaimedReward(reward);
-
-            // Send claim to backend
-            const anonymousId = getAnonymousId();
-            const url = SummaryApi.claimWelcomeGift.url.replace(':id', reward.id.toString());
-
-            await Axios.post(url, { anonymousId });
-
-            console.log('Reward claimed successfully:', reward.title);
-        } catch (error) {
-            console.error('Error claiming reward:', error);
-            // Still store locally even if backend fails
-            localStorage.setItem('rewardClaimed', 'true');
-            localStorage.setItem('claimedRewardDetails', JSON.stringify(reward));
-            setClaimedReward(reward);
-        }
+        return false;
     };
 
-    const closePopup = () => {
-        setIsPopupOpen(false);
-        // Mark as visited
-        localStorage.setItem('hasVisitedBefore', 'true');
-    };
-
-    const getClaimedRewardDetails = (): Reward | null => {
-        if (claimedReward) return claimedReward;
-
-        const stored = localStorage.getItem('claimedRewardDetails');
-        if (stored) {
-            try {
-                return JSON.parse(stored);
-            } catch (error) {
-                console.error('Error parsing stored reward:', error);
-            }
-        }
-        return null;
-    };
-
-    const resetRewardState = () => {
-        // Clear all localStorage flags
-        localStorage.removeItem('hasVisitedBefore');
-        localStorage.removeItem('rewardClaimed');
-        localStorage.removeItem('claimedRewardDetails');
-        localStorage.removeItem('anonymousId');
-
-        // Reset state
-        setClaimedReward(null);
-        setShouldShowPopup(false);
-        setIsPopupOpen(false);
-
-        // Re-check eligibility
-        setTimeout(() => {
-            checkEligibility();
-        }, 100);
-    };
-
-    // Clear anonymous ID when user logs in
-    useEffect(() => {
-        if (user && hasAnonymousId()) {
-            clearAnonymousId();
-            // Re-check eligibility after login
-            setTimeout(() => {
-                checkEligibility();
-            }, 500);
-        }
-    }, [user]);
+    const openPopup = () => setIsOpen(true);
+    const closePopup = () => setIsOpen(false);
 
     return {
-        isPopupOpen,
-        setIsPopupOpen,
-        handleRewardClaimed,
+        isOpen,
+        gifts,
+        loading,
+        selectedGift,
+        setSelectedGift,
+        openPopup,
         closePopup,
-        getClaimedRewardDetails,
-        resetRewardState,
-        shouldShowPopup,
-        loading
+        checkEligibility,
+        claimReward,
     };
 };

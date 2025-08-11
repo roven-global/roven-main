@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -43,9 +43,14 @@ const SizeGuide = lazy(() => import("./pages/SizeGuide"));
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { isPopupOpen, handleRewardClaimed, closePopup } = useRewardPopup();
+  const { isOpen, openPopup, closePopup, checkEligibility } = useRewardPopup();
 
-  console.log('AppContent - isPopupOpen:', isPopupOpen);
+  console.log('AppContent - isPopupOpen:', isOpen);
+
+  // Check eligibility when component mounts
+  useEffect(() => {
+    checkEligibility();
+  }, [checkEligibility]);
 
   return (
     <>
@@ -95,9 +100,8 @@ const AppContent = () => {
 
       {/* Reward Popup for First-Time Visitors */}
       <RewardPopup
-        isOpen={isPopupOpen}
+        isOpen={isOpen}
         onClose={closePopup}
-        onRewardClaimed={handleRewardClaimed}
       />
     </>
   );

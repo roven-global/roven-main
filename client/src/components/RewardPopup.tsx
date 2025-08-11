@@ -4,15 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X, Gift, Percent, Truck, DollarSign, Star, Clock, Heart, Shield, Zap, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Reward } from '@/types/reward';
-import { getAnonymousId } from '@/utils/anonymousId';
-import Axios from '@/utils/Axios';
-import SummaryApi from '@/common/summaryApi';
+import { useRewardPopup } from '@/hooks/useRewardPopup';
 
 interface RewardPopupProps {
     isOpen: boolean;
     onClose: () => void;
-    onRewardClaimed: (reward: Reward) => void;
 }
 
 // Icon mapping for dynamic rendering
@@ -31,58 +27,14 @@ const iconMap: { [key: string]: React.ReactNode } = {
 
 export const RewardPopup: React.FC<RewardPopupProps> = ({
     isOpen,
-    onClose,
-    onRewardClaimed
+    onClose
 }) => {
     console.log('RewardPopup - isOpen:', isOpen);
 
-    const [rewards, setRewards] = useState<Reward[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
+    const { gifts, loading, claimReward } = useRewardPopup();
+    const [selectedReward, setSelectedReward] = useState<any>(null);
     const [isRevealed, setIsRevealed] = useState(false);
     const [countdown, setCountdown] = useState(5);
-
-    // Fetch rewards from backend
-    useEffect(() => {
-        const fetchRewards = async () => {
-            if (isOpen && rewards.length === 0) {
-                setLoading(true);
-                try {
-                    const response = await Axios.get(SummaryApi.getAllWelcomeGifts.url);
-                    if (response.data.success) {
-                        const backendRewards = response.data.data.map((gift: any) => ({
-                            id: gift._id,
-                            title: gift.title,
-                            description: gift.description,
-                            icon: iconMap[gift.icon] || <Gift className="w-6 h-6" />,
-                            color: gift.color,
-                            bgColor: gift.bgColor,
-                            reward: gift.reward
-                        }));
-                        setRewards(backendRewards);
-                    }
-                } catch (error) {
-                    console.error('Error fetching rewards:', error);
-                    // Fallback to default rewards if API fails
-                    setRewards([
-                        {
-                            id: '1',
-                            title: "10% Off",
-                            description: "Get 10% off your first order",
-                            icon: <Percent className="w-6 h-6" />,
-                            color: "text-green-600",
-                            bgColor: "bg-green-50 hover:bg-green-100",
-                            reward: "Use code: WELCOME10"
-                        }
-                    ]);
-                } finally {
-                    setLoading(false);
-                }
-            }
-        };
-
-        fetchRewards();
-    }, [isOpen, rewards.length]);
 
     useEffect(() => {
         if (isRevealed && countdown > 0) {
@@ -95,18 +47,15 @@ export const RewardPopup: React.FC<RewardPopupProps> = ({
         }
     }, [isRevealed, countdown, onClose]);
 
-    const handleRewardClick = async (reward: Reward) => {
+    const handleRewardClick = async (reward: any) => {
         setSelectedReward(reward);
         setIsRevealed(true);
-        onRewardClaimed(reward);
 
-        // Track the claim in the backend
+        // Use the new claimReward function from the hook
         try {
-            const anonymousId = getAnonymousId();
-            const url = SummaryApi.claimWelcomeGift.url.replace(':id', reward.id.toString());
-            await Axios.post(url, { anonymousId });
+            await claimReward(reward._id);
         } catch (error) {
-            console.error('Error tracking reward claim:', error);
+            console.error('Error claiming reward:', error);
         }
     };
 
@@ -165,23 +114,28 @@ export const RewardPopup: React.FC<RewardPopupProps> = ({
                     {!isRevealed ? (
                         <>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                                {rewards.map((reward) => (
+                                {gifts.map((gift) => (
                                     <Card
-                                        key={reward.id}
+                                        key={gift._id}
                                         className={cn(
                                             "cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-lg border-2 hover:border-gray-300",
-                                            reward.bgColor
+                                            gift.bgColor
                                         )}
-                                        onClick={() => handleRewardClick(reward)}
+                                        onClick={() => handleRewardClick(gift)}
                                     >
                                         <CardContent className="p-6 text-center">
-                                            <div className={cn("mx-auto mb-3 w-12 h-12 rounded-full flex items-center justify-center", reward.bgColor)}>
-                                                <div className={reward.color}>
-                                                    {reward.icon}
+                                            <div className={cn("mx-auto mb-3 w-12 h-12 rounded-full flex items-center justify-center", gift.bgColor)}>
+                                                <div className={gift.color}>
+                                                    {iconMap[gift.icon] || <Gift className="w-6 h-6" />}
                                                 </div>
                                             </div>
-                                            <h3 className="font-semibold text-gray-900 mb-2">{reward.title}</h3>
-                                            <p className="text-sm text-gray-600">{reward.description}</p>
+                                            <h3 className="font-semibold text-gray-900 mb-2">{gift.title}</h3>
+                                            <p className="text-sm text-gray-600">{gift.description}</p>
+                                            {gift.couponCode && (
+                                                <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono">
+                                                    {gift.couponCode}
+                                                </div>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 ))}
@@ -197,30 +151,28 @@ export const RewardPopup: React.FC<RewardPopupProps> = ({
                             <div className="mb-6">
                                 <div className={cn(
                                     "mx-auto mb-4 w-20 h-20 rounded-full flex items-center justify-center",
-                                    selectedReward?.bgColor
+                                    selectedReward?.bgColor || "bg-green-100"
                                 )}>
-                                    <div className={selectedReward?.color}>
-                                        {selectedReward?.icon}
+                                    <div className={selectedReward?.color || "text-green-600"}>
+                                        {iconMap[selectedReward?.icon] || <Gift className="w-10 h-10" />}
                                     </div>
                                 </div>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                                <h3 className="text-xl font-bold text-gray-900 mb-2">
                                     {selectedReward?.title}
                                 </h3>
-                                <p className="text-gray-600 mb-4">{selectedReward?.description}</p>
-                                <Badge variant="secondary" className="text-lg px-4 py-2">
+                                <p className="text-gray-600 mb-4">
                                     {selectedReward?.reward}
-                                </Badge>
-                            </div>
-
-                            <div className="text-center">
-                                <p className="text-sm text-gray-500 mb-2">
-                                    This popup will close automatically in {countdown} seconds
                                 </p>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div
-                                        className="bg-blue-600 h-2 rounded-full transition-all duration-1000"
-                                        style={{ width: `${((5 - countdown) / 5) * 100}%` }}
-                                    ></div>
+                                {selectedReward?.couponCode && (
+                                    <div className="mb-4 p-3 bg-gray-100 rounded-lg">
+                                        <p className="text-sm text-gray-600 mb-1">Your Coupon Code:</p>
+                                        <code className="text-lg font-mono font-bold text-gray-800">
+                                            {selectedReward.couponCode}
+                                        </code>
+                                    </div>
+                                )}
+                                <div className="text-sm text-gray-500">
+                                    Closing in {countdown} seconds...
                                 </div>
                             </div>
                         </div>

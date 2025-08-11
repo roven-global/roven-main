@@ -83,17 +83,35 @@ const Cart = () => {
         }
     }, [appliedWelcomeGift]);
 
+    // Auto-apply welcome gift if user has claimed one and it's not already applied
+    useEffect(() => {
+        if (hasClaimedReward && !appliedWelcomeGift) {
+            // Automatically apply the welcome gift if user has claimed one (both authenticated and anonymous)
+            setApplyReward(true);
+        }
+    }, [hasClaimedReward, appliedWelcomeGift]);
+
     // Check if user has claimed reward
     useEffect(() => {
         const checkClaimedReward = async () => {
-            if (!isAuthenticated) return;
-            try {
-                const response = await Axios.get(SummaryApi.userDetails.url);
-                if (response.data.success && response.data.data.rewardClaimed) {
-                    setHasClaimedReward(true);
+            if (isAuthenticated) {
+                try {
+                    const response = await Axios.get(SummaryApi.userDetails.url);
+                    if (response.data.success && response.data.data.rewardClaimed) {
+                        setHasClaimedReward(true);
+                    }
+                } catch (error) {
+                    console.error('Error checking claimed reward:', error);
                 }
-            } catch (error) {
-                console.error('Error checking claimed reward:', error);
+            }
+
+            // Always check localStorage as well (for both authenticated and anonymous users)
+            const hasClaimedRewardLocal = localStorage.getItem('rewardClaimed') === 'true';
+            console.log('Cart: Checking localStorage for claimed reward:', hasClaimedRewardLocal);
+
+            if (hasClaimedRewardLocal) {
+                setHasClaimedReward(true);
+                console.log('Cart: Setting hasClaimedReward to true from localStorage');
             }
         };
 
@@ -109,6 +127,7 @@ const Cart = () => {
                 const response = await Axios.get(SummaryApi.getActiveCoupons.url);
                 if (response.data.success) {
                     setAvailableCoupons(response.data.data);
+                    console.log('Available coupons loaded:', response.data.data);
                 }
             } catch (error) {
                 console.error('Error fetching available coupons:', error);
@@ -126,6 +145,11 @@ const Cart = () => {
             }
         };
     }, []);
+
+    // Debug log for applied coupon
+    useEffect(() => {
+        console.log('Applied coupon state:', appliedCoupon);
+    }, [appliedCoupon]);
 
     const handleUpdateQuantity = async (cartItemId: string, newQuantity: number, variant?: { volume: string; sku: string }) => {
         if (newQuantity < 1) return;
@@ -173,11 +197,19 @@ const Cart = () => {
                 ? cartItems.reduce((acc, item) => acc + ((item.variant?.price || item.productId?.price || 0) * item.quantity), 0)
                 : guestCart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
+            console.log('Applying coupon:', couponToApply);
+            console.log('Subtotal:', subtotal);
+            console.log('Cart items:', displayCartItems);
+
             const success = await applyCoupon(couponToApply, subtotal, displayCartItems);
+            console.log('Coupon application result:', success);
+
             if (success) {
                 setCouponCode('');
+                console.log('Coupon applied successfully, clearing input');
             }
         } catch (error: any) {
+            console.error('Error applying coupon:', error);
             const errorMessage = error.response?.data?.message || "Invalid coupon code";
             setCouponError(errorMessage);
         } finally {
@@ -193,9 +225,6 @@ const Cart = () => {
     const handleRemoveIndividualCoupon = async (couponCode: string) => {
         setRemovingCouponId(couponCode);
         try {
-            // Call the backend API to unapply the coupon
-            await Axios.post('/api/coupon/remove', { couponCode });
-
             // Remove the coupon from the applied coupons list
             removeCoupon();
 
@@ -238,14 +267,14 @@ const Cart = () => {
     const totalAmount = subtotal;
 
     const shippingCost = subtotal > 499 ? 0 : 40;
-    const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
     const welcomeGiftDiscount = appliedWelcomeGift ? appliedWelcomeGift.discountAmount : 0;
-    const finalTotal = subtotal - couponDiscount - welcomeGiftDiscount + shippingCost;
+    // Calculate final total including coupon and welcome gift discounts
+    const finalTotal = subtotal - (appliedCoupon ? appliedCoupon.discountAmount : 0) - welcomeGiftDiscount + shippingCost;
 
     // Calculate total savings including shipping savings
     const originalShippingCost = 40; // Original shipping cost before free shipping
     const shippingSavings = subtotal > 499 ? originalShippingCost : 0;
-    const totalSavings = couponDiscount + welcomeGiftDiscount + shippingSavings;
+    const totalSavings = (appliedCoupon ? appliedCoupon.discountAmount : 0) + welcomeGiftDiscount + shippingSavings;
 
     // Handle checkout with reward state
     const handleCheckout = () => {
@@ -301,6 +330,71 @@ const Cart = () => {
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                 {/* Left Column */}
                                 <div className="lg:col-span-2 space-y-6">
+
+                                    {/* Coupon Input Section */}
+                                    <div className="bg-white rounded-lg border shadow-sm">
+                                        <div className="p-4 border-b">
+                                            <div className="flex items-center gap-3">
+                                                <Tag className="w-5 h-5 text-blue-600" />
+                                                <span className="font-semibold text-gray-900">Apply Coupon Code</span>
+                                            </div>
+                                            <p className="text-sm text-gray-600 mt-1">Enter your coupon code to get additional discounts</p>
+                                        </div>
+                                        <div className="p-4 space-y-4">
+                                            {/* Coupon Input */}
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    type="text"
+                                                    placeholder="Enter coupon code"
+                                                    value={couponCode}
+                                                    onChange={(e) => setCouponCode(e.target.value)}
+                                                    className="flex-1"
+                                                    disabled={couponLoading}
+                                                />
+                                                <Button
+                                                    onClick={() => handleApplyCoupon()}
+                                                    disabled={couponLoading || !couponCode.trim()}
+                                                    className="bg-blue-500 hover:bg-blue-600 text-white"
+                                                >
+                                                    {couponLoading ? 'Applying...' : 'Apply'}
+                                                </Button>
+                                            </div>
+
+                                            {/* Coupon Error */}
+                                            {couponError && (
+                                                <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
+                                                    {couponError}
+                                                </div>
+                                            )}
+
+                                            {/* Applied Coupon Display */}
+                                            {appliedCoupon && (
+                                                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <Tag className="w-4 h-4 text-green-600" />
+                                                            <div>
+                                                                <p className="text-sm font-medium text-green-700">
+                                                                    Coupon Applied: {appliedCoupon.coupon.code}
+                                                                </p>
+                                                                <p className="text-xs text-green-600">
+                                                                    {appliedCoupon.coupon.name} - {formatRupees(appliedCoupon.discountAmount)} off
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={handleRemoveCoupon}
+                                                            className="text-red-600 hover:text-red-700 h-auto p-1 text-xs"
+                                                        >
+                                                            Remove
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
 
                                     {/* Available Offers Section */}
                                     {availableCoupons.length > 0 && (
@@ -503,11 +597,29 @@ const Cart = () => {
                                     {/* Welcome Gift Reward */}
                                     <WelcomeGiftReward
                                         subtotal={subtotal}
-                                        shippingCost={40}
+                                        shippingCost={shippingCost}
+                                        cartItems={cartItems} // Pass cart items for BOGO calculations
                                         onRewardApplied={applyWelcomeGift}
                                         onRewardRemoved={removeWelcomeGift}
-                                        appliedReward={appliedWelcomeGift?.reward}
+                                        appliedReward={appliedWelcomeGift}
                                     />
+
+                                    {/* Welcome Gift Selection Status */}
+                                    {isAuthenticated && hasClaimedReward && !appliedWelcomeGift && (
+                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                            <div className="flex items-center gap-2">
+                                                <Gift className="w-5 h-5 text-blue-600" />
+                                                <div>
+                                                    <p className="text-sm text-blue-700 font-medium">
+                                                        Select Your Welcome Gift
+                                                    </p>
+                                                    <p className="text-xs text-blue-600">
+                                                        Choose a welcome gift above to apply to this order
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="bg-white rounded-lg border shadow-sm sticky top-4">
                                         <div className="p-4 border-b">
@@ -521,16 +633,22 @@ const Cart = () => {
                                                 <span className="text-gray-600">Order Total</span>
                                                 <span className="text-gray-900 font-bold">{formatRupees(subtotal)}</span>
                                             </div>
-                                            {couponDiscount > 0 && (
+                                            {appliedCoupon && (
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-gray-600">Coupon Discount</span>
-                                                    <span className="text-green-600 font-bold">-{formatRupees(couponDiscount)}</span>
+                                                    <span className="text-green-600 font-bold">-{formatRupees(appliedCoupon.discountAmount)}</span>
                                                 </div>
                                             )}
                                             {appliedWelcomeGift && (
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-gray-600">Welcome Gift</span>
                                                     <span className="text-green-600 font-bold">-{formatRupees(appliedWelcomeGift.discountAmount)}</span>
+                                                </div>
+                                            )}
+                                            {!appliedWelcomeGift && applyReward && hasClaimedReward && (
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-600">Welcome Gift</span>
+                                                    <span className="text-orange-600 font-medium">Will be applied</span>
                                                 </div>
                                             )}
                                             <div className="flex justify-between text-sm">
@@ -579,40 +697,82 @@ const Cart = () => {
                                                 </div>
                                             )}
 
-                                            {/* Apply Welcome Gift Toggle */}
-                                            {isAuthenticated && hasClaimedReward && (
-                                                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            <Gift className="w-5 h-5 text-orange-600" />
-                                                            <div>
-                                                                <p className="text-sm text-orange-700 font-medium">
-                                                                    Apply Welcome Gift
+                                            {/* Welcome Gift Status */}
+                                            <div className="space-y-3">
+                                                <h3 className="text-lg font-semibold text-gray-800">Welcome Gift Status</h3>
+                                                {hasClaimedReward ? (
+                                                    <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                                                                <Gift className="w-4 h-4 text-orange-600" />
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <h4 className="font-medium text-orange-800">Welcome Gift Available!</h4>
+                                                                <p className="text-sm text-orange-700">
+                                                                    {appliedWelcomeGift ? (
+                                                                        <>
+                                                                            <strong>{appliedWelcomeGift.reward?.rewardTitle}</strong> applied
+                                                                            {appliedWelcomeGift.discountAmount > 0 && (
+                                                                                <span className="ml-2 font-medium">
+                                                                                    -{formatRupees(appliedWelcomeGift.discountAmount)}
+                                                                                </span>
+                                                                            )}
+                                                                        </>
+                                                                    ) : (
+                                                                        "Will be applied at checkout"
+                                                                    )}
                                                                 </p>
-                                                                <p className="text-xs text-orange-600">
-                                                                    Use your claimed welcome gift on this order
-                                                                </p>
+                                                                {appliedWelcomeGift?.reward?.couponCode && (
+                                                                    <p className="text-xs text-orange-600 mt-1">
+                                                                        Coupon Code: <code className="bg-orange-100 px-1 rounded">{appliedWelcomeGift.reward.couponCode}</code>
+                                                                    </p>
+                                                                )}
+                                                                {/* Show detailed discount breakdown */}
+                                                                {appliedWelcomeGift && appliedWelcomeGift.discountAmount > 0 && (
+                                                                    <div className="mt-2 p-2 bg-orange-100 rounded text-xs">
+                                                                        <p className="text-orange-800 font-medium">Discount Breakdown:</p>
+                                                                        <p className="text-orange-700">
+                                                                            {appliedWelcomeGift.reward?.rewardText}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex gap-2">
+                                                                {!appliedWelcomeGift && (
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() => setApplyReward(true)}
+                                                                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                                                                    >
+                                                                        Apply
+                                                                    </Button>
+                                                                )}
+                                                                {appliedWelcomeGift && (
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        onClick={() => setApplyReward(false)}
+                                                                        className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                                                                    >
+                                                                        Remove
+                                                                    </Button>
+                                                                )}
                                                             </div>
                                                         </div>
-                                                        <label className="relative inline-flex items-center cursor-pointer">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={applyReward}
-                                                                onChange={(e) => setApplyReward(e.target.checked)}
-                                                                className="sr-only peer"
-                                                            />
-                                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-500"></div>
-                                                        </label>
                                                     </div>
-                                                </div>
-                                            )}
+                                                ) : (
+                                                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+                                                        <p className="text-gray-500">No welcome gift claimed yet</p>
+                                                    </div>
+                                                )}
+                                            </div>
 
                                             <Button
                                                 onClick={handleCheckout}
                                                 className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-md py-3 font-medium"
                                                 disabled={displayCartItems.length === 0}
                                             >
-                                                Add address
+                                                {applyReward && hasClaimedReward ? 'Proceed with Welcome Gift' : 'Add address'}
                                             </Button>
                                         </div>
                                     </div>

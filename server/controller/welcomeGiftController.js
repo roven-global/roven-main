@@ -50,13 +50,14 @@ const getWelcomeGiftById = asyncHandler(async (req, res) => {
 // @route   POST /api/admin/welcome-gifts
 // @access  Private/Admin
 const createWelcomeGift = asyncHandler(async (req, res) => {
-  const { 
-    title, 
-    description, 
-    icon, 
-    color, 
-    bgColor, 
-    reward, 
+  const {
+    title,
+    description,
+    icon,
+    color,
+    bgColor,
+    reward,
+    couponCode,
     order,
     rewardType,
     rewardValue,
@@ -71,6 +72,13 @@ const createWelcomeGift = asyncHandler(async (req, res) => {
     throw new Error(`Gift with order ${order} already exists`);
   }
 
+  // Check if coupon code already exists
+  const existingCouponCode = await WelcomeGift.findOne({ couponCode: couponCode.toUpperCase() });
+  if (existingCouponCode) {
+    res.status(400);
+    throw new Error(`Coupon code ${couponCode} already exists`);
+  }
+
   const gift = await WelcomeGift.create({
     title,
     description,
@@ -78,6 +86,7 @@ const createWelcomeGift = asyncHandler(async (req, res) => {
     color,
     bgColor,
     reward,
+    couponCode: couponCode.toUpperCase(),
     order,
     rewardType: rewardType || 'percentage',
     rewardValue: rewardValue || 10,
@@ -96,14 +105,15 @@ const createWelcomeGift = asyncHandler(async (req, res) => {
 // @route   PUT /api/admin/welcome-gifts/:id
 // @access  Private/Admin
 const updateWelcomeGift = asyncHandler(async (req, res) => {
-  const { 
-    title, 
-    description, 
-    icon, 
-    color, 
-    bgColor, 
-    reward, 
-    order, 
+  const {
+    title,
+    description,
+    icon,
+    color,
+    bgColor,
+    reward,
+    couponCode,
+    order,
     isActive,
     rewardType,
     rewardValue,
@@ -127,6 +137,18 @@ const updateWelcomeGift = asyncHandler(async (req, res) => {
     }
   }
 
+  // Check if coupon code is being changed and if it conflicts with another gift
+  if (couponCode && couponCode.toUpperCase() !== gift.couponCode) {
+    const existingCouponCode = await WelcomeGift.findOne({
+      couponCode: couponCode.toUpperCase(),
+      _id: { $ne: req.params.id }
+    });
+    if (existingCouponCode) {
+      res.status(400);
+      throw new Error(`Coupon code ${couponCode} already exists`);
+    }
+  }
+
   const updatedGift = await WelcomeGift.findByIdAndUpdate(
     req.params.id,
     {
@@ -136,6 +158,7 @@ const updateWelcomeGift = asyncHandler(async (req, res) => {
       color,
       bgColor,
       reward,
+      couponCode: couponCode ? couponCode.toUpperCase() : gift.couponCode,
       order,
       isActive,
       rewardType: rewardType || gift.rewardType,
@@ -278,6 +301,13 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
 
   if (req.user) {
     userRewardData.userId = req.user._id;
+
+    // Update user's rewardClaimed status
+    const User = require("../models/userModel");
+    await User.findByIdAndUpdate(req.user._id, {
+      rewardClaimed: true,
+      reward: gift._id
+    });
   }
 
   await UserReward.create(userRewardData);
@@ -287,7 +317,8 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
     data: {
       gift,
       claimed: true,
-      anonymousId
+      anonymousId,
+      userUpdated: !!req.user
     },
     message: "Welcome gift claimed successfully"
   });
@@ -378,6 +409,102 @@ const getUserRewards = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Validate welcome gift coupon code
+// @route   POST /api/welcome-gifts/validate-coupon
+// @access  Public
+const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
+  const { couponCode, orderAmount, cartItems } = req.body;
+
+  if (!couponCode) {
+    res.status(400);
+    throw new Error("Coupon code is required");
+  }
+
+  if (!orderAmount || orderAmount <= 0) {
+    res.status(400);
+    throw new Error("Valid order amount is required");
+  }
+
+  // Find the welcome gift by coupon code
+  const gift = await WelcomeGift.findOne({
+    couponCode: couponCode.toUpperCase(),
+    isActive: true
+  });
+
+  if (!gift) {
+    res.status(404);
+    throw new Error("Invalid welcome gift coupon code");
+  }
+
+  // Check if user has already claimed this gift
+  let hasClaimed = false;
+  if (req.user) {
+    const userReward = await UserReward.findOne({
+      userId: req.user._id,
+      giftId: gift._id
+    });
+    hasClaimed = !!userReward;
+  } else {
+    // For anonymous users, we allow them to use welcome gifts
+    // The frontend will handle localStorage checks
+    hasClaimed = false;
+  }
+
+  // Only check if user has claimed if they are authenticated
+  if (req.user && hasClaimed) {
+    res.status(400);
+    throw new Error("You have already claimed this welcome gift");
+  }
+
+  // Use the enhanced calculation method from the model
+  const validationResult = gift.canBeApplied(orderAmount, cartItems);
+
+  if (!validationResult.canApply) {
+    res.status(400);
+    throw new Error(validationResult.reason);
+  }
+
+  // For free shipping, we need to calculate the shipping cost
+  let shippingDiscount = 0;
+  if (gift.rewardType === 'free_shipping') {
+    // Calculate shipping cost based on order amount
+    const shippingCost = orderAmount < 1000 ? 49 : 0;
+    shippingDiscount = shippingCost;
+  }
+
+  // Calculate final discount (including shipping for free shipping type)
+  const totalDiscount = validationResult.discount + shippingDiscount;
+  const finalAmount = orderAmount - totalDiscount;
+
+  res.status(200).json({
+    success: true,
+    data: {
+      gift: {
+        _id: gift._id,
+        title: gift.title,
+        description: gift.description,
+        icon: gift.icon,
+        color: gift.color,
+        bgColor: gift.bgColor,
+        reward: gift.reward,
+        couponCode: gift.couponCode,
+        rewardType: gift.rewardType,
+        rewardValue: gift.rewardValue,
+        maxDiscount: gift.maxDiscount,
+        minOrderAmount: gift.minOrderAmount,
+        displayText: gift.getDisplayText()
+      },
+      discountAmount: totalDiscount,
+      reason: validationResult.reason,
+      finalAmount: finalAmount,
+      shippingDiscount: shippingDiscount,
+      productDiscount: validationResult.discount,
+      canApply: true
+    },
+    message: "Welcome gift coupon validated successfully"
+  });
+});
+
 module.exports = {
   getAllWelcomeGifts,
   getAllWelcomeGiftsAdmin,
@@ -391,5 +518,6 @@ module.exports = {
   claimWelcomeGift,
   checkWelcomeGiftEligibility,
   markRewardAsUsed,
-  getUserRewards
+  getUserRewards,
+  validateWelcomeGiftCoupon
 };

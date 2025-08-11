@@ -49,10 +49,28 @@ const userRewardSchema = new mongoose.Schema(
     }
 );
 
-// Ensure one claim per authenticated user per gift (only when userId exists)
-userRewardSchema.index({ userId: 1, giftId: 1 }, { unique: true, partialFilterExpression: { userId: { $exists: true } } });
+// Virtual field for compound unique index (only when userId exists)
+userRewardSchema.virtual('userId_giftId').get(function () {
+    if (this.userId) {
+        return `${this.userId}_${this.giftId}`;
+    }
+    return null;
+});
+
+// Ensure virtual fields are serialized
+userRewardSchema.set('toJSON', { virtuals: true });
+userRewardSchema.set('toObject', { virtuals: true });
+
+// Create unique index for authenticated users only
+// This prevents duplicate claims from the same user for the same gift
+userRewardSchema.index({ "userId_giftId": 1 }, {
+    unique: true,
+    sparse: true,
+    name: "userId_giftId_unique"
+});
+
 // Allow multiple claims from anonymous users (they might clear localStorage)
-userRewardSchema.index({ anonymousId: 1, giftId: 1 });
+userRewardSchema.index({ anonymousId: 1, giftId: 1 }, { name: "anonymousId_giftId" });
 
 // Method to mark reward as used
 userRewardSchema.methods.markAsUsed = async function () {

@@ -41,6 +41,7 @@ interface WelcomeGift {
   color: string;
   bgColor: string;
   reward: string;
+  couponCode: string;
   rewardType: string;
   rewardValue: number;
   maxDiscount?: number;
@@ -102,10 +103,10 @@ const bgColorOptions = [
 ];
 
 const rewardTypeOptions = [
-  { value: 'percentage', label: 'Percentage Discount' },
-  { value: 'fixed_amount', label: 'Fixed Amount Discount' },
-  { value: 'free_shipping', label: 'Free Shipping' },
-  { value: 'buy_one_get_one', label: 'Buy One Get One Free' },
+  { value: 'percentage', label: 'Percentage Discount', description: 'e.g., 10% off' },
+  { value: 'fixed_amount', label: 'Fixed Amount Discount', description: 'e.g., ₹100 off' },
+  { value: 'free_shipping', label: 'Free Shipping', description: 'Free shipping on order' },
+  { value: 'buy_one_get_one', label: 'Buy One Get One Free', description: 'BOGO offer on products' },
 ];
 
 const WelcomeGiftAdmin = () => {
@@ -123,6 +124,7 @@ const WelcomeGiftAdmin = () => {
     color: 'text-blue-600',
     bgColor: 'bg-blue-50 hover:bg-blue-100',
     reward: '',
+    couponCode: '',
     rewardType: 'percentage',
     rewardValue: 10,
     maxDiscount: null as number | null,
@@ -177,6 +179,7 @@ const WelcomeGiftAdmin = () => {
       color: 'text-blue-600',
       bgColor: 'bg-blue-50 hover:bg-blue-100',
       reward: '',
+      couponCode: '',
       rewardType: 'percentage',
       rewardValue: 10,
       maxDiscount: null,
@@ -228,6 +231,7 @@ const WelcomeGiftAdmin = () => {
       color: gift.color,
       bgColor: gift.bgColor,
       reward: gift.reward,
+      couponCode: gift.couponCode || '',
       rewardType: gift.rewardType || 'percentage',
       rewardValue: gift.rewardValue || 10,
       maxDiscount: gift.maxDiscount,
@@ -418,7 +422,19 @@ const WelcomeGiftAdmin = () => {
                     name="reward"
                     value={formData.reward}
                     onChange={handleInputChange}
-                    placeholder="e.g., Use code: WELCOME10"
+                    placeholder="e.g., Use code: WELCOME100"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="couponCode">Coupon Code</Label>
+                  <Input
+                    id="couponCode"
+                    name="couponCode"
+                    value={formData.couponCode}
+                    onChange={handleInputChange}
+                    placeholder="e.g., WELCOME100"
                     required
                   />
                 </div>
@@ -433,7 +449,10 @@ const WelcomeGiftAdmin = () => {
                       <SelectContent>
                         {rewardTypeOptions.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
-                            {option.label}
+                            <div className="flex flex-col">
+                              <span className="font-medium">{option.label}</span>
+                              <span className="text-xs text-gray-500">{option.description}</span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -442,7 +461,11 @@ const WelcomeGiftAdmin = () => {
 
                   <div>
                     <Label htmlFor="rewardValue">
-                      Reward Value {formData.rewardType === 'percentage' ? '(%)' : formData.rewardType === 'fixed_amount' ? '(₹)' : ''}
+                      Reward Value {
+                        formData.rewardType === 'percentage' ? '(%)' :
+                          formData.rewardType === 'fixed_amount' ? '(₹)' :
+                            formData.rewardType === 'buy_one_get_one' ? '(Quantity)' : ''
+                      }
                     </Label>
                     <Input
                       id="rewardValue"
@@ -451,8 +474,18 @@ const WelcomeGiftAdmin = () => {
                       min="0"
                       value={formData.rewardValue}
                       onChange={handleInputChange}
+                      placeholder={
+                        formData.rewardType === 'percentage' ? 'e.g., 10 for 10%' :
+                          formData.rewardType === 'fixed_amount' ? 'e.g., 100 for ₹100' :
+                            formData.rewardType === 'buy_one_get_one' ? 'e.g., 1 for BOGO' : 'Enter value'
+                      }
                       required
                     />
+                    {formData.rewardType === 'buy_one_get_one' && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Set to 1 for standard BOGO (Buy 1 Get 1 Free)
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -468,6 +501,11 @@ const WelcomeGiftAdmin = () => {
                       onChange={handleInputChange}
                       placeholder="Leave empty for no limit"
                     />
+                    {formData.rewardType === 'percentage' && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Maximum discount amount for percentage-based rewards
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -481,6 +519,9 @@ const WelcomeGiftAdmin = () => {
                       onChange={handleInputChange}
                       required
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Minimum cart total required to apply this reward
+                    </p>
                   </div>
                 </div>
 
