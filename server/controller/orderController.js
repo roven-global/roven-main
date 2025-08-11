@@ -137,7 +137,7 @@ const createOrder = asyncHandler(async (req, res) => {
         }
     }
 
-    const total = subtotal + shippingCost - discount - welcomeGiftDiscount;
+    const total = subtotal + finalShippingCost - discount - welcomeGiftDiscount;
 
     // Prepare order items
     const orderItems = cartItems.map(item => ({
