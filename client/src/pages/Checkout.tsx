@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Loader2, Save, ShoppingBag, Trash2, X, Tag, Calendar, Percent, DollarSign, Gift, Truck, ArrowRight, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
@@ -25,6 +25,9 @@ import { useIndianStatesAndCities } from '@/lib/cities';
 
 const Checkout = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    // Get the flag from the state passed by the Cart page
+    const shouldApplyWelcomeGift = location.state?.applyWelcomeGift || false;
     const {
         cartItems,
         clearCart,
@@ -109,6 +112,26 @@ const Checkout = () => {
             refreshCart();
         }
     }, [isAuthenticated, refreshCart]);
+
+    // Fetch lifetime savings
+    useEffect(() => {
+        const fetchLifetimeSavings = async () => {
+            if (!isAuthenticated) return;
+            setLifetimeSavingsLoading(true);
+            try {
+                const response = await Axios.get(SummaryApi.getLifetimeSavings.url);
+                if (response.data.success) {
+                    setLifetimeSavings(response.data.data.totalSavings);
+                }
+            } catch (error) {
+                console.error('Error loading lifetime savings:', error);
+            } finally {
+                setLifetimeSavingsLoading(false);
+            }
+        };
+
+        fetchLifetimeSavings();
+    }, [isAuthenticated]);
 
     useEffect(() => {
         if (!cartLoading && displayCartItems.length === 0) {
@@ -197,6 +220,8 @@ const Checkout = () => {
                     rewardId: appliedWelcomeGift.reward._id,
                     discountAmount: appliedWelcomeGift.discountAmount
                 } : undefined,
+                // Include the flag here!
+                applyWelcomeGift: shouldApplyWelcomeGift,
             });
 
             if (orderResponse.data.success) {
@@ -558,6 +583,23 @@ const Checkout = () => {
                                     isCheckout={true}
                                 />
 
+                                {/* Welcome Gift Application Status */}
+                                {shouldApplyWelcomeGift && (
+                                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                        <div className="flex items-center gap-2">
+                                            <Gift className="w-5 h-5 text-orange-600" />
+                                            <div>
+                                                <p className="text-sm text-orange-700 font-medium">
+                                                    Welcome Gift Will Be Applied
+                                                </p>
+                                                <p className="text-xs text-orange-600">
+                                                    Your claimed welcome gift will be applied to this order
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="bg-white rounded-lg border shadow-sm sticky top-4">
                                     <div className="p-4 border-b">
                                         <span className="font-semibold text-gray-900 flex items-center gap-2">
@@ -582,6 +624,12 @@ const Checkout = () => {
                                                 <span className="text-green-600 font-bold">-{formatRupees(welcomeGiftDiscount)}</span>
                                             </div>
                                         )}
+                                        {shouldApplyWelcomeGift && !welcomeGiftDiscount && (
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-600">Welcome Gift</span>
+                                                <span className="text-orange-600 font-medium">Will be applied</span>
+                                            </div>
+                                        )}
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-600">Shipping <span className="text-xs text-gray-400">ⓘ</span></span>
                                             <div className="text-right">
@@ -603,6 +651,29 @@ const Checkout = () => {
                                                 You are saving {formatRupees(totalSavings)} on this order
                                             </p>
                                         </div>
+
+                                        {/* Lifetime Savings Section */}
+                                        {isAuthenticated && (
+                                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 flex items-center gap-2">
+                                                <span className="text-green-600">🏆</span>
+                                                <div className="flex-1">
+                                                    <p className="text-sm text-green-700 font-medium">
+                                                        Your lifetime savings with Roven Beauty
+                                                    </p>
+                                                    {lifetimeSavingsLoading ? (
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-600"></div>
+                                                            <span className="text-xs text-green-600">Calculating...</span>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-lg font-bold text-green-800 mt-1">
+                                                            {formatRupees(lifetimeSavings)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <Button
                                             onClick={handleProceedToPayment}
                                             className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-md py-3 font-medium"

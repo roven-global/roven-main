@@ -43,6 +43,8 @@ const Cart = () => {
     const [removingCouponId, setRemovingCouponId] = useState<string | null>(null);
     const [lifetimeSavings, setLifetimeSavings] = useState<number>(0);
     const [lifetimeSavingsLoading, setLifetimeSavingsLoading] = useState(false);
+    const [applyReward, setApplyReward] = useState(false);
+    const [hasClaimedReward, setHasClaimedReward] = useState(false);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -70,6 +72,32 @@ const Cart = () => {
         };
 
         fetchLifetimeSavings();
+    }, [isAuthenticated]);
+
+    // Sync applyReward state with appliedWelcomeGift
+    useEffect(() => {
+        if (appliedWelcomeGift) {
+            setApplyReward(true);
+        } else {
+            setApplyReward(false);
+        }
+    }, [appliedWelcomeGift]);
+
+    // Check if user has claimed reward
+    useEffect(() => {
+        const checkClaimedReward = async () => {
+            if (!isAuthenticated) return;
+            try {
+                const response = await Axios.get(SummaryApi.userDetails.url);
+                if (response.data.success && response.data.data.rewardClaimed) {
+                    setHasClaimedReward(true);
+                }
+            } catch (error) {
+                console.error('Error checking claimed reward:', error);
+            }
+        };
+
+        checkClaimedReward();
     }, [isAuthenticated]);
 
     // Fetch available coupons
@@ -218,6 +246,17 @@ const Cart = () => {
     const originalShippingCost = 40; // Original shipping cost before free shipping
     const shippingSavings = subtotal > 499 ? originalShippingCost : 0;
     const totalSavings = couponDiscount + welcomeGiftDiscount + shippingSavings;
+
+    // Handle checkout with reward state
+    const handleCheckout = () => {
+        // When you navigate to checkout, pass the 'applyReward' state.
+        // If you use Redux or Context, you can dispatch an action here.
+        navigate('/checkout', {
+            state: {
+                applyWelcomeGift: applyReward
+            }
+        });
+    };
 
     if (loading) {
         return (
@@ -517,7 +556,7 @@ const Cart = () => {
                                                     </p>
                                                 </div>
                                             )}
-                                            
+
                                             {/* Lifetime Savings Section */}
                                             {isAuthenticated && (
                                                 <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 flex items-center gap-2">
@@ -539,9 +578,37 @@ const Cart = () => {
                                                     </div>
                                                 </div>
                                             )}
-                                            
+
+                                            {/* Apply Welcome Gift Toggle */}
+                                            {isAuthenticated && hasClaimedReward && (
+                                                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <Gift className="w-5 h-5 text-orange-600" />
+                                                            <div>
+                                                                <p className="text-sm text-orange-700 font-medium">
+                                                                    Apply Welcome Gift
+                                                                </p>
+                                                                <p className="text-xs text-orange-600">
+                                                                    Use your claimed welcome gift on this order
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <label className="relative inline-flex items-center cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={applyReward}
+                                                                onChange={(e) => setApplyReward(e.target.checked)}
+                                                                className="sr-only peer"
+                                                            />
+                                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-500"></div>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <Button
-                                                onClick={() => navigate('/checkout')}
+                                                onClick={handleCheckout}
                                                 className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-md py-3 font-medium"
                                                 disabled={displayCartItems.length === 0}
                                             >

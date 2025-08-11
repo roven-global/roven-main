@@ -15,6 +15,8 @@ const {
   getUserProfileStats,
   toggleWishlist,
   getWishlist,
+  claimReward,
+  useReward,
 } = require("../controller/userController");
 const auth = require("../middleware/auth");
 const upload = require("../middleware/multer");
@@ -49,5 +51,9 @@ router.route("/profile/stats").get(auth, getUserProfileStats);
 
 // Wishlist routes
 router.route("/wishlist").post(auth, toggleWishlist).get(auth, getWishlist);
+
+// Reward routes
+router.route("/claim-reward").post(auth, claimReward);
+router.route("/use-reward").post(auth, useReward);
 
 module.exports = router;

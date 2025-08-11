@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       // Password is not required if signing up with Google
-      required: function() { return !this.googleId; },
+      required: function () { return !this.googleId; },
     },
     googleId: {
       type: String,
@@ -28,7 +28,21 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
-      default: "",
+      default: "https://res.cloudinary.com/dkq55s6t8/image/upload/v1717398335/Roven/Avatar/default_avatar.png",
+    },
+    // Add these fields for efficient reward checking
+    rewardClaimed: {
+      type: Boolean,
+      default: false,
+    },
+    rewardUsed: {
+      type: Boolean,
+      default: false,
+    },
+    // You can keep this reference if you want to store more detailed reward history
+    reward: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserReward",
     },
     mobile: {
       type: Number,
@@ -87,7 +101,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["ADMIN", "USER"],
+      enum: ["USER", "ADMIN"],
       default: "USER",
     },
     wishlist: [{

@@ -4,6 +4,8 @@ const ProductModel = require("../models/productModel");
 const CouponModel = require("../models/couponModel");
 const CouponUsageModel = require("../models/couponUsageModel");
 const UserReward = require("../models/userRewardModel");
+const User = require("../models/userModel");
+const WelcomeGift = require("../models/welcomeGiftModel");
 const asyncHandler = require("express-async-handler");
 
 /**
@@ -17,6 +19,8 @@ const createOrder = asyncHandler(async (req, res) => {
         notes,
         couponCode,
         appliedWelcomeGift,
+        // 1. Get the new 'applyWelcomeGift' flag from the frontend request
+        applyWelcomeGift,
     } = req.body;
 
     if (!shippingAddress) {
@@ -36,6 +40,15 @@ const createOrder = asyncHandler(async (req, res) => {
         return res.status(400).json({
             success: false,
             message: "Cart is empty",
+        });
+    }
+
+    // Get user for reward checking
+    const user = await User.findById(req.user._id);
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            message: "User not found",
         });
     }
 
@@ -88,6 +101,26 @@ const createOrder = asyncHandler(async (req, res) => {
         if (userReward) {
             welcomeGiftDiscount = appliedWelcomeGift.discountAmount;
             appliedWelcomeGiftId = userReward._id;
+        }
+    }
+
+    // 3. ADD THIS BLOCK: Welcome Gift Logic
+    if (applyWelcomeGift && user.rewardClaimed && !user.rewardUsed) {
+        const userReward = await UserReward.findOne({
+            userId: req.user._id,
+            isUsed: false
+        }).populate('reward');
+
+        if (userReward && userReward.reward) {
+            const gift = userReward.reward;
+            if (gift.rewardType === 'discount' && gift.value) {
+                welcomeGiftDiscount = (subtotal * gift.value) / 100;
+            }
+            if (gift.rewardType === 'free_shipping') {
+                // Note: We're keeping the existing shipping logic for now
+                // but this could be extended to handle free shipping rewards
+            }
+            // 'free_sample' logic can be handled on the frontend cart
         }
     }
 
@@ -399,10 +432,10 @@ const getLifetimeSavings = asyncHandler(async (req, res) => {
         orders.forEach(order => {
             // Add coupon discounts
             totalCouponSavings += order.discount || 0;
-            
+
             // Add welcome gift discounts
             totalWelcomeGiftSavings += order.welcomeGiftDiscount || 0;
-            
+
             // Calculate shipping savings (original shipping cost - actual charged shipping)
             // If subtotal > 499, shipping was free, so savings = 40
             // If subtotal <= 499, shipping was charged, so savings = 0

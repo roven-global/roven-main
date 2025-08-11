@@ -1,6 +1,8 @@
 // userController.js file
 const UserModel = require("../models/userModel");
 const ProductModel = require("../models/productModel");
+const UserReward = require("../models/userRewardModel"); // Make sure this is imported
+const WelcomeGift = require("../models/welcomeGiftModel"); // And this one too
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -504,11 +506,30 @@ const getUserDetails = asyncHandler(async (req, res) => {
       .status(401)
       .json({ success: false, message: "Unauthorized: User ID missing." });
   }
-  const user = await UserModel.findById(userId).select("-password");
-  if (!user) {
-    return res.status(404).json({ success: false, message: "User not found." });
+
+  try {
+    const user = await UserModel.findById(userId)
+      .select("-password")
+      .populate({
+        path: 'reward',
+        populate: {
+          path: 'reward',
+          model: 'WelcomeGift'
+        }
+      });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    return res.json({ success: true, data: user });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching user details",
+      error: error.message
+    });
   }
-  return res.json({ success: true, data: user });
 });
 
 /**
@@ -625,6 +646,117 @@ const getWishlist = asyncHandler(async (req, res) => {
   return res.json({ success: true, wishlist: user.wishlist });
 });
 
+/**
+Marks a user's reward as claimed.
+@route POST /api/user/claim-reward
+*/
+const claimReward = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+  const { rewardId } = req.body;
+
+  if (!userId) {
+    return res
+      .status(401)
+      .json({ success: false, message: "Unauthorized: User ID missing." });
+  }
+
+  if (!rewardId) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Reward ID is required." });
+  }
+
+  try {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    if (user.rewardClaimed) {
+      return res.status(400).json({
+        success: false,
+        message: "User has already claimed a reward."
+      });
+    }
+
+    // Update user to mark reward as claimed
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      {
+        rewardClaimed: true,
+        reward: rewardId
+      },
+      { new: true }
+    ).select("-password");
+
+    return res.json({
+      success: true,
+      message: "Reward claimed successfully.",
+      data: updatedUser
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error claiming reward",
+      error: error.message
+    });
+  }
+});
+
+/**
+Marks a user's reward as used.
+@route POST /api/user/use-reward
+*/
+const useReward = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+
+  if (!userId) {
+    return res
+      .status(401)
+      .json({ success: false, message: "Unauthorized: User ID missing." });
+  }
+
+  try {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    if (!user.rewardClaimed) {
+      return res.status(400).json({
+        success: false,
+        message: "User has not claimed any reward yet."
+      });
+    }
+
+    if (user.rewardUsed) {
+      return res.status(400).json({
+        success: false,
+        message: "Reward has already been used."
+      });
+    }
+
+    // Update user to mark reward as used
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      { rewardUsed: true },
+      { new: true }
+    ).select("-password");
+
+    return res.json({
+      success: true,
+      message: "Reward used successfully.",
+      data: updatedUser
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error using reward",
+      error: error.message
+    });
+  }
+});
+
 module.exports = {
   registerUser,
   verifyEmail,
@@ -640,4 +772,6 @@ module.exports = {
   getUserProfileStats,
   toggleWishlist,
   getWishlist,
+  claimReward,
+  useReward,
 };

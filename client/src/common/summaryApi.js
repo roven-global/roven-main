@@ -274,6 +274,15 @@ const SummaryApi = {
     url: "/api/welcome-gifts",
     method: "get",
   },
+  // User Reward endpoints
+  claimReward: {
+    url: "/api/user/claim-reward",
+    method: "post",
+  },
+  useReward: {
+    url: "/api/user/use-reward",
+    method: "post",
+  },
   getAllWelcomeGiftsAdmin: {
     url: "/api/welcome-gifts/admin/all",
     method: "get",
