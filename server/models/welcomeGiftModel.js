@@ -50,6 +50,30 @@ const welcomeGiftSchema = new mongoose.Schema(
       trim: true,
       maxlength: [100, "Reward text cannot exceed 100 characters"],
     },
+    // Enhanced reward structure
+    rewardType: {
+      type: String,
+      required: [true, "Reward type is required"],
+      enum: ["percentage", "fixed_amount", "free_shipping", "buy_one_get_one"],
+      default: "percentage"
+    },
+    rewardValue: {
+      type: Number,
+      required: [true, "Reward value is required"],
+      min: [0, "Reward value cannot be negative"],
+    },
+    // For percentage: 10 means 10%
+    // For fixed_amount: 100 means ₹100
+    // For free_shipping: value should be 0 (boolean-like)
+    // For BOGO: value should be 1 (means buy 1 get 1 free)
+    maxDiscount: {
+      type: Number,
+      default: null, // Maximum discount for percentage type
+    },
+    minOrderAmount: {
+      type: Number,
+      default: 0, // Minimum order amount to apply this reward
+    },
     isActive: {
       type: Boolean,
       default: true,
