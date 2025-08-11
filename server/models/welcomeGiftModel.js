@@ -118,4 +118,59 @@ welcomeGiftSchema.methods.incrementUsage = async function() {
   return await this.save();
 };
 
+// Calculate discount amount based on reward type
+welcomeGiftSchema.methods.calculateDiscount = function(subtotal, cartItems = []) {
+  if (subtotal < this.minOrderAmount) {
+    return { discount: 0, reason: 'Minimum order amount not met' };
+  }
+
+  let discount = 0;
+  let reason = '';
+
+  switch (this.rewardType) {
+    case 'percentage':
+      discount = (subtotal * this.rewardValue) / 100;
+      if (this.maxDiscount && discount > this.maxDiscount) {
+        discount = this.maxDiscount;
+      }
+      reason = `${this.rewardValue}% off applied`;
+      break;
+
+    case 'fixed_amount':
+      discount = Math.min(this.rewardValue, subtotal);
+      reason = `₹${this.rewardValue} off applied`;
+      break;
+
+    case 'free_shipping':
+      discount = 0; // Shipping discount is handled separately
+      reason = 'Free shipping applied';
+      break;
+
+    case 'buy_one_get_one':
+      // BOGO logic: for each pair of same items, give discount on the cheaper one
+      const itemCounts = {};
+      cartItems.forEach(item => {
+        const productId = item.productId._id || item.productId;
+        const price = item.variant?.price || item.productId?.price || item.price;
+        if (!itemCounts[productId]) {
+          itemCounts[productId] = { quantity: 0, price: price };
+        }
+        itemCounts[productId].quantity += item.quantity;
+      });
+
+      Object.values(itemCounts).forEach(item => {
+        const pairs = Math.floor(item.quantity / 2);
+        discount += pairs * item.price;
+      });
+      reason = 'Buy one get one free applied';
+      break;
+
+    default:
+      discount = 0;
+      reason = 'Unknown reward type';
+  }
+
+  return { discount, reason };
+};
+
 module.exports = mongoose.model("WelcomeGift", welcomeGiftSchema);
