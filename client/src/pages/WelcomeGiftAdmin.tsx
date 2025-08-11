@@ -228,6 +228,10 @@ const WelcomeGiftAdmin = () => {
       color: gift.color,
       bgColor: gift.bgColor,
       reward: gift.reward,
+      rewardType: gift.rewardType || 'percentage',
+      rewardValue: gift.rewardValue || 10,
+      maxDiscount: gift.maxDiscount,
+      minOrderAmount: gift.minOrderAmount || 0,
       order: gift.order,
       isActive: gift.isActive
     });
