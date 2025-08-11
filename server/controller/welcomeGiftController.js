@@ -270,7 +270,7 @@ const getWelcomeGiftsAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Claim welcome gift (enhanced logic)
+// @desc    Claim welcome gift
 // @route   POST /api/welcome-gifts/:id/claim
 // @access  Public
 const claimWelcomeGift = asyncHandler(async (req, res) => {
@@ -285,6 +285,23 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
   if (!gift.isActive) {
     res.status(400);
     throw new Error("This welcome gift is not active");
+  }
+
+  // Check if user has already claimed any welcome gift
+  if (req.user) {
+    // For authenticated users, check if they've already claimed any gift
+    const canClaim = await UserReward.canUserClaimGift(req.user._id);
+    if (!canClaim) {
+      res.status(400);
+      throw new Error("You have already claimed a welcome gift. Only one gift per user is allowed.");
+    }
+  } else if (anonymousId) {
+    // For anonymous users, check if they've already claimed any gift
+    const hasClaimed = await UserReward.hasAnonymousUserClaimed(anonymousId);
+    if (hasClaimed) {
+      res.status(400);
+      throw new Error("You have already claimed a welcome gift. Only one gift per user is allowed.");
+    }
   }
 
   // Increment gift usage count
@@ -324,8 +341,8 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Check if user should see welcome gift popup
 // @route   GET /api/welcome-gifts/check-eligibility
+// @desc    Check if user should see welcome gift popup
 // @access  Public
 const checkWelcomeGiftEligibility = asyncHandler(async (req, res) => {
   const { anonymousId } = req.query;
@@ -335,18 +352,18 @@ const checkWelcomeGiftEligibility = asyncHandler(async (req, res) => {
 
   // If user is logged in, check their reward usage
   if (req.user) {
-    const hasUsedReward = await UserReward.hasUserUsedAnyReward(req.user._id);
-    if (hasUsedReward) {
+    const canClaim = await UserReward.canUserClaimGift(req.user._id);
+    if (!canClaim) {
       shouldShowPopup = false;
-      reason = "User has already used a reward";
+      reason = "User has already claimed a welcome gift";
     }
   }
   // If anonymous user, check if they've claimed any reward
   else if (anonymousId) {
-    const hasClaimed = await UserReward.findOne({ anonymousId });
+    const hasClaimed = await UserReward.hasAnonymousUserClaimed(anonymousId);
     if (hasClaimed) {
       shouldShowPopup = false;
-      reason = "Anonymous user has already claimed a reward";
+      reason = "Anonymous user has already claimed a welcome gift";
     }
   }
 
@@ -380,7 +397,18 @@ const markRewardAsUsed = asyncHandler(async (req, res) => {
     throw new Error("No unused reward found for this user");
   }
 
+  if (userReward.isUsed) {
+    res.status(400);
+    throw new Error("Welcome gift already used");
+  }
+
   await userReward.markAsUsed();
+
+  // Track gift usage
+  const gift = await WelcomeGift.findById(userReward.giftId);
+  if (gift) {
+    await gift.incrementUsage();
+  }
 
   res.status(200).json({
     success: true,
@@ -393,14 +421,37 @@ const markRewardAsUsed = asyncHandler(async (req, res) => {
 // @route   GET /api/welcome-gifts/user-rewards
 // @access  Private
 const getUserRewards = asyncHandler(async (req, res) => {
+  console.log('\n=== getUserRewards API Called ===');
+  console.log('Request headers:', req.headers);
+  console.log('Request user:', req.user);
+  console.log('Request method:', req.method);
+  console.log('Request URL:', req.url);
+
   if (!req.user) {
+    console.log('❌ No user in request - authentication failed');
     res.status(401);
     throw new Error("User must be logged in");
   }
 
+  console.log('✅ User authenticated:', req.user._id);
+  console.log('getUserRewards: Fetching rewards for user:', req.user._id);
+
   const userRewards = await UserReward.find({ userId: req.user._id })
-    .populate('giftId', 'title description icon color bgColor')
+    .populate('giftId', 'title description icon color bgColor rewardType rewardValue couponCode')
     .sort({ createdAt: -1 });
+
+  console.log('getUserRewards: Found rewards:', userRewards.length);
+  console.log('getUserRewards: Raw userRewards:', JSON.stringify(userRewards, null, 2));
+
+  userRewards.forEach((reward, index) => {
+    console.log(`Reward ${index + 1}:`, {
+      id: reward._id,
+      giftId: reward.giftId,
+      rewardTitle: reward.rewardTitle,
+      isUsed: reward.isUsed,
+      wasLoggedIn: reward.wasLoggedIn
+    });
+  });
 
   res.status(200).json({
     success: true,
@@ -413,72 +464,123 @@ const getUserRewards = asyncHandler(async (req, res) => {
 // @route   POST /api/welcome-gifts/validate-coupon
 // @access  Public
 const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
-  const { couponCode, orderAmount, cartItems } = req.body;
+  try {
+    console.log('\n=== validateWelcomeGiftCoupon API Called ===');
+    console.log('Request body:', req.body);
+    console.log('Request user:', req.user);
 
-  if (!couponCode) {
-    res.status(400);
-    throw new Error("Coupon code is required");
-  }
+    const { couponCode, orderAmount, cartItems } = req.body;
 
-  if (!orderAmount || orderAmount <= 0) {
-    res.status(400);
-    throw new Error("Valid order amount is required");
-  }
+    if (!couponCode) {
+      console.log('❌ No coupon code provided');
+      res.status(400);
+      throw new Error("Coupon code is required");
+    }
 
-  // Find the welcome gift by coupon code
-  const gift = await WelcomeGift.findOne({
-    couponCode: couponCode.toUpperCase(),
-    isActive: true
-  });
+    if (!orderAmount || orderAmount <= 0) {
+      console.log('❌ Invalid order amount:', orderAmount);
+      res.status(400);
+      throw new Error("Valid order amount is required");
+    }
 
-  if (!gift) {
-    res.status(404);
-    throw new Error("Invalid welcome gift coupon code");
-  }
+    console.log('✅ Input validation passed');
 
-  // Check if user has already claimed this gift
-  let hasClaimed = false;
-  if (req.user) {
-    const userReward = await UserReward.findOne({
-      userId: req.user._id,
-      giftId: gift._id
+    // Find the welcome gift by coupon code
+    console.log('🔍 Searching for gift with coupon code:', couponCode.toUpperCase());
+    const gift = await WelcomeGift.findOne({
+      couponCode: couponCode.toUpperCase(),
+      isActive: true
     });
-    hasClaimed = !!userReward;
-  } else {
-    // For anonymous users, we allow them to use welcome gifts
-    // The frontend will handle localStorage checks
-    hasClaimed = false;
-  }
 
-  // Only check if user has claimed if they are authenticated
-  if (req.user && hasClaimed) {
-    res.status(400);
-    throw new Error("You have already claimed this welcome gift");
-  }
+    if (!gift) {
+      console.log('❌ Gift not found for coupon code:', couponCode.toUpperCase());
+      res.status(404);
+      throw new Error("Invalid welcome gift coupon code");
+    }
 
-  // Use the enhanced calculation method from the model
-  const validationResult = gift.canBeApplied(orderAmount, cartItems);
+    console.log('✅ Gift found:', {
+      _id: gift._id,
+      title: gift.title,
+      couponCode: gift.couponCode,
+      rewardType: gift.rewardType
+    });
 
-  if (!validationResult.canApply) {
-    res.status(400);
-    throw new Error(validationResult.reason);
-  }
+    // Check if user has claimed this specific gift and if it's unused
+    let userReward = null;
+    if (req.user) {
+      console.log('✅ User is logged in:', req.user._id);
+      console.log('🔍 Looking for user reward for gift:', gift._id);
 
-  // For free shipping, we need to calculate the shipping cost
-  let shippingDiscount = 0;
-  if (gift.rewardType === 'free_shipping') {
-    // Calculate shipping cost based on order amount
-    const shippingCost = orderAmount < 1000 ? 49 : 0;
-    shippingDiscount = shippingCost;
-  }
+      // First, check if user has claimed this specific gift
+      userReward = await UserReward.findOne({
+        userId: req.user._id,
+        giftId: gift._id
+      });
 
-  // Calculate final discount (including shipping for free shipping type)
-  const totalDiscount = validationResult.discount + shippingDiscount;
-  const finalAmount = orderAmount - totalDiscount;
+      console.log('🔍 User reward found:', userReward ? 'YES' : 'NO');
 
-  res.status(200).json({
-    success: true,
-    data: {
+      if (!userReward) {
+        // Check if user might have an anonymous gift that needs migration
+        const anonymousId = req.body.anonymousId;
+        if (anonymousId) {
+          console.log('🔍 Checking for anonymous gift with ID:', anonymousId);
+          const anonymousGift = await UserReward.findOne({ anonymousId, giftId: gift._id });
+          if (anonymousGift) {
+            console.log('❌ Found anonymous gift, suggesting migration');
+            res.status(400);
+            throw new Error("You have an anonymous welcome gift. Please refresh the page or try again to migrate it to your account.");
+          }
+        }
+
+        console.log('❌ User has not claimed this gift');
+        res.status(400);
+        throw new Error("You have not claimed this welcome gift. Please claim a gift first.");
+      }
+
+      if (userReward.isUsed) {
+        console.log('❌ Gift is already used');
+        res.status(400);
+        throw new Error("This welcome gift has already been redeemed. Cannot use it again.");
+      }
+
+      console.log('✅ Gift validation successful');
+    } else {
+      console.log('❌ No user in request');
+      res.status(401);
+      throw new Error("Please log in to use welcome gift coupons");
+    }
+
+    // Use the enhanced calculation method from the model
+    console.log('🔍 Calling gift.canBeApplied with:', { orderAmount, cartItems });
+    const validationResult = gift.canBeApplied(orderAmount, cartItems);
+    console.log('✅ Validation result:', validationResult);
+
+    if (!validationResult.canApply) {
+      console.log('❌ Gift cannot be applied:', validationResult.reason);
+      res.status(400);
+      throw new Error(validationResult.reason);
+    }
+
+    // For free shipping, we need to calculate the shipping cost
+    let shippingDiscount = 0;
+    if (gift.rewardType === 'free_shipping') {
+      const shippingCost = orderAmount < 1000 ? 49 : 0;
+      shippingDiscount = shippingCost;
+      console.log('🚚 Free shipping discount calculated:', shippingDiscount);
+    }
+
+    // Calculate final discount (including shipping for free shipping type)
+    const totalDiscount = validationResult.discount + shippingDiscount;
+    const finalAmount = orderAmount - totalDiscount;
+
+    console.log('💰 Final calculations:', {
+      totalDiscount,
+      finalAmount,
+      shippingDiscount,
+      productDiscount: validationResult.discount
+    });
+
+    const responseData = {
       gift: {
         _id: gift._id,
         title: gift.title,
@@ -491,8 +593,7 @@ const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
         rewardType: gift.rewardType,
         rewardValue: gift.rewardValue,
         maxDiscount: gift.maxDiscount,
-        minOrderAmount: gift.minOrderAmount,
-        displayText: gift.getDisplayText()
+        minOrderAmount: gift.minOrderAmount
       },
       discountAmount: totalDiscount,
       reason: validationResult.reason,
@@ -500,9 +601,118 @@ const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
       shippingDiscount: shippingDiscount,
       productDiscount: validationResult.discount,
       canApply: true
-    },
-    message: "Welcome gift coupon validated successfully"
-  });
+    };
+
+    console.log('✅ Sending successful response');
+    res.status(200).json({
+      success: true,
+      data: responseData,
+      message: "Welcome gift coupon validated successfully"
+    });
+
+  } catch (error) {
+    console.error('❌ Error in validateWelcomeGiftCoupon:', error);
+    console.error('❌ Error stack:', error.stack);
+
+    // If error already has a status, don't override it
+    if (!res.statusCode || res.statusCode === 200) {
+      res.status(500);
+    }
+
+    throw error;
+  }
+});
+
+// @desc    Migrate anonymous welcome gift to authenticated user
+// @route   POST /api/welcome-gifts/migrate-anonymous
+// @access  Private
+const migrateAnonymousGift = asyncHandler(async (req, res) => {
+  try {
+    console.log('\n=== migrateAnonymousGift API Called ===');
+    console.log('Request body:', req.body);
+    console.log('Request user:', req.user);
+
+    if (!req.user) {
+      console.log('❌ No user in request');
+      res.status(401);
+      throw new Error("User must be logged in to migrate gifts");
+    }
+
+    const { anonymousId } = req.body;
+
+    if (!anonymousId) {
+      console.log('❌ No anonymousId provided');
+      res.status(400);
+      throw new Error("Anonymous ID is required");
+    }
+
+    console.log('✅ Input validation passed');
+    console.log('🔍 Checking if migration is possible for:', { anonymousId, userId: req.user._id });
+
+    // Check if migration is possible
+    const canMigrate = await UserReward.canMigrateAnonymousGift(anonymousId, req.user._id);
+    console.log('🔍 Migration check result:', canMigrate);
+
+    if (!canMigrate) {
+      console.log('ℹ️ Migration not possible - user may already have a gift or no anonymous gift found');
+      console.log('ℹ️ This is normal, returning success to prevent frontend errors');
+
+      // Return success instead of error - this is a normal case
+      res.status(200).json({
+        success: true,
+        data: {
+          message: "No migration needed - user already has a gift or no anonymous gift found",
+          migrated: false
+        },
+        message: "Migration check completed successfully"
+      });
+      return;
+    }
+
+    console.log('✅ Migration check passed, performing migration');
+
+    // Perform the migration
+    const migratedGift = await UserReward.migrateAnonymousGift(anonymousId, req.user._id);
+    console.log('🔍 Migration result:', migratedGift);
+
+    if (migratedGift) {
+      console.log('✅ Migration successful, updating user status');
+
+      // Update user's rewardClaimed status
+      const User = require("../models/userModel");
+      await User.findByIdAndUpdate(req.user._id, {
+        rewardClaimed: true,
+        reward: migratedGift.giftId
+      });
+
+      console.log('✅ User status updated successfully');
+
+      res.status(200).json({
+        success: true,
+        data: {
+          migratedGift,
+          message: "Anonymous welcome gift migrated successfully",
+          migrated: true
+        },
+        message: "Welcome gift migrated successfully"
+      });
+    } else {
+      console.log('❌ Migration returned null/undefined');
+      res.status(400);
+      throw new Error("Migration failed or user already has a gift");
+    }
+
+  } catch (error) {
+    console.error('❌ Error in migrateAnonymousGift:', error);
+    console.error('❌ Error stack:', error.stack);
+
+    // If error already has a status, don't override it
+    if (!res.statusCode || res.statusCode === 200) {
+      res.status(500);
+    }
+
+    throw error;
+  }
 });
 
 module.exports = {
@@ -519,5 +729,6 @@ module.exports = {
   checkWelcomeGiftEligibility,
   markRewardAsUsed,
   getUserRewards,
-  validateWelcomeGiftCoupon
+  validateWelcomeGiftCoupon,
+  migrateAnonymousGift
 };

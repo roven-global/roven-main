@@ -43,14 +43,28 @@ const SizeGuide = lazy(() => import("./pages/SizeGuide"));
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { isOpen, openPopup, closePopup, checkEligibility } = useRewardPopup();
+  const { isOpen, openPopup, closePopup, checkEligibility, resetEligibilityCheck } = useRewardPopup();
 
   console.log('AppContent - isPopupOpen:', isOpen);
 
-  // Check eligibility when component mounts
+  // Check eligibility only when component mounts
   useEffect(() => {
     checkEligibility();
-  }, [checkEligibility]);
+  }, []); // Empty dependency array - only run once
+
+  // Listen for logout events to reset eligibility check
+  useEffect(() => {
+    const handleResetEligibility = () => {
+      console.log('AppContent: Resetting eligibility check');
+      resetEligibilityCheck();
+    };
+
+    window.addEventListener('resetEligibilityCheck', handleResetEligibility);
+
+    return () => {
+      window.removeEventListener('resetEligibilityCheck', handleResetEligibility);
+    };
+  }, [resetEligibilityCheck]);
 
   return (
     <>

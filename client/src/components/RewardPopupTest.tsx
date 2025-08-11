@@ -6,24 +6,27 @@ import { useRewardPopup } from '@/hooks/useRewardPopup';
 
 export const RewardPopupTest: React.FC = () => {
     const {
-        isPopupOpen,
+        isOpen, // FIXED: Changed from isPopupOpen to isOpen
         hasClaimedReward,
-        isFirstTimeVisitor,
         getClaimedRewardDetails,
-        resetRewardState,
+        resetEligibilityCheck, // FIXED: Changed from resetRewardState to resetEligibilityCheck
         closePopup
     } = useRewardPopup();
 
     const claimedReward = getClaimedRewardDetails();
 
     const handleReset = () => {
-        resetRewardState();
+        resetEligibilityCheck(); // FIXED: Use the correct function
+        // Clear localStorage manually
+        localStorage.removeItem('eligibilityCheckCompleted');
+        localStorage.removeItem('rewardClaimed');
+        localStorage.removeItem('claimedRewardDetails');
         window.location.reload(); // Reload to trigger the popup again
     };
 
     const handleManualTrigger = () => {
         // Manually trigger the popup by setting localStorage and reloading
-        localStorage.removeItem('hasVisitedBefore');
+        localStorage.removeItem('eligibilityCheckCompleted'); // FIXED: Use correct key
         localStorage.removeItem('rewardClaimed');
         localStorage.removeItem('claimedRewardDetails');
         window.location.reload();
@@ -41,8 +44,8 @@ export const RewardPopupTest: React.FC = () => {
                 <div className="space-y-2">
                     <div className="flex justify-between">
                         <span className="text-sm font-medium">First Time Visitor:</span>
-                        <span className={`text-sm ${isFirstTimeVisitor ? 'text-green-600' : 'text-red-600'}`}>
-                            {isFirstTimeVisitor ? 'Yes' : 'No'}
+                        <span className={`text-sm ${!hasClaimedReward ? 'text-green-600' : 'text-red-600'}`}>
+                            {!hasClaimedReward ? 'Yes' : 'No'}
                         </span>
                     </div>
                     <div className="flex justify-between">
@@ -53,8 +56,8 @@ export const RewardPopupTest: React.FC = () => {
                     </div>
                     <div className="flex justify-between">
                         <span className="text-sm font-medium">Popup Open:</span>
-                        <span className={`text-sm ${isPopupOpen ? 'text-green-600' : 'text-red-600'}`}>
-                            {isPopupOpen ? 'Yes' : 'No'}
+                        <span className={`text-sm ${isOpen ? 'text-green-600' : 'text-red-600'}`}>
+                            {isOpen ? 'Yes' : 'No'}
                         </span>
                     </div>
                 </div>
@@ -88,7 +91,7 @@ export const RewardPopupTest: React.FC = () => {
                     </Button>
                 </div>
 
-                {isPopupOpen && (
+                {isOpen && (
                     <Button
                         onClick={closePopup}
                         variant="outline"

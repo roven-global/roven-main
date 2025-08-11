@@ -58,8 +58,11 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
             }
         };
 
-        fetchUserReward();
-    }, [user]);
+        // Only fetch if user is authenticated and we don't already have a reward
+        if (user && !userReward) {
+            fetchUserReward();
+        }
+    }, [user?._id]); // FIXED: Only run when user ID changes, not on every user state change
 
     // Check localStorage for anonymous user rewards OR as fallback for authenticated users
     useEffect(() => {
@@ -93,7 +96,7 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
                 }
             }
         }
-    }, [user]); // Re-run when user changes
+    }, []); // FIXED: Run only once on mount, not when user changes
 
     // New function to validate and apply welcome gift coupon code
     const handleApplyCouponCode = async () => {

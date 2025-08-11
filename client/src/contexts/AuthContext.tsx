@@ -54,25 +54,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const checkAuthStatus = async () => {
     try {
       setLoading(true);
+      console.log('AuthContext: checkAuthStatus called');
 
       const accessToken = localStorage.getItem('accesstoken');
       const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
 
+      console.log('AuthContext: accessToken exists:', !!accessToken);
+      console.log('AuthContext: isLoggedIn:', isLoggedIn);
+
       if (!accessToken || !isLoggedIn) {
+        console.log('AuthContext: No access token or not logged in, setting unauthenticated');
         setIsAuthenticated(false);
         setUser(null);
         return;
       }
 
+      console.log('AuthContext: Making API call to userDetails');
       const response = await Axios({
         method: SummaryApi.userDetails.method,
         url: SummaryApi.userDetails.url,
       });
 
+      console.log('AuthContext: userDetails response:', response.data);
+
       if (response.data.success) {
         localStorage.removeItem('shimmer_cart');
         setIsAuthenticated(true);
         setUser(response.data.data);
+        console.log('AuthContext: User authenticated, user data:', response.data.data);
+
         await fetchUserCart(); // Fetch cart if user is authenticated
 
         // Merge guest data if any exists
@@ -94,6 +104,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             clearGuestData();
           } catch (error) {
             console.error('Error merging guest data:', error);
+          }
+        }
+
+        // Migrate anonymous welcome gift if exists
+        const anonymousId = localStorage.getItem('anonymousId');
+        if (anonymousId) {
+          try {
+            console.log('AuthContext: Attempting to migrate anonymous gift for anonymousId:', anonymousId);
+            const migrationResponse = await Axios.post('/api/welcome-gifts/migrate-anonymous', { anonymousId });
+
+            if (migrationResponse.data.success) {
+              console.log('AuthContext: Migration response received:', migrationResponse.data.data);
+
+              if (migrationResponse.data.data.migrated) {
+                console.log('AuthContext: Anonymous welcome gift migrated successfully');
+                localStorage.removeItem('anonymousId'); // Clean up after successful migration
+                localStorage.removeItem('rewardClaimed'); // Clean up old reward data
+                localStorage.removeItem('claimedRewardDetails'); // Clean up old reward details
+
+                // Refresh user data to get updated rewardClaimed status
+                await checkAuthStatus();
+              } else {
+                console.log('AuthContext: No migration needed - user already has a gift or no anonymous gift found');
+                localStorage.removeItem('anonymousId'); // Clean up anyway
+                localStorage.removeItem('rewardClaimed'); // Clean up old reward data
+                localStorage.removeItem('claimedRewardDetails'); // Clean up old reward details
+              }
+            } else {
+              console.log('AuthContext: Migration response indicates failure');
+              localStorage.removeItem('anonymousId'); // Clean up anyway
+            }
+          } catch (error: any) {
+            console.error('AuthContext: Error migrating anonymous welcome gift:', error);
+
+            // If migration fails, clean up the anonymousId to prevent future attempts
+            if (error.response?.status === 400 || error.response?.status === 500) {
+              console.log('AuthContext: Migration failed - cleaning up localStorage');
+              localStorage.removeItem('anonymousId');
+              localStorage.removeItem('rewardClaimed');
+              localStorage.removeItem('claimedRewardDetails');
+            }
           }
         }
       } else {
@@ -129,11 +180,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('isLoggedIn');
       localStorage.removeItem('shimmer_cart'); // Clear cart on logout
+      localStorage.removeItem('rewardClaimed'); // Clear reward data on logout
+      localStorage.removeItem('claimedRewardDetails'); // Clear reward details on logout
+      localStorage.removeItem('anonymousId'); // Clear anonymous ID on logout
       setIsAuthenticated(false);
       setUser(null);
       clearCart(); // Clear cart context state
       window.dispatchEvent(new Event('logoutStateChange'));
       window.dispatchEvent(new Event('cartClear')); // Notify cart context to clear state
+      // Dispatch event to reset eligibility check
+      window.dispatchEvent(new Event('resetEligibilityCheck'));
     }
   };
 
@@ -161,8 +217,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
+    // Only check auth status once on mount, not on every render
+    const hasCheckedAuth = localStorage.getItem('authStatusChecked');
+    if (!hasCheckedAuth) {
+      localStorage.setItem('authStatusChecked', 'true');
+      checkAuthStatus();
+    }
+  }, []); // FIXED: Run only once on mount
 
   const value: AuthContextType = {
     isAuthenticated,

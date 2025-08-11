@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateAnonymousId } from '@/utils/anonymousId';
 import Axios from '@/utils/Axios';
@@ -11,6 +11,7 @@ export const useRewardPopup = () => {
     const [loading, setLoading] = useState(false);
     const [selectedGift, setSelectedGift] = useState<any>(null);
     const { user, checkAuthStatus } = useAuth();
+    const hasCheckedRef = useRef(false);
 
     useEffect(() => {
         fetchWelcomeGifts();
@@ -27,22 +28,60 @@ export const useRewardPopup = () => {
         }
     };
 
-    const checkEligibility = async () => {
+    const checkEligibility = useCallback(async () => {
+        // Use localStorage to prevent multiple eligibility checks
+        const eligibilityCheckKey = 'eligibilityCheckCompleted';
+        const hasCheckedEligibility = localStorage.getItem(eligibilityCheckKey) === 'true';
+
+        if (hasCheckedEligibility || hasCheckedRef.current) {
+            console.log('Eligibility already checked, skipping');
+            return;
+        }
+
         try {
+            // Don't check eligibility if user is already logged in and has claimed a reward
+            if (user && user.rewardClaimed) {
+                console.log('User already has claimed reward, skipping eligibility check');
+                localStorage.setItem(eligibilityCheckKey, 'true');
+                hasCheckedRef.current = true;
+                return;
+            }
+
+            // Don't check eligibility if we already have a reward in localStorage
+            const hasClaimedReward = localStorage.getItem('rewardClaimed') === 'true';
+            if (hasClaimedReward) {
+                console.log('Reward already claimed in localStorage, skipping eligibility check');
+                localStorage.setItem(eligibilityCheckKey, 'true');
+                hasCheckedRef.current = true;
+                return;
+            }
+
             const anonymousId = generateAnonymousId();
+            console.log('Checking welcome gift eligibility for anonymousId:', anonymousId);
+
             const response = await Axios.get(SummaryApi.checkWelcomeGiftEligibility.url, {
                 params: { anonymousId }
             });
 
             if (response.data.success && response.data.data.shouldShowPopup) {
+                console.log('Eligibility check passed, opening popup');
                 setIsOpen(true);
+            } else {
+                console.log('Eligibility check failed or popup not needed');
             }
+
+            // Mark as checked to prevent future calls
+            localStorage.setItem(eligibilityCheckKey, 'true');
+            hasCheckedRef.current = true;
         } catch (error) {
             console.error('Error checking eligibility:', error);
+            // Mark as checked even on error to prevent infinite retries
+            localStorage.setItem(eligibilityCheckKey, 'true');
+            hasCheckedRef.current = true;
         }
-    };
+    }, [user]);
 
-    const claimReward = async (giftId: string) => {
+    const claimReward = useCallback(async (giftId: string) => {
         try {
             setLoading(true);
             const anonymousId = generateAnonymousId();
@@ -89,10 +128,39 @@ export const useRewardPopup = () => {
             setLoading(false);
         }
         return false;
-    };
+    }, [user, checkAuthStatus]);
 
-    const openPopup = () => setIsOpen(true);
-    const closePopup = () => setIsOpen(false);
+    const openPopup = useCallback(() => setIsOpen(true), []);
+    const closePopup = useCallback(() => setIsOpen(false), []);
+
+    // Reset function to clear eligibility check flag
+    const resetEligibilityCheck = useCallback(() => {
+        localStorage.removeItem('eligibilityCheckCompleted');
+        hasCheckedRef.current = false;
+        console.log('Eligibility check flag reset');
+    }, []);
+
+    // Add missing functions that ClaimedRewardDisplay needs
+    const getClaimedRewardDetails = useCallback(() => {
+        try {
+            const details = localStorage.getItem('claimedRewardDetails');
+            if (details) {
+                const parsed = JSON.parse(details);
+                return {
+                    ...parsed,
+                    claimedAt: new Date().toISOString() // Use current time as fallback
+                };
+            }
+            return null;
+        } catch (error) {
+            console.error('Error parsing claimed reward details:', error);
+            return null;
+        }
+    }, []);
+
+    const hasClaimedReward = useCallback(() => {
+        return localStorage.getItem('rewardClaimed') === 'true';
+    }, []);
 
     return {
         isOpen,
@@ -104,5 +172,8 @@ export const useRewardPopup = () => {
         closePopup,
         checkEligibility,
         claimReward,
+        resetEligibilityCheck,
+        getClaimedRewardDetails,
+        hasClaimedReward,
     };
 };
