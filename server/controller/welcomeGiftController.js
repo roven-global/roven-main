@@ -96,7 +96,20 @@ const createWelcomeGift = asyncHandler(async (req, res) => {
 // @route   PUT /api/admin/welcome-gifts/:id
 // @access  Private/Admin
 const updateWelcomeGift = asyncHandler(async (req, res) => {
-  const { title, description, icon, color, bgColor, reward, order, isActive } = req.body;
+  const { 
+    title, 
+    description, 
+    icon, 
+    color, 
+    bgColor, 
+    reward, 
+    order, 
+    isActive,
+    rewardType,
+    rewardValue,
+    maxDiscount,
+    minOrderAmount
+  } = req.body;
 
   const gift = await WelcomeGift.findById(req.params.id);
 
@@ -124,7 +137,11 @@ const updateWelcomeGift = asyncHandler(async (req, res) => {
       bgColor,
       reward,
       order,
-      isActive
+      isActive,
+      rewardType: rewardType || gift.rewardType,
+      rewardValue: rewardValue !== undefined ? rewardValue : gift.rewardValue,
+      maxDiscount: maxDiscount !== undefined ? maxDiscount : gift.maxDiscount,
+      minOrderAmount: minOrderAmount !== undefined ? minOrderAmount : gift.minOrderAmount
     },
     { new: true, runValidators: true }
   );
