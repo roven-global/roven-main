@@ -101,6 +101,13 @@ const bgColorOptions = [
   { value: 'bg-orange-50 hover:bg-orange-100', label: 'Orange' },
 ];
 
+const rewardTypeOptions = [
+  { value: 'percentage', label: 'Percentage Discount' },
+  { value: 'fixed_amount', label: 'Fixed Amount Discount' },
+  { value: 'free_shipping', label: 'Free Shipping' },
+  { value: 'buy_one_get_one', label: 'Buy One Get One Free' },
+];
+
 const WelcomeGiftAdmin = () => {
   const [gifts, setGifts] = useState<WelcomeGift[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
