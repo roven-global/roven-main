@@ -50,7 +50,19 @@ const getWelcomeGiftById = asyncHandler(async (req, res) => {
 // @route   POST /api/admin/welcome-gifts
 // @access  Private/Admin
 const createWelcomeGift = asyncHandler(async (req, res) => {
-  const { title, description, icon, color, bgColor, reward, order } = req.body;
+  const { 
+    title, 
+    description, 
+    icon, 
+    color, 
+    bgColor, 
+    reward, 
+    order,
+    rewardType,
+    rewardValue,
+    maxDiscount,
+    minOrderAmount
+  } = req.body;
 
   // Check if order already exists
   const existingGift = await WelcomeGift.findOne({ order });
@@ -66,7 +78,11 @@ const createWelcomeGift = asyncHandler(async (req, res) => {
     color,
     bgColor,
     reward,
-    order
+    order,
+    rewardType: rewardType || 'percentage',
+    rewardValue: rewardValue || 10,
+    maxDiscount: maxDiscount || null,
+    minOrderAmount: minOrderAmount || 0
   });
 
   res.status(201).json({
