@@ -188,7 +188,7 @@ const createOrder = asyncHandler(async (req, res) => {
             status: "pending",
         },
         subtotal,
-        shippingCost,
+        shippingCost: finalShippingCost,
         discount,
         welcomeGiftDiscount,
         total,
