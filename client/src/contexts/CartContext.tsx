@@ -265,9 +265,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const appliedGift: AppliedWelcomeGift = {
       reward: {
         _id: reward._id,
-        rewardTitle: reward.rewardTitle,
-        rewardText: reward.rewardText,
-        giftId: reward.giftId,
+        rewardTitle: reward.title || reward.rewardTitle, // Backend sends 'title'
+        rewardText: reward.reward || reward.rewardText, // Backend sends 'reward'
+        giftId: reward._id, // Use reward._id as giftId
         couponCode: reward.couponCode,
         rewardType: additionalData?.rewardType,
         rewardValue: additionalData?.rewardValue,

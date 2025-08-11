@@ -295,6 +295,15 @@ const Cart = () => {
         );
     }
 
+    // Debug: Log cart items being passed to WelcomeGiftReward
+    console.log('Cart: About to render with displayCartItems:', {
+        isAuthenticated,
+        cartItemsCount: cartItems?.length || 0,
+        guestCartCount: guestCart?.length || 0,
+        displayCartItemsCount: displayCartItems?.length || 0,
+        displayCartItems: displayCartItems
+    });
+
     return (
         <div className="min-h-screen bg-warm-cream">
             <Navigation />
@@ -598,7 +607,7 @@ const Cart = () => {
                                     <WelcomeGiftReward
                                         subtotal={subtotal}
                                         shippingCost={shippingCost}
-                                        cartItems={cartItems} // Pass cart items for BOGO calculations
+                                        cartItems={displayCartItems} // Use displayCartItems for both authenticated and guest users
                                         onRewardApplied={applyWelcomeGift}
                                         onRewardRemoved={removeWelcomeGift}
                                         appliedReward={appliedWelcomeGift}

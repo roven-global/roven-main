@@ -104,6 +104,18 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
 
         try {
             console.log('WelcomeGiftReward: Validating coupon code:', couponCode);
+            console.log('WelcomeGiftReward: Cart items being sent:', cartItems);
+            console.log('WelcomeGiftReward: Cart items structure:', {
+                count: cartItems.length,
+                items: cartItems.map(item => ({
+                    id: item._id,
+                    productId: item.productId?._id || item.productId,
+                    name: item.productId?.name,
+                    price: item.productId?.price || item.price,
+                    quantity: item.quantity,
+                    variant: item.variant
+                }))
+            });
 
             const response = await Axios.post(SummaryApi.validateWelcomeGiftCoupon.url, {
                 couponCode: couponCode.trim(),

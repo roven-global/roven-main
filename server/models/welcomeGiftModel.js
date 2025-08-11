@@ -192,9 +192,27 @@ welcomeGiftSchema.methods.calculateBOGODiscount = function (cartItems) {
   // Group items by product ID to handle quantities
   const itemGroups = {};
   cartItems.forEach(item => {
-    const productId = item.productId._id || item.productId;
-    const price = item.variant?.price || item.productId?.price || item.price;
-    const quantity = item.quantity || 1;
+    // Handle different cart item structures
+    let productId;
+    let price;
+    let quantity;
+
+    if (item.productId && typeof item.productId === 'object') {
+      // Structure: { productId: { _id: '...', price: 2000 }, quantity: 1, price: 2000 }
+      productId = item.productId._id || item.productId;
+      price = item.variant?.price || item.productId?.price || item.price;
+      quantity = item.quantity || 1;
+    } else if (item.productId) {
+      // Structure: { productId: 'product1', price: 2000, quantity: 1 }
+      productId = item.productId;
+      price = item.price;
+      quantity = item.quantity || 1;
+    } else {
+      // Fallback structure
+      productId = item._id || 'unknown';
+      price = item.price || 0;
+      quantity = item.quantity || 1;
+    }
 
     if (!itemGroups[productId]) {
       itemGroups[productId] = {
@@ -209,7 +227,8 @@ welcomeGiftSchema.methods.calculateBOGODiscount = function (cartItems) {
   Object.values(itemGroups).forEach(group => {
     const pairs = Math.floor(group.quantity / 2);
     const discountPerPair = group.price;
-    totalDiscount += pairs * discountPerPair;
+    const itemDiscount = pairs * discountPerPair;
+    totalDiscount += itemDiscount;
   });
 
   return totalDiscount;
@@ -233,6 +252,28 @@ welcomeGiftSchema.methods.canBeApplied = function (subtotal, cartItems = []) {
 
   const discountCalculation = this.calculateDiscount(subtotal, cartItems);
 
+  // Special handling for BOGO rewards
+  if (this.rewardType === 'buy_one_get_one') {
+    // For BOGO, we need at least 2 items to apply
+    const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+
+    if (totalItems < 2) {
+      return {
+        canApply: false,
+        reason: 'BOGO offer requires at least 2 items in cart'
+      };
+    }
+
+    // BOGO is valid if we have enough items, regardless of discount amount
+    return {
+      canApply: true,
+      reason: discountCalculation.reason,
+      discount: discountCalculation.discount,
+      finalAmount: discountCalculation.finalAmount
+    };
+  }
+
+  // For other reward types, check if discount is valid
   if (!discountCalculation.isValid) {
     return {
       canApply: false,
