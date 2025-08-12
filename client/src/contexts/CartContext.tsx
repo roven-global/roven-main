@@ -224,6 +224,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (response.data.success) {
         console.log('CartContext: Setting applied coupon:', response.data.data);
         setAppliedCoupon(response.data.data);
+
+        // Recalculate the discount amount based on current cart to ensure accuracy
+        setTimeout(() => {
+          console.log('CartContext: Recalculating coupon discount after application');
+          recalculateCouponDiscount();
+        }, 100);
+
         toast({
           title: "Coupon applied successfully!",
           description: `You saved ${response.data.data.discountAmount}₹`,
@@ -525,21 +532,62 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         return acc + (price * item.quantity);
       }, 0);
 
+      console.log('CartContext: recalculateCouponDiscount - starting calculation', {
+        couponType: appliedCoupon.coupon.type,
+        couponValue: appliedCoupon.coupon.value,
+        maxDiscount: appliedCoupon.coupon.maxDiscount,
+        currentSubtotal: subtotal,
+        cartItemsCount: cartItems.length,
+        cartItems: cartItems.map(item => ({
+          id: item._id,
+          quantity: item.quantity,
+          price: item.variant?.price || item.productId?.price || 0,
+          itemTotal: (item.variant?.price || item.productId?.price || 0) * item.quantity
+        }))
+      });
+
       let discountAmount = 0;
 
       // Calculate discount based on coupon type
       if (appliedCoupon.coupon.type === 'percentage') {
         discountAmount = (subtotal * appliedCoupon.coupon.value) / 100;
+        console.log('CartContext: Percentage coupon calculation:', {
+          percentage: appliedCoupon.coupon.value,
+          subtotal,
+          calculatedDiscount: discountAmount
+        });
 
         // Apply max discount limit if specified
         if (appliedCoupon.coupon.maxDiscount) {
+          const originalDiscount = discountAmount;
           discountAmount = Math.min(discountAmount, appliedCoupon.coupon.maxDiscount);
+          console.log('CartContext: Max discount applied:', {
+            originalDiscount,
+            maxDiscount: appliedCoupon.coupon.maxDiscount,
+            finalDiscount: discountAmount
+          });
         }
       } else if (appliedCoupon.coupon.type === 'fixed') {
         discountAmount = Math.min(appliedCoupon.coupon.value, subtotal);
+        console.log('CartContext: Fixed amount coupon calculation:', {
+          fixedAmount: appliedCoupon.coupon.value,
+          subtotal,
+          calculatedDiscount: discountAmount,
+          reason: subtotal < appliedCoupon.coupon.value ? 'Limited by subtotal' : 'Full fixed amount applied'
+        });
+      } else {
+        console.log('CartContext: Unknown coupon type:', appliedCoupon.coupon.type);
+        discountAmount = 0;
       }
 
       const finalAmount = subtotal - discountAmount;
+
+      console.log('CartContext: Final coupon calculation result:', {
+        subtotal,
+        discountAmount,
+        finalAmount,
+        savings: discountAmount
+      });
 
       // Update the applied coupon with new calculations
       setAppliedCoupon(prev => prev ? {
@@ -549,11 +597,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         currentSubtotal: subtotal
       } : null);
 
-      console.log('CartContext: Coupon discount recalculated:', discountAmount);
+      console.log('CartContext: Coupon discount recalculated and state updated:', discountAmount);
     } catch (error) {
       console.error('CartContext: Error recalculating coupon discount:', error);
     }
-  }, [appliedCoupon, cartItems]); // Add dependencies
+  }, [appliedCoupon, cartItems]);
 
   // Function to recalculate BOGO discount when cart changes
   const recalculateBOGODiscount = useCallback(async () => {
@@ -564,7 +612,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
-      console.log('CartContext: recalculateBOGODiscount - totalItems:', totalItems);
+      console.log('CartContext: recalculateBOGODiscount - starting calculation', {
+        totalItems,
+        cartItemsCount: cartItems.length,
+        cartItems: cartItems.map(item => ({
+          id: item._id,
+          quantity: item.quantity,
+          price: item.variant?.price || item.productId?.price || 0
+        }))
+      });
 
       if (totalItems >= 2) {
         // Find the cheapest item to give for free
@@ -575,10 +631,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         });
 
         const freeItemValue = sortedItems[0].variant?.price || sortedItems[0].productId?.price || 0;
-        console.log('CartContext: recalculateBOGODiscount - freeItemValue:', freeItemValue);
+        console.log('CartContext: BOGO discount calculation details:', {
+          totalItems,
+          sortedItems: sortedItems.map(item => ({
+            id: item._id,
+            price: item.variant?.price || item.productId?.price || 0
+          })),
+          freeItemValue
+        });
         return freeItemValue;
       } else {
-        console.log('CartContext: recalculateBOGODiscount - not enough items for BOGO');
+        console.log('CartContext: recalculateBOGODiscount - not enough items for BOGO', {
+          totalItems,
+          required: 2
+        });
         return 0;
       }
     } catch (error) {
@@ -597,16 +663,60 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         return sum + (itemPrice * item.quantity);
       }, 0);
 
+      console.log('CartContext: recalculateWelcomeGiftDiscount - starting calculation', {
+        rewardType: appliedWelcomeGift.reward?.rewardType,
+        rewardValue: appliedWelcomeGift.reward?.rewardValue,
+        currentSubtotal: subtotal,
+        cartItemsCount: cartItems.length
+      });
+
       let discountAmount = 0;
 
       // Calculate discount based on reward type
       if (appliedWelcomeGift.reward?.rewardType === 'percentage') {
         discountAmount = (subtotal * (appliedWelcomeGift.reward.rewardValue || 0)) / 100;
-      } else if (appliedWelcomeGift.reward?.rewardType === 'fixed') {
+        console.log('CartContext: Percentage discount calculated:', {
+          percentage: appliedWelcomeGift.reward.rewardValue,
+          subtotal,
+          discountAmount
+        });
+      } else if (appliedWelcomeGift.reward?.rewardType === 'fixed' || appliedWelcomeGift.reward?.rewardType === 'fixed_amount') {
         discountAmount = Math.min(appliedWelcomeGift.reward.rewardValue || 0, subtotal);
+        console.log('CartContext: Fixed amount discount calculated:', {
+          fixedAmount: appliedWelcomeGift.reward.rewardValue,
+          subtotal,
+          discountAmount,
+          reason: subtotal < (appliedWelcomeGift.reward.rewardValue || 0) ? 'Limited by subtotal' : 'Full fixed amount applied'
+        });
+      } else if (appliedWelcomeGift.reward?.rewardType === 'free_shipping') {
+        // For free shipping, calculate the shipping cost as the discount
+        const shippingCost = subtotal > 499 ? 0 : 40;
+        discountAmount = shippingCost;
+        console.log('CartContext: Free shipping discount calculated:', {
+          shippingCost,
+          discountAmount
+        });
+      } else if (appliedWelcomeGift.reward?.rewardType === 'buy_one_get_one') {
+        // This should not happen here as BOGO is handled separately
+        console.log('CartContext: BOGO reward type detected in recalculateWelcomeGiftDiscount - this should not happen');
+        discountAmount = 0;
+      } else {
+        // Handle unknown reward types
+        console.log('CartContext: Unknown reward type:', appliedWelcomeGift.reward?.rewardType, 'falling back to fixed amount calculation');
+        // Fallback: treat as fixed amount if rewardValue exists
+        if (appliedWelcomeGift.reward?.rewardValue) {
+          discountAmount = Math.min(appliedWelcomeGift.reward.rewardValue, subtotal);
+          console.log('CartContext: Fallback fixed amount calculation:', {
+            rewardValue: appliedWelcomeGift.reward.rewardValue,
+            subtotal,
+            discountAmount
+          });
+        } else {
+          discountAmount = 0;
+        }
       }
 
-      console.log('CartContext: recalculateWelcomeGiftDiscount - calculated:', discountAmount);
+      console.log('CartContext: recalculateWelcomeGiftDiscount - final result:', discountAmount);
       return discountAmount;
     } catch (error) {
       console.error('CartContext: Error recalculating welcome gift discount:', error);
@@ -638,7 +748,67 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           const newDiscountAmount = await recalculateBOGODiscount();
           console.log('CartContext: BOGO discount calculation result:', newDiscountAmount);
 
-          // Update the appliedWelcomeGift with the new discount amount
+          // Only update state if the discount amount has actually changed
+          if (newDiscountAmount !== appliedWelcomeGift.discountAmount || appliedWelcomeGift.isValid !== true) {
+            setAppliedWelcomeGift(prev => prev ? {
+              ...prev,
+              discountAmount: newDiscountAmount,
+              isValid: true,
+              validationMessage: undefined
+            } : null);
+            console.log('CartContext: BOGO offer updated with new discount amount:', newDiscountAmount);
+          } else {
+            console.log('CartContext: BOGO offer state unchanged - no update needed');
+          }
+        } else {
+          console.log('CartContext: BOGO validation failed - not enough items');
+
+          // Only update state if the validation status has actually changed
+          if (appliedWelcomeGift.isValid !== false || appliedWelcomeGift.discountAmount !== 0) {
+            setAppliedWelcomeGift(prev => prev ? {
+              ...prev,
+              discountAmount: 0,
+              isValid: false,
+              validationMessage: 'BOGO offer requires at least 2 items in cart'
+            } : null);
+            console.log('CartContext: BOGO offer marked as invalid');
+          } else {
+            console.log('CartContext: BOGO offer already marked as invalid - no update needed');
+          }
+        }
+      }
+      // For other welcome gift types, check minimum order amount and recalculate discounts
+      else {
+        const subtotal = cartItems.reduce((sum, item) => {
+          const itemPrice = item.variant?.price || item.productId?.price || 0;
+          return sum + (itemPrice * item.quantity);
+        }, 0);
+
+        // Check minimum order amount if specified
+        if (appliedWelcomeGift.reward?.minOrderAmount && subtotal < appliedWelcomeGift.reward.minOrderAmount) {
+          console.log('CartContext: Welcome gift validation failed - minimum order not met', {
+            currentSubtotal: subtotal,
+            requiredAmount: appliedWelcomeGift.reward.minOrderAmount
+          });
+
+          setAppliedWelcomeGift(prev => prev ? {
+            ...prev,
+            discountAmount: 0,
+            isValid: false,
+            validationMessage: `Minimum order amount of ₹${appliedWelcomeGift.reward.minOrderAmount} required`
+          } : null);
+        } else {
+          console.log('CartContext: Welcome gift validation passed - recalculating discount', {
+            rewardType: appliedWelcomeGift.reward?.rewardType,
+            currentSubtotal: subtotal,
+            minOrderAmount: appliedWelcomeGift.reward?.minOrderAmount
+          });
+
+          // Recalculate discount for all non-BOGO offers
+          const newDiscountAmount = await recalculateWelcomeGiftDiscount();
+          console.log('CartContext: Welcome gift discount calculation result:', newDiscountAmount);
+
+          // Update the appliedWelcomeGift with the new discount amount and validation status
           setAppliedWelcomeGift(prev => prev ? {
             ...prev,
             discountAmount: newDiscountAmount,
@@ -646,54 +816,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             validationMessage: undefined
           } : null);
 
-          console.log('CartContext: BOGO offer updated with new discount amount:', newDiscountAmount);
-        } else {
-          console.log('CartContext: BOGO validation failed - not enough items');
-          setAppliedWelcomeGift(prev => prev ? {
-            ...prev,
-            isValid: false,
-            validationMessage: 'BOGO offer requires at least 2 items in cart'
-          } : null);
+          console.log('CartContext: Welcome gift updated with new discount amount:', newDiscountAmount);
         }
-      }
-      // For other welcome gift types, check minimum order amount
-      else if (appliedWelcomeGift.reward?.minOrderAmount) {
-        const subtotal = cartItems.reduce((sum, item) => {
-          const itemPrice = item.variant?.price || item.productId?.price || 0;
-          return sum + (itemPrice * item.quantity);
-        }, 0);
-
-        if (subtotal >= appliedWelcomeGift.reward.minOrderAmount) {
-          console.log('CartContext: Welcome gift validation passed - minimum order met');
-          setAppliedWelcomeGift(prev => prev ? {
-            ...prev,
-            isValid: true,
-            validationMessage: undefined
-          } : null);
-
-          // Recalculate discount for non-BOGO offers
-          const newDiscountAmount = await recalculateWelcomeGiftDiscount();
-          if (newDiscountAmount > 0) {
-            setAppliedWelcomeGift(prev => prev ? {
-              ...prev,
-              discountAmount: newDiscountAmount
-            } : null);
-          }
-        } else {
-          console.log('CartContext: Welcome gift validation failed - minimum order not met');
-          setAppliedWelcomeGift(prev => prev ? {
-            ...prev,
-            isValid: false,
-            validationMessage: `Minimum order amount of ₹${appliedWelcomeGift.reward.minOrderAmount} required`
-          } : null);
-        }
-      } else {
-        console.log('CartContext: Welcome gift validation passed - no minimum requirement');
-        setAppliedWelcomeGift(prev => prev ? {
-          ...prev,
-          isValid: true,
-          validationMessage: undefined
-        } : null);
       }
 
       console.log('CartContext: Welcome gift validation completed');
@@ -729,7 +853,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [cartItems.length, appliedCoupon, appliedWelcomeGift]); // Depend on cartItems.length and applied offers
+  }, [cartItems.length]); // Only depend on cartItems.length to prevent infinite loops
 
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
