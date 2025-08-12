@@ -58,6 +58,7 @@ interface Product {
   benefits?: string[];
   isActive: boolean;
   isFeatured: boolean;
+  howToUse?: string[];
 }
 
 interface ImagePreview {
@@ -82,6 +83,14 @@ const UploadProduct = () => {
   const [newBenefit, setNewBenefit] = useState('');
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [useVariants, setUseVariants] = useState(false);
+
+  // New fields
+  const [ingredients, setIngredients] = useState<string[]>([]);
+  const [newIngredient, setNewIngredient] = useState('');
+  const [suitableFor, setSuitableFor] = useState<string[]>([]);
+  const [newSuitableFor, setNewSuitableFor] = useState('');
+  const [howToUse, setHowToUse] = useState<string[]>([]);
+  const [newHowToUse, setNewHowToUse] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -167,6 +176,11 @@ const UploadProduct = () => {
           setVariants(product.variants);
           setUseVariants(true);
         }
+
+        // Set new fields
+        setIngredients(product.specifications?.ingredients || []);
+        setSuitableFor(product.specifications?.suitableFor || []);
+        setHowToUse(product.howToUse || []);
       }
     } catch (error) {
       console.error('Error fetching product:', error);
@@ -244,6 +258,17 @@ const UploadProduct = () => {
 
   const removeBenefit = (benefitToRemove: string) => {
     setBenefits(benefits.filter(benefit => benefit !== benefitToRemove));
+  };
+
+  // Helper functions for new fields
+  const addListItem = (listSetter: React.Dispatch<React.SetStateAction<string[]>>, value: string) => {
+    if (value.trim()) {
+      listSetter(prev => [...prev, value.trim()]);
+    }
+  };
+
+  const removeListItem = (listSetter: React.Dispatch<React.SetStateAction<string[]>>, value: string) => {
+    listSetter(prev => prev.filter(item => item !== value));
   };
 
   // Variant management functions
@@ -413,12 +438,16 @@ const UploadProduct = () => {
       }
 
       // Add specifications
-      const specsObject = specifications.reduce((acc, spec) => {
-        if (spec.key.trim() && spec.value.trim()) {
-          acc[spec.key] = spec.value;
-        }
-        return acc;
-      }, {} as Record<string, string>);
+      const specsObject = {
+        ...specifications.reduce((acc, spec) => {
+          if (spec.key.trim() && spec.value.trim()) {
+            acc[spec.key] = spec.value;
+          }
+          return acc;
+        }, {} as Record<string, any>),
+        ingredients,
+        suitableFor
+      };
       formDataToSend.append('specifications', JSON.stringify(specsObject));
 
       // Add tags
@@ -426,6 +455,9 @@ const UploadProduct = () => {
 
       // Add benefits
       formDataToSend.append('benefits', JSON.stringify(benefits));
+
+      // Add How to Use
+      formDataToSend.append('howToUse', JSON.stringify(howToUse));
 
       // Handle variants - be very explicit about the data structure
       if (isUsingVariants) {
@@ -972,6 +1004,132 @@ const UploadProduct = () => {
                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addBenefit())}
                 />
                 <Button type="button" variant="outline" onClick={addBenefit}>
+                  Add
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Hero Ingredients */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Hero Ingredients
+              </CardTitle>
+              <CardDescription>
+                Add key ingredients that make your product special
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {ingredients.map((ingredient) => (
+                  <Badge key={ingredient} variant="secondary" className="flex items-center gap-1">
+                    {ingredient}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() => removeListItem(setIngredients, ingredient)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add an ingredient"
+                  value={newIngredient}
+                  onChange={(e) => setNewIngredient(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addListItem(setIngredients, newIngredient), setNewIngredient(''))}
+                />
+                <Button type="button" variant="outline" onClick={() => { addListItem(setIngredients, newIngredient); setNewIngredient(''); }}>
+                  Add
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Suitable For */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Suitable For
+              </CardTitle>
+              <CardDescription>
+                Add skin types, concerns, or demographics this product is suitable for
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {suitableFor.map((item) => (
+                  <Badge key={item} variant="secondary" className="flex items-center gap-1">
+                    {item}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() => removeListItem(setSuitableFor, item)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add suitable for"
+                  value={newSuitableFor}
+                  onChange={(e) => setNewSuitableFor(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addListItem(setSuitableFor, newSuitableFor), setNewSuitableFor(''))}
+                />
+                <Button type="button" variant="outline" onClick={() => { addListItem(setSuitableFor, newSuitableFor); setNewSuitableFor(''); }}>
+                  Add
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* How to Use */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                How to Use
+              </CardTitle>
+              <CardDescription>
+                Add step-by-step instructions for using your product
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {howToUse.map((step, index) => (
+                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                    Step {index + 1}: {step}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() => removeListItem(setHowToUse, step)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add a how-to-use step"
+                  value={newHowToUse}
+                  onChange={(e) => setNewHowToUse(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addListItem(setHowToUse, newHowToUse), setNewHowToUse(''))}
+                />
+                <Button type="button" variant="outline" onClick={() => { addListItem(setHowToUse, newHowToUse); setNewHowToUse(''); }}>
                   Add
                 </Button>
               </div>

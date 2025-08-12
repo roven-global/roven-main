@@ -1,3 +1,4 @@
+// ProductCard.tsx
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -285,14 +286,7 @@ const ProductCard = ({
                         </div>
                     )}
 
-                    {/* Clickable hint when Add to Cart button is hidden */}
-                    {hideAddToCart && (
-                        <div className="mt-auto text-center">
-                            <p className="text-sm text-gray-500 font-medium">
-                                Click to view details
-                            </p>
-                        </div>
-                    )}
+
                 </CardContent>
             </Link>
         </Card>

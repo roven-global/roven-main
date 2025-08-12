@@ -1,3 +1,4 @@
+// productController.js
 const ProductModel = require("../models/productModel");
 const CategoryModel = require("../models/categoryModel");
 const asyncHandler = require("express-async-handler");
@@ -41,6 +42,7 @@ const createProduct = asyncHandler(async (req, res) => {
     tags,
     benefits,
     isFeatured,
+    howToUse, // ✅ new field
   } = req.body;
 
   const images = req.files;
@@ -165,6 +167,13 @@ const createProduct = asyncHandler(async (req, res) => {
     }
   }
 
+  // Ensure suitableFor is always an array
+  if (parsedSpecifications && parsedSpecifications.suitableFor) {
+    if (!Array.isArray(parsedSpecifications.suitableFor)) {
+      parsedSpecifications.suitableFor = [parsedSpecifications.suitableFor];
+    }
+  }
+
   let parsedTags = tags;
   if (typeof tags === 'string') {
     try {
@@ -180,6 +189,19 @@ const createProduct = asyncHandler(async (req, res) => {
       parsedBenefits = JSON.parse(benefits);
     } catch (err) {
       parsedBenefits = benefits ? benefits.split(',').map(benefit => benefit.trim()) : [];
+    }
+  }
+
+  let parsedHowToUse = [];
+  if (req.body.howToUse) {
+    if (typeof req.body.howToUse === 'string') {
+      try {
+        parsedHowToUse = JSON.parse(req.body.howToUse);
+      } catch (err) {
+        parsedHowToUse = req.body.howToUse.split(',').map(step => step.trim());
+      }
+    } else if (Array.isArray(req.body.howToUse)) {
+      parsedHowToUse = req.body.howToUse;
     }
   }
 
@@ -221,6 +243,7 @@ const createProduct = asyncHandler(async (req, res) => {
       tags: parsedTags || [],
       benefits: parsedBenefits || [],
       isFeatured: isFeatured === 'true',
+      howToUse: parsedHowToUse || [],
     };
   } else {
     // Single product - use the provided price and volume
@@ -242,6 +265,7 @@ const createProduct = asyncHandler(async (req, res) => {
       tags: parsedTags || [],
       benefits: parsedBenefits || [],
       isFeatured: isFeatured === 'true',
+      howToUse: parsedHowToUse || [],
     };
   }
 
@@ -394,6 +418,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     benefits,
     isActive,
     isFeatured,
+    howToUse, // ✅ new field
   } = req.body;
 
   const images = req.files;
@@ -425,6 +450,9 @@ const updateProduct = asyncHandler(async (req, res) => {
   if (isActive !== undefined) updateFields.isActive = isActive === 'true';
   if (isFeatured !== undefined) {
     updateFields.isFeatured = isFeatured === 'true';
+  }
+  if (howToUse !== undefined) {
+    updateFields.howToUse = howToUse;
   }
 
   if (category && category !== String(product.category)) {
@@ -563,6 +591,11 @@ const updateProduct = asyncHandler(async (req, res) => {
         parsedSpecifications = {};
       }
     }
+    if (parsedSpecifications && parsedSpecifications.suitableFor) {
+      if (!Array.isArray(parsedSpecifications.suitableFor)) {
+        parsedSpecifications.suitableFor = [parsedSpecifications.suitableFor];
+      }
+    }
     updateFields.specifications = parsedSpecifications;
   }
 
@@ -588,6 +621,20 @@ const updateProduct = asyncHandler(async (req, res) => {
       }
     }
     updateFields.benefits = parsedBenefits;
+  }
+
+  if (req.body.howToUse) {
+    let parsedHowToUse = [];
+    if (typeof req.body.howToUse === 'string') {
+      try {
+        parsedHowToUse = JSON.parse(req.body.howToUse);
+      } catch (err) {
+        parsedHowToUse = req.body.howToUse.split(',').map(step => step.trim());
+      }
+    } else if (Array.isArray(req.body.howToUse)) {
+      parsedHowToUse = req.body.howToUse;
+    }
+    updateFields.howToUse = parsedHowToUse;
   }
 
   if (images && images.length > 0) {
