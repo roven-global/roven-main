@@ -45,6 +45,7 @@ const Cart = () => {
     const [lifetimeSavingsLoading, setLifetimeSavingsLoading] = useState(false);
     const [applyReward, setApplyReward] = useState(false);
     const [hasClaimedReward, setHasClaimedReward] = useState(false);
+    const [cartUpdateTrigger, setCartUpdateTrigger] = useState(0); // Force re-renders when cart changes
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -82,6 +83,17 @@ const Cart = () => {
             setApplyReward(false);
         }
     }, [appliedWelcomeGift]);
+
+    // Listen to cart changes to ensure price summary updates
+    useEffect(() => {
+        // This effect ensures the component re-renders when cart changes
+        // The price summary calculations are done in the render function,
+        // so any cart state change will automatically update the prices
+        console.log('Cart: Cart items changed, triggering re-render');
+
+        // Force a re-render by updating the trigger
+        setCartUpdateTrigger(prev => prev + 1);
+    }, [cartItems, guestCart]); // Listen to both authenticated and guest cart changes
 
     // Auto-apply welcome gift if user has claimed one and it's not already applied
     useEffect(() => {
@@ -153,10 +165,27 @@ const Cart = () => {
 
     const handleUpdateQuantity = async (cartItemId: string, newQuantity: number, variant?: { volume: string; sku: string }) => {
         if (newQuantity < 1) return;
-        if (isAuthenticated) {
-            await updateQuantity(cartItemId, newQuantity);
-        } else {
-            updateGuestCartQuantity(cartItemId, newQuantity, variant);
+
+        console.log('Cart: Updating quantity:', { cartItemId, newQuantity, variant, isAuthenticated });
+
+        try {
+            if (isAuthenticated) {
+                await updateQuantity(cartItemId, newQuantity);
+                console.log('Cart: Quantity updated for authenticated user');
+            } else {
+                updateGuestCartQuantity(cartItemId, newQuantity, variant);
+                console.log('Cart: Quantity updated for guest user');
+            }
+
+            // Force a re-render to update price summary
+            // The useEffect listening to cart changes should handle this automatically
+        } catch (error) {
+            console.error('Cart: Error updating quantity:', error);
+            toast({
+                title: "Error updating quantity",
+                description: "Failed to update item quantity. Please try again.",
+                variant: "destructive"
+            });
         }
     };
 
@@ -257,24 +286,88 @@ const Cart = () => {
     };
 
     const displayCartItems = isAuthenticated ? cartItems : guestCart;
-    const subtotal = isAuthenticated
-        ? cartItems.reduce((acc, item) => acc + ((item.variant?.price || item.productId?.price || 0) * item.quantity), 0)
-        : guestCart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+    // Calculate totals first
+    const subtotal = displayCartItems.reduce((sum, item) => {
+        let itemPrice = 0;
+        let itemId = '';
+
+        if (isAuthenticated) {
+            // For authenticated users, use CartItem structure
+            itemPrice = (item as any).variant?.price || (item as any).productId?.price || 0;
+            itemId = (item as any)._id || '';
+        } else {
+            // For guest users, use GuestCartItem structure
+            itemPrice = (item as any).price || 0;
+            itemId = (item as any).id || '';
+        }
+
+        const itemTotal = itemPrice * item.quantity;
+        console.log('🔍 DEBUG: Cart price calculation - item:', {
+            id: itemId,
+            itemPrice,
+            quantity: item.quantity,
+            itemTotal
+        });
+        return sum + itemTotal;
+    }, 0);
+
+    console.log('🔍 DEBUG: Cart subtotal calculated:', subtotal);
+
+    // Calculate shipping cost after subtotal
+    const shippingCost = subtotal > 499 ? 0 : 40;
+
+    // Calculate discounts only for valid offers
+    const validCouponDiscount = appliedCoupon && appliedCoupon.isValid !== false
+        ? (appliedCoupon.discountAmount || 0)
+        : 0;
+    console.log('🔍 DEBUG: Cart validCouponDiscount:', validCouponDiscount);
+
+    const validWelcomeGiftDiscount = appliedWelcomeGift && appliedWelcomeGift.isValid !== false
+        ? (appliedWelcomeGift.discountAmount || 0)
+        : 0;
+    console.log('🔍 DEBUG: Cart validWelcomeGiftDiscount:', validWelcomeGiftDiscount);
+    console.log('🔍 DEBUG: Cart appliedWelcomeGift object:', JSON.stringify(appliedWelcomeGift, null, 2));
+
+    // Calculate final total including only valid coupon and welcome gift discounts
+    const finalTotal = subtotal - validCouponDiscount - validWelcomeGiftDiscount + shippingCost;
+    console.log('🔍 DEBUG: Cart finalTotal calculation:', {
+        subtotal,
+        validCouponDiscount,
+        validWelcomeGiftDiscount,
+        shippingCost,
+        finalTotal
+    });
 
     // Calculate cart summary metrics
     const totalUniqueItems = displayCartItems.length;
     const totalQuantity = displayCartItems.reduce((acc, item) => acc + item.quantity, 0);
     const totalAmount = subtotal;
 
-    const shippingCost = subtotal > 499 ? 0 : 40;
-    const welcomeGiftDiscount = appliedWelcomeGift ? appliedWelcomeGift.discountAmount : 0;
-    // Calculate final total including coupon and welcome gift discounts
-    const finalTotal = subtotal - (appliedCoupon ? appliedCoupon.discountAmount : 0) - welcomeGiftDiscount + shippingCost;
-
-    // Calculate total savings including shipping savings
+    // Calculate total savings including shipping savings (only for valid offers)
     const originalShippingCost = 40; // Original shipping cost before free shipping
     const shippingSavings = subtotal > 499 ? originalShippingCost : 0;
-    const totalSavings = (appliedCoupon ? appliedCoupon.discountAmount : 0) + welcomeGiftDiscount + shippingSavings;
+    const totalSavings = validCouponDiscount + validWelcomeGiftDiscount + shippingSavings;
+
+    // Debug: Log price summary calculations
+    console.log('Cart: Price summary recalculated:', {
+        subtotal,
+        totalQuantity,
+        finalTotal,
+        totalSavings,
+        cartItemsCount: cartItems?.length || 0,
+        guestCartCount: guestCart?.length || 0,
+        isAuthenticated,
+        cartUpdateTrigger, // Include trigger to ensure updates
+        // Add detailed welcome gift debugging
+        appliedWelcomeGift: appliedWelcomeGift ? {
+            type: appliedWelcomeGift.type,
+            isValid: appliedWelcomeGift.isValid,
+            discountAmount: appliedWelcomeGift.discountAmount,
+            validationMessage: appliedWelcomeGift.validationMessage,
+            rewardType: appliedWelcomeGift.reward?.rewardType
+        } : null
+    });
 
     // Handle checkout with reward state
     const handleCheckout = () => {
@@ -388,6 +481,9 @@ const Cart = () => {
                                                                 </p>
                                                                 <p className="text-xs text-green-600">
                                                                     {appliedCoupon.coupon.name} - {formatRupees(appliedCoupon.discountAmount)} off
+                                                                    {appliedCoupon.isValid === false && (
+                                                                        <span className="text-orange-600 ml-1">(Inactive)</span>
+                                                                    )}
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -613,6 +709,107 @@ const Cart = () => {
                                         appliedReward={appliedWelcomeGift}
                                     />
 
+                                    {/* BOGO Warning Message */}
+                                    {appliedWelcomeGift &&
+                                        appliedWelcomeGift.type === 'sample' &&
+                                        appliedWelcomeGift.isValid === false && (
+                                            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-5 h-5 text-orange-600">⚠️</div>
+                                                    <div>
+                                                        <p className="text-sm text-orange-700 font-medium">
+                                                            BOGO Offer Currently Inactive
+                                                        </p>
+                                                        <p className="text-xs text-orange-600">
+                                                            {appliedWelcomeGift.validationMessage || "Add at least 2 items to cart to activate this offer"}
+                                                        </p>
+                                                        <p className="text-xs text-orange-500 mt-1">
+                                                            💡 The offer will automatically activate when you add more items
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                    {/* Comprehensive Offer Warning Messages */}
+                                    {appliedWelcomeGift && (
+                                        <>
+                                            {/* BOGO Warning */}
+                                            {appliedWelcomeGift.type === 'sample' && totalQuantity < 2 && (
+                                                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-5 h-5 text-red-600">⚠️</div>
+                                                        <div>
+                                                            <p className="text-sm text-red-700 font-medium">
+                                                                BOGO Offer Warning
+                                                            </p>
+                                                            <p className="text-xs text-red-600">
+                                                                Your BOGO offer requires at least 2 items. Add more items to keep the offer active.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Minimum Order Amount Warning */}
+                                            {appliedWelcomeGift.reward.minOrderAmount && subtotal < appliedWelcomeGift.reward.minOrderAmount && (
+                                                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-5 h-5 text-orange-600">⚠️</div>
+                                                        <div>
+                                                            <p className="text-sm text-orange-700 font-medium">
+                                                                Minimum Order Warning
+                                                            </p>
+                                                            <p className="text-xs text-orange-600">
+                                                                Your welcome gift requires minimum order of ₹{appliedWelcomeGift.reward.minOrderAmount}.
+                                                                Current order: ₹{subtotal}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {/* Coupon Warning Messages */}
+                                    {appliedCoupon && (
+                                        <>
+                                            {/* Empty Cart Warning */}
+                                            {totalQuantity === 0 && (
+                                                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-5 h-5 text-red-600">⚠️</div>
+                                                        <div>
+                                                            <p className="text-sm text-red-700 font-medium">
+                                                                Coupon Warning
+                                                            </p>
+                                                            <p className="text-xs text-red-600">
+                                                                Your coupon will be removed because the cart is empty.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Low Order Amount Warning */}
+                                            {subtotal < 100 && totalQuantity > 0 && (
+                                                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-5 h-5 text-orange-600">⚠️</div>
+                                                        <div>
+                                                            <p className="text-sm text-orange-700 font-medium">
+                                                                Low Order Amount
+                                                            </p>
+                                                            <p className="text-xs text-orange-600">
+                                                                Your coupon might not be valid for very low order amounts.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+
                                     {/* Welcome Gift Selection Status */}
                                     {isAuthenticated && hasClaimedReward && !appliedWelcomeGift && (
                                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -645,13 +842,21 @@ const Cart = () => {
                                             {appliedCoupon && (
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-gray-600">Coupon Discount</span>
-                                                    <span className="text-green-600 font-bold">-{formatRupees(appliedCoupon.discountAmount)}</span>
+                                                    {appliedCoupon.isValid !== false ? (
+                                                        <span className="text-green-600 font-bold">-{formatRupees(appliedCoupon.discountAmount)}</span>
+                                                    ) : (
+                                                        <span className="text-orange-600 font-medium">Inactive</span>
+                                                    )}
                                                 </div>
                                             )}
                                             {appliedWelcomeGift && (
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-gray-600">Welcome Gift</span>
-                                                    <span className="text-green-600 font-bold">-{formatRupees(appliedWelcomeGift.discountAmount)}</span>
+                                                    {appliedWelcomeGift.isValid !== false ? (
+                                                        <span className="text-green-600 font-bold">-{formatRupees(appliedWelcomeGift.discountAmount)}</span>
+                                                    ) : (
+                                                        <span className="text-orange-600 font-medium">Inactive</span>
+                                                    )}
                                                 </div>
                                             )}
                                             {!appliedWelcomeGift && applyReward && hasClaimedReward && (
@@ -721,7 +926,7 @@ const Cart = () => {
                                                                     {appliedWelcomeGift ? (
                                                                         <>
                                                                             <strong>{appliedWelcomeGift.reward?.rewardTitle}</strong> applied
-                                                                            {appliedWelcomeGift.discountAmount > 0 && (
+                                                                            {appliedWelcomeGift.discountAmount > 0 && appliedWelcomeGift.isValid !== false && (
                                                                                 <span className="ml-2 font-medium">
                                                                                     -{formatRupees(appliedWelcomeGift.discountAmount)}
                                                                                 </span>

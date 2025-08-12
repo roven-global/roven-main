@@ -109,9 +109,11 @@ const Checkout = () => {
     // Separate useEffect for cart refresh
     useEffect(() => {
         if (isAuthenticated) {
+            // Call refreshCart directly to prevent infinite loops
+            // since refreshCart function reference changes on every render
             refreshCart();
         }
-    }, [isAuthenticated, refreshCart]);
+    }, [isAuthenticated]); // Remove refreshCart from dependencies
 
     // Fetch lifetime savings
     useEffect(() => {
@@ -137,7 +139,7 @@ const Checkout = () => {
         if (!cartLoading && displayCartItems.length === 0) {
             navigate('/cart');
         }
-    }, [displayCartItems.length, navigate, cartLoading]);
+    }, [displayCartItems.length, cartLoading]); // Remove navigate from dependencies as it's stable
 
     const loadSavedAddresses = async () => {
         if (!isAuthenticated) return;
@@ -319,11 +321,19 @@ const Checkout = () => {
 
     const subtotal = displayCartItems.reduce((acc, item: any) => acc + (isAuthenticated ? (item.variant?.price || item.productId?.price) : item.price) * item.quantity, 0);
     const shippingCost = subtotal > 499 ? 0 : 40;
-    const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
-    const welcomeGiftDiscount = appliedWelcomeGift ? appliedWelcomeGift.discountAmount : 0;
+
+    // Calculate discounts only for valid offers
+    const discountAmount = appliedCoupon && appliedCoupon.isValid !== false
+        ? (appliedCoupon.discountAmount || 0)
+        : 0;
+
+    const welcomeGiftDiscount = appliedWelcomeGift && appliedWelcomeGift.isValid !== false
+        ? (appliedWelcomeGift.discountAmount || 0)
+        : 0;
+
     const finalTotal = subtotal + shippingCost - discountAmount - welcomeGiftDiscount;
 
-    // Calculate total savings
+    // Calculate total savings (only for valid offers)
     const originalShippingCost = 40; // Original shipping cost before free shipping
     const shippingSavings = subtotal > 499 ? originalShippingCost : 0;
     const totalSavings = discountAmount + welcomeGiftDiscount + shippingSavings;
@@ -577,11 +587,98 @@ const Checkout = () => {
                                 <WelcomeGiftReward
                                     subtotal={subtotal}
                                     shippingCost={40}
+                                    cartItems={cartItems} // Add cartItems for BOGO validation
                                     onRewardApplied={applyWelcomeGift}
                                     onRewardRemoved={removeWelcomeGift}
                                     appliedReward={appliedWelcomeGift?.reward}
                                     isCheckout={true}
                                 />
+
+                                {/* Comprehensive Offer Warning Messages */}
+                                {appliedWelcomeGift && (
+                                    <>
+                                        {/* BOGO Warning */}
+                                        {appliedWelcomeGift.type === 'sample' &&
+                                            cartItems.reduce((sum, item) => sum + item.quantity, 0) < 2 && (
+                                                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-5 h-5 text-red-600">⚠️</div>
+                                                        <div>
+                                                            <p className="text-sm text-red-700 font-medium">
+                                                                BOGO Offer Warning
+                                                            </p>
+                                                            <p className="text-xs text-red-600">
+                                                                Your BOGO offer requires at least 2 items. Add more items to keep the offer active.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                        {/* Minimum Order Amount Warning */}
+                                        {appliedWelcomeGift.reward.minOrderAmount &&
+                                            subtotal < appliedWelcomeGift.reward.minOrderAmount && (
+                                                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-5 h-5 text-orange-600">⚠️</div>
+                                                        <div>
+                                                            <p className="text-sm text-orange-700 font-medium">
+                                                                Minimum Order Warning
+                                                            </p>
+                                                            <p className="text-xs text-orange-600">
+                                                                Your welcome gift requires minimum order of ₹{appliedWelcomeGift.reward.minOrderAmount}.
+                                                                Current order: ₹{subtotal}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                        {/* BOGO Warning Message */}
+                                        {appliedWelcomeGift &&
+                                            appliedWelcomeGift.type === 'sample' &&
+                                            appliedWelcomeGift.isValid === false && (
+                                                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-5 h-5 text-orange-600">⚠️</div>
+                                                        <div>
+                                                            <p className="text-sm text-orange-700 font-medium">
+                                                                BOGO Offer Currently Inactive
+                                                            </p>
+                                                            <p className="text-xs text-orange-600">
+                                                                {appliedWelcomeGift.validationMessage || "Add at least 2 items to cart to activate this offer"}
+                                                            </p>
+                                                            <p className="text-xs text-orange-500 mt-1">
+                                                                💡 The offer will automatically activate when you add more items
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                    </>
+                                )}
+
+                                {/* Coupon Warning Messages */}
+                                {discountAmount > 0 && (
+                                    <>
+                                        {/* Low Order Amount Warning */}
+                                        {subtotal < 100 && (
+                                            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-5 h-5 text-orange-600">⚠️</div>
+                                                    <div>
+                                                        <p className="text-sm text-orange-700 font-medium">
+                                                            Low Order Amount
+                                                        </p>
+                                                        <p className="text-xs text-orange-600">
+                                                            Your coupon might not be valid for very low order amounts.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
 
                                 {/* Welcome Gift Application Status */}
                                 {shouldApplyWelcomeGift && (

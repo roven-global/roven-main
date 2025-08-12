@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +40,34 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
     const [couponCode, setCouponCode] = useState('');
     const [couponLoading, setCouponLoading] = useState(false);
     const [couponError, setCouponError] = useState('');
+
+    // Check if BOGO offer can be applied with current cart
+    const canApplyBOGO = useCallback(() => {
+        if (!userReward) return false;
+
+        const rewardText = (userReward.rewardText || userReward.reward || '').toLowerCase();
+        const isBOGO = rewardText.includes('bogo') || rewardText.includes('buy one get one');
+
+        if (!isBOGO) return true;
+
+        // For BOGO offers, check if we have enough items
+        const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        return totalItems >= 2;
+    }, [userReward, cartItems]);
+
+    // Check if BOGO offer is currently valid (for applied offers)
+    const isBOGOValid = useCallback(() => {
+        if (!appliedReward || appliedReward.type !== 'sample') return true;
+
+        // Check if the applied BOGO offer is valid
+        if (appliedReward.isValid === false) {
+            return false;
+        }
+
+        // If no validation state, check current cart
+        const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        return totalItems >= 2;
+    }, [appliedReward, cartItems]);
 
     // Fetch user's claimed reward (for authenticated users)
     useEffect(() => {
@@ -253,9 +281,20 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
         }
         // Check for BOGO offers
         else if (rewardText.includes('buy one get one') || rewardText.includes('bogo') || rewardTitle.includes('bogo')) {
-            // BOGO calculation will be handled by the backend API
-            console.log('WelcomeGiftReward: BOGO offer detected, calculation handled by backend');
-            return 0; // Will be calculated by backend
+            // Calculate BOGO discount based on cart items
+            const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+
+            if (totalItems >= 2) {
+                // Find the cheapest item to give for free
+                const sortedItems = [...cartItems].sort((a, b) => (a.price || 0) - (b.price || 0));
+                const freeItemValue = sortedItems[0].price || 0;
+
+                console.log('WelcomeGiftReward: BOGO discount calculated:', freeItemValue, 'from', totalItems, 'items');
+                return freeItemValue;
+            } else {
+                console.log('WelcomeGiftReward: BOGO offer requires 2+ items, current items:', totalItems);
+                return 0;
+            }
         }
 
         console.log('WelcomeGiftReward: No discount pattern matched, returning 0');
@@ -267,7 +306,15 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
 
         setApplying(true);
         try {
+            console.log('🔍 DEBUG: handleApplyReward START');
+            console.log('🔍 DEBUG: userReward object:', JSON.stringify(userReward, null, 2));
+            console.log('🔍 DEBUG: cartItems:', JSON.stringify(cartItems, null, 2));
+            console.log('🔍 DEBUG: subtotal:', subtotal);
+            console.log('🔍 DEBUG: shippingCost:', shippingCost);
+
             const discountAmount = calculateDiscountAmount(userReward, subtotal, shippingCost);
+            console.log('🔍 DEBUG: calculateDiscountAmount returned:', discountAmount);
+
             console.log('WelcomeGiftReward: handleApplyReward called');
             console.log('WelcomeGiftReward: userReward:', userReward);
             console.log('WelcomeGiftReward: calculated discountAmount:', discountAmount);
@@ -275,13 +322,37 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
             console.log('WelcomeGiftReward: shippingCost:', shippingCost);
 
             if (discountAmount > 0) {
-                console.log('WelcomeGiftReward: Calling onRewardApplied with:', userReward, discountAmount);
-                onRewardApplied(userReward, discountAmount);
+                // Check if this is a BOGO offer
+                const rewardText = (userReward.rewardText || userReward.reward || '').toLowerCase();
+                const rewardTitle = (userReward.rewardTitle || userReward.title || '').toLowerCase();
+                const isBOGO = rewardText.includes('bogo') || rewardText.includes('buy one get one') ||
+                    rewardTitle.includes('bogo') || rewardTitle.includes('buy one get one');
+
+                console.log('🔍 DEBUG: rewardText:', rewardText);
+                console.log('🔍 DEBUG: rewardTitle:', rewardTitle);
+                console.log('🔍 DEBUG: isBOGO detected:', isBOGO);
+
+                // Prepare additional data for the CartContext
+                const additionalData = {
+                    rewardType: isBOGO ? 'buy_one_get_one' : 'discount',
+                    reason: isBOGO ? 'Buy 1 Get 1 Free' : 'Welcome Gift Discount'
+                };
+
+                console.log('🔍 DEBUG: additionalData being sent:', JSON.stringify(additionalData, null, 2));
+                console.log('🔍 DEBUG: Final call to onRewardApplied with:');
+                console.log('🔍 DEBUG: - reward:', JSON.stringify(userReward, null, 2));
+                console.log('🔍 DEBUG: - discountAmount:', discountAmount);
+                console.log('🔍 DEBUG: - additionalData:', JSON.stringify(additionalData, null, 2));
+
+                console.log('WelcomeGiftReward: Calling onRewardApplied with:', userReward, discountAmount, additionalData);
+                onRewardApplied(userReward, discountAmount, additionalData);
                 toast({
                     title: "Welcome gift applied!",
                     description: `${userReward.rewardTitle} has been applied to your order.`,
                 });
             } else {
+                console.log('🔍 DEBUG: discountAmount is 0, reward not applicable');
+                console.log('🔍 DEBUG: This means calculateDiscountAmount returned 0');
                 console.log('WelcomeGiftReward: Reward not applicable - discountAmount is 0');
                 toast({
                     title: "Reward not applicable",
@@ -290,6 +361,7 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
                 });
             }
         } catch (error) {
+            console.error('🔍 DEBUG: Error in handleApplyReward:', error);
             console.error('Error applying reward:', error);
             toast({
                 title: "Error applying reward",
@@ -328,47 +400,74 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
 
     // If reward is already applied, show the applied state
     if (appliedReward) {
-        // Safety check for appliedReward structure
-        if (!appliedReward.reward || !appliedReward.reward.rewardTitle) {
+        // Safety check for appliedReward structure - handle both 'rewardTitle' and 'title'
+        const rewardTitle = appliedReward.reward?.rewardTitle || appliedReward.reward?.title;
+        if (!appliedReward.reward || !rewardTitle) {
             console.log('WelcomeGiftReward: Invalid appliedReward structure:', appliedReward);
             return null;
         }
 
         const discountAmount = calculateDiscountAmount(appliedReward.reward, subtotal, shippingCost);
+        const isBOGOOffer = appliedReward.type === 'sample';
+        const isCurrentlyValid = isBOGOOffer ? isBOGOValid() : true;
 
         return (
-            <Card className="border-green-200 bg-green-50">
+            <Card className={cn(
+                "border-2",
+                isCurrentlyValid ? "border-green-200 bg-green-50" : "border-orange-200 bg-orange-50"
+            )}>
                 <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center",
-                                "bg-green-100"
+                                isCurrentlyValid ? "bg-green-100" : "bg-orange-100"
                             )}>
-                                <Check className="w-4 h-4 text-green-600" />
+                                {isCurrentlyValid ? (
+                                    <Check className="w-4 h-4 text-green-600" />
+                                ) : (
+                                    <div className="w-4 h-4 text-orange-600">⚠️</div>
+                                )}
                             </div>
                             <div>
                                 <div className="flex items-center gap-2">
                                     <h4 className="font-semibold text-green-800">
-                                        {appliedReward.reward.rewardTitle}
+                                        {rewardTitle}
                                     </h4>
-                                    <Badge variant="secondary" className="bg-green-100 text-green-800">
-                                        Applied
+                                    <Badge variant="secondary" className={cn(
+                                        isCurrentlyValid ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"
+                                    )}>
+                                        {isCurrentlyValid ? "Applied" : "Condition Not Met"}
                                     </Badge>
                                 </div>
                                 <p className="text-sm text-green-700">
-                                    {appliedReward.reward.rewardText}
+                                    {appliedReward.reward.rewardText || appliedReward.reward.reward}
                                 </p>
-                                <p className="text-sm font-medium text-green-800">
-                                    -{formatRupees(discountAmount)}
-                                </p>
+                                {isCurrentlyValid ? (
+                                    <p className="text-sm font-medium text-green-800">
+                                        -{formatRupees(discountAmount)}
+                                    </p>
+                                ) : (
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-medium text-orange-800">
+                                            {appliedReward.validationMessage || "Add more items to activate this offer"}
+                                        </p>
+                                        {isBOGOOffer && (
+                                            <p className="text-xs text-orange-600">
+                                                💡 Add at least 2 items to cart to activate BOGO offer
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={handleRemoveReward}
-                            className="text-green-600 hover:text-green-800 hover:bg-green-100"
+                            className={cn(
+                                isCurrentlyValid ? "text-green-600 hover:text-green-800 hover:bg-green-100" : "text-orange-600 hover:text-orange-800 hover:bg-orange-100"
+                            )}
                         >
                             <X className="w-4 h-4" />
                         </Button>
@@ -392,6 +491,7 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
 
     const discountAmount = calculateDiscountAmount(userReward, subtotal, shippingCost);
     const isApplicable = discountAmount > 0 || (userReward?.rewardText || '').toLowerCase().includes('bogo');
+    const canApplyBOGOOffer = canApplyBOGO();
 
     return (
         <Card className="border-orange-200 bg-orange-50">
@@ -425,9 +525,16 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
                                         </p>
                                     )}
                                     {userReward?.rewardText && (userReward.rewardText.toLowerCase().includes('bogo')) && (
-                                        <p className="text-sm font-medium text-orange-800">
-                                            🎁 Buy One Get One Free offer
-                                        </p>
+                                        <div className="space-y-2">
+                                            <p className="text-sm font-medium text-orange-800">
+                                                🎁 Buy One Get One Free offer
+                                            </p>
+                                            {!canApplyBOGOOffer && (
+                                                <p className="text-sm text-red-600 font-medium">
+                                                    ⚠️ Add at least 2 items to cart to use this offer
+                                                </p>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             )}
@@ -495,7 +602,7 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
                         <Button
                             size="sm"
                             onClick={handleApplyReward}
-                            disabled={!isApplicable || applying}
+                            disabled={!isApplicable || applying || !canApplyBOGOOffer}
                             className="bg-orange-600 hover:bg-orange-700 text-white"
                         >
                             {applying ? (
@@ -507,6 +614,11 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
                         {!isApplicable && (
                             <p className="text-xs text-orange-600 self-center">
                                 Minimum order required
+                            </p>
+                        )}
+                        {!canApplyBOGOOffer && userReward?.rewardText?.toLowerCase().includes('bogo') && (
+                            <p className="text-xs text-red-600 self-center">
+                                Need 2+ items for BOGO
                             </p>
                         )}
                     </div>
