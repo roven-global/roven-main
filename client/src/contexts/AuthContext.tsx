@@ -232,13 +232,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    // Only check auth status once on mount, not on every render
-    const hasCheckedAuth = localStorage.getItem('authStatusChecked');
-    if (!hasCheckedAuth) {
-      localStorage.setItem('authStatusChecked', 'true');
-      checkAuthStatus();
-    }
-  }, []); // FIXED: Run only once on mount
+    // Check auth status on every page refresh/mount
+    checkAuthStatus();
+  }, []); // Run on every mount (page refresh)
 
   const value: AuthContextType = {
     isAuthenticated,
