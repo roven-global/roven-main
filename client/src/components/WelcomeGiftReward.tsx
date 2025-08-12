@@ -120,6 +120,35 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
                 }))
             });
 
+            // Debug authentication
+            const accessToken = localStorage.getItem('accesstoken');
+            const refreshToken = localStorage.getItem('refreshToken');
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+
+            console.log('WelcomeGiftReward: Access token exists:', !!accessToken);
+            console.log('WelcomeGiftReward: Access token length:', accessToken?.length);
+            console.log('WelcomeGiftReward: Refresh token exists:', !!refreshToken);
+            console.log('WelcomeGiftReward: isLoggedIn:', isLoggedIn);
+            console.log('WelcomeGiftReward: All localStorage keys:', Object.keys(localStorage));
+
+            // Check if token is expired
+            if (accessToken) {
+                try {
+                    const payload = JSON.parse(atob(accessToken.split('.')[1]));
+                    const currentTime = Math.floor(Date.now() / 1000);
+                    console.log('WelcomeGiftReward: Token payload:', payload);
+                    console.log('WelcomeGiftReward: Token expires at:', payload.exp);
+                    console.log('WelcomeGiftReward: Current time:', currentTime);
+                    console.log('WelcomeGiftReward: Token expired:', currentTime > payload.exp);
+                } catch (error) {
+                    console.log('WelcomeGiftReward: Error parsing token:', error);
+                }
+            }
+
+            // Double-check token before making the request
+            const tokenBeforeRequest = localStorage.getItem('accesstoken');
+            console.log('WelcomeGiftReward: Token before request:', !!tokenBeforeRequest);
+
             const response = await Axios.post(SummaryApi.validateWelcomeGiftCoupon.url, {
                 couponCode: couponCode.trim(),
                 orderAmount: subtotal,
@@ -438,6 +467,27 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
                         <p className="text-xs text-orange-600">
                             💡 <strong>Tip:</strong> You can also use the coupon code "{userReward.couponCode || 'from your reward'}" to apply this welcome gift!
                         </p>
+
+                        {/* Debug button */}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                const token = localStorage.getItem('accesstoken');
+                                const refreshToken = localStorage.getItem('refreshToken');
+                                const isLoggedIn = localStorage.getItem('isLoggedIn');
+                                console.log('🔍 Debug - Current localStorage state:', {
+                                    accesstoken: !!token,
+                                    refreshToken: !!refreshToken,
+                                    isLoggedIn,
+                                    allKeys: Object.keys(localStorage)
+                                });
+                            }}
+                            className="text-xs"
+                        >
+                            Debug Token Status
+                        </Button>
                     </div>
 
                     {/* Apply Button */}

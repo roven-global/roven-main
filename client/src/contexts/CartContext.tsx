@@ -78,6 +78,7 @@ interface CartContextType {
   applyWelcomeGift: (reward: any, discountAmount: number, additionalData?: any) => void;
   removeWelcomeGift: () => void;
   clearWelcomeGift: () => void;
+  fetchAndApplyMigratedGift: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -295,6 +296,76 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setAppliedWelcomeGift(null);
   };
 
+  // Function to fetch and apply migrated welcome gift after login
+  const fetchAndApplyMigratedGift = useCallback(async () => {
+    console.log('CartContext: fetchAndApplyMigratedGift called');
+    try {
+      const response = await Axios.get(SummaryApi.getUserRewards.url);
+      console.log('CartContext: getUserRewards response:', response.data);
+
+      if (response.data.success && response.data.data.length > 0) {
+        const userReward = response.data.data[0]; // Get the first (and should be only) reward
+        console.log('CartContext: Found user reward:', userReward);
+
+        if (userReward && !userReward.isUsed) {
+          // Apply the welcome gift to the cart
+          const gift = userReward.giftId;
+          console.log('CartContext: Gift details:', gift);
+
+          if (gift) {
+            // Calculate discount based on current cart
+            const cartSubtotal = cartItems.reduce((total, item) => {
+              const price = item.variant?.price || item.productId?.price || 0;
+              return total + (price * item.quantity);
+            }, 0);
+
+            console.log('CartContext: Cart subtotal for gift calculation:', cartSubtotal);
+
+            // Use the gift's calculateDiscount method or apply basic logic
+            let discountAmount = 0;
+            let additionalData = {};
+
+            if (gift.rewardType === 'percentage') {
+              discountAmount = (cartSubtotal * gift.rewardValue) / 100;
+              if (gift.maxDiscount && discountAmount > gift.maxDiscount) {
+                discountAmount = gift.maxDiscount;
+              }
+              additionalData = {
+                rewardType: gift.rewardType,
+                rewardValue: gift.rewardValue,
+                maxDiscount: gift.maxDiscount,
+                reason: `${gift.rewardValue}% off`
+              };
+            } else if (gift.rewardType === 'fixed_amount') {
+              discountAmount = Math.min(gift.rewardValue, cartSubtotal);
+              additionalData = {
+                rewardType: gift.rewardType,
+                rewardValue: gift.rewardValue,
+                reason: `₹${gift.rewardValue} off`
+              };
+            }
+
+            console.log('CartContext: Calculated discount amount:', discountAmount);
+            console.log('CartContext: Additional data:', additionalData);
+
+            if (discountAmount > 0) {
+              applyWelcomeGift(gift, discountAmount, additionalData);
+              console.log('CartContext: Applied migrated welcome gift:', gift.title);
+            } else {
+              console.log('CartContext: No discount to apply, cart might be empty');
+            }
+          }
+        } else {
+          console.log('CartContext: User reward not found or already used');
+        }
+      } else {
+        console.log('CartContext: No user rewards found');
+      }
+    } catch (error) {
+      console.error('CartContext: Error fetching migrated gift:', error);
+    }
+  }, [cartItems, applyWelcomeGift]);
+
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
   return (
@@ -315,6 +386,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       applyWelcomeGift,
       removeWelcomeGift,
       clearWelcomeGift,
+      fetchAndApplyMigratedGift,
     }}>
       {children}
     </CartContext.Provider>

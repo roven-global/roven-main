@@ -462,12 +462,14 @@ const getUserRewards = asyncHandler(async (req, res) => {
 
 // @desc    Validate welcome gift coupon code
 // @route   POST /api/welcome-gifts/validate-coupon
-// @access  Public
+// @access  Private
 const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
   try {
     console.log('\n=== validateWelcomeGiftCoupon API Called ===');
     console.log('Request body:', req.body);
     console.log('Request user:', req.user);
+    console.log('Request headers:', req.headers);
+    console.log('Request cookies:', req.cookies);
 
     const { couponCode, orderAmount, cartItems } = req.body;
 

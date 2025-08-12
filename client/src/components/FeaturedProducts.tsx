@@ -23,6 +23,13 @@ interface Product {
     name: string;
   };
   volume?: string;
+  variants?: Array<{
+    volume: string;
+    price: number;
+    originalPrice?: number;
+    stock: number;
+    sku: string;
+  }>;
   benefits?: string[];
   isFeatured?: boolean;
   createdAt: string;
@@ -95,9 +102,11 @@ const FeaturedProducts = () => {
                 reviews={product.ratings.numOfReviews}
                 category={product.category.name}
                 volume={product.volume}
+                variants={product.variants}
                 isSale={!!(product.originalPrice && product.originalPrice > product.price)}
                 benefits={product.benefits}
                 isNew={new Date(product.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}
+                hideAddToCart={true}
               />
             ))}
           </div>

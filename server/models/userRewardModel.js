@@ -69,6 +69,13 @@ userRewardSchema.index({ "userId_giftId": 1 }, {
     name: "userId_giftId_unique"
 });
 
+// Prevent users from claiming multiple gifts (one gift per user)
+userRewardSchema.index({ userId: 1 }, {
+    unique: true,
+    sparse: true,
+    name: "userId_unique"
+});
+
 // Allow multiple claims from anonymous users (they might clear localStorage)
 userRewardSchema.index({ anonymousId: 1, giftId: 1 }, { name: "anonymousId_giftId" });
 
@@ -94,6 +101,71 @@ userRewardSchema.statics.hasAnonymousUserClaimed = async function (anonymousId) 
         anonymousId
     });
     return !!claimedReward;
+};
+
+// Static method to check if user can claim a welcome gift
+userRewardSchema.statics.canUserClaimGift = async function (userId) {
+    if (!userId) return true; // Anonymous users can always try to claim
+    const existingReward = await this.findOne({ userId });
+    return !existingReward;
+};
+
+// Static method to check if user has claimed a specific gift
+userRewardSchema.statics.hasUserClaimedGift = async function (userId, giftId) {
+    if (!userId) return false; // Anonymous users don't have persistent claims
+    const existingReward = await this.findOne({ userId, giftId });
+    return !!existingReward;
+};
+
+// Static method to find gift by anonymousId
+userRewardSchema.statics.findByAnonymousId = async function (anonymousId) {
+    return await this.findOne({ anonymousId });
+};
+
+// Static method to migrate anonymous gift to authenticated user
+userRewardSchema.statics.migrateAnonymousGift = async function (anonymousId, userId) {
+    console.log(`UserReward: Attempting to migrate gift for anonymousId: ${anonymousId} to userId: ${userId}`);
+
+    const anonymousGift = await this.findOne({ anonymousId });
+    if (!anonymousGift) {
+        console.log('UserReward: No anonymous gift found for migration');
+        return null;
+    }
+
+    console.log('UserReward: Found anonymous gift:', {
+        id: anonymousGift._id,
+        rewardTitle: anonymousGift.rewardTitle,
+        rewardText: anonymousGift.rewardText
+    });
+
+    // Check if user already has a gift
+    const existingUserGift = await this.findOne({ userId });
+    if (existingUserGift) {
+        console.log('UserReward: User already has a gift, removing anonymous one');
+        // User already has a gift, remove the anonymous one
+        await this.findByIdAndDelete(anonymousGift._id);
+        return null;
+    }
+
+    // Migrate the gift
+    console.log('UserReward: Migrating gift to user account');
+    anonymousGift.userId = userId;
+    anonymousGift.anonymousId = null; // Remove anonymous association
+    anonymousGift.wasLoggedIn = true; // Mark as now logged in
+    await anonymousGift.save();
+
+    console.log('UserReward: Gift migration completed successfully');
+    return anonymousGift;
+};
+
+// Static method to check if anonymous user has a gift that can be migrated
+userRewardSchema.statics.canMigrateAnonymousGift = async function (anonymousId, userId) {
+    const anonymousGift = await this.findOne({ anonymousId });
+    if (!anonymousGift) return false;
+
+    // Check if user already has a gift
+    const existingUserGift = await this.findOne({ userId });
+    return !existingUserGift; // Can migrate only if user doesn't have a gift
 };
 
 module.exports = mongoose.model("UserReward", userRewardSchema);

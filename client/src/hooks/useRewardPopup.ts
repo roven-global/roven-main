@@ -57,6 +57,8 @@ export const useRewardPopup = () => {
             }
 
             const anonymousId = generateAnonymousId();
+            // Store anonymousId in localStorage for later use during login
+            localStorage.setItem('anonymousId', anonymousId);
             console.log('Checking welcome gift eligibility for anonymousId:', anonymousId);
 
             const response = await Axios.get(SummaryApi.checkWelcomeGiftEligibility.url, {
@@ -84,7 +86,12 @@ export const useRewardPopup = () => {
     const claimReward = useCallback(async (giftId: string) => {
         try {
             setLoading(true);
-            const anonymousId = generateAnonymousId();
+            // Use existing anonymousId from localStorage or generate new one
+            let anonymousId = localStorage.getItem('anonymousId');
+            if (!anonymousId) {
+                anonymousId = generateAnonymousId();
+                localStorage.setItem('anonymousId', anonymousId);
+            }
 
             const response = await Axios.post(
                 SummaryApi.claimWelcomeGift.url.replace(':id', giftId),
@@ -136,6 +143,7 @@ export const useRewardPopup = () => {
     // Reset function to clear eligibility check flag
     const resetEligibilityCheck = useCallback(() => {
         localStorage.removeItem('eligibilityCheckCompleted');
+        localStorage.removeItem('anonymousId');
         hasCheckedRef.current = false;
         console.log('Eligibility check flag reset');
     }, []);

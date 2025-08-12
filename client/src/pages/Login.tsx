@@ -69,21 +69,39 @@ const Login = () => {
     setLoginError('');
     setLoginLoading(true);
     try {
+      // Get anonymousId from localStorage if available
+      const anonymousId = localStorage.getItem('anonymousId') || null;
+
       const response = await Axios({
         method: SummaryApi.login.method,
         url: SummaryApi.login.url,
-        data: values,
+        data: {
+          ...values,
+          anonymousId
+        },
       });
 
       if (response.data.data.accessToken) {
         localStorage.setItem('accesstoken', response.data.data.accessToken);
+        console.log('🔐 Login: Access token stored in localStorage');
+        console.log('🔐 Login: Token length:', response.data.data.accessToken.length);
       }
       if (response.data.data.refreshToken) {
         localStorage.setItem('refreshToken', response.data.data.refreshToken);
+        console.log('🔐 Login: Refresh token stored in localStorage');
       }
       localStorage.setItem('isLoggedIn', 'true');
+      console.log('🔐 Login: isLoggedIn set to true');
 
       window.dispatchEvent(new Event('loginStateChange'));
+
+      // Handle gift migration result
+      if (response.data.data.giftMigration?.migrated) {
+        console.log('Login: Gift migrated successfully:', response.data.data.giftMigration);
+        // Clear any local reward data since it's now on the server
+        localStorage.removeItem('rewardClaimed');
+        localStorage.removeItem('claimedRewardDetails');
+      }
 
       const localCart = JSON.parse(localStorage.getItem('shimmer_cart') || '[]');
       if (localCart.length > 0) {

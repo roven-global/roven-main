@@ -151,9 +151,10 @@ const login = asyncHandler(async (req, res) => {
       message: "Please provide both email and password.",
     });
   }
-  let { email, password } = req.body || {};
+  let { email, password, anonymousId } = req.body || {};
   email = validator.normalizeEmail(email || "");
   password = validator.trim(password || "");
+  anonymousId = validator.trim(anonymousId || "");
 
   if (!email || !password) {
     return res.status(400).json({ success: false, message: "Please fill in all fields (email, password)." });
@@ -181,17 +182,36 @@ const login = asyncHandler(async (req, res) => {
       message: "Incorrect password! Please try again.",
     });
   }
+
+  // Handle anonymous gift migration
+  let giftMigrationResult = null;
+  if (anonymousId) {
+    try {
+      giftMigrationResult = await UserReward.migrateAnonymousGift(anonymousId, user._id);
+      console.log('Login: Gift migration result:', giftMigrationResult);
+    } catch (error) {
+      console.error('Login: Error during gift migration:', error);
+      // Don't fail login if gift migration fails
+    }
+  }
+
   const accessToken = await generateAccessToken(user._id);
   const refreshToken = await generateRefreshToken(user._id);
 
   res.cookie("accessToken", accessToken, cookiesOption);
   res.cookie("refreshToken", refreshToken, cookiesOption);
+
   return res.json({
     success: true,
     message: "Login successful.",
     data: {
       accessToken,
       refreshToken,
+      giftMigration: giftMigrationResult ? {
+        migrated: true,
+        giftTitle: giftMigrationResult.rewardTitle,
+        giftText: giftMigrationResult.rewardText
+      } : null
     },
   });
 });

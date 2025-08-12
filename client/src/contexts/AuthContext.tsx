@@ -48,7 +48,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const { fetchUserCart, clearCart } = useCart(); // Get cart functions
+  const { fetchUserCart, clearCart, fetchAndApplyMigratedGift } = useCart(); // Get cart functions
   const { guestCart, guestWishlist, clearGuestData } = useGuest(); // Get guest functions
 
   const checkAuthStatus = async () => {
@@ -85,6 +85,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         await fetchUserCart(); // Fetch cart if user is authenticated
 
+        // Fetch and apply migrated welcome gift if exists
+        try {
+          if (fetchAndApplyMigratedGift) {
+            await fetchAndApplyMigratedGift();
+          }
+        } catch (error) {
+          console.error('Error applying migrated gift:', error);
+        }
+
         // Merge guest data if any exists
         if (guestCart.length > 0 || guestWishlist.length > 0) {
           try {
@@ -106,6 +115,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.error('Error merging guest data:', error);
           }
         }
+
+        // Clear anonymous gift data after successful authentication
+        // This ensures the gift is now properly associated with the user account
+        localStorage.removeItem('anonymousId');
+        localStorage.removeItem('eligibilityCheckCompleted');
 
         // Migrate anonymous welcome gift if exists
         const anonymousId = localStorage.getItem('anonymousId');
@@ -152,6 +166,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('Auth check failed:', error);
+      console.log('🔐 AuthContext: Clearing tokens due to error');
       localStorage.removeItem('accesstoken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('isLoggedIn');

@@ -23,7 +23,9 @@ const adminOnly = require("../middleware/adminOnly");
 router.get("/", getAllWelcomeGifts);
 router.get("/check-eligibility", checkWelcomeGiftEligibility);
 router.post("/:id/claim", claimWelcomeGift);
-router.post("/validate-coupon", validateWelcomeGiftCoupon);
+
+// Protected routes (require authentication)
+router.post("/validate-coupon", auth, validateWelcomeGiftCoupon);
 
 // Admin routes - specific routes first, then parameterized routes
 router.get("/admin/all", auth, adminOnly, getAllWelcomeGiftsAdmin);

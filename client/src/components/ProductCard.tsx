@@ -33,6 +33,7 @@ interface ProductCardProps {
     isNew?: boolean;
     isSale?: boolean;
     benefits?: string[];
+    hideAddToCart?: boolean; // New prop to hide the Add to Cart button
 }
 
 const ProductCard = ({
@@ -49,6 +50,7 @@ const ProductCard = ({
     variants,
     isNew,
     isSale,
+    hideAddToCart = false,
 }: ProductCardProps) => {
     const { isAuthenticated, user, updateUser } = useAuth();
     const navigate = useNavigate();
@@ -267,19 +269,30 @@ const ProductCard = ({
                         </div>
                     </div>
 
-                    {/* Add to Cart Button */}
-                    <div className="mt-auto">
-                        <Button
-                            variant="default"
-                            className="w-full bg-sage hover:bg-forest text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-                            onClick={handleAddToCart}
-                            disabled={getTotalStock() === 0}
-                        >
-                            <ShoppingBag className="w-4 h-4 mr-2" />
-                            {getTotalStock() === 0 ? 'OUT OF STOCK' :
-                                variants && variants.length > 1 ? 'SELECT OPTIONS' : 'ADD TO CART'}
-                        </Button>
-                    </div>
+                    {/* Add to Cart Button - Hidden when hideAddToCart is true */}
+                    {!hideAddToCart && (
+                        <div className="mt-auto">
+                            <Button
+                                variant="default"
+                                className="w-full bg-sage hover:bg-forest text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                                onClick={handleAddToCart}
+                                disabled={getTotalStock() === 0}
+                            >
+                                <ShoppingBag className="w-4 h-4 mr-2" />
+                                {getTotalStock() === 0 ? 'OUT OF STOCK' :
+                                    variants && variants.length > 1 ? 'SELECT OPTIONS' : 'ADD TO CART'}
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* Clickable hint when Add to Cart button is hidden */}
+                    {hideAddToCart && (
+                        <div className="mt-auto text-center">
+                            <p className="text-sm text-gray-500 font-medium">
+                                Click to view details
+                            </p>
+                        </div>
+                    )}
                 </CardContent>
             </Link>
         </Card>

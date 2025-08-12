@@ -119,9 +119,9 @@ const createOrder = asyncHandler(async (req, res) => {
 
     // 3. ADD THIS BLOCK: Welcome Gift Logic
     if (applyWelcomeGift && user.rewardClaimed && !user.rewardUsed) {
-        const userReward = await UserReward.findOne({ userId: req.user._id, used: false }).populate('reward');
-        if (userReward && userReward.reward) {
-            const gift = userReward.reward;
+        const userReward = await UserReward.findOne({ userId: req.user._id, isUsed: false }).populate('giftId');
+        if (userReward && userReward.giftId) {
+            const gift = userReward.giftId;
 
             // Use the enhanced calculation method from the model
             const validationResult = gift.canBeApplied(subtotal, orderItems);
