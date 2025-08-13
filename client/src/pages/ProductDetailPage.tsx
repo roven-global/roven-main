@@ -5,7 +5,6 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star, Heart, ShoppingBag, Minus, Plus, ChevronRight, CheckCircle } from 'lucide-react';
 import Axios from '@/utils/Axios';
@@ -394,157 +393,117 @@ const ProductDetailPage = () => {
                     </div>
                 </div>
 
-                {/* Extended Product Info Section with Tabs */}
-                <div className="mt-16 border-t border-warm-taupe/30 pt-12">
-                    <Tabs defaultValue="description" className="w-full">
-                        <TabsList className="flex flex-wrap gap-2 border-b pb-2 bg-transparent">
-                            <TabsTrigger value="description" className="text-deep-forest hover:text-sage">Description</TabsTrigger>
-                            {product.ingredients && product.ingredients.length > 0 && (
-                                <TabsTrigger value="ingredients" className="text-deep-forest hover:text-sage">Hero Ingredients</TabsTrigger>
-                            )}
-                            {product.howToUse && product.howToUse.length > 0 && (
-                                <TabsTrigger value="howToUse" className="text-deep-forest hover:text-sage">How to Use</TabsTrigger>
-                            )}
-                            {product.specifications?.suitableFor && product.specifications.suitableFor.length > 0 && (
-                                <TabsTrigger value="suitableFor" className="text-deep-forest hover:text-sage">Suitable For</TabsTrigger>
-                            )}
-                            {product.benefits && product.benefits.length > 0 && (
-                                <TabsTrigger value="benefits" className="text-deep-forest hover:text-sage">Benefits</TabsTrigger>
-                            )}
-                            {product.specifications && Object.keys(product.specifications).length > 0 && (
-                                <TabsTrigger value="specifications" className="text-deep-forest hover:text-sage">Specifications</TabsTrigger>
-                            )}
-                        </TabsList>
+                {/* Extended Product Info Section - Amazon style (no tabs, all sections visible) */}
+                <div className="mt-16 border-t border-warm-taupe/30 pt-12 space-y-12">
+                    {/* Description */}
+                    <Card className="border-warm-taupe/30 bg-warm-cream/50">
+                        <CardContent className="pt-6">
+                            <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">Description</h2>
+                            <p className="text-forest leading-relaxed">{product.description}</p>
+                        </CardContent>
+                    </Card>
 
-                        {/* Description Tab */}
-                        <TabsContent value="description" className="mt-6">
-                            <Card className="border-warm-taupe/30 bg-warm-cream/50">
-                                <CardContent className="pt-6">
-                                    <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">Description</h2>
-                                    <p className="text-forest leading-relaxed">{product.description}</p>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        {/* Hero Ingredients Tab */}
-                        {product.ingredients && product.ingredients.length > 0 && (
-                            <TabsContent value="ingredients" className="mt-6">
-                                <Card className="border-warm-taupe/30 bg-warm-cream/50">
-                                    <CardContent className="pt-6">
-                                        <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-6">
-                                            Hero Ingredients
-                                        </h2>
-
-                                        {/* Render ingredient cards */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                            {product.ingredients.map((ingredient: any, i: number) => (
-                                                <div
-                                                    key={i}
-                                                    className="bg-white rounded-xl shadow-md overflow-hidden border border-warm-taupe/20 hover:shadow-lg transition-shadow"
-                                                >
-                                                    {/* Show image if available */}
-                                                    {ingredient.image && (
-                                                        <div className="w-full h-48 bg-warm-cream overflow-hidden">
-                                                            <img
-                                                                src={ingredient.image.url}
-                                                                alt={ingredient.name || `Ingredient ${i + 1}`}
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        </div>
-                                                    )}
-                                                    <div className="p-4 space-y-2">
-                                                        {ingredient.name && (
-                                                            <h3 className="font-semibold text-lg text-deep-forest">
-                                                                {ingredient.name}
-                                                            </h3>
-                                                        )}
-                                                        {ingredient.description && (
-                                                            <p className="text-sm text-forest leading-relaxed">
-                                                                {ingredient.description}
-                                                            </p>
-                                                        )}
-                                                    </div>
+                    {/* Hero Ingredients */}
+                    {product.ingredients && product.ingredients.length > 0 && (
+                        <Card className="border-warm-taupe/30 bg-warm-cream/50">
+                            <CardContent className="pt-6">
+                                <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-6">Hero Ingredients</h2>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {product.ingredients.map((ingredient: any, i: number) => (
+                                        <div
+                                            key={i}
+                                            className="bg-white rounded-xl shadow-md overflow-hidden border border-warm-taupe/20 hover:shadow-lg transition-shadow"
+                                        >
+                                            {ingredient.image && (
+                                                <div className="w-full h-48 bg-warm-cream overflow-hidden">
+                                                    <img
+                                                        src={ingredient.image.url}
+                                                        alt={ingredient.name || `Ingredient ${i + 1}`}
+                                                        className="w-full h-full object-cover"
+                                                    />
                                                 </div>
-                                            ))}
+                                            )}
+                                            <div className="p-4 space-y-2">
+                                                {ingredient.name && (
+                                                    <h3 className="font-semibold text-lg text-deep-forest">
+                                                        {ingredient.name}
+                                                    </h3>
+                                                )}
+                                                {ingredient.description && (
+                                                    <p className="text-sm text-forest leading-relaxed">
+                                                        {ingredient.description}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                        )}
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
-                        {/* How to Use Tab */}
-                        {product.howToUse && product.howToUse.length > 0 && (
-                            <TabsContent value="howToUse" className="mt-6">
-                                <Card className="border-warm-taupe/30 bg-warm-cream/50">
-                                    <CardContent className="pt-6">
-                                        <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">How to Use</h2>
-                                        <ol className="list-decimal pl-5 space-y-2 text-forest leading-relaxed">
-                                            {product.howToUse.map((step: string, i: number) => (
-                                                <li key={i}>{step}</li>
-                                            ))}
-                                        </ol>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                        )}
+                    {/* How to Use */}
+                    {product.howToUse && product.howToUse.length > 0 && (
+                        <Card className="border-warm-taupe/30 bg-warm-cream/50">
+                            <CardContent className="pt-6">
+                                <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">How to Use</h2>
+                                <ol className="list-decimal pl-5 space-y-2 text-forest leading-relaxed">
+                                    {product.howToUse.map((step: string, i: number) => (
+                                        <li key={i}>{step}</li>
+                                    ))}
+                                </ol>
+                            </CardContent>
+                        </Card>
+                    )}
 
-                        {/* Suitable For Tab */}
-                        {product.specifications?.suitableFor && product.specifications.suitableFor.length > 0 && (
-                            <TabsContent value="suitableFor" className="mt-6">
-                                <Card className="border-warm-taupe/30 bg-warm-cream/50">
-                                    <CardContent className="pt-6">
-                                        <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">Suitable For</h2>
-                                        <ul className="list-disc pl-5 space-y-2 text-forest leading-relaxed">
-                                            {product.specifications.suitableFor.map((item: string, i: number) => (
-                                                <li key={i}>{item}</li>
-                                            ))}
-                                        </ul>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                        )}
+                    {/* Suitable For */}
+                    {product.specifications?.suitableFor && product.specifications.suitableFor.length > 0 && (
+                        <Card className="border-warm-taupe/30 bg-warm-cream/50">
+                            <CardContent className="pt-6">
+                                <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">Suitable For</h2>
+                                <ul className="list-disc pl-5 space-y-2 text-forest leading-relaxed">
+                                    {product.specifications.suitableFor.map((item: string, i: number) => (
+                                        <li key={i}>{item}</li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    )}
 
-                        {/* Benefits Tab */}
-                        {product.benefits && product.benefits.length > 0 && (
-                            <TabsContent value="benefits" className="mt-6">
-                                <Card className="border-warm-taupe/30 bg-warm-cream/50">
-                                    <CardContent className="pt-6">
-                                        <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">Benefits</h2>
-                                        <ul className="list-disc pl-5 space-y-2 text-forest leading-relaxed">
-                                            {product.benefits.map((benefit, i) => (
-                                                <li key={i}>{benefit}</li>
-                                            ))}
-                                        </ul>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                        )}
+                    {/* Benefits */}
+                    {product.benefits && product.benefits.length > 0 && (
+                        <Card className="border-warm-taupe/30 bg-warm-cream/50">
+                            <CardContent className="pt-6">
+                                <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">Benefits</h2>
+                                <ul className="list-disc pl-5 space-y-2 text-forest leading-relaxed">
+                                    {product.benefits.map((benefit, i) => (
+                                        <li key={i}>{benefit}</li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    )}
 
-                        {/* Specifications Tab */}
-                        {product.specifications && Object.keys(product.specifications).length > 0 && (
-                            <TabsContent value="specifications" className="mt-6">
-                                <Card className="border-warm-taupe/30 bg-warm-cream/50">
-                                    <CardContent className="pt-6">
-                                        <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">Specifications</h2>
-                                        <dl className="divide-y divide-warm-taupe/20">
-                                            {Object.entries(product.specifications).map(([key, value]) => (
-                                                <div key={key} className="flex py-3">
-                                                    <dt className="w-1/3 font-semibold text-deep-forest capitalize">
-                                                        {key
-                                                            .replace(/([A-Z])/g, ' $1')
-                                                            .replace(/^./, (str) => str.toUpperCase())}
-                                                    </dt>
-                                                    <dd className="w-2/3 text-forest">
-                                                        {Array.isArray(value) ? value.join(', ') : value}
-                                                    </dd>
-                                                </div>
-                                            ))}
-                                        </dl>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                        )}
-                    </Tabs>
+                    {/* Specifications */}
+                    {product.specifications && Object.keys(product.specifications).length > 0 && (
+                        <Card className="border-warm-taupe/30 bg-warm-cream/50">
+                            <CardContent className="pt-6">
+                                <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">Specifications</h2>
+                                <dl className="divide-y divide-warm-taupe/20">
+                                    {Object.entries(product.specifications).map(([key, value]) => (
+                                        <div key={key} className="flex py-3">
+                                            <dt className="w-1/3 font-semibold text-deep-forest capitalize">
+                                                {key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
+                                            </dt>
+                                            <dd className="w-2/3 text-forest">
+                                                {Array.isArray(value) ? value.join(', ') : value}
+                                            </dd>
+                                        </div>
+                                    ))}
+                                </dl>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
             <Footer />
