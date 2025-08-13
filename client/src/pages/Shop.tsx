@@ -171,7 +171,7 @@ const Shop = () => {
           <SlidersHorizontal className="h-5 w-5 text-sage" />
           Filters
         </h3>
-        <Button variant="ghost" size="sm" onClick={resetFilters} className="text-sm text-forest hover:text-sage hover:bg-warm-cream">
+        <Button variant="ghost" size="sm" onClick={resetFilters} className="text-sm text-forest hover:text-sage hover:bg-sage/20">
           <X className="h-4 w-4 mr-1" /> Clear All
         </Button>
       </div>
@@ -185,7 +185,7 @@ const Shop = () => {
             onClick={() => setActiveCategory('all')}
             className={`w-full text-left p-2 rounded-md transition-colors text-sm ${activeCategory === 'all'
               ? 'bg-sage/20 text-sage font-semibold border border-sage/30'
-              : 'hover:bg-warm-cream text-forest'
+              : 'hover:bg-sage/20 text-forest'
               }`}
           >
             All Categories
@@ -197,7 +197,7 @@ const Shop = () => {
                 onClick={() => setActiveCategory(category._id)}
                 className={`w-full text-left p-2 rounded-md transition-colors text-sm ${activeCategory === category._id
                   ? 'bg-sage/20 text-sage font-semibold border border-sage/30'
-                  : 'hover:bg-warm-cream text-forest'
+                  : 'hover:bg-sage/20 text-forest'
                   }`}
               >
                 {category.name}
@@ -233,13 +233,13 @@ const Shop = () => {
         <div className="flex items-center space-x-1">
           <button
             onClick={() => setRating(0)}
-            className={`flex items-center p-2 rounded-md transition-colors border ${rating === 0 ? 'bg-gold-accent/20 border-gold-accent/30 text-gold-accent' : 'hover:bg-warm-cream border-warm-taupe text-forest'}`}
+            className={`flex items-center p-2 rounded-md transition-colors border ${rating === 0 ? 'bg-gold-accent/20 border-gold-accent/30 text-gold-accent' : 'hover:bg-sage/20 border-warm-taupe text-forest'}`}
           >
             <span className="text-sm">Any</span>
           </button>
           {[5, 4, 3, 2, 1].map(star => (
             <button key={star} onClick={() => setRating(star)}
-              className={`flex items-center p-2 rounded-md transition-colors border ${rating === star ? 'bg-gold-accent/20 border-gold-accent/30 text-gold-accent' : 'hover:bg-warm-cream border-warm-taupe text-forest'}`}
+              className={`flex items-center p-2 rounded-md transition-colors border ${rating === star ? 'bg-gold-accent/20 border-gold-accent/30 text-gold-accent' : 'hover:bg-sage/20 border-warm-taupe text-forest'}`}
             >
               <span className="text-sm">{star}</span>
               <Star className={`h-4 w-4 ml-1 ${rating >= star ? 'text-gold-accent fill-gold-accent' : 'text-warm-taupe'}`} />
@@ -251,7 +251,7 @@ const Shop = () => {
   );
 
   return (
-    <div className="min-h-screen bg-warm-cream">
+    <div className="min-h-screen bg-white">
       <Navigation />
 
       <section className="relative bg-gradient-to-r from-sage/10 to-forest/10 py-20">
@@ -282,7 +282,7 @@ const Shop = () => {
                 {/* Filter Trigger - Works for both mobile and desktop */}
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="outline" className="w-full sm:w-auto border-warm-taupe text-forest hover:bg-warm-cream hover:text-sage">
+                    <Button variant="outline" className="w-full sm:w-auto border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage">
                       <Filter className="mr-2 h-4 w-4" /> Filters
                     </Button>
                   </SheetTrigger>
@@ -301,11 +301,11 @@ const Shop = () => {
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-warm-taupe">
-                    <SelectItem value="featured-desc" className="text-forest hover:bg-warm-cream">Featured</SelectItem>
-                    <SelectItem value="price-asc" className="text-forest hover:bg-warm-cream">Price: Low to High</SelectItem>
-                    <SelectItem value="price-desc" className="text-forest hover:bg-warm-cream">Price: High to Low</SelectItem>
-                    <SelectItem value="createdAt-desc" className="text-forest hover:bg-warm-cream">Newest</SelectItem>
-                    <SelectItem value="rating-desc" className="text-forest hover:bg-warm-cream">Rating</SelectItem>
+                    <SelectItem value="featured-desc" className="text-forest hover:bg-sage/20">Featured</SelectItem>
+                    <SelectItem value="price-asc" className="text-forest hover:bg-sage/20">Price: Low to High</SelectItem>
+                    <SelectItem value="price-desc" className="text-forest hover:bg-sage/20">Price: High to Low</SelectItem>
+                    <SelectItem value="createdAt-desc" className="text-forest hover:bg-sage/20">Newest</SelectItem>
+                    <SelectItem value="rating-desc" className="text-forest hover:bg-sage/20">Rating</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -320,7 +320,7 @@ const Shop = () => {
             ) : error ? (
               <div className="text-center text-red-500 py-10">{error}</div>
             ) : computedProducts.length === 0 ? (
-              <div className="text-center text-forest py-20 rounded-lg bg-soft-beige/50 border border-warm-taupe">
+              <div className="text-center text-forest py-20 rounded-lg bg-sage/10 border border-warm-taupe">
                 <h3 className="text-2xl font-semibold mb-2 text-deep-forest">No Products Found</h3>
                 <p>Try adjusting your filters to find what you're looking for.</p>
               </div>
@@ -356,7 +356,7 @@ const Shop = () => {
 
             {hasMore && (
               <div className="text-center mt-12">
-                <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={loadingMore} className="border-warm-taupe text-forest hover:bg-warm-cream hover:text-sage">
+                <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={loadingMore} className="border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage">
                   {loadingMore ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading...</> : 'Load More Products'}
                 </Button>
               </div>

@@ -217,7 +217,7 @@ const Login = () => {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-semibold text-gray-700">
+                            <FormLabel className="text-sm font-semibold text-deep-forest">
                               Username or email address <span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
@@ -237,7 +237,7 @@ const Login = () => {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-semibold text-gray-700">
+                            <FormLabel className="text-sm font-semibold text-deep-forest">
                               Password <span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
@@ -251,7 +251,7 @@ const Login = () => {
                                 <button
                                   type="button"
                                   onClick={() => setShowPassword((prev) => !prev)}
-                                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-soft-bronze transition-colors duration-200"
+                                  className="absolute right-4 top-1/2 -translate-y-1/2 text-warm-taupe hover:text-soft-bronze transition-colors duration-200"
                                   tabIndex={-1}
                                 >
                                   {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
@@ -270,7 +270,7 @@ const Login = () => {
                             checked={rememberMe}
                             onCheckedChange={(checked) => setRememberMe(checked as boolean)}
                           />
-                          <label htmlFor="remember" className="text-sm text-gray-600">
+                          <label htmlFor="remember" className="text-sm text-forest">
                             Remember me
                           </label>
                         </div>
@@ -321,7 +321,7 @@ const Login = () => {
                             name="name"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-semibold text-gray-700">
+                                <FormLabel className="text-sm font-semibold text-deep-forest">
                                   Full Name <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
@@ -341,7 +341,7 @@ const Login = () => {
                             name="email"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-semibold text-gray-700">
+                                <FormLabel className="text-sm font-semibold text-deep-forest">
                                   Email address <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
@@ -365,7 +365,7 @@ const Login = () => {
                             name="password"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-semibold text-gray-700">
+                                <FormLabel className="text-sm font-semibold text-deep-forest">
                                   Password <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
@@ -396,7 +396,7 @@ const Login = () => {
                             name="confirmPassword"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-semibold text-gray-700">
+                                <FormLabel className="text-sm font-semibold text-deep-forest">
                                   Confirm Password <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
@@ -425,7 +425,7 @@ const Login = () => {
                       )}
                     </div>
 
-                    <div className="text-xs text-gray-500 mt-4">
+                    <div className="text-xs text-warm-taupe mt-4">
                       Your personal data will be used to support your experience throughout this website, to manage access to your account, and for other purposes described in our privacy policy.
                     </div>
 
@@ -434,7 +434,7 @@ const Login = () => {
                         <Button
                           type="button"
                           onClick={handlePreviousStep}
-                          className="w-full h-11 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                          className="w-full h-11 bg-sage/20 hover:bg-sage/30 text-deep-forest font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
                         >
                           Previous
                         </Button>
@@ -477,7 +477,7 @@ const Login = () => {
               </h2>
 
               <div className="text-center flex-1 flex flex-col justify-center">
-                <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+                <p className="text-forest text-sm mb-6 leading-relaxed">
                   {activeTab === 'login'
                     ? "Registering for this site allows you to access your order status and history. Just fill in the fields below, and we'll get a new account set up for you in no time. We will only ask you for information necessary to make the purchase process faster and easier."
                     : "Already have an account? Sign in to access your order history and manage your account."

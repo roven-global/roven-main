@@ -92,7 +92,7 @@ const About = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-warm-cream">
+    <div className="min-h-screen bg-white">
       <Navigation />
 
       {/* Hero Section */}
@@ -113,7 +113,7 @@ const About = () => {
               <Button size="lg" className="px-8 py-6 bg-sage text-white hover:bg-forest">
                 Shop Our Story
               </Button>
-              <Button size="lg" variant="outline" className="px-8 py-6 border-warm-taupe text-forest hover:bg-warm-cream">
+              <Button size="lg" variant="outline" className="px-8 py-6 border-warm-taupe text-forest hover:bg-sage/20">
                 Meet Our Team
               </Button>
             </div>
@@ -160,7 +160,7 @@ const About = () => {
       </section>
 
       {/* Our Values */}
-      <section className="py-16 bg-warm-cream">
+      <section className="py-16 bg-gradient-to-br from-sage/5 via-white to-sage/5">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="font-playfair text-4xl font-bold text-deep-forest mb-4">
@@ -223,7 +223,7 @@ const About = () => {
       </section>
 
       {/* Team Section */}
-      <section className="py-16 bg-warm-cream">
+      <section className="py-16 bg-gradient-to-br from-sage/5 via-white to-sage/5">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="font-playfair text-4xl font-bold text-deep-forest mb-4">
@@ -324,7 +324,7 @@ const About = () => {
             <Button size="lg" className="px-8 py-6 bg-sage text-white hover:bg-forest">
               Start Shopping
             </Button>
-            <Button size="lg" variant="outline" className="px-8 py-6 border-warm-taupe text-forest hover:bg-warm-cream">
+            <Button size="lg" variant="outline" className="px-8 py-6 border-warm-taupe text-forest hover:bg-sage/20">
               Join Our Newsletter
             </Button>
           </div>

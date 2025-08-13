@@ -89,7 +89,7 @@ const Wishlist = () => {
     const displayError = isAuthenticated ? error : null;
 
     return (
-        <div className="min-h-screen flex flex-col bg-warm-cream">
+        <div className="min-h-screen flex flex-col bg-white">
             <Navigation />
             <main className="flex-grow">
                 <section className="py-12 bg-white border-b border-warm-taupe/50">
@@ -106,9 +106,9 @@ const Wishlist = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                                 {Array.from({ length: 4 }).map((_, index) => (
                                     <div key={index} className="space-y-4">
-                                        <Skeleton className="h-72 w-full bg-soft-beige rounded-lg" />
-                                        <Skeleton className="h-4 w-5/6 bg-soft-beige rounded-md" />
-                                        <Skeleton className="h-4 w-1/2 bg-soft-beige rounded-md" />
+                                        <Skeleton className="h-72 w-full bg-sage/20 rounded-lg" />
+                                        <Skeleton className="h-4 w-5/6 bg-sage/20 rounded-md" />
+                                        <Skeleton className="h-4 w-1/2 bg-sage/20 rounded-md" />
                                     </div>
                                 ))}
                             </div>

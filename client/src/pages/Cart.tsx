@@ -398,7 +398,7 @@ const Cart = () => {
     });
 
     return (
-        <div className="min-h-screen bg-warm-cream">
+        <div className="min-h-screen bg-white">
             <Navigation />
 
             {/* Show loading spinner while authentication is being checked */}
@@ -406,7 +406,7 @@ const Cart = () => {
                 <div className="flex items-center justify-center min-h-[400px]">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-                        <p className="text-gray-600">Checking authentication...</p>
+                        <p className="text-forest">Checking authentication...</p>
                     </div>
                 </div>
             )}
@@ -417,12 +417,12 @@ const Cart = () => {
                     {/* Breadcrumb Navigation */}
                     <div className="bg-white border-b">
                         <div className="container mx-auto px-4 py-3">
-                            <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                            <div className="flex items-center justify-center gap-2 text-sm text-forest">
                                 <span>Cart</span>
                                 <ArrowRight className="w-4 h-4" />
-                                <span className="text-gray-400">Address</span>
+                                <span className="text-warm-taupe">Address</span>
                                 <ArrowRight className="w-4 h-4" />
-                                <span className="text-gray-400">Payment</span>
+                                <span className="text-warm-taupe">Payment</span>
                             </div>
                         </div>
                     </div>
@@ -432,11 +432,11 @@ const Cart = () => {
                             <div className="max-w-7xl mx-auto">
                                 {displayCartItems.length === 0 ? (
                                     <div className="text-center py-32 bg-white rounded-lg shadow-sm max-w-lg mx-auto">
-                                        <div className="bg-gray-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-8">
-                                            <ShoppingBag className="h-12 w-12 text-gray-400" />
+                                        <div className="bg-sage/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-8">
+                                            <ShoppingBag className="h-12 w-12 text-warm-taupe" />
                                         </div>
-                                        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Your cart is empty</h2>
-                                        <p className="text-gray-600 mb-8">Looks like you haven't added anything to your cart yet.</p>
+                                        <h2 className="text-2xl font-semibold text-deep-forest mb-4">Your cart is empty</h2>
+                                        <p className="text-forest mb-8">Looks like you haven't added anything to your cart yet.</p>
                                         <Button asChild size="lg" className="bg-orange-500 hover:bg-orange-600 text-white rounded-md px-8">
                                             <Link to="/shop">Continue Shopping</Link>
                                         </Button>
@@ -451,9 +451,9 @@ const Cart = () => {
                                                 <div className="p-4 border-b">
                                                     <div className="flex items-center gap-3">
                                                         <Tag className="w-5 h-5 text-blue-600" />
-                                                        <span className="font-semibold text-gray-900">Apply Coupon Code</span>
+                                                        <span className="font-semibold text-deep-forest">Apply Coupon Code</span>
                                                     </div>
-                                                    <p className="text-sm text-gray-600 mt-1">Enter your coupon code to get additional discounts</p>
+                                                    <p className="text-sm text-forest mt-1">Enter your coupon code to get additional discounts</p>
                                                 </div>
                                                 <div className="p-4 space-y-4">
                                                     {/* Coupon Input */}
@@ -520,9 +520,9 @@ const Cart = () => {
                                                     <div className="p-4 border-b">
                                                         <div className="flex items-center gap-3">
                                                             <Tag className="w-5 h-5 text-green-600" />
-                                                            <span className="font-semibold text-gray-900">Available offers for you ({availableCoupons.length})</span>
+                                                            <span className="font-semibold text-deep-forest">Available offers for you ({availableCoupons.length})</span>
                                                         </div>
-                                                        <p className="text-sm text-gray-600 mt-1">All coupons are applicable on this order</p>
+                                                        <p className="text-sm text-forest mt-1">All coupons are applicable on this order</p>
                                                     </div>
                                                     <div className="p-4 space-y-4">
                                                         {/* Coupons Horizontal Scroll */}
@@ -533,7 +533,7 @@ const Cart = () => {
                                                                 className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-full p-2 shadow-md hover:bg-gray-50 transition-colors"
                                                                 style={{ marginLeft: '-8px' }}
                                                             >
-                                                                <ChevronLeft className="w-4 h-4 text-gray-600" />
+                                                                <ChevronLeft className="w-4 h-4 text-forest" />
                                                             </button>
 
                                                             {/* Scroll Right Button */}
@@ -542,7 +542,7 @@ const Cart = () => {
                                                                 className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-full p-2 shadow-md hover:bg-gray-50 transition-colors"
                                                                 style={{ marginRight: '-8px' }}
                                                             >
-                                                                <ChevronRight className="w-4 h-4 text-gray-600" />
+                                                                <ChevronRight className="w-4 h-4 text-forest" />
                                                             </button>
 
                                                             <div
@@ -558,15 +558,15 @@ const Cart = () => {
                                                                         <div key={coupon._id} className={`border rounded-lg p-4 min-w-[280px] flex-shrink-0 ${isRemoving ? 'opacity-50' : ''}`}>
                                                                             <div className="flex items-start justify-between mb-2">
                                                                                 <div className="flex-1">
-                                                                                    <h3 className="text-sm font-semibold text-gray-900 mb-1">{coupon.name}</h3>
+                                                                                    <h3 className="text-sm font-semibold text-deep-forest mb-1">{coupon.name}</h3>
                                                                                     {coupon.description && (
-                                                                                        <p className="text-xs text-gray-600 mb-1">{coupon.description}</p>
+                                                                                        <p className="text-xs text-forest mb-1">{coupon.description}</p>
                                                                                     )}
                                                                                     <div className="flex items-center gap-2 mb-2">
                                                                                         <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
                                                                                             {coupon.type === 'percentage' ? `${coupon.value}% OFF` : `${formatRupees(coupon.value)} OFF`}
                                                                                         </span>
-                                                                                        <span className="text-xs text-gray-500">
+                                                                                        <span className="text-xs text-warm-taupe">
                                                                                             Min: {formatRupees(coupon.minOrderAmount)}
                                                                                         </span>
                                                                                     </div>
@@ -616,11 +616,11 @@ const Cart = () => {
                                             <div className="bg-white rounded-lg border shadow-sm">
                                                 <div className="p-4 border-b">
                                                     <div className="flex items-center justify-between">
-                                                        <span className="font-semibold text-gray-900 flex items-center gap-2">
+                                                        <span className="font-semibold text-deep-forest flex items-center gap-2">
                                                             <ShoppingBag className="w-5 h-5" />
                                                             Cart details
                                                         </span>
-                                                        <div className="text-sm text-gray-600 hidden sm:block">
+                                                        <div className="text-sm text-forest hidden sm:block">
                                                             <span className="font-medium">Cart Summary:</span>
                                                             <span className="ml-2">Items - {totalUniqueItems}</span>
                                                             <span className="mx-2">|</span>
@@ -631,8 +631,8 @@ const Cart = () => {
                                                     </div>
                                                 </div>
                                                 {/* Mobile Cart Summary */}
-                                                <div className="p-3 bg-gray-50 border-b sm:hidden">
-                                                    <div className="text-sm text-gray-600 text-center">
+                                                <div className="p-3 bg-sage/10 border-b sm:hidden">
+                                                    <div className="text-sm text-forest text-center">
                                                         <span className="font-medium">Cart Summary:</span>
                                                         <span className="ml-2">Items - {totalUniqueItems}</span>
                                                         <span className="mx-2">|</span>
@@ -654,7 +654,7 @@ const Cart = () => {
                                                                 />
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="flex items-start justify-between mb-1">
-                                                                        <h3 className="font-medium text-gray-900 text-sm line-clamp-2 flex-1">
+                                                                        <h3 className="font-medium text-deep-forest text-sm line-clamp-2 flex-1">
                                                                             {isAuthenticated ? item.productId?.name : item.name}
                                                                         </h3>
                                                                         <Button
@@ -662,15 +662,15 @@ const Cart = () => {
                                                                             size="sm"
                                                                             onClick={() => handleRemoveItem(item._id || item.id, item.variant)}
                                                                             disabled={removingId === (item._id || item.id)}
-                                                                            className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 ml-2"
+                                                                            className="h-8 w-8 p-0 text-warm-taupe hover:text-red-600 hover:bg-red-50 ml-2"
                                                                         >
                                                                             <Trash2 className="h-4 w-4" />
                                                                         </Button>
                                                                     </div>
                                                                     {item.variant && (
-                                                                        <p className="text-xs text-gray-600 mb-2">{item.variant.volume}</p>
+                                                                        <p className="text-xs text-forest mb-2">{item.variant.volume}</p>
                                                                     )}
-                                                                    <p className="text-sm font-bold text-gray-900 mb-2">
+                                                                    <p className="text-sm font-bold text-deep-forest mb-2">
                                                                         {formatRupees(isAuthenticated ? (item.variant?.price || item.productId?.price) : item.price)}
                                                                     </p>
                                                                     <div className="flex items-center justify-between">
@@ -695,7 +695,7 @@ const Cart = () => {
                                                                             </Button>
                                                                         </div>
                                                                         <div className="text-right">
-                                                                            <p className="font-bold text-gray-900 text-sm">
+                                                                            <p className="font-bold text-deep-forest text-sm">
                                                                                 {formatRupees((isAuthenticated ? (item.variant?.price || item.productId?.price) : item.price) * item.quantity)}
                                                                             </p>
                                                                         </div>
@@ -842,19 +842,19 @@ const Cart = () => {
 
                                             <div className="bg-white rounded-lg border shadow-sm sticky top-4">
                                                 <div className="p-4 border-b">
-                                                    <span className="font-semibold text-gray-900 flex items-center gap-2">
+                                                    <span className="font-semibold text-deep-forest flex items-center gap-2">
                                                         <ShieldCheck className="w-5 h-5" />
                                                         Price Summary
                                                     </span>
                                                 </div>
                                                 <div className="p-4 space-y-3">
                                                     <div className="flex justify-between text-sm">
-                                                        <span className="text-gray-600">Order Total</span>
-                                                        <span className="text-gray-900 font-bold">{formatRupees(subtotal)}</span>
+                                                        <span className="text-forest">Order Total</span>
+                                                        <span className="text-deep-forest font-bold">{formatRupees(subtotal)}</span>
                                                     </div>
                                                     {appliedCoupon && (
                                                         <div className="flex justify-between text-sm">
-                                                            <span className="text-gray-600">Coupon Discount</span>
+                                                            <span className="text-forest">Coupon Discount</span>
                                                             {appliedCoupon.isValid !== false ? (
                                                                 <span className="text-green-600 font-bold">-{formatRupees(appliedCoupon.discountAmount)}</span>
                                                             ) : (
@@ -864,7 +864,7 @@ const Cart = () => {
                                                     )}
                                                     {appliedWelcomeGift && (
                                                         <div className="flex justify-between text-sm">
-                                                            <span className="text-gray-600">Welcome Gift</span>
+                                                            <span className="text-forest">Welcome Gift</span>
                                                             {appliedWelcomeGift.isValid !== false ? (
                                                                 <span className="text-green-600 font-bold">-{formatRupees(appliedWelcomeGift.discountAmount)}</span>
                                                             ) : (
@@ -874,22 +874,22 @@ const Cart = () => {
                                                     )}
                                                     {!appliedWelcomeGift && applyReward && hasClaimedReward && (
                                                         <div className="flex justify-between text-sm">
-                                                            <span className="text-gray-600">Welcome Gift</span>
+                                                            <span className="text-forest">Welcome Gift</span>
                                                             <span className="text-orange-600 font-medium">Will be applied</span>
                                                         </div>
                                                     )}
                                                     <div className="flex justify-between text-sm">
-                                                        <span className="text-gray-600">Shipping <span className="text-xs text-gray-400">ⓘ</span></span>
+                                                        <span className="text-forest">Shipping <span className="text-xs text-warm-taupe">ⓘ</span></span>
                                                         <div className="text-right">
                                                             <span className="text-green-600 font-bold">Free</span>
-                                                            <div className="text-xs text-gray-500 line-through">₹40</div>
+                                                            <div className="text-xs text-warm-taupe line-through">₹40</div>
                                                         </div>
                                                     </div>
 
                                                     <Separator />
                                                     <div className="flex justify-between font-bold text-lg">
-                                                        <span className="text-gray-900">To Pay</span>
-                                                        <span className="text-gray-900">{formatRupees(finalTotal)}</span>
+                                                        <span className="text-deep-forest">To Pay</span>
+                                                        <span className="text-deep-forest">{formatRupees(finalTotal)}</span>
                                                     </div>
                                                 </div>
                                                 <div className="p-4 border-t">
@@ -926,7 +926,7 @@ const Cart = () => {
 
                                                     {/* Welcome Gift Status */}
                                                     <div className="space-y-3">
-                                                        <h3 className="text-lg font-semibold text-gray-800">Welcome Gift Status</h3>
+                                                        <h3 className="text-lg font-semibold text-deep-forest">Welcome Gift Status</h3>
                                                         {hasClaimedReward ? (
                                                             <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
                                                                 <div className="flex items-center gap-3">
@@ -989,7 +989,7 @@ const Cart = () => {
                                                             </div>
                                                         ) : (
                                                             <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
-                                                                <p className="text-gray-500">No welcome gift claimed yet</p>
+                                                                <p className="text-warm-taupe">No welcome gift claimed yet</p>
                                                             </div>
                                                         )}
                                                     </div>

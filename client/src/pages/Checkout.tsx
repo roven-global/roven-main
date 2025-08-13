@@ -340,7 +340,7 @@ const Checkout = () => {
 
     if (cartLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-warm-cream">
+            <div className="min-h-screen flex items-center justify-center bg-white">
                 <div className="animate-spin rounded-full h-24 w-24 border-b-2 border-sage"></div>
             </div>
         );
@@ -353,12 +353,12 @@ const Checkout = () => {
             {/* Breadcrumb Navigation */}
             <div className="bg-white border-b">
                 <div className="container mx-auto px-4 py-3">
-                    <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-                        <Link to="/cart" className="hover:text-gray-900">Cart</Link>
+                    <div className="flex items-center justify-center gap-2 text-sm text-forest">
+                        <Link to="/cart" className="hover:text-deep-forest">Cart</Link>
                         <ArrowRight className="w-4 h-4" />
                         <span>Address</span>
                         <ArrowRight className="w-4 h-4" />
-                        <span className="text-gray-400">Payment</span>
+                        <span className="text-warm-taupe">Payment</span>
                     </div>
                 </div>
             </div>
@@ -376,7 +376,7 @@ const Checkout = () => {
                                 <div className="bg-white rounded-lg border shadow-sm">
                                     <div className="p-4 border-b">
                                         <div className="flex items-center justify-between">
-                                            <span className="font-semibold text-gray-900 flex items-center gap-2">
+                                            <span className="font-semibold text-deep-forest flex items-center gap-2">
                                                 <Truck className="w-5 h-5" />
                                                 Shipping Address
                                             </span>
@@ -400,9 +400,9 @@ const Checkout = () => {
                                                     >
                                                         <div className="flex items-start justify-between">
                                                             <div className="flex-1">
-                                                                <p className="font-semibold text-gray-900">{addr.firstName} {addr.lastName}</p>
-                                                                <p className="text-gray-600 text-sm">{addr.address}, {addr.city}, {addr.state} - {addr.pincode}</p>
-                                                                <p className="text-gray-600 text-sm">{addr.phone}</p>
+                                                                <p className="font-semibold text-deep-forest">{addr.firstName} {addr.lastName}</p>
+                                                                <p className="text-forest text-sm">{addr.address}, {addr.city}, {addr.state} - {addr.pincode}</p>
+                                                                <p className="text-forest text-sm">{addr.phone}</p>
                                                             </div>
                                                             <div className="flex items-center gap-2">
                                                                 {selectedAddressId === addr._id && (
@@ -419,7 +419,7 @@ const Checkout = () => {
                                                                         e.stopPropagation();
                                                                         handleDeleteAddress(addr._id);
                                                                     }}
-                                                                    className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                                                    className="h-8 w-8 text-warm-taupe hover:text-red-600 hover:bg-red-50"
                                                                 >
                                                                     <Trash2 className="h-4 w-4" />
                                                                 </Button>
@@ -433,7 +433,7 @@ const Checkout = () => {
                                         {/* Show Add New Address button when no saved addresses */}
                                         {isAuthenticated && savedAddresses.length === 0 && !showNewAddressForm && (
                                             <div className="text-center py-4">
-                                                <p className="text-gray-600 mb-4">No saved addresses found.</p>
+                                                <p className="text-forest mb-4">No saved addresses found.</p>
                                                 <Button onClick={() => setShowNewAddressForm(true)} className="bg-orange-500 hover:bg-orange-600 text-white rounded-md px-6 py-2">
                                                     Add New Address
                                                 </Button>
@@ -443,11 +443,11 @@ const Checkout = () => {
                                         {/* New Address Form */}
                                         {showNewAddressForm && (
                                             <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                                                <h3 className="font-semibold text-gray-900 mb-4">Add New Address</h3>
+                                                <h3 className="font-semibold text-deep-forest mb-4">Add New Address</h3>
                                                 <form onSubmit={handleSaveAddress} className="space-y-4">
                                                     <div className="grid grid-cols-2 gap-4">
                                                         <div>
-                                                            <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">First Name</Label>
+                                                            <Label htmlFor="firstName" className="text-sm font-medium text-deep-forest">First Name</Label>
                                                             <Input
                                                                 id="firstName"
                                                                 name="firstName"
@@ -458,7 +458,7 @@ const Checkout = () => {
                                                             />
                                                         </div>
                                                         <div>
-                                                            <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">Last Name</Label>
+                                                            <Label htmlFor="lastName" className="text-sm font-medium text-deep-forest">Last Name</Label>
                                                             <Input
                                                                 id="lastName"
                                                                 name="lastName"
@@ -471,7 +471,7 @@ const Checkout = () => {
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-4">
                                                         <div>
-                                                            <Label htmlFor="phone" className="text-sm font-medium text-gray-700">Phone</Label>
+                                                            <Label htmlFor="phone" className="text-sm font-medium text-deep-forest">Phone</Label>
                                                             <Input
                                                                 id="phone"
                                                                 name="phone"
@@ -482,7 +482,7 @@ const Checkout = () => {
                                                             />
                                                         </div>
                                                         <div>
-                                                            <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+                                                            <Label htmlFor="email" className="text-sm font-medium text-deep-forest">Email</Label>
                                                             <Input
                                                                 id="email"
                                                                 name="email"
@@ -495,7 +495,7 @@ const Checkout = () => {
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <Label htmlFor="address" className="text-sm font-medium text-gray-700">Address</Label>
+                                                        <Label htmlFor="address" className="text-sm font-medium text-deep-forest">Address</Label>
                                                         <Textarea
                                                             id="address"
                                                             name="address"
@@ -507,7 +507,7 @@ const Checkout = () => {
                                                     </div>
                                                     <div className="grid grid-cols-3 gap-4">
                                                         <div>
-                                                            <Label htmlFor="state" className="text-sm font-medium text-gray-700">State</Label>
+                                                            <Label htmlFor="state" className="text-sm font-medium text-deep-forest">State</Label>
                                                             <Select value={formData.state} onValueChange={handleStateChange}>
                                                                 <SelectTrigger className="mt-1">
                                                                     <SelectValue placeholder="Select state" />
@@ -522,7 +522,7 @@ const Checkout = () => {
                                                             </Select>
                                                         </div>
                                                         <div>
-                                                            <Label htmlFor="city" className="text-sm font-medium text-gray-700">City</Label>
+                                                            <Label htmlFor="city" className="text-sm font-medium text-deep-forest">City</Label>
                                                             <Select value={formData.city} onValueChange={(city) => setFormData({ ...formData, city })}>
                                                                 <SelectTrigger className="mt-1">
                                                                     <SelectValue placeholder="Select city" />
@@ -537,7 +537,7 @@ const Checkout = () => {
                                                             </Select>
                                                         </div>
                                                         <div>
-                                                            <Label htmlFor="pincode" className="text-sm font-medium text-gray-700">Pincode</Label>
+                                                            <Label htmlFor="pincode" className="text-sm font-medium text-deep-forest">Pincode</Label>
                                                             <Input
                                                                 id="pincode"
                                                                 name="pincode"
@@ -555,7 +555,7 @@ const Checkout = () => {
                                                             checked={formData.saveForFuture}
                                                             onCheckedChange={(checked) => setFormData({ ...formData, saveForFuture: checked as boolean })}
                                                         />
-                                                        <Label htmlFor="saveForFuture" className="text-sm text-gray-700">Save this address for future orders</Label>
+                                                        <Label htmlFor="saveForFuture" className="text-sm text-deep-forest">Save this address for future orders</Label>
                                                     </div>
                                                     <div className="flex gap-2">
                                                         <Button type="submit" disabled={addressLoading} className="bg-orange-500 hover:bg-orange-600 text-white">
@@ -699,46 +699,46 @@ const Checkout = () => {
 
                                 <div className="bg-white rounded-lg border shadow-sm sticky top-4">
                                     <div className="p-4 border-b">
-                                        <span className="font-semibold text-gray-900 flex items-center gap-2">
+                                        <span className="font-semibold text-deep-forest flex items-center gap-2">
                                             <ShieldCheck className="w-5 h-5" />
                                             Price Summary
                                         </span>
                                     </div>
                                     <div className="p-4 space-y-3">
                                         <div className="flex justify-between text-sm">
-                                            <span className="text-gray-600">Order Total</span>
-                                            <span className="text-gray-900 font-bold">{formatRupees(subtotal)}</span>
+                                            <span className="text-forest">Order Total</span>
+                                            <span className="text-deep-forest font-bold">{formatRupees(subtotal)}</span>
                                         </div>
                                         {discountAmount > 0 && (
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">Coupon Discount</span>
+                                                <span className="text-forest">Coupon Discount</span>
                                                 <span className="text-green-600 font-bold">-{formatRupees(discountAmount)}</span>
                                             </div>
                                         )}
                                         {welcomeGiftDiscount > 0 && (
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">Welcome Gift</span>
+                                                <span className="text-forest">Welcome Gift</span>
                                                 <span className="text-green-600 font-bold">-{formatRupees(welcomeGiftDiscount)}</span>
                                             </div>
                                         )}
                                         {shouldApplyWelcomeGift && !welcomeGiftDiscount && (
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">Welcome Gift</span>
+                                                <span className="text-forest">Welcome Gift</span>
                                                 <span className="text-orange-600 font-medium">Will be applied</span>
                                             </div>
                                         )}
                                         <div className="flex justify-between text-sm">
-                                            <span className="text-gray-600">Shipping <span className="text-xs text-gray-400">ⓘ</span></span>
+                                            <span className="text-forest">Shipping <span className="text-xs text-warm-taupe">ⓘ</span></span>
                                             <div className="text-right">
                                                 <span className="text-green-600 font-bold">Free</span>
-                                                <div className="text-xs text-gray-500 line-through">₹40</div>
+                                                <div className="text-xs text-warm-taupe line-through">₹40</div>
                                             </div>
                                         </div>
 
                                         <Separator />
                                         <div className="flex justify-between font-bold text-lg">
-                                            <span className="text-gray-900">To Pay</span>
-                                            <span className="text-gray-900">{formatRupees(finalTotal)}</span>
+                                            <span className="text-deep-forest">To Pay</span>
+                                            <span className="text-deep-forest">{formatRupees(finalTotal)}</span>
                                         </div>
                                     </div>
                                     <div className="p-4 border-t">
