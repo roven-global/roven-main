@@ -5,7 +5,7 @@ import { MoveRight } from "lucide-react";
 
 const Hero = () => {
   return (
-    <section className="relative bg-warm-cream overflow-hidden">
+    <section className="relative bg-gradient-to-br from-sage/10 via-forest/5 to-sage/10 overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center justify-between min-h-[80vh] py-20">
 

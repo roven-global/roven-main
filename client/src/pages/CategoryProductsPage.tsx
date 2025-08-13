@@ -82,7 +82,7 @@ const CategoryProductsPage = () => {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <main className="flex-grow">
-        <section className="py-12 bg-rose-50/50">
+        <section className="py-12 bg-gradient-to-br from-sage/20 via-forest/10 to-sage/20">
           <div className="container mx-auto px-4">
             <Link to="/#categories" className="inline-block mb-6">
               <Button variant="outline">

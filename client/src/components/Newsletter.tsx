@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 
 const Newsletter = () => {
   return (
-    <section className="py-20 bg-soft-beige">
+    <section className="py-20 bg-gradient-to-br from-sage/25 via-forest/10 to-sage/15">
       <div className="container mx-auto px-4 text-center">
         <div className="max-w-2xl mx-auto">
           <h2 className="font-playfair text-4xl md:text-5xl font-bold text-deep-forest mb-4">
