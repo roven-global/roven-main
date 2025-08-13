@@ -15,7 +15,7 @@ const {
 } = require("../controller/productController");
 const auth = require("../middleware/auth");
 const adminOnly = require("../middleware/adminOnly");
-const upload = require("../middleware/multer");
+const productUpload = require("../middleware/multer").productUpload;
 const router = express.Router();
 
 // Public routes
@@ -27,9 +27,9 @@ router.route("/:identifier").get(getProductById);
 router.route("/:id/variants").get(getProductVariants);
 
 // Admin-only routes (require authentication and admin privileges)
-router.route("/create").post(auth, adminOnly, upload.array("images", 10), createProduct);
+router.route("/create").post(auth, adminOnly, productUpload, createProduct);
 router.route("/bulk-delete").delete(auth, adminOnly, bulkDeleteProducts);
-router.route("/:id").put(auth, adminOnly, upload.array("images", 10), updateProduct);
+router.route("/:id").put(auth, adminOnly, productUpload, updateProduct);
 router.route("/:id").delete(auth, adminOnly, deleteProduct);
 router.route("/:id/variant/:variantSku/stock").put(auth, adminOnly, updateVariantStock);
 

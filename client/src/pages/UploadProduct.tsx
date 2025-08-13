@@ -34,6 +34,13 @@ interface ProductVariant {
   isActive: boolean;
 }
 
+interface Ingredient {
+  name: string;
+  description: string;
+  imageFile?: File | null;
+  imageUrl?: string; // For preview / editing
+}
+
 interface Product {
   _id: string;
   name: string;
@@ -54,6 +61,8 @@ interface Product {
     public_id: string;
   }>;
   specifications: Record<string, any>;
+  ingredients?: Array<{ name: string; description: string; image?: { url: string; public_id?: string } }>;
+  suitableFor?: string[];
   tags: string[];
   benefits?: string[];
   isActive: boolean;
@@ -85,12 +94,11 @@ const UploadProduct = () => {
   const [useVariants, setUseVariants] = useState(false);
 
   // New fields
-  const [ingredients, setIngredients] = useState<string[]>([]);
-  const [newIngredient, setNewIngredient] = useState('');
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [suitableFor, setSuitableFor] = useState<string[]>([]);
   const [newSuitableFor, setNewSuitableFor] = useState('');
   const [howToUse, setHowToUse] = useState<string[]>([]);
-  const [newHowToUse, setNewHowToUse] = useState('');
+  const [newHowToUse, setNewHowToUse] = useState('')
 
   const [formData, setFormData] = useState({
     name: '',
@@ -158,11 +166,13 @@ const UploadProduct = () => {
         }));
         setImageFiles(existingImages);
 
-        // Set specifications
-        const specs = Object.entries(product.specifications).map(([key, value]) => ({
-          key,
-          value: value.toString(),
-        }));
+        // Set specifications (filter out suitableFor and ingredients as they are separate fields)
+        const specs = Object.entries(product.specifications)
+          .filter(([key]) => key.toLowerCase() !== 'suitablefor' && key.toLowerCase() !== 'ingredients')
+          .map(([key, value]) => ({
+            key,
+            value: value.toString(),
+          }));
         setSpecifications(specs);
 
         // Set tags
@@ -178,8 +188,18 @@ const UploadProduct = () => {
         }
 
         // Set new fields
-        setIngredients(product.specifications?.ingredients || []);
-        setSuitableFor(product.specifications?.suitableFor || []);
+        if (product.ingredients) {
+          const ingredientsData = product.ingredients.map((ing: any) => ({
+            name: ing.name || '',
+            description: ing.description || '',
+            imageFile: null,
+            imageUrl: ing.image?.url || ''
+          }));
+          setIngredients(ingredientsData);
+        } else {
+          setIngredients([]);
+        }
+        setSuitableFor(product.suitableFor || []);
         setHowToUse(product.howToUse || []);
       }
     } catch (error) {
@@ -229,10 +249,25 @@ const UploadProduct = () => {
   };
 
   const updateSpecification = (index: number, field: 'key' | 'value', value: string) => {
+    // Prevent users from setting specification keys to reserved names
+    if (field === 'key') {
+      const lowerValue = value.toLowerCase();
+      if (lowerValue === 'suitablefor' || lowerValue === 'ingredients') {
+        toast({
+          title: "Invalid Specification Name",
+          description: "'suitableFor' and 'ingredients' are reserved field names and cannot be used as specification keys.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setSpecifications(prev => prev.map((spec, i) =>
       i === index ? { ...spec, [field]: value } : spec
     ));
   };
+
+
 
   const removeSpecification = (index: number) => {
     setSpecifications(prev => prev.filter((_, i) => i !== index));
@@ -258,6 +293,33 @@ const UploadProduct = () => {
 
   const removeBenefit = (benefitToRemove: string) => {
     setBenefits(benefits.filter(benefit => benefit !== benefitToRemove));
+  };
+
+  // Ingredient management functions
+  const addIngredient = () => {
+    setIngredients(prev => [...prev, { name: "", description: "", imageFile: null, imageUrl: "" }]);
+  };
+
+  const updateIngredient = (index: number, field: keyof Ingredient, value: any) => {
+    setIngredients(prev => prev.map((ing, i) => i === index ? { ...ing, [field]: value } : ing));
+  };
+
+  const handleIngredientImageChange = (index: number, file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Ingredient image must be less than 10MB",
+        variant: "destructive"
+      });
+      return;
+    }
+    const previewUrl = URL.createObjectURL(file);
+    updateIngredient(index, "imageFile", file);
+    updateIngredient(index, "imageUrl", previewUrl);
+  };
+
+  const removeIngredient = (index: number) => {
+    setIngredients(prev => prev.filter((_, i) => i !== index));
   };
 
   // Helper functions for new fields
@@ -416,12 +478,12 @@ const UploadProduct = () => {
 
       // Handle price, original price, and volume based on variant usage
       if (isUsingVariants) {
-        // When using variants, set base price to 0 and clear volume
+        // When using variants, set base price to 0, but still send volume if needed
         formDataToSend.append('price', '0');
-        formDataToSend.append('volume', '');
+        formDataToSend.append('volume', formData.volume || '');
         if (formData.originalPrice) formDataToSend.append('originalPrice', '0');
       } else {
-        // When not using variants, use the form data and ensure price is valid
+        // When not using variants, ensure price is valid and send volume
         const price = parseFloat(formData.price) || 0;
         if (price <= 0) {
           toast({
@@ -437,18 +499,32 @@ const UploadProduct = () => {
         if (formData.originalPrice) formDataToSend.append('originalPrice', formData.originalPrice);
       }
 
-      // Add specifications
-      const specsObject = {
-        ...specifications.reduce((acc, spec) => {
-          if (spec.key.trim() && spec.value.trim()) {
+
+      // Add specifications (excluding suitableFor and ingredients as they are separate fields)
+      const specsObject = specifications.reduce((acc, spec) => {
+        if (spec.key.trim() && spec.value.trim()) {
+          // Filter out any specifications that might be named 'suitableFor' or 'ingredients'
+          if (spec.key.toLowerCase() !== 'suitablefor' && spec.key.toLowerCase() !== 'ingredients') {
             acc[spec.key] = spec.value;
           }
-          return acc;
-        }, {} as Record<string, any>),
-        ingredients,
-        suitableFor
-      };
+        }
+        return acc;
+      }, {} as Record<string, any>);
       formDataToSend.append('specifications', JSON.stringify(specsObject));
+
+      // Add ingredients as JSON without images
+      const ingredientsData = ingredients.map(ing => ({
+        name: ing.name,
+        description: ing.description
+      }));
+      formDataToSend.append('ingredients', JSON.stringify(ingredientsData));
+
+      // Add ingredient images separately
+      ingredients.forEach((ing, index) => {
+        if (ing.imageFile) {
+          formDataToSend.append(`ingredientImages[${index}]`, ing.imageFile);
+        }
+      });
 
       // Add tags
       formDataToSend.append('tags', JSON.stringify(tags));
@@ -893,7 +969,7 @@ const UploadProduct = () => {
             <CardHeader>
               <CardTitle>Specifications</CardTitle>
               <CardDescription>
-                Add product specifications and features
+                Add product specifications and features (Note: "suitableFor" and "ingredients" are handled separately)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1018,37 +1094,49 @@ const UploadProduct = () => {
                 Hero Ingredients
               </CardTitle>
               <CardDescription>
-                Add key ingredients that make your product special
+                Add key ingredients with description and image
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {ingredients.map((ingredient) => (
-                  <Badge key={ingredient} variant="secondary" className="flex items-center gap-1">
-                    {ingredient}
+              {ingredients.map((ing, index) => (
+                <div key={index} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Ingredient name"
+                      value={ing.name}
+                      onChange={e => updateIngredient(index, "name", e.target.value)}
+                    />
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="destructive"
                       size="icon"
-                      className="h-4 w-4 hover:bg-destructive hover:text-destructive-foreground"
-                      onClick={() => removeListItem(setIngredients, ingredient)}
+                      onClick={() => removeIngredient(index)}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-4 w-4" />
                     </Button>
-                  </Badge>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add an ingredient"
-                  value={newIngredient}
-                  onChange={(e) => setNewIngredient(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addListItem(setIngredients, newIngredient), setNewIngredient(''))}
-                />
-                <Button type="button" variant="outline" onClick={() => { addListItem(setIngredients, newIngredient); setNewIngredient(''); }}>
-                  Add
-                </Button>
-              </div>
+                  </div>
+                  <Textarea
+                    placeholder="Ingredient description"
+                    value={ing.description}
+                    onChange={e => updateIngredient(index, "description", e.target.value)}
+                  />
+                  <div>
+                    {ing.imageUrl && (
+                      <img src={ing.imageUrl} alt="Ingredient preview" className="h-24 object-cover mb-2" />
+                    )}
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        if (e.target.files?.[0]) handleIngredientImageChange(index, e.target.files[0]);
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+              <Button type="button" variant="outline" onClick={addIngredient}>
+                <Plus className="mr-2 h-4 w-4" /> Add Ingredient
+              </Button>
             </CardContent>
           </Card>
 

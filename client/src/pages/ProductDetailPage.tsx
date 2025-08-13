@@ -41,6 +41,8 @@ interface Product {
     brand: string;
     ratings: { average: number; numOfReviews: number };
     specifications: Record<string, any>;
+    ingredients?: Array<{ name: string; description: string; image?: { url: string; public_id?: string } }>;
+    suitableFor?: string[];
     tags: string[];
     benefits: string[];
     slug: string;
@@ -397,7 +399,7 @@ const ProductDetailPage = () => {
                     <Tabs defaultValue="description" className="w-full">
                         <TabsList className="flex flex-wrap gap-2 border-b pb-2 bg-transparent">
                             <TabsTrigger value="description" className="text-deep-forest hover:text-sage">Description</TabsTrigger>
-                            {product.specifications?.ingredients && product.specifications.ingredients.length > 0 && (
+                            {product.ingredients && product.ingredients.length > 0 && (
                                 <TabsTrigger value="ingredients" className="text-deep-forest hover:text-sage">Hero Ingredients</TabsTrigger>
                             )}
                             {product.howToUse && product.howToUse.length > 0 && (
@@ -425,16 +427,46 @@ const ProductDetailPage = () => {
                         </TabsContent>
 
                         {/* Hero Ingredients Tab */}
-                        {product.specifications?.ingredients && product.specifications.ingredients.length > 0 && (
+                        {product.ingredients && product.ingredients.length > 0 && (
                             <TabsContent value="ingredients" className="mt-6">
                                 <Card className="border-warm-taupe/30 bg-warm-cream/50">
                                     <CardContent className="pt-6">
-                                        <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">Hero Ingredients</h2>
-                                        <ul className="list-disc pl-5 space-y-2 text-forest leading-relaxed">
-                                            {product.specifications.ingredients.map((ingredient: string, i: number) => (
-                                                <li key={i}>{ingredient}</li>
+                                        <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-6">
+                                            Hero Ingredients
+                                        </h2>
+
+                                        {/* Render ingredient cards */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {product.ingredients.map((ingredient: any, i: number) => (
+                                                <div
+                                                    key={i}
+                                                    className="bg-white rounded-xl shadow-md overflow-hidden border border-warm-taupe/20 hover:shadow-lg transition-shadow"
+                                                >
+                                                    {/* Show image if available */}
+                                                    {ingredient.image && (
+                                                        <div className="w-full h-48 bg-warm-cream overflow-hidden">
+                                                            <img
+                                                                src={ingredient.image.url}
+                                                                alt={ingredient.name || `Ingredient ${i + 1}`}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    <div className="p-4 space-y-2">
+                                                        {ingredient.name && (
+                                                            <h3 className="font-semibold text-lg text-deep-forest">
+                                                                {ingredient.name}
+                                                            </h3>
+                                                        )}
+                                                        {ingredient.description && (
+                                                            <p className="text-sm text-forest leading-relaxed">
+                                                                {ingredient.description}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             ))}
-                                        </ul>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             </TabsContent>
