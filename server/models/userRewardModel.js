@@ -1,171 +1,208 @@
 const mongoose = require("mongoose");
 
-const userRewardSchema = new mongoose.Schema(
-    {
-        userId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-            required: false, // Optional for anonymous users
-        },
-        giftId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "WelcomeGift",
-            required: [true, "Gift ID is required"],
-        },
-        claimedAt: {
-            type: Date,
-            default: Date.now,
-        },
-        isUsed: {
-            type: Boolean,
-            default: false,
-        },
-        usedAt: {
-            type: Date,
-            default: null,
-        },
-        // For anonymous users - store device fingerprint or session ID
-        anonymousId: {
-            type: String,
-            default: null,
-        },
-        // Track if user was logged in when claimed
-        wasLoggedIn: {
-            type: Boolean,
-            default: false,
-        },
-        // Store reward details for reference
-        rewardTitle: {
-            type: String,
-            required: true,
-        },
-        rewardText: {
-            type: String,
-            required: true,
-        }
-    },
-    {
-        timestamps: true,
+const userRewardSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    sparse: true, // Allow null for anonymous users
+    index: true
+  },
+  giftId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "WelcomeGift",
+    required: true,
+    index: true
+  },
+  rewardTitle: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: [100, "Reward title cannot exceed 100 characters"]
+  },
+  rewardText: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: [200, "Reward text cannot exceed 200 characters"]
+  },
+  isUsed: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  usedAt: {
+    type: Date,
+    default: null
+  },
+  wasLoggedIn: {
+    type: Boolean,
+    required: true,
+    default: false
+  },
+  anonymousId: {
+    type: String,
+    sparse: true, // Allow null and unique constraint
+    index: true
+  },
+  claimedAt: {
+    type: Date,
+    default: Date.now,
+    index: true
+  },
+  clientIP: {
+    type: String,
+    required: true,
+    validate: {
+      validator: function(v) {
+        // Basic IP validation (IPv4 and IPv6)
+        const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+        const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+        return ipv4Regex.test(v) || ipv6Regex.test(v) || v === '::1' || v === '127.0.0.1';
+      },
+      message: "Invalid IP address format"
     }
-);
+  },
+  migrationData: {
+    originalAnonymousId: String,
+    migratedAt: Date,
+    migratedFrom: { type: String, enum: ['anonymous'], default: undefined }
+  }
+}, {
+  timestamps: true
+});
 
-// Virtual field for compound unique index (only when userId exists)
-userRewardSchema.virtual('userId_giftId').get(function () {
-    if (this.userId) {
-        return `${this.userId}_${this.giftId}`;
-    }
+// Compound indexes for performance and uniqueness
+userRewardSchema.index({ userId: 1, giftId: 1 }, { unique: true, sparse: true });
+userRewardSchema.index({ anonymousId: 1, giftId: 1 }, { unique: true, sparse: true });
+userRewardSchema.index({ isUsed: 1, userId: 1 });
+
+
+// Ensure one reward per user (authenticated)
+userRewardSchema.index({ userId: 1 }, { 
+  unique: true, 
+  sparse: true,
+  name: 'one_reward_per_user'
+});
+
+// Ensure one reward per anonymous session
+userRewardSchema.index({ anonymousId: 1 }, { 
+  unique: true, 
+  sparse: true,
+  name: 'one_reward_per_anonymous'
+});
+
+// Mark reward as used (with session support)
+userRewardSchema.methods.markAsUsed = async function (session = null) {
+  this.isUsed = true;
+  this.usedAt = new Date();
+  const options = session ? { session } : {};
+  return this.save(options);
+};
+
+// Static method to check if user can claim a gift (with session support)
+userRewardSchema.statics.canUserClaimGift = async function (userId, session = null) {
+  if (!userId) return false;
+  
+  const options = session ? { session } : {};
+  const existingReward = await this.findOne({ userId }, null, options);
+  return !existingReward;
+};
+
+// Static method to check if anonymous user has claimed (with session support)
+userRewardSchema.statics.hasAnonymousUserClaimed = async function (anonymousId, session = null) {
+  if (!anonymousId) return false;
+  
+  const options = session ? { session } : {};
+  const existingReward = await this.findOne({ anonymousId }, null, options);
+  return !!existingReward;
+};
+
+// Static method to check if anonymous gift can be migrated (with session support)
+userRewardSchema.statics.canMigrateAnonymousGift = async function (anonymousId, userId, session = null) {
+  if (!anonymousId || !userId) return false;
+  
+  const options = session ? { session } : {};
+  
+  // Check if user already has a reward
+  const userHasReward = await this.findOne({ userId }, null, options);
+  if (userHasReward) return false;
+  
+  // Check if anonymous gift exists and is unused
+  const anonymousReward = await this.findOne({ 
+    anonymousId, 
+    isUsed: false 
+  }, null, options);
+  
+  return !!anonymousReward;
+};
+
+// Static method to migrate anonymous gift (with session support)
+userRewardSchema.statics.migrateAnonymousGift = async function (anonymousId, userId, session = null) {
+  if (!anonymousId || !userId) return null;
+  
+  const options = session ? { session } : {};
+  
+  try {
+    // Find the anonymous reward
+    const anonymousReward = await this.findOne({ 
+      anonymousId, 
+      isUsed: false 
+    }, null, options);
+    
+    if (!anonymousReward) return null;
+    
+    // Check if user already has a reward
+    const userHasReward = await this.findOne({ userId }, null, options);
+    if (userHasReward) return null;
+    
+    // Update the anonymous reward to be associated with the user
+    anonymousReward.userId = userId;
+    anonymousReward.migrationData = {
+      originalAnonymousId: anonymousId,
+      migratedAt: new Date(),
+      migratedFrom: 'anonymous'
+    };
+    anonymousReward.anonymousId = undefined; // Remove anonymous association
+    
+    await anonymousReward.save(options);
+    return anonymousReward;
+  } catch (error) {
+    console.error('Migration error:', error);
     return null;
-});
+  }
+};
 
-// Ensure virtual fields are serialized
-userRewardSchema.set('toJSON', { virtuals: true });
-userRewardSchema.set('toObject', { virtuals: true });
-
-// Create unique index for authenticated users only
-// This prevents duplicate claims from the same user for the same gift
-userRewardSchema.index({ "userId_giftId": 1 }, {
-    unique: true,
-    sparse: true,
-    name: "userId_giftId_unique"
-});
-
-// Prevent users from claiming multiple gifts (one gift per user)
-userRewardSchema.index({ userId: 1 }, {
-    unique: true,
-    sparse: true,
-    name: "userId_unique"
-});
-
-// Allow multiple claims from anonymous users (they might clear localStorage)
-userRewardSchema.index({ anonymousId: 1, giftId: 1 }, { name: "anonymousId_giftId" });
-
-// Method to mark reward as used
-userRewardSchema.methods.markAsUsed = async function () {
-    this.isUsed = true;
+// Pre-save validation
+userRewardSchema.pre('save', function(next) {
+  // Ensure either userId or anonymousId is present, but not both during initial claim
+  if (!this.migrationData && !this.userId && !this.anonymousId) {
+    return next(new Error('Either userId or anonymousId must be provided'));
+  }
+  
+  // Validate that used rewards have usedAt timestamp
+  if (this.isUsed && !this.usedAt) {
     this.usedAt = new Date();
-    return await this.save();
-};
+  }
+  
+  next();
+});
 
-// Static method to check if user has used any reward
-userRewardSchema.statics.hasUserUsedAnyReward = async function (userId) {
-    const usedReward = await this.findOne({
-        userId,
-        isUsed: true
-    });
-    return !!usedReward;
-};
-
-// Static method to check if anonymous user has claimed any reward
-userRewardSchema.statics.hasAnonymousUserClaimed = async function (anonymousId) {
-    const claimedReward = await this.findOne({
-        anonymousId
-    });
-    return !!claimedReward;
-};
-
-// Static method to check if user can claim a welcome gift
-userRewardSchema.statics.canUserClaimGift = async function (userId) {
-    if (!userId) return true; // Anonymous users can always try to claim
-    const existingReward = await this.findOne({ userId });
-    return !existingReward;
-};
-
-// Static method to check if user has claimed a specific gift
-userRewardSchema.statics.hasUserClaimedGift = async function (userId, giftId) {
-    if (!userId) return false; // Anonymous users don't have persistent claims
-    const existingReward = await this.findOne({ userId, giftId });
-    return !!existingReward;
-};
-
-// Static method to find gift by anonymousId
-userRewardSchema.statics.findByAnonymousId = async function (anonymousId) {
-    return await this.findOne({ anonymousId });
-};
-
-// Static method to migrate anonymous gift to authenticated user
-userRewardSchema.statics.migrateAnonymousGift = async function (anonymousId, userId) {
-    console.log(`UserReward: Attempting to migrate gift for anonymousId: ${anonymousId} to userId: ${userId}`);
-
-    const anonymousGift = await this.findOne({ anonymousId });
-    if (!anonymousGift) {
-        console.log('UserReward: No anonymous gift found for migration');
-        return null;
-    }
-
-    console.log('UserReward: Found anonymous gift:', {
-        id: anonymousGift._id,
-        rewardTitle: anonymousGift.rewardTitle,
-        rewardText: anonymousGift.rewardText
-    });
-
-    // Check if user already has a gift
-    const existingUserGift = await this.findOne({ userId });
-    if (existingUserGift) {
-        console.log('UserReward: User already has a gift, removing anonymous one');
-        // User already has a gift, remove the anonymous one
-        await this.findByIdAndDelete(anonymousGift._id);
-        return null;
-    }
-
-    // Migrate the gift
-    console.log('UserReward: Migrating gift to user account');
-    anonymousGift.userId = userId;
-    anonymousGift.anonymousId = null; // Remove anonymous association
-    anonymousGift.wasLoggedIn = true; // Mark as now logged in
-    await anonymousGift.save();
-
-    console.log('UserReward: Gift migration completed successfully');
-    return anonymousGift;
-};
-
-// Static method to check if anonymous user has a gift that can be migrated
-userRewardSchema.statics.canMigrateAnonymousGift = async function (anonymousId, userId) {
-    const anonymousGift = await this.findOne({ anonymousId });
-    if (!anonymousGift) return false;
-
-    // Check if user already has a gift
-    const existingUserGift = await this.findOne({ userId });
-    return !existingUserGift; // Can migrate only if user doesn't have a gift
-};
+// Prevent direct modification of critical fields
+userRewardSchema.pre('findOneAndUpdate', function() {
+  const update = this.getUpdate();
+  
+  // Prevent modification of claim timestamp and migration data
+  if (update.$set) {
+    delete update.$set.claimedAt;
+    delete update.$set.migrationData;
+    delete update.$set.clientIP;
+  }
+  
+  // Only allow marking as used, not unused
+  if (update.$set && update.$set.isUsed === false) {
+    delete update.$set.isUsed;
+    delete update.$set.usedAt;
+  }
+});
 
 module.exports = mongoose.model("UserReward", userRewardSchema);

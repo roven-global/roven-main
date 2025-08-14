@@ -1,173 +1,233 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import { useNavigate, Link } from 'react-router-dom';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Card, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Sparkles, Gift } from 'lucide-react';
-import Axios from '@/utils/Axios';
-import SummaryApi from '../common/summaryApi';
-import { useAuth } from '@/contexts/AuthContext';
-import { useCart } from '@/contexts/CartContext';
-import { FcGoogle } from "react-icons/fc";
-import Navigation from '@/components/Navigation';
-import Footer from '@/components/Footer';
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { useNavigate, Link } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
+import Axios from "@/utils/Axios";
+import SummaryApi from "../common/summaryApi";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
+
+// Validation helpers
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const mobileRegex = /^[6-9]\d{9}$/; // India-specific: 10 digits, starts with 6-9
+const isEmail = (val: string) => emailRegex.test(val.trim());
+const isMobile = (val: string) => mobileRegex.test(val.trim());
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address." }),
+  emailOrMobile: z
+    .string()
+    .min(1, { message: "Email or mobile number is required." }),
   password: z.string().min(1, { message: "Password is required." }),
 });
-
-const registerSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  email: z.string().email({ message: "Invalid email address." }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
-  confirmPassword: z.string().min(1, { message: "Please confirm your password." }),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const registerSchema = z
+  .object({
+    name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+    emailOrMobile: z
+      .string()
+      .min(1, { message: "Email or mobile number is required." }),
+    password: z
+      .string()
+      .min(8, { message: "Password must be at least 8 characters." }),
+    confirmPassword: z
+      .string()
+      .min(1, { message: "Please confirm your password." }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 const Login = () => {
-  const [activeTab, setActiveTab] = useState('login'); // Toggle between 'login' and 'register'
+  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [loginError, setLoginError] = useState('');
-  const [registerError, setRegisterError] = useState('');
+  const [loginError, setLoginError] = useState("");
+  const [registerError, setRegisterError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
-  const [registerStep, setRegisterStep] = useState(1); // 1 for name/email, 2 for password
+  const [registerStep, setRegisterStep] = useState(1); // 1: name/email/mobile, 2: password
   const navigate = useNavigate();
   const { checkAuthStatus } = useAuth();
+  // Capture redirect intent from navigation state
+  const redirectTo =
+    (history.state && history.state.usr && history.state.usr.redirectTo) || "/";
   const { fetchUserCart } = useCart();
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      emailOrMobile: "",
+      password: "",
     },
   });
 
   const registerForm = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
+      name: "",
+      emailOrMobile: "",
+      password: "",
+      confirmPassword: "",
     },
   });
 
+  // Login API handler
   const handleLogin = async (values: z.infer<typeof loginSchema>) => {
-    setLoginError('');
+    setLoginError("");
     setLoginLoading(true);
     try {
-      // Get anonymousId from localStorage if available
-      const anonymousId = localStorage.getItem('anonymousId') || null;
+      const anonymousId = localStorage.getItem("anonymousId") || null;
+      const input = values.emailOrMobile.trim();
+      const payload: any = {
+        password: values.password,
+        anonymousId,
+      };
+      if (isEmail(input)) payload.email = input;
+      else if (isMobile(input)) payload.mobile = input;
+      else {
+        setLoginError("Please enter a valid email or mobile number.");
+        setLoginLoading(false);
+        return;
+      }
 
       const response = await Axios({
         method: SummaryApi.login.method,
         url: SummaryApi.login.url,
-        data: {
-          ...values,
-          anonymousId
-        },
+        data: payload,
       });
 
-      if (response.data.data.accessToken) {
-        localStorage.setItem('accesstoken', response.data.data.accessToken);
-        console.log('🔐 Login: Access token stored in localStorage');
-        console.log('🔐 Login: Token length:', response.data.data.accessToken.length);
-      }
-      if (response.data.data.refreshToken) {
-        localStorage.setItem('refreshToken', response.data.data.refreshToken);
-        console.log('🔐 Login: Refresh token stored in localStorage');
-      }
-      localStorage.setItem('isLoggedIn', 'true');
-      console.log('🔐 Login: isLoggedIn set to true');
-
-      window.dispatchEvent(new Event('loginStateChange'));
-
-      // Handle gift migration result
-      if (response.data.data.giftMigration?.migrated) {
-        console.log('Login: Gift migrated successfully:', response.data.data.giftMigration);
-        // Clear any local reward data since it's now on the server
-        localStorage.removeItem('rewardClaimed');
-        localStorage.removeItem('claimedRewardDetails');
-      }
-
-      const localCart = JSON.parse(localStorage.getItem('shimmer_cart') || '[]');
+      // Store tokens and trigger login state
+      if (response.data.data.accessToken)
+        localStorage.setItem("accesstoken", response.data.data.accessToken);
+      if (response.data.data.refreshToken)
+        localStorage.setItem("refreshToken", response.data.data.refreshToken);
+      localStorage.setItem("isLoggedIn", "true");
+      window.dispatchEvent(new Event("loginStateChange"));
+      // Cart merging
+      const localCart = JSON.parse(
+        localStorage.getItem("shimmer_cart") || "[]"
+      );
       if (localCart.length > 0) {
         await Axios.post(SummaryApi.mergeCart.url, { localCart });
-        localStorage.removeItem('shimmer_cart');
+        localStorage.removeItem("shimmer_cart");
       }
-
       await checkAuthStatus();
-      navigate('/');
+      navigate(redirectTo || "/");
     } catch (err: any) {
-      setLoginError(err.response?.data?.message || 'Login failed. Please try again.');
+      const errorMessage =
+        err?.response?.data?.message || "Login failed. Please try again.";
+      if (errorMessage.includes("No account found"))
+        setLoginError(
+          "No account found. Please check your details or register."
+        );
+      else if (errorMessage.includes("Incorrect password"))
+        setLoginError("Incorrect password.");
+      else setLoginError(errorMessage);
     } finally {
       setLoginLoading(false);
     }
   };
 
+  // Registration API handler with debugging logs
   const handleRegister = async (values: z.infer<typeof registerSchema>) => {
-    setRegisterError('');
+    setRegisterError("");
     setRegisterLoading(true);
     try {
-      await Axios({
+      const input = values.emailOrMobile.trim();
+      const payload: any = {
+        name: values.name,
+        password: values.password,
+      };
+      // Detect and assign email or mobile
+      if (isEmail(input)) payload.email = input;
+      else if (isMobile(input)) payload.mobile = input;
+      else {
+        setRegisterError(
+          "Please enter a valid email address or 10-digit mobile number."
+        );
+        setRegisterLoading(false);
+        return;
+      }
+
+      // Log the payload before sending
+      console.log(
+        "[FRONTEND] Registration payload being sent to API:",
+        payload
+      );
+
+      const response = await Axios({
         method: SummaryApi.register.method,
         url: SummaryApi.register.url,
-        data: {
-          name: values.name,
-          email: values.email,
-          password: values.password,
-        },
+        data: payload,
       });
 
-      // Auto login after successful registration
-      await handleLogin({ email: values.email, password: values.password });
+      // Registration success: auto-login
+      await handleLogin({
+        emailOrMobile: values.emailOrMobile,
+        password: values.password,
+      });
     } catch (err: any) {
-      setRegisterError(err.response?.data?.message || 'Registration failed. Please try again.');
+      // Log error response for debugging
+      console.log(
+        "[FRONTEND] Registration error response:",
+        err?.response?.data || err
+      );
+
+      const errorMessage =
+        err?.response?.data?.message ||
+        "Registration failed. Please try again.";
+      setRegisterError(errorMessage);
     } finally {
       setRegisterLoading(false);
     }
   };
 
+  // Stepper for registration, 2-step UX
   const handleNextStep = () => {
-    const { name, email } = registerForm.getValues();
-    if (!name || !email) {
-      setRegisterError('Please fill in your name and email address');
+    const { name, emailOrMobile } = registerForm.getValues();
+    if (!name || !emailOrMobile) {
+      setRegisterError("Please fill in your name and email or mobile number");
       return;
     }
-    if (!registerForm.formState.errors.name && !registerForm.formState.errors.email) {
+    if (
+      !registerForm.formState.errors.name &&
+      !registerForm.formState.errors.emailOrMobile
+    ) {
       setRegisterStep(2);
-      setRegisterError('');
+      setRegisterError("");
     }
   };
-
   const handlePreviousStep = () => {
     setRegisterStep(1);
-    setRegisterError('');
+    setRegisterError("");
   };
 
   const handleGoogleLogin = () => {
     window.location.href = `${SummaryApi.googleLogin.url}`;
   };
 
-  // Reset register step when switching tabs
-  const handleTabChange = (newTab: string) => {
+  // Switch tab resets form error and step
+  const handleTabChange = (newTab: "login" | "register") => {
     setActiveTab(newTab);
-    if (newTab === 'register') {
+    if (newTab === "register") {
       setRegisterStep(1);
-      setRegisterError('');
+      setRegisterError("");
     }
   };
 
@@ -175,19 +235,15 @@ const Login = () => {
     <div className="min-h-screen bg-background">
       {/* Navigation */}
       <Navigation />
-
-      {/* Header Banner - Matching The Beer Beauty Design */}
+      {/* Header Banner */}
       <div className="relative bg-gradient-to-br from-sage/10 via-forest/10 to-deep-forest/10 py-24">
-        {/* Background Pattern */}
         <div className="absolute inset-0">
           <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-10 right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-white/5 rounded-full blur-3xl"></div>
         </div>
-
-        {/* Content */}
         <div className="relative z-10 container mx-auto px-4 text-center">
-          <h1 className="font-serif text-5xl md:text-6xl font-bold text-deep-forest mb-4">
+          <h1 className="text-5xl md:text-6xl font-bold text-deep-forest mb-4">
             My Account
           </h1>
         </div>
@@ -197,32 +253,38 @@ const Login = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-            {/* Login Section - Only show when activeTab is 'login' */}
-            {activeTab === 'login' && (
+            {/* Login Section */}
+            {activeTab === "login" && (
               <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8 h-[450px] flex flex-col">
-                <h2 className="font-serif text-3xl font-bold text-deep-forest mb-6 text-center">LOGIN</h2>
-
+                <h2 className="text-3xl font-bold text-deep-forest mb-6 text-center">
+                  LOGIN
+                </h2>
                 {loginError && (
                   <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-600 text-sm text-center">{loginError}</p>
+                    <p className="text-red-600 text-sm text-center">
+                      {loginError}
+                    </p>
                   </div>
                 )}
-
                 <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit(handleLogin)} className="flex-1 flex flex-col">
+                  <form
+                    onSubmit={loginForm.handleSubmit(handleLogin)}
+                    className="flex-1 flex flex-col"
+                  >
                     <div className="flex-1 space-y-4">
+                      {/* Email/Mobile */}
                       <FormField
                         control={loginForm.control}
-                        name="email"
+                        name="emailOrMobile"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-sm font-semibold text-deep-forest">
-                              Username or email address <span className="text-red-500">*</span>
+                              Email or mobile number{" "}
+                              <span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="Enter your email"
+                                placeholder="Enter your email or mobile number"
                                 {...field}
                                 className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200"
                               />
@@ -231,7 +293,7 @@ const Login = () => {
                           </FormItem>
                         )}
                       />
-
+                      {/* Password */}
                       <FormField
                         control={loginForm.control}
                         name="password"
@@ -243,18 +305,24 @@ const Login = () => {
                             <FormControl>
                               <div className="relative">
                                 <Input
-                                  type={showPassword ? 'text' : 'password'}
+                                  type={showPassword ? "text" : "password"}
                                   placeholder="Enter your password"
                                   {...field}
                                   className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200 pr-12"
                                 />
                                 <button
                                   type="button"
-                                  onClick={() => setShowPassword((prev) => !prev)}
+                                  onClick={() =>
+                                    setShowPassword((prev) => !prev)
+                                  }
                                   className="absolute right-4 top-1/2 -translate-y-1/2 text-warm-taupe hover:text-soft-bronze transition-colors duration-200"
                                   tabIndex={-1}
                                 >
-                                  {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                                  {showPassword ? (
+                                    <FaEyeSlash className="h-5 w-5" />
+                                  ) : (
+                                    <FaEye className="h-5 w-5" />
+                                  )}
                                 </button>
                               </div>
                             </FormControl>
@@ -262,24 +330,31 @@ const Login = () => {
                           </FormItem>
                         )}
                       />
-
+                      {/* Remember + Forgot */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <Checkbox
                             id="remember"
                             checked={rememberMe}
-                            onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                            onCheckedChange={(checked) =>
+                              setRememberMe(checked as boolean)
+                            }
                           />
-                          <label htmlFor="remember" className="text-sm text-forest">
+                          <label
+                            htmlFor="remember"
+                            className="text-sm text-forest"
+                          >
                             Remember me
                           </label>
                         </div>
-                        <Link to="/forgot-password" className="text-forest hover:text-deep-forest text-sm font-medium transition-colors duration-200">
+                        <Link
+                          to="/forgot-password"
+                          className="text-forest hover:text-deep-forest text-sm font-medium transition-colors duration-200"
+                        >
                           Lost your password?
                         </Link>
                       </div>
                     </div>
-
                     <Button
                       type="submit"
                       className="w-full h-11 bg-sage hover:bg-forest text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 mt-auto"
@@ -291,7 +366,7 @@ const Login = () => {
                           LOG IN
                         </div>
                       ) : (
-                        'LOG IN'
+                        "LOG IN"
                       )}
                     </Button>
                   </form>
@@ -299,30 +374,36 @@ const Login = () => {
               </div>
             )}
 
-            {/* Register Section - Only show when activeTab is 'register' */}
-            {activeTab === 'register' && (
+            {/* Register Section */}
+            {activeTab === "register" && (
               <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8 h-[450px] flex flex-col">
-                <h2 className="font-serif text-3xl font-bold text-deep-forest mb-6 text-center">REGISTER</h2>
-
-
+                <h2 className="text-3xl font-bold text-deep-forest mb-6 text-center">
+                  REGISTER
+                </h2>
                 {registerError && (
                   <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-600 text-sm text-center">{registerError}</p>
+                    <p className="text-red-600 text-sm text-center">
+                      {registerError}
+                    </p>
                   </div>
                 )}
-
                 <Form {...registerForm}>
-                  <form onSubmit={registerForm.handleSubmit(handleRegister)} className="flex-1 flex flex-col">
+                  <form
+                    onSubmit={registerForm.handleSubmit(handleRegister)}
+                    className="flex-1 flex flex-col"
+                  >
                     <div className="flex-1 space-y-4">
                       {registerStep === 1 && (
                         <>
+                          {/* Name */}
                           <FormField
                             control={registerForm.control}
                             name="name"
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel className="text-sm font-semibold text-deep-forest">
-                                  Full Name <span className="text-red-500">*</span>
+                                  Full Name{" "}
+                                  <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
                                   <Input
@@ -335,20 +416,21 @@ const Login = () => {
                               </FormItem>
                             )}
                           />
-
+                          {/* Email/Mobile */}
                           <FormField
                             control={registerForm.control}
-                            name="email"
+                            name="emailOrMobile"
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel className="text-sm font-semibold text-deep-forest">
-                                  Email address <span className="text-red-500">*</span>
+                                  Email or mobile number{" "}
+                                  <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
                                   <Input
-                                    placeholder="Enter your email"
+                                    placeholder="Enter your email or mobile number"
                                     {...field}
-                                    className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200"
+                                    className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-sage/20 rounded-lg transition-all duration-200"
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -357,32 +439,39 @@ const Login = () => {
                           />
                         </>
                       )}
-
                       {registerStep === 2 && (
                         <>
+                          {/* Password */}
                           <FormField
                             control={registerForm.control}
                             name="password"
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel className="text-sm font-semibold text-deep-forest">
-                                  Password <span className="text-red-500">*</span>
+                                  Password{" "}
+                                  <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
                                   <div className="relative">
                                     <Input
-                                      type={showPassword ? 'text' : 'password'}
+                                      type={showPassword ? "text" : "password"}
                                       placeholder="Create a strong password"
                                       {...field}
                                       className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200 pr-12"
                                     />
                                     <button
                                       type="button"
-                                      onClick={() => setShowPassword((prev) => !prev)}
+                                      onClick={() =>
+                                        setShowPassword((prev) => !prev)
+                                      }
                                       className="absolute right-4 top-1/2 -translate-y-1/2 text-warm-taupe hover:text-soft-bronze transition-colors duration-200"
                                       tabIndex={-1}
                                     >
-                                      {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                                      {showPassword ? (
+                                        <FaEyeSlash className="h-5 w-5" />
+                                      ) : (
+                                        <FaEye className="h-5 w-5" />
+                                      )}
                                     </button>
                                   </div>
                                 </FormControl>
@@ -390,30 +479,41 @@ const Login = () => {
                               </FormItem>
                             )}
                           />
-
+                          {/* Confirm Password */}
                           <FormField
                             control={registerForm.control}
                             name="confirmPassword"
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel className="text-sm font-semibold text-deep-forest">
-                                  Confirm Password <span className="text-red-500">*</span>
+                                  Confirm Password{" "}
+                                  <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
                                   <div className="relative">
                                     <Input
-                                      type={showConfirmPassword ? 'text' : 'password'}
+                                      type={
+                                        showConfirmPassword
+                                          ? "text"
+                                          : "password"
+                                      }
                                       placeholder="Confirm your password"
                                       {...field}
                                       className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200 pr-12"
                                     />
                                     <button
                                       type="button"
-                                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                                      onClick={() =>
+                                        setShowConfirmPassword((prev) => !prev)
+                                      }
                                       className="absolute right-4 top-1/2 -translate-y-1/2 text-warm-taupe hover:text-soft-bronze transition-colors duration-200"
                                       tabIndex={-1}
                                     >
-                                      {showConfirmPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                                      {showConfirmPassword ? (
+                                        <FaEyeSlash className="h-5 w-5" />
+                                      ) : (
+                                        <FaEye className="h-5 w-5" />
+                                      )}
                                     </button>
                                   </div>
                                 </FormControl>
@@ -424,11 +524,11 @@ const Login = () => {
                         </>
                       )}
                     </div>
-
                     <div className="text-xs text-warm-taupe mt-4">
-                      Your personal data will be used to support your experience throughout this website, to manage access to your account, and for other purposes described in our privacy policy.
+                      Your personal data will be used to support your experience
+                      throughout this website, to manage access to your account,
+                      and for other purposes described in our privacy policy.
                     </div>
-
                     <div className="flex justify-between mt-4">
                       {registerStep > 1 && (
                         <Button
@@ -460,7 +560,7 @@ const Login = () => {
                               Creating account...
                             </div>
                           ) : (
-                            'REGISTER'
+                            "REGISTER"
                           )}
                         </Button>
                       )}
@@ -470,36 +570,34 @@ const Login = () => {
               </div>
             )}
 
-            {/* Toggle Section - Always visible on the right */}
+            {/* Toggle Section */}
             <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8 h-[450px] flex flex-col">
-                              <h2 className="font-serif text-3xl font-bold text-deep-forest mb-6 text-center">
-                  {activeTab === 'login' ? 'REGISTER' : 'LOGIN'}
-                </h2>
-
+              <h2 className="text-3xl font-bold text-deep-forest mb-6 text-center">
+                {activeTab === "login" ? "REGISTER" : "LOGIN"}
+              </h2>
               <div className="text-center flex-1 flex flex-col justify-center">
                 <p className="text-forest text-sm mb-6 leading-relaxed">
-                  {activeTab === 'login'
+                  {activeTab === "login"
                     ? "Registering for this site allows you to access your order status and history. Just fill in the fields below, and we'll get a new account set up for you in no time. We will only ask you for information necessary to make the purchase process faster and easier."
-                    : "Already have an account? Sign in to access your order history and manage your account."
-                  }
+                    : "Already have an account? Sign in to access your order history and manage your account."}
                 </p>
               </div>
-
               <Button
-                onClick={() => handleTabChange(activeTab === 'login' ? 'register' : 'login')}
-                className={`w-full h-11 font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ${activeTab === 'login'
-                  ? 'bg-sage hover:bg-forest text-white'
-                  : 'bg-forest hover:bg-deep-forest text-white'
-                  }`}
+                onClick={() =>
+                  handleTabChange(activeTab === "login" ? "register" : "login")
+                }
+                className={`w-full h-11 font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ${
+                  activeTab === "login"
+                    ? "bg-sage hover:bg-forest text-white"
+                    : "bg-forest hover:bg-deep-forest text-white"
+                }`}
               >
-                {activeTab === 'login' ? 'REGISTER' : 'LOGIN'}
+                {activeTab === "login" ? "REGISTER" : "LOGIN"}
               </Button>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Footer */}
       <Footer />
     </div>
   );

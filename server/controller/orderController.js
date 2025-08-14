@@ -1,11 +1,9 @@
 const OrderModel = require("../models/orderModel");
 const CartModel = require("../models/cartProductModel");
-const ProductModel = require("../models/productModel");
 const CouponModel = require("../models/couponModel");
 const CouponUsageModel = require("../models/couponUsageModel");
 const UserReward = require("../models/userRewardModel");
 const User = require("../models/userModel");
-const WelcomeGift = require("../models/welcomeGiftModel");
 const asyncHandler = require("express-async-handler");
 
 /**

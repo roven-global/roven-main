@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "seed:welcome-gifts": "node utils/seedWelcomeGifts.js"
   },
   "keywords": [],
   "author": "",
@@ -25,6 +26,7 @@
     "express-rate-limit": "^8.0.1",
     "express-session": "^1.18.2",
     "helmet": "^8.1.0",
+    "hpp": "^0.2.3",
     "https": "^1.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.3",

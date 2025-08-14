@@ -42,26 +42,30 @@ const Returns = lazy(() => import("./pages/Returns"));
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { isOpen, openPopup, closePopup, checkEligibility, resetEligibilityCheck } = useRewardPopup();
+  const { isOpen, closePopup, checkEligibility, resetEligibilityCheck } =
+    useRewardPopup();
 
-  console.log('AppContent - isPopupOpen:', isOpen);
+  console.log("AppContent - isPopupOpen:", isOpen);
 
   // Check eligibility only when component mounts
   useEffect(() => {
-    checkEligibility();
+    checkEligibility(true);
   }, []); // Empty dependency array - only run once
 
   // Listen for logout events to reset eligibility check
   useEffect(() => {
     const handleResetEligibility = () => {
-      console.log('AppContent: Resetting eligibility check');
+      console.log("AppContent: Resetting eligibility check");
       resetEligibilityCheck();
     };
 
-    window.addEventListener('resetEligibilityCheck', handleResetEligibility);
+    window.addEventListener("resetEligibilityCheck", handleResetEligibility);
 
     return () => {
-      window.removeEventListener('resetEligibilityCheck', handleResetEligibility);
+      window.removeEventListener(
+        "resetEligibilityCheck",
+        handleResetEligibility
+      );
     };
   }, [resetEligibilityCheck]);
 
@@ -111,10 +115,7 @@ const AppContent = () => {
       </BrowserRouter>
 
       {/* Reward Popup for First-Time Visitors */}
-      <RewardPopup
-        isOpen={isOpen}
-        onClose={closePopup}
-      />
+      <RewardPopup isOpen={isOpen} onClose={closePopup} />
     </>
   );
 };

@@ -274,6 +274,10 @@ const SummaryApi = {
     url: "/api/welcome-gifts",
     method: "get",
   },
+  migrateAnonymousGift: {
+    url: "/api/welcome-gifts/migrate-anonymous",
+    method: "post",
+  },
   // User Reward endpoints
   claimReward: {
     url: "/api/user/claim-reward",

@@ -1,199 +1,153 @@
-// userController.js file
+// userController.js
+
 const UserModel = require("../models/userModel");
 const ProductModel = require("../models/productModel");
-const UserReward = require("../models/userRewardModel"); // Make sure this is imported
-const WelcomeGift = require("../models/welcomeGiftModel"); // And this one too
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const sendEmail = require("../config/sendEmail");
-const verifyEmailTemplate = require("../utils/verifyEmailTemplate");
 const generateAccessToken = require("../utils/generateAccessToken");
 const generateRefreshToken = require("../utils/generateRefreshToken");
 const uploadImageCloudinary = require("../utils/uploadImageCloudinary");
 const generateOTP = require("../utils/generateOTP");
 const forgotPasswordTemplate = require("../utils/forgotPasswordTemplate");
 const validator = require("validator");
-const xss = require("xss-clean/lib/xss");
 
-/**
-Registers a new user, sends verification email, and returns user info.
-@route POST /api/user/register
-*/
+// --- Helpers ---
+const sanitizeString = val => typeof val === 'string' ? val.trim() : '';
+const logDebug = (context, obj) => console.log(`[USER][DEBUG][${context}]`, obj);
+const logError = (context, msg) => console.error(`[USER][ERROR][${context}] ${msg}`);
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const mobileRegex = /^[6-9]\d{9}$/; // India-specific: 10 digits starting with 6-9
+
+const isEmail = (val) => emailRegex.test((val || '').trim());
+const isMobile = (val) => mobileRegex.test((val || '').trim());
+
+// ----- Registration -----
 const registerUser = asyncHandler(async (req, res) => {
-  if (!req.body || typeof req.body !== "object") {
-    return res.status(400).json({
-      success: false,
-      message:
-        "Invalid or missing request body. Please send JSON with name, email, and password.",
-    });
-  }
-  let { name, email, password } = req.body || {};
+  let { name, email, mobile, password, emailOrMobile } = req.body || {};
+  name = sanitizeString(name);
+  email = sanitizeString(email);
+  mobile = sanitizeString(mobile);
+  emailOrMobile = sanitizeString(emailOrMobile);
+  password = sanitizeString(password);
 
-  // Sanitize input
-  name = validator.trim(validator.escape(name || ""));
-  email = validator.normalizeEmail(email || "");
-  password = validator.trim(password || "");
+  logDebug("register--incoming", req.body);
 
-  // Validate input
-  if (!name || !email || !password) {
-    return res.status(400).json({
-      success: false,
-      message: "Please fill in all fields (name, email, password).",
-    });
-  }
-  if (!validator.isLength(name, { min: 2, max: 50 })) {
-    return res.status(400).json({ success: false, message: "Name must be 2-50 characters." });
-  }
-  if (!validator.isEmail(email)) {
-    return res.status(400).json({ success: false, message: "Invalid email address." });
-  }
-  if (!validator.isStrongPassword(password, { minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1 })) {
-    return res.status(400).json({ success: false, message: "Password must be at least 8 characters and include uppercase, lowercase, number, and symbol." });
+  if (!name)
+    return res.status(400).json({ message: "Name is required." });
+
+  // Auto-detect field
+  if (!email && !mobile && emailOrMobile) {
+    if (isEmail(emailOrMobile)) email = emailOrMobile;
+    else if (isMobile(emailOrMobile)) mobile = emailOrMobile;
+    else return res.status(400).json({ message: "Please provide a valid email or mobile number." });
+    logDebug("register--auto-detection", { email, mobile });
   }
 
-  // Check if user already exists
-  const user = await UserModel.findOne({ email });
-  if (user) {
-    return res.status(409).json({
-      success: false,
-      message:
-        "User already registered! Please login or use a different email.",
-    });
+  // Misplaced mobile in email field
+  if (email && isMobile(email)) {
+    mobile = email; email = undefined;
+    logDebug("register--fixed-mobile-in-email", { mobile });
   }
 
-  // Hash password
+  if (!email && !mobile)
+    return res.status(400).json({ message: "Email or mobile number is required." });
+
+  if (email && !isEmail(email))
+    return res.status(400).json({ message: `Invalid email format: ${email}` });
+
+  if (mobile && !isMobile(mobile))
+    return res.status(400).json({ message: `Invalid mobile number: ${mobile}` });
+
+  if (!password)
+    return res.status(400).json({ message: "Password is required." });
+
+  if (email) {
+    const existingEmail = await UserModel.findOne({ email });
+    if (existingEmail)
+      return res.status(400).json({ message: `This email address (${email}) is already registered.` });
+  }
+  if (mobile) {
+    const existingMobile = await UserModel.findOne({ mobile });
+    if (existingMobile)
+      return res.status(400).json({ message: `This mobile number (${mobile}) is already registered.` });
+  }
+
   const salt = await bcrypt.genSalt(10);
-  const hashPassword = await bcrypt.hash(password, salt);
-
-  const payload = {
-    name,
-    email,
-    password: hashPassword,
-  };
-
-  const newUser = new UserModel(payload);
-  await newUser.save();
+  const hashedPassword = await bcrypt.hash(password, salt);
 
   try {
-    const verifyEmailUrl = `${process.env.FRONTEND_URL}/verify-email?code=${newUser._id}`;
-    await sendEmail({
-      sendTo: email,
-      subject: "Verify your email from Roven Global",
-      html: verifyEmailTemplate({
-        name,
-        url: verifyEmailUrl,
-      }),
-    });
+    const newUser = await UserModel.create({ name, email, mobile, password: hashedPassword });
+    logDebug("register--success", { userId: newUser._id });
     return res.status(201).json({
       success: true,
-      message: "User registered successfully. Verification email sent.",
+      message: "User registered successfully",
       data: {
-        _id: newUser._id,
+        id: newUser._id,
         name: newUser.name,
-        email: newUser.email,
+        email: newUser.email || null,
+        mobile: newUser.mobile || null,
       },
     });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message:
-        "User registered, but failed to send verification email. Please try again later.",
-      error: err.message || err,
-    });
+    if (err.code === 11000 && err.keyValue) {
+      const field = Object.keys(err.keyValue)[0];
+      const value = err.keyValue[field];
+      logError("register--duplicate", `Duplicate ${field}: ${value}`);
+      return res.status(400).json({ message: `This ${field === 'email' ? 'email address' : 'mobile number'} (${value}) is already registered.` });
+    }
+    logError("register--unknown", err.message);
+    throw err;
   }
 });
 
-/**
-Verifies a user's email using a code.
-@route POST /api/user/verify-email
-*/
-const verifyEmail = asyncHandler(async (req, res) => {
-  if (!req.body || typeof req.body !== "object") {
-    return res
-      .status(400)
-      .json({ success: false, message: "Missing request body." });
-  }
-  let { code } = req.body || {};
-  code = validator.trim(validator.escape(code || ""));
-  if (!code) {
-    return res.status(400).json({ success: false, message: "Verification code is required." });
-  }
-  const user = await UserModel.findById(code);
-  if (!user) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid or expired verification code.",
-    });
-  }
-  if (user.verify_email) {
-    return res
-      .status(200)
-      .json({ success: true, message: "Email already verified." });
-  }
-  await UserModel.updateOne({ _id: code }, { verify_email: true });
-  return res.json({ success: true, message: "Email verified successfully." });
-});
-
+// ----- Login -----
 const cookiesOption = {
   httpOnly: true,
   secure: true,
   sameSite: "None",
 };
-/**
-Logs in a user and returns access and refresh tokens.
-@route POST /api/user/login
-*/
+
 const login = asyncHandler(async (req, res) => {
-  if (!req.body || typeof req.body !== "object") {
-    return res.status(400).json({
-      success: false,
-      message: "Please provide both email and password.",
-    });
-  }
-  let { email, password, anonymousId } = req.body || {};
-  email = validator.normalizeEmail(email || "");
-  password = validator.trim(password || "");
-  anonymousId = validator.trim(anonymousId || "");
+  let { email, mobile, password, emailOrMobile } = req.body || {};
+  email = sanitizeString(email);
+  mobile = sanitizeString(mobile);
+  emailOrMobile = sanitizeString(emailOrMobile);
+  password = sanitizeString(password);
 
-  if (!email || !password) {
-    return res.status(400).json({ success: false, message: "Please fill in all fields (email, password)." });
-  }
-  if (!validator.isEmail(email)) {
-    return res.status(400).json({ success: false, message: "Invalid email address." });
-  }
-  const user = await UserModel.findOne({ email });
-  if (!user) {
-    return res.status(400).json({
-      success: false,
-      message: "User not registered! Please register first.",
-    });
-  }
-  if (user.status !== "Active") {
-    return res.status(403).json({
-      success: false,
-      message: "Account not active. Please contact Admin.",
-    });
-  }
-  const checkPass = await bcrypt.compare(password, user.password);
-  if (!checkPass) {
-    return res.status(400).json({
-      success: false,
-      message: "Incorrect password! Please try again.",
-    });
+  logDebug("login--incoming", req.body);
+
+  if (!email && !mobile && emailOrMobile) {
+    if (isEmail(emailOrMobile)) email = emailOrMobile;
+    else if (isMobile(emailOrMobile)) mobile = emailOrMobile;
+    else return res.status(400).json({ message: "Please provide a valid email or mobile number." });
   }
 
-  // Handle anonymous gift migration
-  let giftMigrationResult = null;
-  if (anonymousId) {
-    try {
-      giftMigrationResult = await UserReward.migrateAnonymousGift(anonymousId, user._id);
-      console.log('Login: Gift migration result:', giftMigrationResult);
-    } catch (error) {
-      console.error('Login: Error during gift migration:', error);
-      // Don't fail login if gift migration fails
-    }
+  if (email && isMobile(email)) {
+    mobile = email; email = undefined;
   }
+
+  if (!email && !mobile)
+    return res.status(400).json({ message: "Email or mobile number is required." });
+  if (email && !isEmail(email))
+    return res.status(400).json({ message: `Invalid email format: ${email}` });
+  if (mobile && !isMobile(mobile))
+    return res.status(400).json({ message: `Invalid mobile number: ${mobile}` });
+  if (!password)
+    return res.status(400).json({ message: "Password is required." });
+
+  const user = await UserModel.findOne(email ? { email } : { mobile });
+  if (!user)
+    return res.status(400).json({ message: `No account found with this ${email ? "email address" : "mobile number"}.` });
+
+  if (user.status !== "Active")
+    return res.status(403).json({ message: "Account is not active. Please contact support." });
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch)
+    return res.status(400).json({ message: "Incorrect password. Please try again." });
 
   const accessToken = await generateAccessToken(user._id);
   const refreshToken = await generateRefreshToken(user._id);
@@ -201,132 +155,74 @@ const login = asyncHandler(async (req, res) => {
   res.cookie("accessToken", accessToken, cookiesOption);
   res.cookie("refreshToken", refreshToken, cookiesOption);
 
+  logDebug("login--success", { userId: user._id });
   return res.json({
     success: true,
     message: "Login successful.",
-    data: {
-      accessToken,
-      refreshToken,
-      giftMigration: giftMigrationResult ? {
-        migrated: true,
-        giftTitle: giftMigrationResult.rewardTitle,
-        giftText: giftMigrationResult.rewardText
-      } : null
-    },
+    data: { accessToken, refreshToken, userId: user._id },
   });
 });
 
-/**
-Logs out a user.
-@route POST /api/user/logout
-*/
+// ----- Logout -----
 const logout = asyncHandler(async (req, res) => {
   res.clearCookie("accessToken", cookiesOption);
   res.clearCookie("refreshToken", cookiesOption);
   return res.json({ success: true, message: "Logged out successfully." });
 });
 
-/**
-Uploads a user's avatar image to cloud storage and updates user profile.
-@route POST /api/user/upload-avatar
-*/
-const uploadAvatar = asyncHandler(async (req, res) => {
-  const userId = req.user?._id || req.userId; // Support both req.user and req.userId from auth middleware
-  const image = req.file;
-
-  if (!userId) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Unauthorized: User ID missing." });
-  }
-  if (!image) {
-    return res
-      .status(400)
-      .json({ success: false, message: "No image file uploaded." });
-  }
-
-  let upload;
-  try {
-    upload = await uploadImageCloudinary(image);
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Image upload failed.",
-      error: err.message,
-    });
-  }
-
-  const updateUser = await UserModel.findByIdAndUpdate(
-    userId,
-    { avatar: upload.url },
-    { new: true }
-  );
-
-  if (!updateUser) {
-    return res.status(404).json({ success: false, message: "User not found." });
-  }
-
-  return res.json({
-    success: true,
-    message: "Profile image uploaded successfully.",
-    data: { _id: userId, avatar: upload.url },
-  });
-});
-
-/**
-Updates user details (name, email, mobile, password).
-@route PUT /api/user/update-user
-*/
+// ----- Update User Details -----
 const updateUserDetails = asyncHandler(async (req, res) => {
-  const userId = req.user?._id || req.userId; // auth middleware
-  if (!userId) {
-    return res.status(401).json({
-      success: false,
-      message: "Unauthorized: User ID missing.",
-    });
-  }
-  if (!req.body || typeof req.body !== "object") {
-    return res.status(400).json({
-      success: false,
-      message: "Missing or invalid request body.",
-    });
-  }
-  const { name, email, mobile, phone, address, password } = req.body;
+  const userId = req.user?._id || req.userId;
+  if (!userId)
+    return res.status(401).json({ success: false, message: "Unauthorized: User ID missing." });
+
+  const { name, email, mobile, phone, address, password } = req.body || {};
+  logDebug("updateUser--incoming", req.body);
 
   let updateFields = {};
-  if (name) updateFields.name = name;
+  if (name && sanitizeString(name) !== "") updateFields.name = sanitizeString(name);
+
   if (email) {
-    // Check if email is already used by another user
-    const existing = await UserModel.findOne({ email });
+    const cleanEmail = sanitizeString(email);
+    if (!isEmail(cleanEmail))
+      return res.status(400).json({ message: `Invalid email format: ${cleanEmail}` });
+    const existing = await UserModel.findOne({ email: cleanEmail });
     if (existing && String(existing._id) !== String(userId)) {
-      return res
-        .status(409)
-        .json({
-          success: false,
-          message: "Email is already in use by another account.",
-        });
+      return res.status(409).json({
+        success: false,
+        message: `Email (${cleanEmail}) is already in use by another account.`,
+      });
     }
-    updateFields.email = email;
+    updateFields.email = cleanEmail;
   }
-  if (mobile) updateFields.mobile = mobile;
-  if (phone !== undefined) updateFields.phone = phone;
-  if (address !== undefined) updateFields.address = address;
+  if (mobile) {
+    const cleanMobile = sanitizeString(mobile);
+    if (!isMobile(cleanMobile))
+      return res.status(400).json({ message: `Invalid mobile number: ${cleanMobile}` });
+    const existingMobile = await UserModel.findOne({ mobile: cleanMobile });
+    if (existingMobile && String(existingMobile._id) !== String(userId)) {
+      return res.status(409).json({
+        success: false,
+        message: `Mobile number (${cleanMobile}) is already in use by another account.`,
+      });
+    }
+    updateFields.mobile = cleanMobile;
+  }
+  if (phone !== undefined) updateFields.phone = sanitizeString(phone);
+  if (address !== undefined) updateFields.address = sanitizeString(address);
+
   if (password) {
     const salt = await bcrypt.genSalt(10);
-    updateFields.password = await bcrypt.hash(password, salt);
+    updateFields.password = await bcrypt.hash(sanitizeString(password), salt);
   }
-  if (Object.keys(updateFields).length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: "No valid fields provided for update.",
-    });
-  }
-  const updateUser = await UserModel.findByIdAndUpdate(userId, updateFields, {
-    new: true,
-  }).select("-password");
-  if (!updateUser) {
+  if (Object.keys(updateFields).length === 0)
+    return res.status(400).json({ success: false, message: "No valid fields provided for update." });
+
+  const updateUser = await UserModel.findByIdAndUpdate(userId, updateFields, { new: true }).select("-password");
+  if (!updateUser)
     return res.status(404).json({ success: false, message: "User not found." });
-  }
+
+  logDebug("updateUser--success", updateFields);
   return res.json({
     success: true,
     message: "Updated user successfully.",
@@ -334,44 +230,82 @@ const updateUserDetails = asyncHandler(async (req, res) => {
   });
 });
 
-/**
-Handles forgot password functionality.
-@route POST /api/user/forgot-password
-*/
-const forgotPassword = asyncHandler(async (req, res) => {
-  const { email } = req.body || {};
-  if (!email) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Email is required." });
-  }
+// ----- Avatar Upload -----
+const uploadAvatar = asyncHandler(async (req, res) => {
+  const userId = req.user?._id || req.userId;
+  const image = req.file;
+  if (!userId)
+    return res.status(401).json({ success: false, message: "Unauthorized: User ID missing." });
+  if (!image)
+    return res.status(400).json({ success: false, message: "No image file uploaded." });
+
   try {
-    const user = await UserModel.findOne({ email });
-    // For security, always return success even if user not found
+    const upload = await uploadImageCloudinary(image);
+    const updateUser = await UserModel.findByIdAndUpdate(
+      userId,
+      { avatar: upload.url },
+      { new: true }
+    );
+    if (!updateUser)
+      return res.status(404).json({ success: false, message: "User not found." });
+
+    return res.json({
+      success: true,
+      message: "Profile image uploaded successfully.",
+      data: { _id: userId, avatar: upload.url },
+    });
+  } catch (err) {
+    logError("avatar-upload", err.message);
+    return res.status(500).json({
+      success: false,
+      message: "Image upload failed.",
+      error: err.message,
+    });
+  }
+});
+
+// ----- Forgot Password, OTP, Reset Password -----
+const forgotPassword = asyncHandler(async (req, res) => {
+  let email = sanitizeString(req.body.email);
+  let mobile = sanitizeString(req.body.mobile);
+
+  if (!email && !mobile)
+    return res.status(400).json({ success: false, message: "Email or mobile number is required." });
+
+  try {
+    const user = email ? await UserModel.findOne({ email }) : await UserModel.findOne({ mobile });
     if (!user) {
+      const field = email ? "email address" : "mobile number";
       return res.json({
         success: true,
-        message: "If the email exists, an OTP has been sent.",
+        message: `If the ${field} exists, an OTP has been sent.`,
       });
     }
     const otp = generateOTP();
-    const expireTime = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+    const expireTime = new Date(Date.now() + 15 * 60 * 1000);
 
     await UserModel.findByIdAndUpdate(user._id, {
       forgot_password_otp: otp,
       forgot_password_expiry: expireTime.toISOString(),
     });
 
-    await sendEmail({
-      sendTo: email,
-      subject: "Forgot password from Roven Global",
-      html: forgotPasswordTemplate({ name: user.name, otp }),
-    });
+    if (email) {
+      await sendEmail({
+        sendTo: email,
+        subject: "Forgot password - Roven Global",
+        html: forgotPasswordTemplate({ name: user.name, otp }),
+      });
+    } else if (mobile) {
+      logDebug("forgotPassword--smsOTP", `OTP for ${mobile}: ${otp}`);
+    }
+
+    const field = email ? "email address" : "mobile number";
     return res.json({
       success: true,
-      message: "If the email exists, an OTP has been sent.",
+      message: `If the ${field} exists, an OTP has been sent.`,
     });
   } catch (err) {
+    logError("forgotPassword", err.message);
     return res.status(500).json({
       success: false,
       message: "Failed to process forgot password request.",
@@ -380,41 +314,27 @@ const forgotPassword = asyncHandler(async (req, res) => {
   }
 });
 
-/**
-Verifies the OTP for forgot password functionality.
-@route POST /api/user/verify-forgot-password-otp
-*/
 const verifyForgotPasswordOtp = asyncHandler(async (req, res) => {
-  const { otp, email } = req.body || {};
-  if (!otp || !email) {
-    return res
-      .status(400)
-      .json({ success: false, message: "OTP and email are required." });
-  }
+  let otp = sanitizeString(req.body.otp);
+  let email = sanitizeString(req.body.email);
+  let mobile = sanitizeString(req.body.mobile);
 
-  const user = await UserModel.findOne({ email });
+  if (!otp || (!email && !mobile))
+    return res.status(400).json({ success: false, message: "OTP and email OR mobile are required." });
+
+  const user = email ? await UserModel.findOne({ email }) : await UserModel.findOne({ mobile });
   if (!user || !user.forgot_password_otp || !user.forgot_password_expiry) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid OTP or email." });
+    const field = email ? "email address" : "mobile number";
+    return res.status(400).json({ success: false, message: `Invalid OTP or ${field}.` });
   }
 
-  // Check if OTP matches
-  if (String(user.forgot_password_otp) !== String(otp)) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid OTP or email." });
-  }
+  if (String(user.forgot_password_otp) !== String(otp))
+    return res.status(400).json({ success: false, message: "Invalid OTP." });
 
-  // Check if OTP is expired
   const expireTime = new Date(user.forgot_password_expiry);
-  if (Date.now() > expireTime.getTime()) {
-    return res
-      .status(400)
-      .json({ success: false, message: "OTP has expired." });
-  }
+  if (Date.now() > expireTime.getTime())
+    return res.status(400).json({ success: false, message: "OTP has expired." });
 
-  // Optionally, clear OTP fields after successful verification
   await UserModel.findByIdAndUpdate(user._id, {
     forgot_password_otp: null,
     forgot_password_expiry: null,
@@ -423,33 +343,23 @@ const verifyForgotPasswordOtp = asyncHandler(async (req, res) => {
   return res.json({ success: true, message: "OTP verified successfully." });
 });
 
-/**
-Resets the user's password after OTP verification.
-@route POST /api/user/reset-password
-*/
 const resetPassword = asyncHandler(async (req, res) => {
-  const { newPassword, confirmPassword, email } = req.body || {};
+  let newPassword = sanitizeString(req.body.newPassword);
+  let confirmPassword = sanitizeString(req.body.confirmPassword);
+  let email = sanitizeString(req.body.email);
+  let mobile = sanitizeString(req.body.mobile);
 
-  if (!newPassword || !confirmPassword || !email) {
-    return res
-      .status(400)
-      .json({ success: false, message: "All fields are required." });
-  }
+  if (!newPassword || !confirmPassword || (!email && !mobile))
+    return res.status(400).json({ success: false, message: "All fields are required." });
 
-  if (newPassword !== confirmPassword) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Passwords do not match." });
-  }
+  if (newPassword !== confirmPassword)
+    return res.status(400).json({ success: false, message: "Passwords do not match." });
 
-  const user = await UserModel.findOne({ email });
+  const user = email ? await UserModel.findOne({ email }) : await UserModel.findOne({ mobile });
   if (!user) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Email is not available." });
+    const field = email ? "email address" : "mobile number";
+    return res.status(400).json({ success: false, message: `${field} is not available.` });
   }
-
-  // Prevent reusing the same password
   const isSame = await bcrypt.compare(newPassword, user.password);
   if (isSame) {
     return res.status(400).json({
@@ -457,7 +367,6 @@ const resetPassword = asyncHandler(async (req, res) => {
       message: "New password must be different from the old password.",
     });
   }
-
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(newPassword, salt);
 
@@ -470,62 +379,43 @@ const resetPassword = asyncHandler(async (req, res) => {
   return res.json({ success: true, message: "Password updated successfully." });
 });
 
-/**
-Handles refresh token logic: validates the refresh token and issues a new access token if valid.
-@route POST /api/user/refresh-token
-*/
+// ----- Refresh Token -----
 const refreshToken = asyncHandler(async (req, res) => {
   let token = req.cookies.refreshToken;
   if (!token && req.headers.authorization) {
     const parts = req.headers.authorization.split(" ");
-    if (parts.length === 2 && parts[0] === "Bearer") {
-      token = parts[1];
-    }
+    if (parts.length === 2 && parts[0] === "Bearer") token = parts[1];
   }
   token = validator.trim(token || "");
-  if (!token) {
+  if (!token)
     return res.status(401).json({ success: false, message: "Refresh token missing or invalid." });
-  }
 
   try {
-    // Verify the refresh token
     const payload = jwt.verify(token, process.env.SECRET_KEY_REFRESH_TOKEN);
-
-    // Issue a new access token
     const newAccessToken = await generateAccessToken(
       payload.userId || payload._id || payload.id
     );
-
-    // Set the new access token in cookie
     res.cookie("accessToken", newAccessToken, cookiesOption);
-
     return res.json({
       success: true,
       accessToken: newAccessToken,
       message: "New access token issued.",
     });
   } catch (err) {
-    return res
-      .status(401)
-      .json({
-        success: false,
-        message: "Invalid or expired refresh token.",
-        error: err.message,
-      });
+    logError("refreshToken", err.message);
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired refresh token.",
+      error: err.message,
+    });
   }
 });
 
-/**
-Returns the current user's details.
-@route GET /api/user/details
-*/
+// ----- Get User Details -----
 const getUserDetails = asyncHandler(async (req, res) => {
   const userId = req.user?._id || req.userId;
-  if (!userId) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Unauthorized: User ID missing." });
-  }
+  if (!userId)
+    return res.status(401).json({ success: false, message: "Unauthorized: User ID missing." });
 
   try {
     const user = await UserModel.findById(userId)
@@ -538,12 +428,12 @@ const getUserDetails = asyncHandler(async (req, res) => {
         }
       });
 
-    if (!user) {
+    if (!user)
       return res.status(404).json({ success: false, message: "User not found." });
-    }
 
     return res.json({ success: true, data: user });
   } catch (error) {
+    logError("getUserDetails", error.message);
     return res.status(500).json({
       success: false,
       message: "Error fetching user details",
@@ -552,24 +442,17 @@ const getUserDetails = asyncHandler(async (req, res) => {
   }
 });
 
-/**
-Returns user profile statistics.
-@route GET /api/user/profile/stats
-*/
+// ----- Profile Stats -----
 const getUserProfileStats = asyncHandler(async (req, res) => {
   const userId = req.user?._id || req.userId;
-  if (!userId) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Unauthorized: User ID missing." });
-  }
+  if (!userId)
+    return res.status(401).json({ success: false, message: "Unauthorized: User ID missing." });
 
   const user = await UserModel.findById(userId)
     .populate("orderHistory")
     .populate("shopping_cart");
-  if (!user) {
+  if (!user)
     return res.status(404).json({ success: false, message: "User not found." });
-  }
 
   const stats = {
     totalOrders: user.orderHistory?.length || 0,
@@ -579,45 +462,31 @@ const getUserProfileStats = asyncHandler(async (req, res) => {
     emailVerified: user.verify_email,
     accountStatus: user.status,
   };
-
   return res.json({ success: true, data: stats });
 });
 
-/**
-Toggles a product in the user's wishlist.
-@route POST /api/user/wishlist
-*/
+// ----- Wishlist -----
 const toggleWishlist = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
-  const { productId } = req.body;
+  const productId = sanitizeString(req.body.productId);
 
-  if (!userId) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Unauthorized: User ID missing." });
-  }
+  logDebug("wishlist--toggle--incoming", { userId, productId });
 
-  if (!productId) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Product ID is required." });
-  }
+  if (!userId)
+    return res.status(401).json({ success: false, message: "Unauthorized: User ID missing." });
+  if (!productId)
+    return res.status(400).json({ success: false, message: "Product ID is required." });
 
   const user = await UserModel.findById(userId);
-  if (!user) {
+  if (!user)
     return res.status(404).json({ success: false, message: "User not found." });
-  }
 
   const productExists = await ProductModel.findById(productId);
-  if (!productExists) {
-    return res
-      .status(404)
-      .json({ success: false, message: "Product not found." });
-  }
+  if (!productExists)
+    return res.status(404).json({ success: false, message: "Product not found." });
 
   const index = user.wishlist.indexOf(productId);
   if (index > -1) {
-    // Product is in wishlist, remove it
     user.wishlist.splice(index, 1);
     await user.save();
     return res.json({
@@ -626,7 +495,6 @@ const toggleWishlist = asyncHandler(async (req, res) => {
       wishlist: user.wishlist,
     });
   } else {
-    // Product is not in wishlist, add it
     user.wishlist.push(productId);
     await user.save();
     return res.json({
@@ -637,18 +505,10 @@ const toggleWishlist = asyncHandler(async (req, res) => {
   }
 });
 
-/**
-Retrieves the user's wishlist.
-@route GET /api/user/wishlist
-*/
 const getWishlist = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
-
-  if (!userId) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Unauthorized: User ID missing." });
-  }
+  if (!userId)
+    return res.status(401).json({ success: false, message: "Unauthorized: User ID missing." });
 
   const user = await UserModel.findById(userId).populate({
     path: "wishlist",
@@ -658,63 +518,43 @@ const getWishlist = asyncHandler(async (req, res) => {
       model: "Category",
     },
   });
-
-  if (!user) {
+  if (!user)
     return res.status(404).json({ success: false, message: "User not found." });
-  }
 
   return res.json({ success: true, wishlist: user.wishlist });
 });
 
-/**
-Marks a user's reward as claimed.
-@route POST /api/user/claim-reward
-*/
+// ----- Reward Claim/Use -----
 const claimReward = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
-  const { rewardId } = req.body;
+  const rewardId = sanitizeString(req.body.rewardId);
 
-  if (!userId) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Unauthorized: User ID missing." });
-  }
-
-  if (!rewardId) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Reward ID is required." });
-  }
+  if (!userId)
+    return res.status(401).json({ success: false, message: "Unauthorized: User ID missing." });
+  if (!rewardId)
+    return res.status(400).json({ success: false, message: "Reward ID is required." });
 
   try {
     const user = await UserModel.findById(userId);
-    if (!user) {
+    if (!user)
       return res.status(404).json({ success: false, message: "User not found." });
-    }
-
-    if (user.rewardClaimed) {
+    if (user.rewardClaimed)
       return res.status(400).json({
         success: false,
         message: "User has already claimed a reward."
       });
-    }
-
-    // Update user to mark reward as claimed
     const updatedUser = await UserModel.findByIdAndUpdate(
       userId,
-      {
-        rewardClaimed: true,
-        reward: rewardId
-      },
+      { rewardClaimed: true, reward: rewardId },
       { new: true }
     ).select("-password");
-
     return res.json({
       success: true,
       message: "Reward claimed successfully.",
       data: updatedUser
     });
   } catch (error) {
+    logError("claimReward", error.message);
     return res.status(500).json({
       success: false,
       message: "Error claiming reward",
@@ -723,52 +563,36 @@ const claimReward = asyncHandler(async (req, res) => {
   }
 });
 
-/**
-Marks a user's reward as used.
-@route POST /api/user/use-reward
-*/
 const useReward = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
-
-  if (!userId) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Unauthorized: User ID missing." });
-  }
-
+  if (!userId)
+    return res.status(401).json({ success: false, message: "Unauthorized: User ID missing." });
   try {
     const user = await UserModel.findById(userId);
-    if (!user) {
+    if (!user)
       return res.status(404).json({ success: false, message: "User not found." });
-    }
-
-    if (!user.rewardClaimed) {
+    if (!user.rewardClaimed)
       return res.status(400).json({
         success: false,
         message: "User has not claimed any reward yet."
       });
-    }
-
-    if (user.rewardUsed) {
+    if (user.rewardUsed)
       return res.status(400).json({
         success: false,
         message: "Reward has already been used."
       });
-    }
-
-    // Update user to mark reward as used
     const updatedUser = await UserModel.findByIdAndUpdate(
       userId,
       { rewardUsed: true },
       { new: true }
     ).select("-password");
-
     return res.json({
       success: true,
       message: "Reward used successfully.",
       data: updatedUser
     });
   } catch (error) {
+    logError("useReward", error.message);
     return res.status(500).json({
       success: false,
       message: "Error using reward",
@@ -779,7 +603,21 @@ const useReward = asyncHandler(async (req, res) => {
 
 module.exports = {
   registerUser,
-  verifyEmail,
+  verifyEmail: asyncHandler(async (req, res) => {
+    if (!req.body || typeof req.body !== "object")
+      return res.status(400).json({ success: false, message: "Missing request body." });
+    let { code } = req.body || {};
+    code = validator.trim(validator.escape(code || ""));
+    if (!code)
+      return res.status(400).json({ success: false, message: "Verification code is required." });
+    const user = await UserModel.findById(code);
+    if (!user)
+      return res.status(400).json({ success: false, message: "Invalid or expired verification code." });
+    if (user.verify_email)
+      return res.status(200).json({ success: true, message: "Email already verified." });
+    await UserModel.updateOne({ _id: code }, { verify_email: true });
+    return res.json({ success: true, message: "Email verified successfully." });
+  }),
   login,
   logout,
   uploadAvatar,

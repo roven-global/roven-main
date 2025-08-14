@@ -12,9 +12,12 @@ const userSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: [true, "Provide email"],
+      required: function () { return !this.mobile; },
       unique: true,
+      sparse: true,
       match: [emailRegex, "Please provide a valid email address"],
+      set: v => v === "" ? undefined : v,
+      default: undefined,
     },
     password: {
       type: String,
@@ -45,8 +48,13 @@ const userSchema = new mongoose.Schema(
       ref: "UserReward",
     },
     mobile: {
-      type: Number,
-      default: null,
+      type: String,
+      required: function () { return !this.email; },
+      unique: true,
+      sparse: true,
+      match: [/^[6-9]\d{9}$/, "Please provide a valid 10-digit Indian mobile number"],
+      set: v => v === "" ? undefined : v, 
+      default: undefined,
     },
     phone: {
       type: String,

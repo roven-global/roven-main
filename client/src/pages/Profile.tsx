@@ -11,7 +11,6 @@ import { User, Camera, Edit, Save, X, LogOut, Loader2 } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import ClaimedRewardDisplay from '@/components/ClaimedRewardDisplay';
-import RewardPopupTest from '@/components/RewardPopupTest';
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 import { toast } from '@/hooks/use-toast';
@@ -27,6 +26,7 @@ const Profile = () => {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
+    mobile: user?.mobile || '',
     phone: user?.phone || '',
   });
 
@@ -38,6 +38,7 @@ const Profile = () => {
     setFormData({
       name: user.name || '',
       email: user.email || '',
+      mobile: user.mobile || '',
       phone: user.phone || '',
     });
   }, [user, navigate]);
@@ -141,6 +142,7 @@ const Profile = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div><Label htmlFor="name">Full Name</Label><Input id="name" name="name" value={formData.name} onChange={handleInputChange} disabled={!editMode} className="border-warm-taupe focus:border-sage focus:ring-sage/20" /></div>
                 <div><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} disabled className="border-warm-taupe focus:border-sage focus:ring-sage/20" /></div>
+                <div><Label htmlFor="mobile">Mobile Number</Label><Input id="mobile" name="mobile" value={formData.mobile} onChange={handleInputChange} disabled className="border-warm-taupe focus:border-sage focus:ring-sage/20" /></div>
                 <div><Label htmlFor="phone">Phone Number</Label><Input id="phone" name="phone" value={formData.phone} onChange={handleInputChange} disabled={!editMode} className="border-warm-taupe focus:border-sage focus:ring-sage/20" /></div>
               </div>
 
@@ -163,7 +165,6 @@ const Profile = () => {
           <ClaimedRewardDisplay />
 
           {/* Test Component - Remove in production */}
-          <RewardPopupTest />
 
           <Card className="bg-white rounded-lg shadow-md mt-6 border border-warm-taupe/50">
             <CardContent className="p-6 flex items-center justify-between">
