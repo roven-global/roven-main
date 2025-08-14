@@ -18,16 +18,16 @@ const SummaryApi = {
     url: "/api/user/verify-forgot-password-otp",
     method: "post",
   },
+  reset_password: {
+    url: "/api/user/reset-password",
+    method: "post",
+  },
   verify_email: {
     url: "/api/user/verify-email",
     method: "post",
   },
   logout: {
     url: "/api/user/logout",
-    method: "post",
-  },
-  reset_password: {
-    url: "/api/user/reset-password",
     method: "post",
   },
   refreshToken: {

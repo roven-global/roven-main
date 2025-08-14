@@ -3,7 +3,7 @@ import React from "react";
 const Returns = () => {
   return (
     <div className="max-w-2xl mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold mb-4">Returns & Exchanges</h1>
+      <h1 className="font-serif text-3xl font-bold mb-4 text-deep-forest">Returns & Exchanges</h1>
       <p className="mb-4 text-muted-foreground">We want you to love your purchase! If you're not satisfied, here's how to return or exchange an item:</p>
       <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
         <li>Returns are accepted within 14 days of delivery.</li>

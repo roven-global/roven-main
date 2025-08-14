@@ -230,7 +230,7 @@ const ProductCard = ({
                     </div>
 
                     {/* Product Title */}
-                    <h3 className="font-playfair font-bold text-lg text-gray-900 mb-2 line-clamp-2 leading-tight flex-grow">
+                    <h3 className="font-serif font-bold text-lg text-gray-900 mb-2 line-clamp-2 leading-tight flex-grow">
                         {name}
                     </h3>
 
@@ -259,7 +259,7 @@ const ProductCard = ({
                             {variants && variants.length > 1 && (
                                 <span className="text-xs text-gray-500 font-medium">From</span>
                             )}
-                            <span className="font-playfair font-bold text-xl text-gray-900">
+                            <span className="font-serif font-bold text-xl text-gray-900">
                                 {formatRupees(getDisplayPrice())}
                             </span>
                             {getDisplayOriginalPrice() && (

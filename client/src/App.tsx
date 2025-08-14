@@ -38,7 +38,6 @@ const ContactUs = lazy(() => import("./pages/ContactUs"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const ShippingInfo = lazy(() => import("./pages/ShippingInfo"));
 const Returns = lazy(() => import("./pages/Returns"));
-const SizeGuide = lazy(() => import("./pages/SizeGuide"));
 
 const queryClient = new QueryClient();
 
@@ -89,7 +88,6 @@ const AppContent = () => {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/shipping-info" element={<ShippingInfo />} />
             <Route path="/returns" element={<Returns />} />
-            <Route path="/size-guide" element={<SizeGuide />} />
             <Route
               path="/admin"
               element={

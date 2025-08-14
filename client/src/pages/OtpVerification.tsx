@@ -17,6 +17,7 @@ const OtpVerification = () => {
   const [email] = useState(emailFromState);
   const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(''));
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -39,6 +40,27 @@ const OtpVerification = () => {
       if (idx < OTP_LENGTH - 1) {
         inputsRef.current[idx + 1]?.focus();
       }
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text/plain');
+    const numbers = pastedData.replace(/\D/g, '').split('').slice(0, OTP_LENGTH);
+
+    if (numbers.length > 0) {
+      const newOtp = [...otp];
+      numbers.forEach((num, idx) => {
+        if (idx < OTP_LENGTH) {
+          newOtp[idx] = num;
+        }
+      });
+      setOtp(newOtp);
+
+      // Focus on the next empty field or the last field
+      const nextEmptyIndex = newOtp.findIndex(val => val === '');
+      const focusIndex = nextEmptyIndex !== -1 ? nextEmptyIndex : OTP_LENGTH - 1;
+      inputsRef.current[focusIndex]?.focus();
     }
   };
 
@@ -78,13 +100,45 @@ const OtpVerification = () => {
     }
   };
 
+  const handleResend = async () => {
+    if (!email) {
+      toast({
+        title: "No email available",
+        description: "Please go back to forgot password page.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setResending(true);
+    try {
+      await Axios.post(SummaryApi.forgot_password.url, { email });
+      toast({
+        title: "OTP Resent",
+        description: "A new 6-digit code has been sent to your email.",
+      });
+      // Clear the OTP input fields
+      setOtp(Array(OTP_LENGTH).fill(''));
+      // Focus on the first input
+      inputsRef.current[0]?.focus();
+    } catch (err: any) {
+      toast({
+        title: "Resend Failed",
+        description: err.response?.data?.message || 'Failed to resend OTP. Please try again.',
+        variant: "destructive",
+      });
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-warm-cream">
       <Navigation />
       <div className="container mx-auto flex items-center justify-center py-24">
         <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe p-8 w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="font-playfair text-3xl font-bold text-deep-forest">Check Your Email</h1>
+            <h1 className="font-serif text-3xl font-bold text-deep-forest">Check Your Email</h1>
             <p className="text-forest mt-2">We've sent a 6-digit code to <span className="font-semibold text-sage">{email}</span>.</p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -99,6 +153,7 @@ const OtpVerification = () => {
                   value={digit}
                   onChange={e => handleChange(e, idx)}
                   onKeyDown={e => handleKeyDown(e, idx)}
+                  onPaste={handlePaste}
                   className="w-12 h-12 text-2xl text-center rounded-lg border-2 border-warm-taupe bg-white text-deep-forest focus:ring-2 focus:ring-sage focus:border-sage"
                   disabled={loading}
                   autoFocus={idx === 0}
@@ -110,7 +165,14 @@ const OtpVerification = () => {
             </Button>
           </form>
           <p className="text-center text-sm text-forest mt-6">
-            Didn't receive a code? <Link to="/forgot-password" className="font-semibold text-sage hover:underline">Resend</Link>
+            Didn't receive a code?             <button
+              type="button"
+              onClick={handleResend}
+              className="font-semibold text-sage hover:underline bg-transparent border-none cursor-pointer"
+              disabled={resending}
+            >
+              {resending ? 'Sending...' : 'Resend'}
+            </button>
           </p>
         </div>
       </div>

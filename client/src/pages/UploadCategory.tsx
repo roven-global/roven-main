@@ -198,7 +198,7 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="font-serif flex items-center gap-2">
             <ImageIcon className="h-5 w-5" />
             {editingCategory ? 'Edit Category' : 'Add New Category'}
           </DialogTitle>

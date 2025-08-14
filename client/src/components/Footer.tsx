@@ -8,7 +8,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <Link to="/" className="font-playfair text-3xl font-bold text-deep-forest mb-4 block hover:text-white transition-all duration-500 transform hover:scale-105">
+            <Link to="/" className="font-serif text-3xl font-bold text-deep-forest mb-4 block hover:text-white transition-all duration-500 transform hover:scale-105">
               Roven
             </Link>
             <p className="text-deep-forest mb-6 max-w-md leading-relaxed">
@@ -48,7 +48,6 @@ const Footer = () => {
               <li><Link to="/faq" className="text-deep-forest hover:text-white transition-all duration-300 hover:pl-2 block border-l-2 border-transparent hover:border-white/60 pl-2">FAQ</Link></li>
               <li><Link to="/shipping-info" className="text-deep-forest hover:text-white transition-all duration-300 hover:pl-2 block border-l-2 border-transparent hover:border-white/60 pl-2">Shipping Info</Link></li>
               <li><Link to="/returns" className="text-deep-forest hover:text-white transition-all duration-300 hover:pl-2 block border-l-2 border-transparent hover:border-white/60 pl-2">Returns</Link></li>
-              <li><Link to="/size-guide" className="text-deep-forest hover:text-white transition-all duration-300 hover:pl-2 block border-l-2 border-transparent hover:border-white/60 pl-2">Size Guide</Link></li>
             </ul>
           </div>
         </div>

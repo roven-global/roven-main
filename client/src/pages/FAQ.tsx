@@ -26,7 +26,7 @@ const faqs = [
 const FAQ = () => {
   return (
     <div className="max-w-2xl mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold mb-6">Frequently Asked Questions</h1>
+      <h1 className="font-serif text-3xl font-bold mb-6 text-deep-forest">Frequently Asked Questions</h1>
       <div className="space-y-6">
         {faqs.map((faq, idx) => (
           <div key={idx}>

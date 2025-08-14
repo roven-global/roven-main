@@ -303,7 +303,7 @@ const WelcomeGiftAdmin = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Welcome Gift Management</h1>
+          <h1 className="font-serif text-2xl font-bold text-deep-forest">Welcome Gift Management</h1>
           <p className="text-gray-600">Manage the 6 welcome gift options for first-time visitors</p>
         </div>
         <div className="flex gap-2">

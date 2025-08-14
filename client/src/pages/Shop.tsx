@@ -251,12 +251,12 @@ const Shop = () => {
   );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <Navigation />
 
-      <section className="relative bg-gradient-to-r from-sage/10 to-forest/10 py-20">
+      <section className="relative bg-gradient-to-br from-sage/10 via-forest/10 to-deep-forest/10 py-20">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="font-playfair text-5xl md:text-6xl font-bold text-deep-forest mb-6">
+          <h1 className="font-serif text-5xl md:text-6xl font-bold text-deep-forest mb-6">
             Shop Our Collection
           </h1>
           <p className="text-xl text-forest leading-relaxed">
@@ -265,12 +265,12 @@ const Shop = () => {
         </div>
       </section>
 
-      <section className="py-16">
+      <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
           <main className="w-full">
             <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
               <div>
-                <h2 className="text-3xl font-playfair font-bold text-deep-forest">
+                <h2 className="text-3xl font-serif font-bold text-deep-forest">
                   {activeCategory === 'all' ? 'Products' : categories.find(c => c._id === activeCategory)?.name || 'Products'}
                 </h2>
                 <p className="text-forest mt-1">
@@ -320,7 +320,7 @@ const Shop = () => {
             ) : error ? (
               <div className="text-center text-red-500 py-10">{error}</div>
             ) : computedProducts.length === 0 ? (
-              <div className="text-center text-forest py-20 rounded-lg bg-sage/10 border border-warm-taupe">
+              <div className="text-center text-forest py-20 rounded-lg bg-gradient-to-br from-sage/10 via-white to-sage/10 border border-warm-taupe">
                 <h3 className="text-2xl font-semibold mb-2 text-deep-forest">No Products Found</h3>
                 <p>Try adjusting your filters to find what you're looking for.</p>
               </div>

@@ -95,16 +95,16 @@ const Profile = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-warm-cream">
+    <div className="min-h-screen bg-background">
       <Navigation />
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
-            <h1 className="font-playfair text-4xl font-bold text-deep-forest">My Profile</h1>
+            <h1 className="font-serif text-4xl font-bold text-deep-forest">My Profile</h1>
             <p className="text-forest mt-2">Manage your account and personal information.</p>
           </div>
 
-          <Card className="bg-white rounded-lg shadow-md">
+          <Card className="bg-white rounded-lg shadow-md border border-warm-taupe/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-deep-forest">
                 <User /> Personal Information
@@ -126,10 +126,10 @@ const Profile = () => {
                 </div>
                 {avatarFile && (
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={handleAvatarUpload} disabled={loading} className="bg-forest text-white">
+                    <Button size="sm" onClick={handleAvatarUpload} disabled={loading} className="bg-sage hover:bg-forest text-white">
                       {loading ? <Loader2 className="animate-spin" /> : 'Upload'}
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => { setAvatarFile(null); setAvatarPreview(''); }}>
+                    <Button size="sm" variant="outline" onClick={() => { setAvatarFile(null); setAvatarPreview(''); }} className="border-warm-taupe text-forest hover:bg-sage/20">
                       Cancel
                     </Button>
                   </div>
@@ -139,20 +139,20 @@ const Profile = () => {
               <Separator className="bg-warm-taupe/50" />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div><Label htmlFor="name">Full Name</Label><Input id="name" name="name" value={formData.name} onChange={handleInputChange} disabled={!editMode} /></div>
-                <div><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} disabled /></div>
-                <div><Label htmlFor="phone">Phone Number</Label><Input id="phone" name="phone" value={formData.phone} onChange={handleInputChange} disabled={!editMode} /></div>
+                <div><Label htmlFor="name">Full Name</Label><Input id="name" name="name" value={formData.name} onChange={handleInputChange} disabled={!editMode} className="border-warm-taupe focus:border-sage focus:ring-sage/20" /></div>
+                <div><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} disabled className="border-warm-taupe focus:border-sage focus:ring-sage/20" /></div>
+                <div><Label htmlFor="phone">Phone Number</Label><Input id="phone" name="phone" value={formData.phone} onChange={handleInputChange} disabled={!editMode} className="border-warm-taupe focus:border-sage focus:ring-sage/20" /></div>
               </div>
 
               <div className="flex gap-4">
                 {!editMode ? (
-                  <Button onClick={() => setEditMode(true)} className="bg-sage text-white"><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>
+                  <Button onClick={() => setEditMode(true)} className="bg-sage hover:bg-forest text-white"><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>
                 ) : (
                   <>
-                    <Button onClick={handleProfileUpdate} disabled={loading} className="bg-forest text-white">
+                    <Button onClick={handleProfileUpdate} disabled={loading} className="bg-sage hover:bg-forest text-white">
                       {loading ? <Loader2 className="animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save
                     </Button>
-                    <Button variant="outline" onClick={() => setEditMode(false)}><X className="mr-2 h-4 w-4" /> Cancel</Button>
+                    <Button variant="outline" onClick={() => setEditMode(false)} className="border-warm-taupe text-forest hover:bg-sage/20"><X className="mr-2 h-4 w-4" /> Cancel</Button>
                   </>
                 )}
               </div>
@@ -165,7 +165,7 @@ const Profile = () => {
           {/* Test Component - Remove in production */}
           <RewardPopupTest />
 
-          <Card className="bg-white rounded-lg shadow-md mt-6">
+          <Card className="bg-white rounded-lg shadow-md mt-6 border border-warm-taupe/50">
             <CardContent className="p-6 flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-destructive">Logout</h3>

@@ -11,7 +11,7 @@ const Hero = () => {
 
           {/* Left Side: Text Content */}
           <div className="md:w-1/2 text-center md:text-left z-10 animate-fade-in-up">
-            <h1 className="font-playfair text-5xl md:text-7xl font-extrabold text-deep-forest mb-6 text-balance">
+            <h1 className="font-serif text-5xl md:text-7xl font-extrabold text-deep-forest mb-6 text-balance">
               Discover Your Natural Radiance
             </h1>
             <p className="text-lg text-forest mb-8 max-w-lg mx-auto md:mx-0 text-balance">

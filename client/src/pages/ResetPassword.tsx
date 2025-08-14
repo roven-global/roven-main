@@ -52,76 +52,103 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-warm-cream">
+    <div className="min-h-screen bg-background">
       <Navigation />
-      <div className="container mx-auto flex items-center justify-center py-24">
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md border border-warm-taupe"
-        >
-          <h2 className="text-3xl font-playfair font-bold mb-6 text-center text-deep-forest">
+
+      {/* Header Banner - Matching Login Page Design */}
+      <div className="relative bg-gradient-to-br from-sage/10 via-forest/10 to-deep-forest/10 py-24">
+        {/* Background Pattern */}
+        <div className="absolute inset-0">
+          <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-white/5 rounded-full blur-3xl"></div>
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 container mx-auto px-4 text-center">
+          <h1 className="font-serif text-5xl md:text-6xl font-bold text-deep-forest mb-4">
             Reset Password
-          </h2>
-          <p className="text-deep-forest/80 text-center mb-6">
-            Reset password for <span className="font-semibold text-forest">{email}</span>
-          </p>
-          {error && <p className="text-red-600 text-center mb-4 text-sm">{error}</p>}
-          {success && <p className="text-sage-dark text-center mb-4 text-sm">{success}</p>}
-          <div className="mb-5 relative">
-            <label className="block text-deep-forest/90 mb-1 font-medium" htmlFor="password">New Password</label>
-            <Input
-              id="password"
-              name="password"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="new-password"
-              required
-              className="bg-white border-warm-taupe focus:ring-sage-light focus:border-sage pr-10"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-9 text-warm-taupe hover:text-soft-bronze"
-              tabIndex={-1}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </button>
-          </div>
-          <div className="mb-6 relative">
-            <label className="block text-deep-forest/90 mb-1 font-medium" htmlFor="confirmPassword">Confirm Password</label>
-            <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type={showConfirm ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="new-password"
-              required
-              className="bg-white border-warm-taupe focus:ring-sage-light focus:border-sage pr-10"
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirm((prev) => !prev)}
-              className="absolute right-3 top-9 text-warm-taupe hover:text-soft-bronze"
-              tabIndex={-1}
-              aria-label={showConfirm ? 'Hide password' : 'Show password'}
-            >
-              {showConfirm ? <FaEyeSlash /> : <FaEye />}
-            </button>
-          </div>
-          <Button
-            type="submit"
-            className="w-full text-lg font-semibold bg-sage hover:bg-forest text-white rounded-lg transition-all duration-300"
-            disabled={loading}
-          >
-            {loading ? 'Resetting...' : 'Reset Password'}
-          </Button>
-        </form>
+          </h1>
+        </div>
       </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-md mx-auto">
+          <form
+            onSubmit={handleSubmit}
+            className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8"
+          >
+            <h2 className="font-serif text-3xl font-bold text-deep-forest mb-6 text-center">Reset Password</h2>
+            <p className="text-forest text-center mb-6">
+              Reset password for <span className="font-semibold text-deep-forest">{email}</span>
+            </p>
+            {error && <p className="text-red-600 text-center mb-4 text-sm">{error}</p>}
+            {success && <p className="text-sage text-center mb-4 text-sm">{success}</p>}
+            <div className="mb-5 relative">
+              <label className="block text-deep-forest mb-1 font-medium" htmlFor="password">New Password</label>
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="new-password"
+                required
+                className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-9 text-warm-taupe hover:text-soft-bronze transition-colors duration-200"
+                tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+            <div className="mb-6 relative">
+              <label className="block text-deep-forest mb-1 font-medium" htmlFor="confirmPassword">Confirm Password</label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirm ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="new-password"
+                required
+                className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm((prev) => !prev)}
+                className="absolute right-3 top-9 text-warm-taupe hover:text-soft-bronze transition-colors duration-200"
+                tabIndex={-1}
+                aria-label={showConfirm ? 'Hide password' : 'Show password'}
+              >
+                {showConfirm ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+            <Button
+              type="submit"
+              className="w-full h-11 bg-sage hover:bg-forest text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+              disabled={loading}
+            >
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Resetting...
+                </div>
+              ) : (
+                'Reset Password'
+              )}
+            </Button>
+          </form>
+        </div>
+      </div>
+
       <Footer />
     </div>
   );

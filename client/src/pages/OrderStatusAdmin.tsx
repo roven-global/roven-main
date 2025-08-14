@@ -24,7 +24,7 @@ const OrderStatusAdmin = () => {
 
   return (
     <div className="container mx-auto p-6 bg-warm-cream min-h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-deep-forest font-playfair capitalize">{status} Orders</h1>
+      <h1 className="font-serif text-3xl font-bold mb-6 text-deep-forest capitalize">{status} Orders</h1>
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-forest text-lg font-medium">Loading...</div>

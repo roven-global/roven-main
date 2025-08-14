@@ -112,124 +112,124 @@ const CategoryPage = () => {
       });
     }
   };
-  
+
   const handleBulkDelete = async () => {
     try {
-        const response = await Axios({
-            method: SummaryApi.bulkDeleteCategories.method,
-            url: SummaryApi.bulkDeleteCategories.url,
-            data: { ids: selectedCategories },
-        });
+      const response = await Axios({
+        method: SummaryApi.bulkDeleteCategories.method,
+        url: SummaryApi.bulkDeleteCategories.url,
+        data: { ids: selectedCategories },
+      });
 
-        if (response.data.success) {
-            toast({
-                title: "Success",
-                description: response.data.message,
-            });
-            setSelectedCategories([]);
-            fetchCategories();
-        }
-    } catch (error: any) {
-        console.error('Error bulk deleting categories:', error);
+      if (response.data.success) {
         toast({
-            title: "Error",
-            description: error.response?.data?.message || "Failed to delete categories",
-            variant: "destructive",
+          title: "Success",
+          description: response.data.message,
         });
+        setSelectedCategories([]);
+        fetchCategories();
+      }
+    } catch (error: any) {
+      console.error('Error bulk deleting categories:', error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to delete categories",
+        variant: "destructive",
+      });
     }
   };
 
   const filteredCategories = categories.filter(category => {
     const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterParent === 'all' || 
+    const matchesFilter = filterParent === 'all' ||
       (filterParent === 'main' && !category.parentCategory) ||
       (filterParent === 'sub' && category.parentCategory);
     return matchesSearch && matchesFilter;
   });
 
   const parentCategories = categories.filter(cat => !cat.parentCategory);
-  
+
   const handleSelectAll = (checked: boolean | 'indeterminate') => {
     if (checked === true) {
-        setSelectedCategories(filteredCategories.map(c => c._id));
+      setSelectedCategories(filteredCategories.map(c => c._id));
     } else {
-        setSelectedCategories([]);
+      setSelectedCategories([]);
     }
   };
 
   const handleSelectCategory = (categoryId: string, checked: boolean) => {
-    setSelectedCategories(prev => 
-        checked ? [...prev, categoryId] : prev.filter(id => id !== categoryId)
+    setSelectedCategories(prev =>
+      checked ? [...prev, categoryId] : prev.filter(id => id !== categoryId)
     );
   };
-  
+
   const renderCategoryRow = (category: Category, level: number) => (
     <React.Fragment key={category._id}>
-        <TableRow data-state={selectedCategories.includes(category._id) && "selected"}>
-            <TableCell style={{ paddingLeft: `${level * 1.5 + 1}rem` }}>
-                <Checkbox
-                    checked={selectedCategories.includes(category._id)}
-                    onCheckedChange={(checked) => handleSelectCategory(category._id, !!checked)}
-                    aria-label={`Select category ${category.name}`}
-                />
-            </TableCell>
-            <TableCell>
-              <div className="w-12 h-12 rounded-lg overflow-hidden border">
-                <img 
-                  src={category.image.url} 
-                  alt={category.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </TableCell>
-            <TableCell className="font-medium">{category.name}</TableCell>
-            <TableCell>
-              {category.parentCategory ? (
-                <Badge variant="outline">{category.parentCategory.name}</Badge>
-              ) : (
-                <Badge variant="secondary">Main Category</Badge>
-              )}
-            </TableCell>
-            <TableCell>
-              {new Date(category.createdAt).toLocaleDateString()}
-            </TableCell>
-            <TableCell>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEditCategory(category)}
-                >
-                  <Edit className="h-4 w-4" />
+      <TableRow data-state={selectedCategories.includes(category._id) && "selected"}>
+        <TableCell style={{ paddingLeft: `${level * 1.5 + 1}rem` }}>
+          <Checkbox
+            checked={selectedCategories.includes(category._id)}
+            onCheckedChange={(checked) => handleSelectCategory(category._id, !!checked)}
+            aria-label={`Select category ${category.name}`}
+          />
+        </TableCell>
+        <TableCell>
+          <div className="w-12 h-12 rounded-lg overflow-hidden border">
+            <img
+              src={category.image.url}
+              alt={category.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </TableCell>
+        <TableCell className="font-medium">{category.name}</TableCell>
+        <TableCell>
+          {category.parentCategory ? (
+            <Badge variant="outline">{category.parentCategory.name}</Badge>
+          ) : (
+            <Badge variant="secondary">Main Category</Badge>
+          )}
+        </TableCell>
+        <TableCell>
+          {new Date(category.createdAt).toLocaleDateString()}
+        </TableCell>
+        <TableCell>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleEditCategory(category)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Category</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete "{category.name}"? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={() => handleDeleteCategory(category._id)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </TableCell>
-        </TableRow>
-        {categories.filter(c => c.parentCategory?._id === category._id).map(subCat => renderCategoryRow(subCat, level + 1))}
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{category.name}"? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => handleDeleteCategory(category._id)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </TableCell>
+      </TableRow>
+      {categories.filter(c => c.parentCategory?._id === category._id).map(subCat => renderCategoryRow(subCat, level + 1))}
     </React.Fragment>
   );
 
@@ -237,7 +237,7 @@ const CategoryPage = () => {
     <>
       <div className="flex items-center justify-between space-y-2">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">
+          <h2 className="font-serif text-3xl font-bold tracking-tight text-deep-forest">
             Category Management
           </h2>
           <p className="text-muted-foreground">
@@ -263,35 +263,35 @@ const CategoryPage = () => {
                 Manage your product categories and their hierarchy
               </CardDescription>
             </div>
-             {selectedCategories.length > 0 && (
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">{selectedCategories.length} selected</span>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Selected
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This will permanently delete {selectedCategories.length} categories. This action cannot be undone.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={handleBulkDelete}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                    Delete
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
+            {selectedCategories.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">{selectedCategories.length} selected</span>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Selected
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete {selectedCategories.length} categories. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleBulkDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             )}
           </div>
           <div className="flex gap-4 items-center pt-4">
@@ -327,15 +327,15 @@ const CategoryPage = () => {
                 <TableRow>
                   <TableHead className="w-[60px]">
                     <Checkbox
-                         checked={
-                            selectedCategories.length > 0 && selectedCategories.length === filteredCategories.length
-                            ? true
-                            : selectedCategories.length > 0
+                      checked={
+                        selectedCategories.length > 0 && selectedCategories.length === filteredCategories.length
+                          ? true
+                          : selectedCategories.length > 0
                             ? 'indeterminate'
                             : false
-                        }
-                        onCheckedChange={handleSelectAll}
-                        aria-label="Select all"
+                      }
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all"
                     />
                   </TableHead>
                   <TableHead>Image</TableHead>
@@ -347,73 +347,73 @@ const CategoryPage = () => {
               </TableHeader>
               <TableBody>
                 {filterParent === 'all' && searchTerm.length === 0
-                    ? categories.filter(c => !c.parentCategory).map(cat => renderCategoryRow(cat, 0))
-                    : filteredCategories.map((category) => (
-                      <TableRow key={category._id} data-state={selectedCategories.includes(category._id) && "selected"}>
-                         <TableCell>
-                            <Checkbox
-                                checked={selectedCategories.includes(category._id)}
-                                onCheckedChange={(checked) => handleSelectCategory(category._id, !!checked)}
-                                aria-label={`Select category ${category.name}`}
-                            />
-                        </TableCell>
-                        <TableCell>
-                          <div className="w-12 h-12 rounded-lg overflow-hidden border">
-                            <img 
-                              src={category.image.url} 
-                              alt={category.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium">{category.name}</TableCell>
-                        <TableCell>
-                          {category.parentCategory ? (
-                            <Badge variant="outline">{category.parentCategory.name}</Badge>
-                          ) : (
-                            <Badge variant="secondary">Main Category</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {new Date(category.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditCategory(category)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Category</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete "{category.name}"? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    onClick={() => handleDeleteCategory(category._id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                  ? categories.filter(c => !c.parentCategory).map(cat => renderCategoryRow(cat, 0))
+                  : filteredCategories.map((category) => (
+                    <TableRow key={category._id} data-state={selectedCategories.includes(category._id) && "selected"}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedCategories.includes(category._id)}
+                          onCheckedChange={(checked) => handleSelectCategory(category._id, !!checked)}
+                          aria-label={`Select category ${category.name}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="w-12 h-12 rounded-lg overflow-hidden border">
+                          <img
+                            src={category.image.url}
+                            alt={category.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell>
+                        {category.parentCategory ? (
+                          <Badge variant="outline">{category.parentCategory.name}</Badge>
+                        ) : (
+                          <Badge variant="secondary">Main Category</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(category.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditCategory(category)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{category.name}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteCategory(category._id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           )}

@@ -52,7 +52,7 @@ const Categories = () => {
     <section id="categories" className="py-20 bg-gradient-to-br from-sage/10 via-forest/5 to-sage/10">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="font-playfair text-4xl md:text-5xl font-bold text-deep-forest mb-4">
+          <h2 className="font-serif text-4xl md:text-5xl font-bold text-deep-forest mb-4">
             Shop by Category
           </h2>
           <p className="text-forest text-lg max-w-2xl mx-auto text-balance">
@@ -85,7 +85,7 @@ const Categories = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-deep-forest/60 via-transparent to-transparent" />
                   </div>
                   <div className="p-6 bg-gradient-to-br from-white via-sage/5 to-white">
-                    <h3 className="font-playfair text-2xl font-bold text-deep-forest mb-1">
+                    <h3 className="font-serif text-2xl font-bold text-deep-forest mb-1">
                       {category.name}
                     </h3>
                     <p className="text-forest group-hover:text-gold-accent transition-colors duration-300">

@@ -57,7 +57,7 @@ const AdminOverview = () => {
   return (
     <div className="bg-warm-cream min-h-screen p-6">
       <div className="flex items-center justify-between space-y-2 mb-8">
-        <h2 className="text-3xl font-bold tracking-tight text-deep-forest font-playfair">Overview</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-deep-forest font-serif">Overview</h2>
       </div>
       <div className="container mx-auto">
         {loading ? (

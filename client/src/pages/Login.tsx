@@ -172,12 +172,12 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Navigation */}
       <Navigation />
 
       {/* Header Banner - Matching The Beer Beauty Design */}
-      <div className="relative bg-gradient-to-r from-sage to-forest py-24">
+      <div className="relative bg-gradient-to-br from-sage/10 via-forest/10 to-deep-forest/10 py-24">
         {/* Background Pattern */}
         <div className="absolute inset-0">
           <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
@@ -187,7 +187,7 @@ const Login = () => {
 
         {/* Content */}
         <div className="relative z-10 container mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
+          <h1 className="font-serif text-5xl md:text-6xl font-bold text-deep-forest mb-4">
             My Account
           </h1>
         </div>
@@ -200,8 +200,8 @@ const Login = () => {
 
             {/* Login Section - Only show when activeTab is 'login' */}
             {activeTab === 'login' && (
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 h-[450px] flex flex-col">
-                <h2 className="text-3xl font-bold text-deep-forest mb-6 text-center">LOGIN</h2>
+              <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8 h-[450px] flex flex-col">
+                <h2 className="font-serif text-3xl font-bold text-deep-forest mb-6 text-center">LOGIN</h2>
 
                 {loginError && (
                   <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -224,7 +224,7 @@ const Login = () => {
                               <Input
                                 placeholder="Enter your email"
                                 {...field}
-                                className="h-11 border-2 border-warm-taupe focus:border-sage-dark focus:ring-2 focus:ring-sage-light rounded-lg transition-all duration-200"
+                                className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200"
                               />
                             </FormControl>
                             <FormMessage />
@@ -246,7 +246,7 @@ const Login = () => {
                                   type={showPassword ? 'text' : 'password'}
                                   placeholder="Enter your password"
                                   {...field}
-                                  className="h-11 border-2 border-warm-taupe focus:border-sage-dark focus:ring-2 focus:ring-sage-light rounded-lg transition-all duration-200 pr-12"
+                                  className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200 pr-12"
                                 />
                                 <button
                                   type="button"
@@ -301,8 +301,8 @@ const Login = () => {
 
             {/* Register Section - Only show when activeTab is 'register' */}
             {activeTab === 'register' && (
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 h-[450px] flex flex-col">
-                <h2 className="text-3xl font-bold text-deep-forest mb-6 text-center">REGISTER</h2>
+              <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8 h-[450px] flex flex-col">
+                <h2 className="font-serif text-3xl font-bold text-deep-forest mb-6 text-center">REGISTER</h2>
 
 
                 {registerError && (
@@ -328,7 +328,7 @@ const Login = () => {
                                   <Input
                                     placeholder="Enter your full name"
                                     {...field}
-                                    className="h-11 border-2 border-warm-taupe focus:border-sage-dark focus:ring-2 focus:ring-sage-light rounded-lg transition-all duration-200"
+                                    className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200"
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -348,7 +348,7 @@ const Login = () => {
                                   <Input
                                     placeholder="Enter your email"
                                     {...field}
-                                    className="h-11 border-2 border-warm-taupe focus:border-sage-dark focus:ring-2 focus:ring-sage-light rounded-lg transition-all duration-200"
+                                    className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200"
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -374,12 +374,12 @@ const Login = () => {
                                       type={showPassword ? 'text' : 'password'}
                                       placeholder="Create a strong password"
                                       {...field}
-                                      className="h-11 border-2 border-warm-taupe focus:border-sage-dark focus:ring-2 focus:ring-sage-light rounded-lg transition-all duration-200 pr-12"
+                                      className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200 pr-12"
                                     />
                                     <button
                                       type="button"
                                       onClick={() => setShowPassword((prev) => !prev)}
-                                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-soft-bronze transition-colors duration-200"
+                                      className="absolute right-4 top-1/2 -translate-y-1/2 text-warm-taupe hover:text-soft-bronze transition-colors duration-200"
                                       tabIndex={-1}
                                     >
                                       {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
@@ -405,12 +405,12 @@ const Login = () => {
                                       type={showConfirmPassword ? 'text' : 'password'}
                                       placeholder="Confirm your password"
                                       {...field}
-                                      className="h-11 border-2 border-warm-taupe focus:border-sage-dark focus:ring-2 focus:ring-sage-light rounded-lg transition-all duration-200 pr-12"
+                                      className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200 pr-12"
                                     />
                                     <button
                                       type="button"
                                       onClick={() => setShowConfirmPassword((prev) => !prev)}
-                                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-soft-bronze transition-colors duration-200"
+                                      className="absolute right-4 top-1/2 -translate-y-1/2 text-warm-taupe hover:text-soft-bronze transition-colors duration-200"
                                       tabIndex={-1}
                                     >
                                       {showConfirmPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
@@ -471,10 +471,10 @@ const Login = () => {
             )}
 
             {/* Toggle Section - Always visible on the right */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 h-[450px] flex flex-col">
-              <h2 className="text-3xl font-bold text-deep-forest mb-6 text-center">
-                {activeTab === 'login' ? 'REGISTER' : 'LOGIN'}
-              </h2>
+            <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8 h-[450px] flex flex-col">
+                              <h2 className="font-serif text-3xl font-bold text-deep-forest mb-6 text-center">
+                  {activeTab === 'login' ? 'REGISTER' : 'LOGIN'}
+                </h2>
 
               <div className="text-center flex-1 flex flex-col justify-center">
                 <p className="text-forest text-sm mb-6 leading-relaxed">

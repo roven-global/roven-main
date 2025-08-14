@@ -94,7 +94,7 @@ const Wishlist = () => {
             <main className="flex-grow">
                 <section className="py-12 bg-white border-b border-warm-taupe/50">
                     <div className="container mx-auto px-4 text-center">
-                        <h1 className="font-playfair text-4xl md:text-5xl font-bold text-deep-forest">
+                        <h1 className="font-serif text-4xl md:text-5xl font-bold text-deep-forest">
                             My Wishlist
                         </h1>
                     </div>
@@ -140,7 +140,7 @@ const Wishlist = () => {
                         ) : (
                             <Card className="text-center py-20 bg-white shadow-md border-warm-taupe/50">
                                 <Heart className="mx-auto h-16 w-16 text-sage/50 mb-4" />
-                                <h3 className="text-2xl font-semibold mb-2 text-deep-forest font-playfair">Your Wishlist is Empty</h3>
+                                <h3 className="text-2xl font-semibold mb-2 text-deep-forest font-serif">Your Wishlist is Empty</h3>
                                 <p className="mb-6 text-forest">Looks like you haven't added anything yet.</p>
                                 <Button asChild size="lg" className="bg-sage text-white hover:bg-forest rounded-full">
                                     <Link to="/shop">Discover Products</Link>

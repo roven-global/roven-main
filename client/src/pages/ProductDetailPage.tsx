@@ -288,7 +288,7 @@ const ProductDetailPage = () => {
 
                     {/* Product Details */}
                     <div className="space-y-6">
-                        <h1 className="font-playfair text-4xl font-bold text-deep-forest">
+                        <h1 className="font-serif text-4xl font-bold text-deep-forest">
                             {product.name}
                         </h1>
                         {product.shortDescription && (
@@ -308,7 +308,7 @@ const ProductDetailPage = () => {
                             </span>
                         </div>
                         <div className="flex items-baseline gap-3">
-                            <span className="font-playfair text-4xl font-bold text-deep-forest">
+                            <span className="font-serif text-4xl font-bold text-deep-forest">
                                 {formatRupees(currentPrice)}
                             </span>
                             {originalPrice && (
@@ -398,7 +398,7 @@ const ProductDetailPage = () => {
                     {/* Description */}
                     <Card className="border-warm-taupe/30 bg-warm-cream/50">
                         <CardContent className="pt-6">
-                            <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">Description</h2>
+                            <h2 className="text-2xl font-serif font-bold text-deep-forest mb-4">Description</h2>
                             <p className="text-forest leading-relaxed">{product.description}</p>
                         </CardContent>
                     </Card>
@@ -407,7 +407,7 @@ const ProductDetailPage = () => {
                     {product.ingredients && product.ingredients.length > 0 && (
                         <Card className="border-warm-taupe/30 bg-warm-cream/50">
                             <CardContent className="pt-6">
-                                <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-6">Hero Ingredients</h2>
+                                <h2 className="text-2xl font-serif font-bold text-deep-forest mb-6">Hero Ingredients</h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {product.ingredients.map((ingredient: any, i: number) => (
                                         <div
@@ -446,7 +446,7 @@ const ProductDetailPage = () => {
                     {product.howToUse && product.howToUse.length > 0 && (
                         <Card className="border-warm-taupe/30 bg-warm-cream/50">
                             <CardContent className="pt-6">
-                                <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">How to Use</h2>
+                                <h2 className="text-2xl font-serif font-bold text-deep-forest mb-4">How to Use</h2>
                                 <ol className="list-decimal pl-5 space-y-2 text-forest leading-relaxed">
                                     {product.howToUse.map((step: string, i: number) => (
                                         <li key={i}>{step}</li>
@@ -460,7 +460,7 @@ const ProductDetailPage = () => {
                     {product.specifications?.suitableFor && product.specifications.suitableFor.length > 0 && (
                         <Card className="border-warm-taupe/30 bg-warm-cream/50">
                             <CardContent className="pt-6">
-                                <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">Suitable For</h2>
+                                <h2 className="text-2xl font-serif font-bold text-deep-forest mb-4">Suitable For</h2>
                                 <ul className="list-disc pl-5 space-y-2 text-forest leading-relaxed">
                                     {product.specifications.suitableFor.map((item: string, i: number) => (
                                         <li key={i}>{item}</li>
@@ -474,7 +474,7 @@ const ProductDetailPage = () => {
                     {product.benefits && product.benefits.length > 0 && (
                         <Card className="border-warm-taupe/30 bg-warm-cream/50">
                             <CardContent className="pt-6">
-                                <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">Benefits</h2>
+                                <h2 className="text-2xl font-serif font-bold text-deep-forest mb-4">Benefits</h2>
                                 <ul className="list-disc pl-5 space-y-2 text-forest leading-relaxed">
                                     {product.benefits.map((benefit, i) => (
                                         <li key={i}>{benefit}</li>
@@ -488,7 +488,7 @@ const ProductDetailPage = () => {
                     {product.specifications && Object.keys(product.specifications).length > 0 && (
                         <Card className="border-warm-taupe/30 bg-warm-cream/50">
                             <CardContent className="pt-6">
-                                <h2 className="text-2xl font-playfair font-bold text-deep-forest mb-4">Specifications</h2>
+                                <h2 className="text-2xl font-serif font-bold text-deep-forest mb-4">Specifications</h2>
                                 <dl className="divide-y divide-warm-taupe/20">
                                     {Object.entries(product.specifications).map(([key, value]) => (
                                         <div key={key} className="flex py-3">

@@ -20,6 +20,7 @@ export default {
 		extend: {
 			fontFamily: {
 				'sans': ['Inter', 'sans-serif'],
+				'serif': ['Merriweather', 'Source Serif Pro', 'Georgia', 'serif'],
 				'playfair': ['Playfair Display', 'serif'],
 			},
 			colors: {
