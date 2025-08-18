@@ -6,6 +6,7 @@ import React, {
   ReactNode,
   useCallback,
   useMemo,
+  useRef,
 } from "react";
 import { toast } from "@/hooks/use-toast";
 import Axios from "@/utils/Axios";
@@ -255,17 +256,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const applyCoupon = useCallback(
     async (couponCode: string): Promise<boolean> => {
-      // subtotal and cartItems are calculated below in useMemo,
-      // but they are simple state derivations and this is safe.
-      const currentSubtotal = cartItems.reduce((total, item) => {
-        const price = item.variant?.price || item.productId?.price || 0;
-        return total + price * item.quantity;
-      }, 0);
-
       try {
         const response = await Axios.post(SummaryApi.validateCoupon.url, {
           code: couponCode.toUpperCase(),
-          orderAmount: currentSubtotal,
           cartItems,
         });
 
@@ -633,12 +626,26 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     getClaimedRewardDetails,
   ]);
 
+  // Avoid revalidation loops: only re-validate when cart composition changes
+  const appliedCouponCodeRef = useRef<string | null>(null);
+  const lastCartKeyRef = useRef<string>("");
+
   useEffect(() => {
-    if (appliedCoupon && cartItems.length > 0) {
+    appliedCouponCodeRef.current = appliedCoupon?.coupon.code || null;
+  }, [appliedCoupon]);
+
+  useEffect(() => {
+    const cartKey = cartItems
+      .map((i) => `${i._id}:${i.quantity}:${i.variant?.sku || ""}`)
+      .join("|");
+    if (cartKey === lastCartKeyRef.current) return;
+    lastCartKeyRef.current = cartKey;
+
+    if (appliedCouponCodeRef.current && cartItems.length > 0) {
       console.log("CartContext: Auto-validating coupon due to cart change");
-      applyCoupon(appliedCoupon.coupon.code);
+      applyCoupon(appliedCouponCodeRef.current);
     }
-  }, [cartItems.length, appliedCoupon, applyCoupon]);
+  }, [cartItems, applyCoupon]);
 
   return (
     <CartContext.Provider

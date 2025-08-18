@@ -4,7 +4,56 @@ const CouponModel = require("../models/couponModel");
 const CouponUsageModel = require("../models/couponUsageModel");
 const UserReward = require("../models/userRewardModel");
 const User = require("../models/userModel");
+const ProductModel = require("../models/productModel");
 const asyncHandler = require("express-async-handler");
+
+// Validate and recompute cart items using server-side prices
+const validateCartItemsForQuote = async (cartItems) => {
+    if (!Array.isArray(cartItems)) return { isValid: false, message: "Invalid cart items format" };
+    const validatedItems = [];
+    let subtotal = 0;
+    for (const item of cartItems) {
+        try {
+            const productId = (item && item.productId && typeof item.productId === 'object')
+                ? (item.productId._id || item.productId.id)
+                : item?.productId;
+            if (!productId) continue;
+
+            const product = await ProductModel.findById(productId);
+            if (!product) continue;
+
+            let unitPrice = product.price;
+            if (item.variant?.sku && Array.isArray(product.variants)) {
+                const variant = product.variants.find(v => v.sku === item.variant.sku);
+                if (variant) unitPrice = variant.price;
+            }
+
+            const quantity = Math.max(1, Math.min(99, parseInt(item.quantity) || 1));
+            const lineTotal = unitPrice * quantity;
+            subtotal += lineTotal;
+            validatedItems.push({
+                productId: product._id,
+                name: product.name,
+                quantity,
+                unitPrice,
+                lineTotal,
+                variant: item.variant?.sku ? { sku: item.variant.sku } : undefined,
+            });
+        } catch (_) {
+            // skip invalid item
+        }
+    }
+    return {
+        isValid: validatedItems.length > 0,
+        items: validatedItems,
+        subtotal: Math.round(subtotal * 100) / 100,
+    };
+};
+
+const computeShipping = (subtotal, hasFreeShippingGift = false) => {
+    if (hasFreeShippingGift) return 0;
+    return subtotal > 499 ? 0 : 40;
+};
 
 /**
  * Create new order
@@ -54,14 +103,14 @@ const createOrder = asyncHandler(async (req, res) => {
     const subtotal = cartItems.reduce((acc, item) => acc + (item.productId.price * item.quantity), 0);
     const shippingCost = subtotal > 499 ? 0 : 40;
 
-    // Handle coupon discount
+    // Handle coupon discount on server as source of truth
     let discount = 0;
     let appliedCoupon = null;
 
     if (couponCode) {
         const coupon = await CouponModel.findOne({
-            code: couponCode.toUpperCase(),
-            isActive: true
+            code: String(couponCode).toUpperCase(),
+            isActive: true,
         });
 
         if (coupon && coupon.isValid) {
@@ -484,6 +533,100 @@ const getLifetimeSavings = asyncHandler(async (req, res) => {
     }
 });
 
+/**
+ * Quote current cart totals with server-side validation
+ * @route POST /api/order/quote
+ */
+const getOrderQuote = asyncHandler(async (req, res) => {
+    const { cartItems = [], couponCode, applyWelcomeGift } = req.body || {};
+
+    // Validate cart against server data
+    const { isValid, items, subtotal } = await validateCartItemsForQuote(cartItems);
+    if (!isValid) {
+        return res.status(400).json({ success: false, message: "Invalid cart items" });
+    }
+
+    // Determine if a free shipping welcome gift applies
+    let freeShippingGift = false;
+    let welcomeGiftDiscount = 0;
+    if (applyWelcomeGift && req.user) {
+        const user = await User.findById(req.user._id);
+        if (user?.rewardClaimed && !user?.rewardUsed) {
+            const userReward = await UserReward.findOne({ userId: req.user._id, isUsed: false }).populate('giftId');
+            if (userReward?.giftId) {
+                const gift = userReward.giftId;
+                if (gift.rewardType === 'free_shipping') {
+                    freeShippingGift = true;
+                } else {
+                    // Use model method if available
+                    const validation = gift.canBeApplied ? gift.canBeApplied(subtotal, items) : { canApply: false, discount: 0 };
+                    if (validation.canApply) {
+                        welcomeGiftDiscount = validation.discount || 0;
+                    }
+                }
+            }
+        }
+    }
+
+    // Shipping from server logic
+    const shippingCost = computeShipping(subtotal, freeShippingGift);
+
+    // Coupon handling on server
+    let couponDiscount = 0;
+    let coupon = null;
+    if (couponCode) {
+        const found = await CouponModel.findOne({ code: String(couponCode).toUpperCase(), isActive: true });
+        if (found && found.isValid) {
+            let userOrderCount = 0;
+            if (req.user) {
+                userOrderCount = await OrderModel.countDocuments({ user: req.user._id });
+            }
+            const canApply = found.canBeApplied(subtotal, req.user?._id, userOrderCount);
+            if (canApply.valid) {
+                if (req.user) {
+                    const canUserUse = await CouponUsageModel.canUserUseCoupon(found._id, req.user._id, found.perUserLimit);
+                    if (!canUserUse) {
+                        return res.status(400).json({ success: false, message: `You have already used this coupon ${found.perUserLimit} time(s)` });
+                    }
+                }
+                couponDiscount = found.calculateDiscount(subtotal);
+                coupon = {
+                    _id: found._id,
+                    code: found.code,
+                    name: found.name,
+                    description: found.description,
+                    type: found.type,
+                    value: found.value,
+                    maxDiscount: found.maxDiscount,
+                };
+            } else {
+                return res.status(400).json({ success: false, message: canApply.message });
+            }
+        } else {
+            return res.status(404).json({ success: false, message: "Invalid coupon code" });
+        }
+    }
+
+    const totalDiscount = Math.max(0, (couponDiscount || 0) + (welcomeGiftDiscount || 0));
+    const total = Math.max(0, subtotal + shippingCost - totalDiscount);
+
+    return res.json({
+        success: true,
+        data: {
+            items,
+            subtotal,
+            shippingCost,
+            discounts: {
+                coupon: couponDiscount,
+                welcomeGift: welcomeGiftDiscount,
+                total: totalDiscount,
+            },
+            coupon,
+            finalTotal: total,
+        },
+    });
+});
+
 module.exports = {
     createOrder,
     getUserOrders,
@@ -492,4 +635,5 @@ module.exports = {
     cancelOrder,
     getAllOrders,
     getLifetimeSavings,
+    getOrderQuote,
 };

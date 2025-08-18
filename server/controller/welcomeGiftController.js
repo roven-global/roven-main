@@ -30,7 +30,10 @@ const validateCartItems = async (cartItems) => {
   
   for (const item of cartItems) {
     try {
-      const product = await ProductModel.findById(item.productId || item.productId?._id);
+      const productId = (item && item.productId && typeof item.productId === 'object')
+        ? (item.productId._id || item.productId.id)
+        : item?.productId;
+      const product = await ProductModel.findById(productId);
       if (!product) continue;
       
       let actualPrice = product.price;
@@ -731,24 +734,16 @@ const getUserRewards = asyncHandler(async (req, res) => {
 // @route POST /api/welcome-gifts/validate-coupon
 // @access Private
 const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
-  try {
     const { couponCode, orderAmount, cartItems, anonymousId: bodyAnonymousId } = req.body;
     const clientIP = req.ip || req.connection?.remoteAddress || 'unknown';
 
     // Input validation
     if (!couponCode || typeof couponCode !== 'string') {
-      res.status(400);
-      throw new Error("Valid coupon code is required");
-    }
-
-    if (!orderAmount || orderAmount <= 0 || !Number.isFinite(orderAmount)) {
-      res.status(400);
-      throw new Error("Valid order amount is required");
+      return res.status(400).json({ success: false, message: "Valid coupon code is required" });
     }
 
     if (!Array.isArray(cartItems)) {
-      res.status(400);
-      throw new Error("Valid cart items are required");
+      return res.status(400).json({ success: false, message: "Valid cart items are required" });
     }
 
     // Validate and sanitize cart items server-side
@@ -764,8 +759,7 @@ const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
           hasVariant: !!i?.variant,
         })) : 'not-array'
       });
-      res.status(400);
-      throw new Error(cartValidation.message);
+      return res.status(400).json({ success: false, message: cartValidation.message });
     }
 
     const validatedCartItems = cartValidation.validatedItems;
@@ -774,15 +768,14 @@ const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
     const actualCartTotal = cartValidation.totalCartValue;
     
     // Security check: verify submitted order amount matches server calculation
-    if (Math.abs(actualCartTotal - orderAmount) > 1) { // Allow 1 rupee tolerance for rounding
+    if (orderAmount && Math.abs(actualCartTotal - orderAmount) > 1) { // Allow 1 rupee tolerance for rounding
       logSecurityEvent("CART_TOTAL_MISMATCH", {
-        userId: req.user._id,
+        userId: req.user?._id,
         submittedTotal: orderAmount,
         actualTotal: actualCartTotal,
         clientIP
       });
-      res.status(400);
-      throw new Error("Cart total mismatch. Please refresh and try again.");
+      // Soft-fail: proceed using server total for robustness
     }
 
     // Find gift by coupon code
@@ -794,17 +787,17 @@ const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
     if (!gift) {
       logSecurityEvent("INVALID_COUPON_ATTEMPT", { 
         couponCode: sanitizeString(couponCode), 
-        userId: req.user._id, 
+        userId: req.user?._id, 
         clientIP 
       });
-      res.status(404);
-      throw new Error("Invalid welcome gift coupon code");
+      return res.status(404).json({ success: false, message: "Invalid welcome gift coupon code" });
     }
 
     // Check if user has claimed this specific gift and if it's unused
     let userReward = await UserReward.findOne({
       userId: req.user._id,
-      giftId: gift._id
+      giftId: gift._id,
+      isUsed: false,
     });
 
     console.log('ValidateWelcomeGiftCoupon: Initial userReward lookup result:', {
@@ -820,43 +813,56 @@ const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
 
     if (!userReward) {
       console.log('ValidateWelcomeGiftCoupon: No userReward found for authenticated user', {
-        userId: req.user._id,
+        userId: req.user?._id,
         giftId: gift._id,
       });
       
       logSecurityEvent("UNCLAIMED_GIFT_USAGE_ATTEMPT", {
         giftId: gift._id,
-        userId: req.user._id,
+        userId: req.user?._id,
         clientIP
       });
-      
-      return res.status(400).json({
-        success: false,
-        message: "You have not claimed this welcome gift. Please claim a gift first.",
-        code: "UNCLAIMED_REWARD",
-        debug: {
-          hasAnonymousId: !!bodyAnonymousId,
-          userId: req.user._id,
-          giftId: gift._id
+      // Inline migration fallback: attach anonymous reward for this user if present
+      if (bodyAnonymousId) {
+        const anonymousReward = await UserReward.findOne({ anonymousId: bodyAnonymousId, isUsed: false });
+        if (anonymousReward) {
+          anonymousReward.userId = req.user._id;
+          anonymousReward.anonymousId = null;
+          await anonymousReward.save();
+          userReward = anonymousReward;
+          const User = require("../models/userModel");
+          await User.findByIdAndUpdate(req.user._id, { rewardClaimed: true, reward: anonymousReward.giftId });
+          logSecurityEvent("INLINE_GIFT_MIGRATION_SUCCESS", { userId: req.user._id, giftId: anonymousReward.giftId });
         }
-      });
+      }
+
+      if (!userReward) {
+        return res.status(400).json({
+          success: false,
+          message: "You have not claimed this welcome gift. Please claim a gift first.",
+          code: "UNCLAIMED_REWARD",
+          debug: {
+            hasAnonymousId: !!bodyAnonymousId,
+            userId: req.user?._id,
+            giftId: gift._id
+          }
+        });
+      }
     }
 
     if (userReward.isUsed) {
       logSecurityEvent("USED_GIFT_REUSE_ATTEMPT", {
         giftId: gift._id,
-        userId: req.user._id,
+        userId: req.user?._id,
         clientIP
       });
-      res.status(400);
-      throw new Error("This welcome gift has already been redeemed. Cannot use it again.");
+      return res.status(400).json({ success: false, message: "This welcome gift has already been redeemed. Cannot use it again." });
     }
 
     // Server-side discount calculation using validated data
     const validationResult = gift.canBeApplied(actualCartTotal, validatedCartItems);
     if (!validationResult.canApply) {
-      res.status(400);
-      throw new Error(validationResult.reason);
+      return res.status(400).json({ success: false, message: validationResult.reason });
     }
 
     // Calculate shipping discount for free shipping offers
@@ -866,8 +872,9 @@ const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
       shippingDiscount = actualCartTotal < 1000 ? 49 : 0;
     }
 
+    const serverTotal = actualCartTotal;
     const totalDiscount = validationResult.discount + shippingDiscount;
-    const finalAmount = Math.max(0, actualCartTotal - totalDiscount);
+    const finalAmount = Math.max(0, serverTotal - totalDiscount);
 
     logSecurityEvent("COUPON_VALIDATED_SUCCESS", {
       giftId: gift._id,
@@ -900,21 +907,11 @@ const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
       serverValidated: true // Flag to indicate server-side validation
     };
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: responseData,
       message: "Welcome gift coupon validated successfully"
     });
-  } catch (error) {
-    logSecurityEvent("COUPON_VALIDATION_ERROR", {
-      error: error.message,
-      stack: process.env.NODE_ENV === 'production' ? undefined : error.stack,
-      userId: req.user?._id,
-      clientIP: req.ip || req.connection?.remoteAddress || 'unknown',
-      requestBody: process.env.NODE_ENV === 'production' ? undefined : req.body
-    });
-    throw error;
-  }
 });
 
 // @desc Migrate anonymous welcome gift to authenticated user

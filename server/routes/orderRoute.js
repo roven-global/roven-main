@@ -10,6 +10,7 @@ const {
     cancelOrder,
     getAllOrders,
     getLifetimeSavings,
+    getOrderQuote,
 } = require("../controller/orderController");
 
 // Create new order (requires auth)
@@ -20,6 +21,9 @@ router.get("/user", auth, getUserOrders);
 
 // Get lifetime savings (requires auth)
 router.get("/lifetime-savings", auth, getLifetimeSavings);
+
+// Get server-authoritative order quote (requires auth)
+router.post("/quote", auth, getOrderQuote);
 
 // Admin routes (requires auth + admin) - must come before /:id routes
 router.get("/all", auth, adminOnly, getAllOrders);

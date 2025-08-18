@@ -208,6 +208,10 @@ const SummaryApi = {
     url: "/api/order/lifetime-savings",
     method: "get",
   },
+  getOrderQuote: {
+    url: "/api/order/quote",
+    method: "post",
+  },
   getOrderById: {
     url: "/api/order",
     method: "get",

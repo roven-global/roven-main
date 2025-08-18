@@ -1,7 +1,53 @@
 const CouponModel = require("../models/couponModel");
 const CouponUsageModel = require("../models/couponUsageModel");
 const OrderModel = require("../models/orderModel");
+const ProductModel = require("../models/productModel");
 const asyncHandler = require("express-async-handler");
+
+// Server-side cart validation (duplicated from welcome gift controller for now)
+const validateCartItems = async (cartItems) => {
+    if (!Array.isArray(cartItems)) return { isValid: false, message: "Invalid cart items format" };
+
+    const validatedItems = [];
+    let totalCartValue = 0;
+
+    for (const item of cartItems) {
+        try {
+            const productId = (item && item.productId && typeof item.productId === 'object')
+                ? (item.productId._id || item.productId.id)
+                : item?.productId;
+            if (!productId) continue;
+
+            const product = await ProductModel.findById(productId);
+            if (!product) continue;
+
+            let actualPrice = product.price;
+            if (item.variant?.sku && Array.isArray(product.variants) && product.variants.length > 0) {
+                const variant = product.variants.find(v => v.sku === item.variant.sku);
+                if (variant) actualPrice = variant.price;
+            }
+
+            const quantity = Math.max(1, Math.min(99, parseInt(item.quantity) || 1));
+            const itemTotal = actualPrice * quantity;
+            totalCartValue += itemTotal;
+
+            validatedItems.push({
+                ...item,
+                actualPrice,
+                quantity,
+                itemTotal
+            });
+        } catch (error) {
+            // skip invalid item
+        }
+    }
+
+    return {
+        isValid: validatedItems.length > 0,
+        validatedItems,
+        totalCartValue: Math.round(totalCartValue * 100) / 100,
+    };
+};
 
 /**
  * Validate coupon code
@@ -10,17 +56,43 @@ const asyncHandler = require("express-async-handler");
 const validateCoupon = asyncHandler(async (req, res) => {
     const { code, orderAmount, cartItems } = req.body;
 
-    if (!code || !orderAmount) {
+    if (!code) {
         return res.status(400).json({
             success: false,
-            message: "Coupon code and order amount are required",
+            message: "Coupon code is required",
+        });
+    }
+
+    if (!Array.isArray(cartItems)) {
+        return res.status(400).json({
+            success: false,
+            message: "Valid cart items are required",
+        });
+    }
+
+    // Validate and recompute cart on server
+    const cartValidation = await validateCartItems(cartItems);
+    if (!cartValidation.isValid) {
+        return res.status(400).json({
+            success: false,
+            message: cartValidation.message || "Invalid cart",
+        });
+    }
+
+    const actualCartTotal = cartValidation.totalCartValue;
+
+    // Optional: verify submitted order amount matches server calc (tolerance 1)
+    if (orderAmount && Math.abs(actualCartTotal - orderAmount) > 1) {
+        return res.status(400).json({
+            success: false,
+            message: "Cart total mismatch. Please refresh and try again.",
         });
     }
 
     // Find the coupon
     const coupon = await CouponModel.findOne({
-        code: code.toUpperCase(),
-        isActive: true
+        code: String(code).toUpperCase(),
+        isActive: true,
     });
 
     if (!coupon) {
@@ -44,8 +116,8 @@ const validateCoupon = asyncHandler(async (req, res) => {
         userOrderCount = await OrderModel.countDocuments({ user: req.user._id });
     }
 
-    // Check if coupon can be applied
-    const canBeApplied = coupon.canBeApplied(orderAmount, req.user?._id, userOrderCount);
+    // Check if coupon can be applied using server total
+    const canBeApplied = coupon.canBeApplied(actualCartTotal, req.user?._id, userOrderCount);
     if (!canBeApplied.valid) {
         return res.status(400).json({
             success: false,
@@ -68,8 +140,8 @@ const validateCoupon = asyncHandler(async (req, res) => {
         }
     }
 
-    // Calculate discount
-    const discountAmount = coupon.calculateDiscount(orderAmount);
+    // Calculate discount based on server total
+    const discountAmount = coupon.calculateDiscount(actualCartTotal);
 
     return res.json({
         success: true,
@@ -85,7 +157,7 @@ const validateCoupon = asyncHandler(async (req, res) => {
                 maxDiscount: coupon.maxDiscount,
             },
             discountAmount,
-            finalAmount: orderAmount - discountAmount,
+            finalAmount: Math.max(0, actualCartTotal - discountAmount),
         },
     });
 });
