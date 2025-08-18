@@ -524,29 +524,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   }, [cartItems]);
 
-  const calculateBogoDiscount = useCallback((items: CartItem[]): number => {
-    if (!Array.isArray(items) || items.length === 0) return 0;
-    const normalized = items.map((item) => {
-      const productId = item.productId?._id as string;
-      const price = item.variant?.price ?? item.productId?.price ?? 0;
-      const quantity = Number.isFinite(item.quantity) ? item.quantity : 1;
-      return { productId, price, quantity };
-    });
-    const groups: Record<string, { price: number; quantity: number }> = {};
-    normalized.forEach((it) => {
-      if (!groups[it.productId])
-        groups[it.productId] = { price: it.price, quantity: 0 };
-      groups[it.productId].quantity += it.quantity;
-      if (it.price > groups[it.productId].price)
-        groups[it.productId].price = it.price;
-    });
-    let totalDiscount = 0;
-    Object.values(groups).forEach((group) => {
-      const pairs = Math.floor(group.quantity / 2);
-      totalDiscount += pairs * group.price;
-    });
-    return Math.max(0, Math.round(totalDiscount * 100) / 100);
-  }, []);
+  // All welcome gift calculations are handled on the server
 
   const totalSavings = useMemo(() => {
     const couponSavings = appliedCoupon?.discountAmount || 0;

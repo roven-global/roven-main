@@ -50,18 +50,6 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
           }
         }
 
-        // 2. If no reward from backend OR user is a guest, fall back to localStorage.
-        if (!rewardData) {
-          const storedReward = localStorage.getItem("claimedRewardDetails");
-          if (storedReward) {
-            try {
-              rewardData = JSON.parse(storedReward);
-            } catch (e) {
-              console.error("Error parsing stored reward from localStorage", e);
-            }
-          }
-        }
-
         // 3. If any reward is found, set the state.
         if (rewardData) {
           setUserReward(rewardData);
