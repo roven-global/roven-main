@@ -946,27 +946,26 @@ const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
 // @route POST /api/welcome-gifts/migrate-anonymous
 // @access Private
 const migrateAnonymousGift = asyncHandler(async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
     if (!req.user) {
-      await session.abortTransaction();
-      res.status(401);
-      throw new Error("User must be logged in to migrate gifts");
+      return res.status(401).json({
+        success: false,
+        message: "User must be logged in to migrate gifts"
+      });
     }
 
     const { anonymousId } = req.body;
     const clientIP = req.ip || req.connection?.remoteAddress || 'unknown';
 
     if (!anonymousId) {
-      await session.abortTransaction();
       logSecurityEvent("MISSING_ANONYMOUS_ID", { 
         userId: req.user._id, 
         clientIP 
       });
-      res.status(400);
-      throw new Error("Anonymous ID is required");
+      return res.status(400).json({
+        success: false,
+        message: "Anonymous ID is required"
+      });
     }
     
     // Validate anonymous ID with detailed logging
@@ -979,129 +978,119 @@ const migrateAnonymousGift = asyncHandler(async (req, res) => {
     });
     
     if (!isValidAnonymousId) {
-      await session.abortTransaction();
       logSecurityEvent("INVALID_MIGRATION_ATTEMPT", { 
         userId: req.user._id, 
         anonymousId, 
         clientIP 
       });
-      res.status(400);
-      throw new Error("Invalid anonymous ID. Please refresh and try again.");
-    }
-
-    // First, let's check what rewards exist for this user and anonymousId
-    const existingUserReward = await UserReward.findOne({ userId: req.user._id });
-    const anonymousRewards = await UserReward.find({ anonymousId });
-    const unusedAnonymousRewards = await UserReward.find({ anonymousId, isUsed: false });
-    
-    console.log('Migration Debug:', {
-      userId: req.user._id,
-      anonymousId,
-      anonymousIdLength: anonymousId?.length,
-      anonymousIdParts: anonymousId?.split('-')?.length,
-      existingUserReward: !!existingUserReward,
-      anonymousRewardsCount: anonymousRewards.length,
-      unusedAnonymousRewardsCount: unusedAnonymousRewards.length,
-      anonymousRewards: anonymousRewards.map(r => ({ 
-        id: r._id, 
-        isUsed: r.isUsed, 
-        giftId: r.giftId,
-        rewardTitle: r.rewardTitle,
-        storedAnonymousId: r.anonymousId,
-        storedAnonymousIdLength: r.anonymousId?.length
-      }))
-    });
-    
-    // Also check for any rewards with similar anonymous IDs (for debugging)
-    if (anonymousRewards.length === 0 && anonymousId) {
-      // Try to find rewards with similar anonymous IDs
-      const similarRewards = await UserReward.find({
-        anonymousId: { $regex: anonymousId.substring(0, 20) }
-      });
-      console.log('Similar anonymous IDs found:', similarRewards.map(r => ({
-        id: r._id,
-        anonymousId: r.anonymousId,
-        anonymousIdLength: r.anonymousId?.length
-      })));
-      
-      // Also try to find any rewards that might have been stored with a different format
-      const allAnonymousRewards = await UserReward.find({
-        anonymousId: { $exists: true, $ne: null }
-      });
-      console.log('All anonymous rewards in database:', allAnonymousRewards.map(r => ({
-        id: r._id,
-        anonymousId: r.anonymousId,
-        anonymousIdLength: r.anonymousId?.length,
-        createdAt: r.createdAt
-      })));
-    }
-
-    // Check if migration is possible with atomic operations
-    const canMigrate = await UserReward.canMigrateAnonymousGift(anonymousId, req.user._id, session);
-    if (!canMigrate) {
-      await session.abortTransaction();
-      
-      if (existingUserReward) {
-        console.log('Migration not needed: User already has a reward', {
-          userId: req.user._id,
-          existingRewardId: existingUserReward._id
-        });
-      } else {
-        console.log('Migration not possible: No anonymous gift found for migration', {
-          userId: req.user._id,
-          anonymousId,
-          anonymousRewardsFound: anonymousRewards.length,
-          unusedRewardsFound: unusedAnonymousRewards.length
-        });
-      }
-      
-      // Return success to prevent frontend errors for legitimate cases
-      return res.status(200).json({
-        success: true,
-        data: {
-          message: "No migration needed - user already has a gift or no anonymous gift found",
-          migrated: false,
-          userHasReward: !!existingUserReward
-        },
-        message: "Migration check completed successfully"
+      return res.status(400).json({
+        success: false,
+        message: "Invalid anonymous ID. Please refresh and try again."
       });
     }
 
-    // Perform atomic migration
-    const migratedGift = await UserReward.migrateAnonymousGift(anonymousId, req.user._id, session);
-    if (migratedGift) {
-      // Update user's rewardClaimed status atomically
-      const User = require("../models/userModel");
-      await User.findByIdAndUpdate(req.user._id, {
-        rewardClaimed: true,
-        reward: migratedGift.giftId
-      }, { session });
-
-      await session.commitTransaction();
-
-      logSecurityEvent("GIFT_MIGRATED_SUCCESS", {
+    const result = await executeWithOptionalTransaction(async (session) => {
+      // First, let's check what rewards exist for this user and anonymousId
+      const existingUserReward = session 
+        ? await UserReward.findOne({ userId: req.user._id }).session(session)
+        : await UserReward.findOne({ userId: req.user._id });
+        
+      const anonymousRewards = session
+        ? await UserReward.find({ anonymousId }).session(session)
+        : await UserReward.find({ anonymousId });
+        
+      const unusedAnonymousRewards = session
+        ? await UserReward.find({ anonymousId, isUsed: false }).session(session)
+        : await UserReward.find({ anonymousId, isUsed: false });
+      
+      console.log('Migration Debug:', {
         userId: req.user._id,
         anonymousId,
-        giftId: migratedGift.giftId,
-        clientIP
+        anonymousIdLength: anonymousId?.length,
+        anonymousIdParts: anonymousId?.split('-')?.length,
+        existingUserReward: !!existingUserReward,
+        anonymousRewardsCount: anonymousRewards.length,
+        unusedAnonymousRewardsCount: unusedAnonymousRewards.length,
+        anonymousRewards: anonymousRewards.map(r => ({ 
+          id: r._id, 
+          isUsed: r.isUsed, 
+          giftId: r.giftId,
+          rewardTitle: r.rewardTitle,
+          storedAnonymousId: r.anonymousId,
+          storedAnonymousIdLength: r.anonymousId?.length
+        }))
       });
+      
+      // Check if migration is possible with atomic operations
+      const canMigrate = session
+        ? await UserReward.canMigrateAnonymousGift(anonymousId, req.user._id, session)
+        : await UserReward.canMigrateAnonymousGift(anonymousId, req.user._id);
+        
+      if (!canMigrate) {
+        if (existingUserReward) {
+          console.log('Migration not needed: User already has a reward', {
+            userId: req.user._id,
+            existingRewardId: existingUserReward._id
+          });
+        } else {
+          console.log('Migration not possible: No anonymous gift found for migration', {
+            userId: req.user._id,
+            anonymousId,
+            anonymousRewardsFound: anonymousRewards.length,
+            unusedRewardsFound: unusedAnonymousRewards.length
+          });
+        }
+        
+        return {
+          success: true,
+          data: {
+            message: "No migration needed - user already has a gift or no anonymous gift found",
+            migrated: false,
+            userHasReward: !!existingUserReward
+          }
+        };
+      }
 
-      res.status(200).json({
-        success: true,
-        data: {
-          migratedGift,
-          message: "Anonymous welcome gift migrated successfully",
-          migrated: true
-        },
-        message: "Welcome gift migrated successfully"
-      });
-    } else {
-      await session.abortTransaction();
-      res.status(400);
-      throw new Error("Migration failed or user already has a gift");
-    }
+      // Perform atomic migration
+      const migratedGift = session
+        ? await UserReward.migrateAnonymousGift(anonymousId, req.user._id, session)
+        : await UserReward.migrateAnonymousGift(anonymousId, req.user._id);
+        
+      if (migratedGift) {
+        // Update user's rewardClaimed status atomically
+        const User = require("../models/userModel");
+        const updateOptions = session ? { session } : {};
+        await User.findByIdAndUpdate(req.user._id, {
+          rewardClaimed: true,
+          reward: migratedGift.giftId
+        }, updateOptions);
+
+        logSecurityEvent("GIFT_MIGRATED_SUCCESS", {
+          userId: req.user._id,
+          anonymousId,
+          giftId: migratedGift.giftId,
+          clientIP
+        });
+
+        return {
+          success: true,
+          data: {
+            migratedGift,
+            message: "Anonymous welcome gift migrated successfully",
+            migrated: true
+          }
+        };
+      } else {
+        throw new Error("Migration failed or user already has a gift");
+      }
+    });
+
+    res.status(200).json({
+      success: result.success,
+      data: result.data,
+      message: result.data.message || "Migration handled"
+    });
   } catch (error) {
-    await session.abortTransaction();
     logSecurityEvent("MIGRATION_ERROR", {
       error: error.message,
       stack: process.env.NODE_ENV === 'production' ? undefined : error.stack,
@@ -1117,8 +1106,6 @@ const migrateAnonymousGift = asyncHandler(async (req, res) => {
       },
       message: "Migration handled"
     });
-  } finally {
-    session.endSession();
   }
 });
 
