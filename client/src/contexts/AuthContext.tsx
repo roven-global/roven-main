@@ -1,8 +1,14 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import Axios from '@/utils/Axios';
-import SummaryApi from '@/common/summaryApi';
-import { useCart } from './CartContext'; // Import useCart
-import { useGuest } from './GuestContext'; // Import useGuest
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import Axios from "@/utils/Axios";
+import SummaryApi from "@/common/summaryApi";
+import { useCart } from "./CartContext"; // Import useCart
+import { useGuest } from "./GuestContext"; // Import useGuest
 
 interface User {
   _id: string;
@@ -36,7 +42,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -49,128 +55,187 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const { fetchUserCart, clearCart, fetchAndApplyMigratedGift } = useCart(); // Get cart functions
+  const { fetchUserCart, clearCart } = useCart(); // Get cart functions
   const { guestCart, guestWishlist, clearGuestData } = useGuest(); // Get guest functions
 
   const checkAuthStatus = async () => {
     try {
       setLoading(true);
-      console.log('AuthContext: checkAuthStatus called');
+      console.log("AuthContext: checkAuthStatus called");
 
-      const accessToken = localStorage.getItem('accesstoken');
-      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      const accessToken = localStorage.getItem("accesstoken");
+      const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 
-      console.log('AuthContext: accessToken exists:', !!accessToken);
-      console.log('AuthContext: isLoggedIn:', isLoggedIn);
+      console.log("AuthContext: accessToken exists:", !!accessToken);
+      console.log("AuthContext: isLoggedIn:", isLoggedIn);
 
       if (!accessToken || !isLoggedIn) {
-        console.log('AuthContext: No access token or not logged in, setting unauthenticated');
+        console.log(
+          "AuthContext: No access token or not logged in, setting unauthenticated"
+        );
         setIsAuthenticated(false);
         setUser(null);
         return;
       }
 
-      console.log('AuthContext: Making API call to userDetails');
+      console.log("AuthContext: Making API call to userDetails");
       const response = await Axios({
         method: SummaryApi.userDetails.method,
         url: SummaryApi.userDetails.url,
       });
 
-      console.log('AuthContext: userDetails response:', response.data);
+      console.log("AuthContext: userDetails response:", response.data);
 
       if (response.data.success) {
-        localStorage.removeItem('shimmer_cart');
+        localStorage.removeItem("shimmer_cart");
         setIsAuthenticated(true);
         setUser(response.data.data);
-        console.log('AuthContext: User authenticated, user data:', response.data.data);
+        console.log(
+          "AuthContext: User authenticated, user data:",
+          response.data.data
+        );
 
         await fetchUserCart(); // Fetch cart if user is authenticated
 
-        // Fetch and apply migrated welcome gift if exists
-        try {
-          if (fetchAndApplyMigratedGift) {
-            await fetchAndApplyMigratedGift();
-          }
-        } catch (error) {
-          console.error('Error applying migrated gift:', error);
-        }
+        // Note: Welcome gift validation will be handled by CartContext automatically
 
         // Merge guest data if any exists
         if (guestCart.length > 0 || guestWishlist.length > 0) {
           try {
             // Merge guest cart
             if (guestCart.length > 0) {
-              await Axios.post(SummaryApi.mergeCart.url, { localCart: guestCart });
+              await Axios.post(SummaryApi.mergeCart.url, {
+                localCart: guestCart,
+              });
             }
 
             // Merge guest wishlist
             if (guestWishlist.length > 0) {
               for (const item of guestWishlist) {
-                await Axios.post(SummaryApi.toggleWishlist.url, { productId: item.id });
+                await Axios.post(SummaryApi.toggleWishlist.url, {
+                  productId: item.id,
+                });
               }
             }
 
             // Clear guest data after successful merge
             clearGuestData();
           } catch (error) {
-            console.error('Error merging guest data:', error);
+            console.error("Error merging guest data:", error);
           }
         }
 
-        // Clear anonymous gift data after successful authentication
-        // This ensures the gift is now properly associated with the user account
-        localStorage.removeItem('anonymousId');
-        localStorage.removeItem('eligibilityCheckCompleted');
+        // Migrate anonymous welcome gift if exists BEFORE clearing the anonymousId
+        const anonymousId = localStorage.getItem("anonymousId");
+        const rewardDetails = localStorage.getItem("claimedRewardDetails");
+        console.log("AuthContext: Migration preparation:", {
+          hasAnonymousId: !!anonymousId,
+          anonymousId: anonymousId,
+          hasRewardDetails: !!rewardDetails,
+          rewardDetails: rewardDetails ? JSON.parse(rewardDetails) : null,
+        });
 
-        // Migrate anonymous welcome gift if exists
-        const anonymousId = localStorage.getItem('anonymousId');
         if (anonymousId) {
           try {
-            console.log('AuthContext: Attempting to migrate anonymous gift for anonymousId:', anonymousId);
-            const migrationResponse = await Axios.post('/api/welcome-gifts/migrate-anonymous', { anonymousId });
+            console.log(
+              "AuthContext: Attempting to migrate anonymous gift for anonymousId:",
+              anonymousId
+            );
+            const migrationResponse = await Axios.post(
+              "/api/welcome-gifts/migrate-anonymous",
+              { anonymousId }
+            );
 
             if (migrationResponse.data.success) {
-              console.log('AuthContext: Migration response received:', migrationResponse.data.data);
+              console.log(
+                "AuthContext: Migration response received:",
+                migrationResponse.data.data
+              );
 
               if (migrationResponse.data.data.migrated) {
-                console.log('AuthContext: Anonymous welcome gift migrated successfully');
-                localStorage.removeItem('anonymousId'); // Clean up after successful migration
-                localStorage.removeItem('rewardClaimed'); // Clean up old reward data
-                localStorage.removeItem('claimedRewardDetails'); // Clean up old reward details
+                console.log(
+                  "AuthContext: Anonymous welcome gift migrated successfully"
+                );
 
-                // Refresh user data to get updated rewardClaimed status
-                await checkAuthStatus();
+                // Update user data to reflect the migration and refetch cart
+                try {
+                  const userResponse = await Axios({
+                    method: SummaryApi.userDetails.method,
+                    url: SummaryApi.userDetails.url,
+                  });
+                  if (userResponse.data.success) {
+                    setUser(userResponse.data.data);
+                    console.log(
+                      "AuthContext: User data updated after migration, refetching cart..."
+                    );
+                    await fetchUserCart(); // Ensure cart is updated before notifying
+                    console.log("AuthContext: Cart refetched successfully");
+                  }
+                } catch (error) {
+                  console.error(
+                    "AuthContext: Error updating user data or fetching cart after migration:",
+                    error
+                  );
+                }
+
+                // Dispatch event to notify other parts of the app
+                window.dispatchEvent(new Event("migrationComplete"));
+
+                localStorage.removeItem("anonymousId");
+                localStorage.removeItem("rewardClaimed");
+                localStorage.removeItem("claimedRewardDetails");
               } else {
-                console.log('AuthContext: No migration needed - user already has a gift or no anonymous gift found');
-                localStorage.removeItem('anonymousId'); // Clean up anyway
-                localStorage.removeItem('rewardClaimed'); // Clean up old reward data
-                localStorage.removeItem('claimedRewardDetails'); // Clean up old reward details
+                console.log(
+                  "AuthContext: Migration failed - anonymous gift not found on server"
+                );
+
+                // If user has reward details in localStorage but server can't find it,
+                // the anonymous gift might have been lost. Clean up localStorage
+                if (rewardDetails) {
+                  console.log(
+                    "AuthContext: Cleaning up orphaned reward details from localStorage"
+                  );
+                  localStorage.removeItem("claimedRewardDetails");
+                  localStorage.removeItem("rewardClaimed");
+                }
+                localStorage.removeItem("anonymousId"); // Clean up anyway
               }
             } else {
-              console.log('AuthContext: Migration response indicates failure');
-              localStorage.removeItem('anonymousId'); // Clean up anyway
+              console.log("AuthContext: Migration response indicates failure");
+              localStorage.removeItem("anonymousId"); // Clean up anyway
             }
           } catch (error: any) {
-            console.error('AuthContext: Error migrating anonymous welcome gift:', error);
+            console.error(
+              "AuthContext: Error migrating anonymous welcome gift:",
+              error
+            );
 
             // If migration fails, clean up the anonymousId to prevent future attempts
-            if (error.response?.status === 400 || error.response?.status === 500) {
-              console.log('AuthContext: Migration failed - cleaning up localStorage');
-              localStorage.removeItem('anonymousId');
-              localStorage.removeItem('rewardClaimed');
-              localStorage.removeItem('claimedRewardDetails');
+            if (
+              error.response?.status === 400 ||
+              error.response?.status === 500
+            ) {
+              console.log(
+                "AuthContext: Migration failed - cleaning up localStorage"
+              );
+              localStorage.removeItem("anonymousId");
+              localStorage.removeItem("rewardClaimed");
+              localStorage.removeItem("claimedRewardDetails");
             }
           }
         }
+
+        // Clear eligibility check after migration attempt
+        localStorage.removeItem("eligibilityCheckCompleted");
       } else {
-        throw new Error('Invalid session');
+        throw new Error("Invalid session");
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
-      console.log('🔐 AuthContext: Clearing tokens due to error');
-      localStorage.removeItem('accesstoken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('isLoggedIn');
+      console.error("Auth check failed:", error);
+      console.log("🔐 AuthContext: Clearing tokens due to error");
+      localStorage.removeItem("accesstoken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("isLoggedIn");
       setIsAuthenticated(false);
       setUser(null);
     } finally {
@@ -190,22 +255,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         url: SummaryApi.logout.url,
       });
     } catch (error) {
-      console.error('Logout API error:', error);
+      console.error("Logout API error:", error);
     } finally {
-      localStorage.removeItem('accesstoken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('isLoggedIn');
-      localStorage.removeItem('shimmer_cart'); // Clear cart on logout
-      localStorage.removeItem('rewardClaimed'); // Clear reward data on logout
-      localStorage.removeItem('claimedRewardDetails'); // Clear reward details on logout
-      localStorage.removeItem('anonymousId'); // Clear anonymous ID on logout
+      localStorage.removeItem("accesstoken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("shimmer_cart"); // Clear cart on logout
+      localStorage.removeItem("rewardClaimed"); // Clear reward data on logout
+      localStorage.removeItem("claimedRewardDetails"); // Clear reward details on logout
+      localStorage.removeItem("anonymousId"); // Clear anonymous ID on logout
       setIsAuthenticated(false);
       setUser(null);
       clearCart(); // Clear cart context state
-      window.dispatchEvent(new Event('logoutStateChange'));
-      window.dispatchEvent(new Event('cartClear')); // Notify cart context to clear state
+      window.dispatchEvent(new Event("logoutStateChange"));
+      window.dispatchEvent(new Event("cartClear")); // Notify cart context to clear state
       // Dispatch event to reset eligibility check
-      window.dispatchEvent(new Event('resetEligibilityCheck'));
+      window.dispatchEvent(new Event("resetEligibilityCheck"));
     }
   };
 
@@ -223,12 +288,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
     };
 
-    window.addEventListener('loginStateChange', handleLoginStateChange);
-    window.addEventListener('logoutStateChange', handleLogoutStateChange);
+    window.addEventListener("loginStateChange", handleLoginStateChange);
+    window.addEventListener("logoutStateChange", handleLogoutStateChange);
 
     return () => {
-      window.removeEventListener('loginStateChange', handleLoginStateChange);
-      window.removeEventListener('logoutStateChange', handleLogoutStateChange);
+      window.removeEventListener("loginStateChange", handleLoginStateChange);
+      window.removeEventListener("logoutStateChange", handleLogoutStateChange);
     };
   }, []);
 
@@ -244,12 +309,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     updateUser,
-    checkAuthStatus
+    checkAuthStatus,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

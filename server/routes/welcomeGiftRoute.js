@@ -19,7 +19,10 @@ const {
   getUserRewards,
   validateWelcomeGiftCoupon,
   migrateAnonymousGift,
-  applyGiftClaimLimiter
+  applyGiftClaimLimiter,
+  testWelcomeGiftEndpoint,
+  getAnonymousId,
+  checkRewardStatus
 } = require("../controller/welcomeGiftController");
 
 const auth = require("../middleware/auth");
@@ -91,7 +94,9 @@ const sanitizeAnonymousId = (req, res, next) => {
 };
 
 // Public routes (with rate limiting)
+router.get("/test", testWelcomeGiftEndpoint); // Test endpoint without rate limiting
 router.get("/", publicApiLimiter, getAllWelcomeGifts);
+router.get("/anonymous-id", publicApiLimiter, getAnonymousId);
 router.get("/check-eligibility", eligibilityLimiter, sanitizeAnonymousId, checkWelcomeGiftEligibility);
 
 // Gift claiming with additional security
@@ -114,6 +119,7 @@ router.post("/migrate-anonymous",
   sanitizeAnonymousId,
   migrateAnonymousGift
 );
+router.get("/status", auth, checkRewardStatus);
 
 // User reward routes
 router.get("/user-rewards", auth, getUserRewards);

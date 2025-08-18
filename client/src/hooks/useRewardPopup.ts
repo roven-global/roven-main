@@ -4,20 +4,8 @@ import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 import { toast } from '@/hooks/use-toast';
 
-// Import the secure anonymous ID utilities
-const generateSecureAnonymousId = (): string => {
-  // This would ideally come from the server, but for client-side we'll use a simpler approach
-  const timestamp = Date.now();
-  const randomBytes = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-    .map(b => b.toString(16).padStart(2, '0')).join('');
-  return `${timestamp}-${randomBytes}-client`;
-};
-
-const validateAnonymousId = (anonymousId: string): boolean => {
-  if (!anonymousId || typeof anonymousId !== 'string') return false;
-  const parts = anonymousId.split('-');
-  return parts.length >= 3; // Basic validation for client-side generated IDs
-};
+// Client-side validation is no longer needed as we rely on the server's canonical ID.
+// The server will handle all validation.
 
 export const useRewardPopup = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,6 +27,22 @@ export const useRewardPopup = () => {
       }
     };
   }, []);
+
+  // New function to get a server-generated anonymous ID
+  const getAnonymousIdFromServer = async (): Promise<string | null> => {
+    try {
+      const response = await Axios.get(SummaryApi.getAnonymousId.url);
+      if (response.data.success && response.data.data.anonymousId) {
+        const serverId = response.data.data.anonymousId;
+        localStorage.setItem('anonymousId', serverId);
+        return serverId;
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to fetch anonymous ID from server:', error);
+      return null;
+    }
+  };
 
   const fetchWelcomeGifts = async () => {
     try {
@@ -101,10 +105,15 @@ export const useRewardPopup = () => {
         }
       }
 
-      // Retrieve anonymous ID; if invalid, let server issue a new one
-      let anonymousId: string | undefined = overrideAnonymousId ?? (localStorage.getItem('anonymousId') || undefined);
-      if (!anonymousId || !validateAnonymousId(anonymousId)) {
-        anonymousId = undefined;
+      // Retrieve anonymous ID; if it doesn't exist, get one from the server.
+      let anonymousId = localStorage.getItem('anonymousId');
+      if (!anonymousId) {
+        anonymousId = await getAnonymousIdFromServer();
+        if (!anonymousId) {
+          console.log('Could not obtain anonymous ID. Aborting eligibility check.');
+          hasCheckedRef.current = true;
+          return;
+        }
       }
 
       console.log('Checking welcome gift eligibility');
@@ -116,7 +125,7 @@ export const useRewardPopup = () => {
       }, 10000); // 10 second timeout
 
       const response = await Axios.get(SummaryApi.checkWelcomeGiftEligibility.url, {
-        params: anonymousId ? { anonymousId } : {},
+        params: { anonymousId },
         timeout: 8000 // 8 second request timeout
       });
 
@@ -195,17 +204,48 @@ export const useRewardPopup = () => {
         throw new Error('Invalid gift ID');
       }
 
-      // Get and validate anonymous ID
-      let anonymousId = localStorage.getItem('anonymousId');
-      if (!anonymousId || !validateAnonymousId(anonymousId)) {
-        anonymousId = generateSecureAnonymousId();
-        localStorage.setItem('anonymousId', anonymousId);
+      // Get anonymous ID. It must exist at this point.
+      const anonymousId = localStorage.getItem('anonymousId');
+      if (!anonymousId) {
+        // This case should be rare, as eligibility check ensures an ID exists.
+        // We'll attempt to get a new one as a fallback.
+        const newId = await getAnonymousIdFromServer();
+        if (!newId) {
+           toast({
+            title: "Error claiming reward",
+            description: "Your session is invalid. Please refresh the page.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return false;
+        }
+        // Use the new ID for the claim
+        await claimRewardWithId(giftId, newId);
+        return;
       }
+      
+      return await claimRewardWithId(giftId, anonymousId);
 
+    } catch (error: any) {
+      console.error('Error in claimReward wrapper:', error);
+      toast({
+        title: "An unexpected error occurred",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [user, checkAuthStatus, loading]);
+
+  const claimRewardWithId = useCallback(async (giftId: string, anonymousId: string) => {
+    try {
+      setLoading(true);
       const response = await Axios.post(
         SummaryApi.claimWelcomeGift.url.replace(':id', giftId),
         { anonymousId },
-        { timeout: 15000 } // 15 second timeout for claim requests
+        { timeout: 15000 }
       );
 
       if (response.data.success) {
@@ -227,18 +267,15 @@ export const useRewardPopup = () => {
           minOrderAmount: gift.minOrderAmount
         }));
 
-        // Update anonymous ID if changed
-        if (claimedAnonymousId && claimedAnonymousId !== anonymousId) {
+        // Always update anonymous ID from server response to keep it fresh
+        if (claimedAnonymousId) {
           localStorage.setItem('anonymousId', claimedAnonymousId);
+          console.log('Refreshed anonymousId from server:', claimedAnonymousId);
         }
 
-        // If user is logged in, refresh their data to update rewardClaimed status
+        // If user is logged in, refresh their data
         if (user && checkAuthStatus) {
-          try {
-            await checkAuthStatus();
-          } catch (error) {
-            console.error('Error updating auth status:', error);
-          }
+          await checkAuthStatus();
         }
 
         toast({
@@ -250,19 +287,13 @@ export const useRewardPopup = () => {
         setIsOpen(false);
         return true;
       }
-
       return false;
     } catch (error: any) {
       console.error('Error claiming reward:', error);
       
       let errorMessage = "Please try again.";
-      
       if (error.response?.status === 429) {
         errorMessage = "Too many attempts. Please wait before trying again.";
-      } else if (error.response?.status === 400) {
-        errorMessage = error.response.data?.message || "Invalid request. Please refresh the page.";
-      } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-        errorMessage = "Request timed out. Please try again.";
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
@@ -277,8 +308,8 @@ export const useRewardPopup = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, checkAuthStatus, loading]);
-
+  }, [user, checkAuthStatus]);
+  
   const openPopup = useCallback(() => setIsOpen(true), []);
   const closePopup = useCallback(() => setIsOpen(false), []);
 

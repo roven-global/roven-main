@@ -31,7 +31,6 @@ import WelcomeGiftReward from "@/components/WelcomeGiftReward";
 import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
 import { useRewardPopup } from "@/hooks/useRewardPopup";
-import { markRewardAsUsed } from "@/utils/markRewardAsUsed";
 
 const Cart = () => {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -46,16 +45,12 @@ const Cart = () => {
     applyCoupon,
     removeCoupon,
     validateAndApplyWelcomeGift,
-    applyWelcomeGift,
+    markRewardAsUsed,
     removeWelcomeGift,
   } = useCart();
   const { guestCart, removeFromGuestCart, updateGuestCartQuantity } =
     useGuest();
-  const {
-    hasClaimedReward: hasClaimedRewardFn,
-    getClaimedRewardDetails,
-    resetEligibilityCheck,
-  } = useRewardPopup();
+  const { hasClaimedReward } = useCart();
   const [loading, setLoading] = useState(true);
   const [couponCode, setCouponCode] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
@@ -67,9 +62,6 @@ const Cart = () => {
   const [removingCouponId, setRemovingCouponId] = useState<string | null>(null);
   const [lifetimeSavings, setLifetimeSavings] = useState<number>(0);
   const [lifetimeSavingsLoading, setLifetimeSavingsLoading] = useState(false);
-  const [applyReward, setApplyReward] = useState(false);
-  const [hasClaimedReward, setHasClaimedReward] = useState(false);
-  const [cartUpdateTrigger, setCartUpdateTrigger] = useState(0); // Force re-renders when cart changes
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -100,64 +92,12 @@ const Cart = () => {
     fetchLifetimeSavings();
   }, [isAuthenticated]);
 
-  // Sync applyReward state with appliedWelcomeGift
-  useEffect(() => {
-    if (appliedWelcomeGift) {
-      setApplyReward(true);
-    } else {
-      setApplyReward(false);
-    }
-  }, [appliedWelcomeGift]);
-
   // Listen to cart changes to ensure price summary updates
   useEffect(() => {
-    // This effect ensures the component re-renders when cart changes
-    // The price summary calculations are done in the render function,
-    // so any cart state change will automatically update the prices
+    // This effect is minimal now; the context handles most logic.
+    // It's kept to ensure re-renders on cart/guestCart changes if needed.
     console.log("Cart: Cart items changed, triggering re-render");
-
-    // Force a re-render by updating the trigger
-    setCartUpdateTrigger((prev) => prev + 1);
-  }, [cartItems, guestCart]); // Listen to both authenticated and guest cart changes
-
-  // Auto-apply welcome gift if user has claimed one and it's not already applied
-  useEffect(() => {
-    if (hasClaimedReward && !appliedWelcomeGift) {
-      // Automatically apply the welcome gift if user has claimed one (both authenticated and anonymous)
-      setApplyReward(true);
-    }
-  }, [hasClaimedReward, appliedWelcomeGift]);
-
-  // Check if user has claimed reward
-  useEffect(() => {
-    const checkClaimedReward = async () => {
-      if (isAuthenticated) {
-        try {
-          const response = await Axios.get(SummaryApi.userDetails.url);
-          if (response.data.success && response.data.data.rewardClaimed) {
-            setHasClaimedReward(true);
-          }
-        } catch (error) {
-          console.error("Error checking claimed reward:", error);
-        }
-      }
-
-      // Always check localStorage as well (for both authenticated and anonymous users)
-      const hasClaimedRewardLocal =
-        localStorage.getItem("rewardClaimed") === "true";
-      console.log(
-        "Cart: Checking localStorage for claimed reward:",
-        hasClaimedRewardLocal
-      );
-
-      if (hasClaimedRewardLocal) {
-        setHasClaimedReward(true);
-        console.log("Cart: Setting hasClaimedReward to true from localStorage");
-      }
-    };
-
-    checkClaimedReward();
-  }, [isAuthenticated]);
+  }, [cartItems, guestCart]);
 
   // Fetch available coupons
   useEffect(() => {
@@ -193,19 +133,10 @@ const Cart = () => {
   }, [appliedCoupon]);
 
   // Server-side coupon validation for welcome gift
-  const validateWelcomeGift = async () => {
-    const details = getClaimedRewardDetails();
-    if (!details || !details.couponCode) {
-      toast({
-        title: "No Welcome Gift",
-        description: "You have not claimed any welcome gift yet.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleValidateWelcomeGift = async (gift: any, couponCode?: string) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const success = await validateAndApplyWelcomeGift();
+      const success = await validateAndApplyWelcomeGift(gift, couponCode);
       if (success) {
         toast({
           title: "Welcome Gift Applied!",
@@ -214,7 +145,7 @@ const Cart = () => {
       } else {
         toast({
           title: "Cannot Apply Gift",
-          description: "Not eligible or conditions not met.",
+          description: "Your gift is not applicable to the current cart.",
           variant: "destructive",
         });
       }
@@ -229,32 +160,6 @@ const Cart = () => {
       setIsLoading(false);
     }
   };
-
-  const handlePlaceOrder = async () => {
-    // in a real checkout, you'd create an order first
-    if (appliedWelcomeGift) {
-      const success = await markRewardAsUsed();
-      if (!success) {
-        toast({
-          title: "Warning",
-          description: "Could not mark welcome gift as used.",
-          variant: "destructive",
-        });
-      }
-    }
-    toast({
-      title: "Order Placed",
-      description: "Your order will be processed.",
-    });
-  };
-
-  // Auto-validate on cart change when reward is claimed but not applied
-  useEffect(() => {
-    if (isAuthenticated && hasClaimedRewardFn?.() && !appliedWelcomeGift) {
-      validateWelcomeGift();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cartItems, isAuthenticated]);
 
   const handleUpdateQuantity = async (
     cartItemId: string,
@@ -485,7 +390,6 @@ const Cart = () => {
     cartItemsCount: cartItems?.length || 0,
     guestCartCount: guestCart?.length || 0,
     isAuthenticated,
-    cartUpdateTrigger, // Include trigger to ensure updates
     // Add detailed welcome gift debugging
     appliedWelcomeGift: appliedWelcomeGift
       ? {
@@ -498,11 +402,9 @@ const Cart = () => {
       : null,
   });
 
-  // Handle checkout with reward state
+  // Handle checkout navigation
   const handleCheckout = () => {
-    // If not logged in, redirect to login and come back to checkout afterwards
     if (!isAuthenticated) {
-      // Persist intent and any applied coupon for use after login (already stored via context)
       navigate("/login", { state: { redirectTo: "/checkout" } });
       toast({
         title: "Login required",
@@ -511,15 +413,12 @@ const Cart = () => {
       return;
     }
 
-    // When navigating to checkout, pass the 'applyReward' state for UI hints
-    navigate("/checkout", {
-      state: {
-        applyWelcomeGift: applyReward,
-      },
-    });
+    // Navigate to checkout. The cart context will preserve the applied gift state.
+    navigate("/checkout");
   };
 
-  if (loading) {
+  if (loading || authLoading) {
+    // Check both loading states
     return (
       <div className="min-h-screen flex items-center justify-center bg-warm-cream">
         <div className="animate-spin rounded-full h-24 w-24 border-b-2 border-sage"></div>
@@ -967,22 +866,23 @@ const Cart = () => {
                     {/* Right Column - Price Summary */}
                     <div className="space-y-6">
                       {/* Welcome Gift Reward */}
-                      <WelcomeGiftReward
-                        subtotal={subtotal}
-                        shippingCost={shippingCost}
-                        cartItems={displayCartItems}
-                        onRewardApplied={(gift, discountAmount, data) => {
-                          if (isAuthenticated) {
-                            // For logged-in users, rely on server validation
-                            void validateAndApplyWelcomeGift();
-                          } else {
-                            // For guests, apply client-side immediately
-                            applyWelcomeGift(gift, discountAmount, data);
-                          }
-                        }}
-                        onRewardRemoved={removeWelcomeGift}
-                        appliedReward={appliedWelcomeGift}
-                      />
+                      <div className="bg-white rounded-lg border shadow-sm">
+                        <div className="p-4 border-b">
+                          <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
+                            <Gift className="w-5 h-5 text-orange-600" />
+                            Welcome Gift
+                          </h3>
+                        </div>
+                        <div className="p-4">
+                          <WelcomeGiftReward
+                            cartItems={displayCartItems}
+                            onValidateReward={handleValidateWelcomeGift}
+                            onRewardRemoved={removeWelcomeGift}
+                            appliedReward={appliedWelcomeGift}
+                            hasClaimedReward={hasClaimedReward()}
+                          />
+                        </div>
+                      </div>
 
                       {/* BOGO Warning Message */}
                       {appliedWelcomeGift &&
@@ -1099,26 +999,6 @@ const Cart = () => {
                         </>
                       )}
 
-                      {/* Welcome Gift Selection Status */}
-                      {isAuthenticated &&
-                        hasClaimedReward &&
-                        !appliedWelcomeGift && (
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                            <div className="flex items-center gap-2">
-                              <Gift className="w-5 h-5 text-blue-600" />
-                              <div>
-                                <p className="text-sm text-blue-700 font-medium">
-                                  Select Your Welcome Gift
-                                </p>
-                                <p className="text-xs text-blue-600">
-                                  Choose a welcome gift above to apply to this
-                                  order
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
                       <div className="bg-white rounded-lg border shadow-sm sticky top-4">
                         <div className="p-4 border-b">
                           <span className="font-semibold text-deep-forest flex items-center gap-2">
@@ -1167,8 +1047,8 @@ const Cart = () => {
                             </div>
                           )}
                           {!appliedWelcomeGift &&
-                            applyReward &&
-                            hasClaimedReward && (
+                            appliedWelcomeGift && // This condition is now redundant
+                            hasClaimedReward() && ( // Use context function
                               <div className="flex justify-between text-sm">
                                 <span className="text-forest">
                                   Welcome Gift
@@ -1236,105 +1116,14 @@ const Cart = () => {
                             </div>
                           )}
 
-                          {/* Welcome Gift Status */}
-                          <div className="space-y-3">
-                            <h3 className="text-lg font-semibold text-deep-forest">
-                              Welcome Gift Status
-                            </h3>
-                            {hasClaimedReward ? (
-                              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
-                                    <Gift className="w-4 h-4 text-orange-600" />
-                                  </div>
-                                  <div className="flex-1">
-                                    <h4 className="font-medium text-orange-800">
-                                      Welcome Gift Available!
-                                    </h4>
-                                    <p className="text-sm text-orange-700">
-                                      {appliedWelcomeGift ? (
-                                        <>
-                                          <strong>
-                                            {appliedWelcomeGift.reward?.title}
-                                          </strong>{" "}
-                                          applied
-                                          {appliedWelcomeGift.discountAmount >
-                                            0 &&
-                                            appliedWelcomeGift.isValid !==
-                                              false && (
-                                              <span className="ml-2 font-medium">
-                                                -
-                                                {formatRupees(
-                                                  appliedWelcomeGift.discountAmount
-                                                )}
-                                              </span>
-                                            )}
-                                        </>
-                                      ) : (
-                                        "Will be applied at checkout"
-                                      )}
-                                    </p>
-                                    {appliedWelcomeGift?.reward?.couponCode && (
-                                      <p className="text-xs text-orange-600 mt-1">
-                                        Coupon Code:{" "}
-                                        <code className="bg-orange-100 px-1 rounded">
-                                          {appliedWelcomeGift.reward.couponCode}
-                                        </code>
-                                      </p>
-                                    )}
-                                    {/* Show detailed discount breakdown */}
-                                    {appliedWelcomeGift &&
-                                      appliedWelcomeGift.discountAmount > 0 && (
-                                        <div className="mt-2 p-2 bg-orange-100 rounded text-xs">
-                                          <p className="text-orange-800 font-medium">
-                                            Discount Breakdown:
-                                          </p>
-                                          <p className="text-orange-700">
-                                            {appliedWelcomeGift.reward?.reward}
-                                          </p>
-                                        </div>
-                                      )}
-                                  </div>
-                                  <div className="flex gap-2">
-                                    {!appliedWelcomeGift && (
-                                      <Button
-                                        size="sm"
-                                        onClick={() => setApplyReward(true)}
-                                        className="bg-orange-600 hover:bg-orange-700 text-white"
-                                      >
-                                        Apply
-                                      </Button>
-                                    )}
-                                    {appliedWelcomeGift && (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => setApplyReward(false)}
-                                        className="text-orange-600 border-orange-300 hover:bg-orange-50"
-                                      >
-                                        Remove
-                                      </Button>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
-                                <p className="text-warm-taupe">
-                                  No welcome gift claimed yet
-                                </p>
-                              </div>
-                            )}
-                          </div>
-
                           <Button
                             onClick={handleCheckout}
                             className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-md py-3 font-medium"
                             disabled={displayCartItems.length === 0}
                           >
-                            {applyReward && hasClaimedReward
+                            {appliedWelcomeGift
                               ? "Proceed with Welcome Gift"
-                              : "Add address"}
+                              : "Proceed to Checkout"}
                           </Button>
                         </div>
                       </div>

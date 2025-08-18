@@ -100,7 +100,10 @@ interface CartContextType {
   applyCoupon: (couponCode: string) => Promise<boolean>;
   removeCoupon: () => void;
   clearCoupon: () => void;
-  validateAndApplyWelcomeGift: () => Promise<boolean>;
+  validateAndApplyWelcomeGift: (
+    gift: any,
+    couponCode?: string
+  ) => Promise<boolean>;
   applyWelcomeGift: (
     reward: AppliedWelcomeGift["reward"] | any,
     discountAmount: number,
@@ -118,6 +121,7 @@ interface CartContextType {
   markRewardAsUsed: () => Promise<boolean>;
   hasClaimedReward: () => boolean;
   getClaimedRewardDetails: () => any;
+  serverHasUnusedReward: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -137,130 +141,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   );
   const [appliedWelcomeGift, setAppliedWelcomeGift] =
     useState<AppliedWelcomeGift | null>(null);
+  const [isValidatingGift, setIsValidatingGift] = useState(false);
+  const [serverHasUnusedReward, setServerHasUnusedReward] = useState(false);
 
-  // Calculate subtotal
-  const subtotal = useMemo(() => {
-    return cartItems.reduce((total, item) => {
-      const price = item.variant?.price || item.productId?.price || 0;
-      return total + price * item.quantity;
-    }, 0);
-  }, [cartItems]);
+  //
+  //
+  // ======= CORE FUNCTIONS (useCallback) =======
+  //
+  //
 
-  // Calculate cart count
-  const cartCount = useMemo(() => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
-  }, [cartItems]);
-
-  // Helper: Calculate BOGO discount client-side (used to keep UI in sync on cart changes)
-  const calculateBogoDiscount = useCallback((items: CartItem[]): number => {
-    if (!Array.isArray(items) || items.length === 0) return 0;
-
-    // Normalize into { productId, price, quantity }
-    const normalized = items.map((item) => {
-      const productId = item.productId?._id as string;
-      const price = item.variant?.price ?? item.productId?.price ?? 0;
-      const quantity = Number.isFinite(item.quantity) ? item.quantity : 1;
-      return { productId, price, quantity };
-    });
-
-    // Group by product and count pairs
-    const groups: Record<string, { price: number; quantity: number }> = {};
-    normalized.forEach((it) => {
-      if (!groups[it.productId])
-        groups[it.productId] = { price: it.price, quantity: 0 };
-      groups[it.productId].quantity += it.quantity;
-      // Keep highest seen price for safety
-      if (it.price > groups[it.productId].price)
-        groups[it.productId].price = it.price;
-    });
-
-    let totalDiscount = 0;
-    Object.values(groups).forEach((group) => {
-      const pairs = Math.floor(group.quantity / 2);
-      totalDiscount += pairs * group.price;
-    });
-    return Math.max(0, Math.round(totalDiscount * 100) / 100);
-  }, []);
-
-  // Calculate total savings
-  const totalSavings = useMemo(() => {
-    const couponSavings = appliedCoupon?.discountAmount || 0;
-    const giftSavings = appliedWelcomeGift?.discountAmount || 0;
-    return couponSavings + giftSavings;
-  }, [appliedCoupon, appliedWelcomeGift]);
-
-  // Calculate final cart total
-  const cartTotal = useMemo(() => {
-    const total = subtotal - totalSavings;
-    return Math.max(0, total);
-  }, [subtotal, totalSavings]);
-
-  // Keep applied welcome gift (especially BOGO) in sync when cart changes
-  useEffect(() => {
-    if (!appliedWelcomeGift) return;
-
-    // Only handle BOGO client-side recalculation. Other types stay as validated.
-    if (appliedWelcomeGift.type === "sample") {
-      const totalItems = cartItems.reduce(
-        (sum, it) => sum + (Number.isFinite(it.quantity) ? it.quantity : 1),
-        0
-      );
-      const isValid = totalItems >= 2;
-      const discount = isValid ? calculateBogoDiscount(cartItems) : 0;
-
-      setAppliedWelcomeGift((prev) => {
-        if (!prev) return prev;
-        // Avoid unnecessary state updates
-        if (prev.discountAmount === discount && prev.isValid === isValid)
-          return prev;
-        return {
-          ...prev,
-          discountAmount: discount,
-          isValid,
-          validationMessage: isValid
-            ? undefined
-            : "Add at least 2 items to activate BOGO offer",
-        };
-      });
-    }
-  }, [cartItems, appliedWelcomeGift?.type, calculateBogoDiscount]);
-
-  // Load applied coupon from localStorage on mount
-  useEffect(() => {
-    const savedCoupon = localStorage.getItem("appliedCoupon");
-    if (savedCoupon) {
-      try {
-        const parsedCoupon = JSON.parse(savedCoupon);
-        setAppliedCoupon(parsedCoupon);
-      } catch (error) {
-        localStorage.removeItem("appliedCoupon");
-      }
-    }
-  }, []);
-
-  // Save applied coupon to localStorage
-  useEffect(() => {
-    if (appliedCoupon) {
-      localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
-    } else {
-      localStorage.removeItem("appliedCoupon");
-    }
-  }, [appliedCoupon]);
-
-  // Clear cart on logout
-  const clearCart = useCallback(() => {
-    setCartItems([]);
-    setAppliedCoupon(null);
-    setAppliedWelcomeGift(null);
-  }, []);
-
-  // Listen for logout event
-  useEffect(() => {
-    window.addEventListener("logoutStateChange", clearCart);
-    return () => window.removeEventListener("logoutStateChange", clearCart);
-  }, [clearCart]);
-
-  // Fetch user cart from backend
   const fetchUserCart = useCallback(async () => {
     try {
       const response = await Axios.get(SummaryApi.getCart.url);
@@ -273,20 +162,36 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       console.error("Failed to fetch user cart:", error);
       setCartItems([]);
     }
+
+    // After fetching cart, check for server-side rewards for logged-in users
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    if (isLoggedIn) {
+      try {
+        const response = await Axios.get(SummaryApi.checkRewardStatus.url);
+        if (response.data.success && response.data.hasUnusedReward) {
+          setServerHasUnusedReward(true);
+          // Also, update localStorage to be in sync
+          localStorage.setItem("rewardClaimed", "true");
+          localStorage.setItem(
+            "claimedRewardDetails",
+            JSON.stringify(response.data.rewardDetails)
+          );
+        } else {
+          setServerHasUnusedReward(false);
+        }
+      } catch (error) {
+        console.error("Failed to check server reward status:", error);
+        setServerHasUnusedReward(false);
+      }
+    }
   }, []);
 
-  // Listen for login event and migrate gifts
-  useEffect(() => {
-    const handleLogin = async () => {
-      await fetchUserCart();
-      await migrateAnonymousGift();
-      await validateAndApplyWelcomeGift();
-    };
-    window.addEventListener("loginStateChange", handleLogin);
-    return () => window.removeEventListener("loginStateChange", handleLogin);
-  }, [fetchUserCart]);
+  const clearCart = useCallback(() => {
+    setCartItems([]);
+    setAppliedCoupon(null);
+    setAppliedWelcomeGift(null);
+  }, []);
 
-  // Cart CRUD operations
   const addToCart = useCallback(
     async (item: {
       productId: string;
@@ -348,13 +253,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     await fetchUserCart();
   }, [fetchUserCart]);
 
-  // Coupon management
   const applyCoupon = useCallback(
     async (couponCode: string): Promise<boolean> => {
+      // subtotal and cartItems are calculated below in useMemo,
+      // but they are simple state derivations and this is safe.
+      const currentSubtotal = cartItems.reduce((total, item) => {
+        const price = item.variant?.price || item.productId?.price || 0;
+        return total + price * item.quantity;
+      }, 0);
+
       try {
         const response = await Axios.post(SummaryApi.validateCoupon.url, {
           code: couponCode.toUpperCase(),
-          orderAmount: subtotal,
+          orderAmount: currentSubtotal,
           cartItems,
         });
 
@@ -378,7 +289,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         return false;
       }
     },
-    [subtotal, cartItems]
+    [cartItems]
   );
 
   const removeCoupon = useCallback(() => {
@@ -388,49 +299,74 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const clearCoupon = useCallback(() => setAppliedCoupon(null), []);
 
-  // Welcome gift management
-  const validateAndApplyWelcomeGift =
-    useCallback(async (): Promise<boolean> => {
+  const hasClaimedReward = useCallback((): boolean => {
+    const details = localStorage.getItem("claimedRewardDetails");
+    if (!details) return false;
+    // For logged-in users, the server is the source of truth.
+    // For guests, we rely on localStorage.
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    if (isLoggedIn) {
+      return serverHasUnusedReward;
+    }
+    try {
+      const parsed = JSON.parse(details);
+      return !!parsed.couponCode;
+    } catch {
+      return false;
+    }
+  }, [serverHasUnusedReward]);
+
+  const getClaimedRewardDetails = useCallback(() => {
+    try {
+      const details = localStorage.getItem("claimedRewardDetails");
+      return details ? JSON.parse(details) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const validateAndApplyWelcomeGift = useCallback(
+    async (gift: any, couponCode?: string): Promise<boolean> => {
+      if (isValidatingGift) {
+        console.log(
+          "CartContext: Gift validation already in progress, skipping"
+        );
+        return false;
+      }
+
+      const currentSubtotal = cartItems.reduce((total, item) => {
+        const price = item.variant?.price || item.productId?.price || 0;
+        return total + price * item.quantity;
+      }, 0);
+
       try {
-        const saved = localStorage.getItem("claimedRewardDetails");
-        if (!saved) return false;
+        setIsValidatingGift(true);
 
-        const details = JSON.parse(saved);
-        if (!details?.couponCode) return false;
+        const details =
+          getClaimedRewardDetails() ||
+          (hasClaimedReward() ? { couponCode: gift?.couponCode } : null);
+        if (!details && !couponCode) {
+          console.log("CartContext: No claimed reward details found");
+          return false;
+        }
 
-        // Debug: log outgoing validation payload (redacted where needed)
-        try {
-          console.log(
-            "[CartContext] validateWelcomeGiftCoupon: sending request",
-            {
-              couponCode: details.couponCode,
-              orderAmount: subtotal,
-              cartItems: cartItems?.map((i: any) => ({
-                id: i?._id || i?.id || i?.productId?._id || i?.productId,
-                quantity: i?.quantity,
-                price: i?.variant?.price || i?.productId?.price || i?.price,
-                hasVariant: !!i?.variant,
-              })),
-              cartItemsCount: cartItems?.length,
-            }
-          );
-        } catch {}
+        const codeToValidate = couponCode || details.couponCode;
+        if (!codeToValidate) {
+          console.log("CartContext: No coupon code in claimed reward details");
+          return false;
+        }
 
         const response = await Axios.post(
           SummaryApi.validateWelcomeGiftCoupon.url,
           {
-            couponCode: details.couponCode,
-            orderAmount: subtotal,
+            couponCode: codeToValidate,
+            giftId: gift?._id || gift?.giftId,
+            orderAmount: currentSubtotal,
             cartItems,
-            anonymousId: localStorage.getItem('anonymousId') || undefined,
           }
         );
 
         if (response.data?.success && response.data?.data?.canApply) {
-          console.log(
-            "[CartContext] validateWelcomeGiftCoupon: success",
-            response.data?.data
-          );
           const giftData = response.data.data;
           setAppliedWelcomeGift({
             reward: giftData.gift,
@@ -453,94 +389,33 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             "[CartContext] validateWelcomeGiftCoupon: cannot apply",
             response.data
           );
-          // Remove invalid gift
           setAppliedWelcomeGift(null);
           return false;
         }
       } catch (error) {
-        // Detailed debug output for easier diagnostics
-        try {
-          const anyErr: any = error;
-          console.error("[CartContext] validateWelcomeGiftCoupon: error", {
-            message: anyErr?.message,
-            status: anyErr?.response?.status,
-            statusText: anyErr?.response?.statusText,
-            data: anyErr?.response?.data,
-            headers: anyErr?.response?.headers,
-            request: {
-              url: anyErr?.config?.url,
-              method: anyErr?.config?.method,
-              timeout: anyErr?.config?.timeout,
-            },
-          });
-        } catch {}
-        // Special handling for unclaimed reward case (400 from server)
         const anyErr: any = error;
         if (
           anyErr?.response?.status === 400 &&
           anyErr?.response?.data?.code === "UNCLAIMED_REWARD"
         ) {
-          // Attempt a one-time migration and retry validation
-          try {
-            const anonymousId = localStorage.getItem("anonymousId");
-            if (anonymousId) {
-              const migrateRes = await Axios.post(
-                SummaryApi.migrateAnonymousGift.url,
-                { anonymousId }
-              );
-              const migrated = !!migrateRes?.data?.data?.migrated;
-              if (migrated) {
-                // Retry once after successful migration
-                try {
-                  const retryRes = await Axios.post(
-                    SummaryApi.validateWelcomeGiftCoupon.url,
-                    {
-                      couponCode: details.couponCode,
-                      orderAmount: subtotal,
-                      cartItems,
-                      anonymousId: localStorage.getItem('anonymousId') || undefined,
-                    }
-                  );
-                  if (retryRes.data?.success && retryRes.data?.data?.canApply) {
-                    const giftData = retryRes.data.data;
-                    setAppliedWelcomeGift({
-                      reward: giftData.gift,
-                      discountAmount: giftData.discountAmount,
-                      type:
-                        giftData.gift.rewardType === "buy_one_get_one"
-                          ? "sample"
-                          : giftData.gift.rewardType === "free_shipping"
-                          ? "shipping"
-                          : "discount",
-                      reason: giftData.reason,
-                      shippingDiscount: giftData.shippingDiscount,
-                      productDiscount: giftData.productDiscount,
-                      isValid: true,
-                      serverValidated: true,
-                    });
-                    return true;
-                  }
-                } catch (retryErr) {
-                  // fall through to toast below
-                }
-              }
-            }
-          } catch {}
-
-          toast({
-            title: "Welcome gift not claimed",
-            description:
-              "Please claim a welcome gift first to use this coupon.",
-            variant: "destructive",
-          });
+          console.log(
+            "CartContext: Gift not found for user - this is expected after login/migration"
+          );
+        } else {
+          console.error(
+            "CartContext: Unexpected error validating welcome gift:",
+            error
+          );
         }
-        console.error("Error validating welcome gift:", error);
         setAppliedWelcomeGift(null);
         return false;
+      } finally {
+        setIsValidatingGift(false);
       }
-    }, [subtotal, cartItems]);
+    },
+    [isValidatingGift, cartItems, getClaimedRewardDetails, hasClaimedReward]
+  );
 
-  // Apply welcome gift (client-side), useful for guest users where server validation is not available
   const applyWelcomeGift = useCallback(
     (
       reward: AppliedWelcomeGift["reward"] | any,
@@ -598,7 +473,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const clearWelcomeGift = useCallback(() => setAppliedWelcomeGift(null), []);
 
-  // Migrate anonymous gift to logged-in user
   const migrateAnonymousGift = useCallback(async (): Promise<boolean> => {
     try {
       const anonymousId = localStorage.getItem("anonymousId");
@@ -622,7 +496,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Mark reward as used (call during checkout)
   const markRewardAsUsed = useCallback(async (): Promise<boolean> => {
     try {
       const response = await Axios.post(SummaryApi.markRewardAsUsed.url);
@@ -638,42 +511,168 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Helper functions
-  const hasClaimedReward = useCallback((): boolean => {
-    const details = localStorage.getItem("claimedRewardDetails");
-    if (!details) return false;
+  //
+  //
+  // ======= MEMOIZED VALUES (useMemo) =======
+  //
+  //
 
-    try {
-      const parsed = JSON.parse(details);
-      return !!parsed.couponCode;
-    } catch {
-      return false;
-    }
+  const subtotal = useMemo(() => {
+    return cartItems.reduce((total, item) => {
+      const price = item.variant?.price || item.productId?.price || 0;
+      return total + price * item.quantity;
+    }, 0);
+  }, [cartItems]);
+
+  const cartCount = useMemo(() => {
+    return cartItems.reduce((total, item) => total + item.quantity, 0);
+  }, [cartItems]);
+
+  const calculateBogoDiscount = useCallback((items: CartItem[]): number => {
+    if (!Array.isArray(items) || items.length === 0) return 0;
+    const normalized = items.map((item) => {
+      const productId = item.productId?._id as string;
+      const price = item.variant?.price ?? item.productId?.price ?? 0;
+      const quantity = Number.isFinite(item.quantity) ? item.quantity : 1;
+      return { productId, price, quantity };
+    });
+    const groups: Record<string, { price: number; quantity: number }> = {};
+    normalized.forEach((it) => {
+      if (!groups[it.productId])
+        groups[it.productId] = { price: it.price, quantity: 0 };
+      groups[it.productId].quantity += it.quantity;
+      if (it.price > groups[it.productId].price)
+        groups[it.productId].price = it.price;
+    });
+    let totalDiscount = 0;
+    Object.values(groups).forEach((group) => {
+      const pairs = Math.floor(group.quantity / 2);
+      totalDiscount += pairs * group.price;
+    });
+    return Math.max(0, Math.round(totalDiscount * 100) / 100);
   }, []);
 
-  const getClaimedRewardDetails = useCallback(() => {
-    try {
-      const details = localStorage.getItem("claimedRewardDetails");
-      return details ? JSON.parse(details) : null;
-    } catch {
-      return null;
-    }
-  }, []);
+  const totalSavings = useMemo(() => {
+    const couponSavings = appliedCoupon?.discountAmount || 0;
+    const giftSavings = appliedWelcomeGift?.discountAmount || 0;
+    return couponSavings + giftSavings;
+  }, [appliedCoupon, appliedWelcomeGift]);
 
-  // Auto-validate welcome gift when cart changes
+  const cartTotal = useMemo(() => {
+    const total = subtotal - totalSavings;
+    return Math.max(0, total);
+  }, [subtotal, totalSavings]);
+
+  //
+  //
+  // ======= SIDE EFFECTS (useEffect) =======
+  //
+  //
+
   useEffect(() => {
-    if (hasClaimedReward() && cartItems.length > 0) {
-      validateAndApplyWelcomeGift();
+    if (!appliedWelcomeGift) return;
+    if (appliedWelcomeGift.type === "sample") {
+      const totalItems = cartItems.reduce(
+        (sum, it) => sum + (Number.isFinite(it.quantity) ? it.quantity : 1),
+        0
+      );
+      const isValid = totalItems >= 2;
+      const discount = isValid ? calculateBogoDiscount(cartItems) : 0;
+      setAppliedWelcomeGift((prev) => {
+        if (!prev) return prev;
+        if (prev.discountAmount === discount && prev.isValid === isValid)
+          return prev;
+        return {
+          ...prev,
+          discountAmount: discount,
+          isValid,
+          validationMessage: isValid
+            ? undefined
+            : "Add at least 2 items to activate BOGO offer",
+        };
+      });
     }
-  }, [cartItems.length, validateAndApplyWelcomeGift, hasClaimedReward]);
+  }, [cartItems, appliedWelcomeGift, calculateBogoDiscount]);
 
-  // Auto-validate coupon when cart changes
+  useEffect(() => {
+    const savedCoupon = localStorage.getItem("appliedCoupon");
+    if (savedCoupon) {
+      try {
+        const parsedCoupon = JSON.parse(savedCoupon);
+        setAppliedCoupon(parsedCoupon);
+      } catch (error) {
+        localStorage.removeItem("appliedCoupon");
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (appliedCoupon) {
+      localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
+    } else {
+      localStorage.removeItem("appliedCoupon");
+    }
+  }, [appliedCoupon]);
+
+  useEffect(() => {
+    window.addEventListener("logoutStateChange", clearCart);
+    return () => window.removeEventListener("logoutStateChange", clearCart);
+  }, [clearCart]);
+
+  useEffect(() => {
+    const handleLogin = async () => {
+      console.log("CartContext: Login event received, fetching cart...");
+      await fetchUserCart();
+    };
+    const handleMigrationComplete = () => {
+      console.log(
+        "CartContext: Migration complete event received, validating gift..."
+      );
+      // After migration, we need the gift details to re-validate
+      const giftDetails = getClaimedRewardDetails();
+      if (giftDetails) {
+        validateAndApplyWelcomeGift(giftDetails);
+      }
+    };
+    window.addEventListener("loginStateChange", handleLogin);
+    window.addEventListener("migrationComplete", handleMigrationComplete);
+    return () => {
+      window.removeEventListener("loginStateChange", handleLogin);
+      window.removeEventListener("migrationComplete", handleMigrationComplete);
+    };
+  }, [fetchUserCart, validateAndApplyWelcomeGift, getClaimedRewardDetails]);
+
+  useEffect(() => {
+    const hasReward = hasClaimedReward();
+    if (
+      hasReward &&
+      cartItems.length > 0 &&
+      !isValidatingGift &&
+      !appliedWelcomeGift
+    ) {
+      console.log(
+        "CartContext: Auto-validating welcome gift due to cart change"
+      );
+      const giftDetails = getClaimedRewardDetails();
+      if (giftDetails) {
+        validateAndApplyWelcomeGift(giftDetails);
+      }
+    }
+  }, [
+    cartItems.length,
+    isValidatingGift,
+    hasClaimedReward,
+    validateAndApplyWelcomeGift,
+    appliedWelcomeGift,
+    getClaimedRewardDetails,
+  ]);
+
   useEffect(() => {
     if (appliedCoupon && cartItems.length > 0) {
-      // Recalculate coupon discount based on new cart total
+      console.log("CartContext: Auto-validating coupon due to cart change");
       applyCoupon(appliedCoupon.coupon.code);
     }
-  }, [cartItems.length]);
+  }, [cartItems.length, appliedCoupon, applyCoupon]);
 
   return (
     <CartContext.Provider
@@ -702,6 +701,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         markRewardAsUsed,
         hasClaimedReward,
         getClaimedRewardDetails,
+        serverHasUnusedReward,
       }}
     >
       {children}

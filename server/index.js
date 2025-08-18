@@ -36,6 +36,9 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const isProduction = process.env.NODE_ENV === "production";
 
+// Trust proxy for proper IP detection
+app.set('trust proxy', true);
+
 // --- Security Middleware ---
 
 // 1. HTTP security headers

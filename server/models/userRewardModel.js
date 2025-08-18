@@ -51,16 +51,7 @@ const userRewardSchema = new mongoose.Schema({
   },
   clientIP: {
     type: String,
-    required: true,
-    validate: {
-      validator: function(v) {
-        // Basic IP validation (IPv4 and IPv6)
-        const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
-        const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
-        return ipv4Regex.test(v) || ipv6Regex.test(v) || v === '::1' || v === '127.0.0.1';
-      },
-      message: "Invalid IP address format"
-    }
+    required: true
   },
   migrationData: {
     originalAnonymousId: String,
@@ -77,18 +68,20 @@ userRewardSchema.index({ anonymousId: 1, giftId: 1 }, { unique: true, sparse: tr
 userRewardSchema.index({ isUsed: 1, userId: 1 });
 
 
-// Ensure one reward per user (authenticated)
+// Ensure one reward per user (authenticated) - only for non-null userIds
 userRewardSchema.index({ userId: 1 }, { 
   unique: true, 
   sparse: true,
-  name: 'one_reward_per_user'
+  name: 'one_reward_per_user',
+  partialFilterExpression: { userId: { $exists: true, $ne: null } }
 });
 
-// Ensure one reward per anonymous session
+// Ensure one reward per anonymous session - only for non-null anonymousIds
 userRewardSchema.index({ anonymousId: 1 }, { 
   unique: true, 
   sparse: true,
-  name: 'one_reward_per_anonymous'
+  name: 'one_reward_per_anonymous',
+  partialFilterExpression: { anonymousId: { $exists: true, $ne: null } }
 });
 
 // Mark reward as used (with session support)
@@ -123,17 +116,38 @@ userRewardSchema.statics.canMigrateAnonymousGift = async function (anonymousId, 
   
   const options = session ? { session } : {};
   
-  // Check if user already has a reward
+  // 1. Check if the target user already has any reward. If so, migration is not allowed.
   const userHasReward = await this.findOne({ userId }, null, options);
-  if (userHasReward) return false;
+  if (userHasReward) {
+    console.log(`Migration check failed: User ${userId} already has a reward.`);
+    return false;
+  }
   
-  // Check if anonymous gift exists and is unused
+  // 2. Find an unused reward matching the anonymous ID.
   const anonymousReward = await this.findOne({ 
     anonymousId, 
     isUsed: false 
   }, null, options);
   
-  return !!anonymousReward;
+  if (!anonymousReward) {
+    console.log(`Migration check failed: No unused anonymous reward found for ID ${anonymousId}.`);
+    return false;
+  }
+  
+  // 3. Check for potential unique index conflicts before attempting migration.
+  // This ensures that if another anonymous reward with the same giftId has already been
+  // migrated to this user, we don't proceed.
+  const conflictCheck = await this.findOne({
+    userId,
+    giftId: anonymousReward.giftId
+  }, null, options);
+
+  if (conflictCheck) {
+    console.log(`Migration check failed: A reward for gift ${anonymousReward.giftId} has already been migrated to user ${userId}.`);
+    return false;
+  }
+
+  return true;
 };
 
 // Static method to migrate anonymous gift (with session support)
@@ -174,8 +188,9 @@ userRewardSchema.statics.migrateAnonymousGift = async function (anonymousId, use
 
 // Pre-save validation
 userRewardSchema.pre('save', function(next) {
-  // Ensure either userId or anonymousId is present, but not both during initial claim
-  if (!this.migrationData && !this.userId && !this.anonymousId) {
+  // During initial claim, either userId or anonymousId must be present
+  // Note: undefined values are allowed and will be converted to null by MongoDB
+  if (!this.migrationData && this.userId === null && this.anonymousId === null) {
     return next(new Error('Either userId or anonymousId must be provided'));
   }
   

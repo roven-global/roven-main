@@ -1,631 +1,245 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useState, useEffect, useCallback } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-import { Gift, Percent, Truck, Star, DollarSign, Clock, Check, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
-import { getUserRewards } from '@/utils/markRewardAsUsed';
-import { toast } from '@/hooks/use-toast';
-import { formatRupees } from '@/lib/currency';
-import Axios from '@/utils/Axios';
-import SummaryApi from '@/common/summaryApi';
+import { Gift, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { getUserRewards } from "@/utils/markRewardAsUsed";
+import { toast } from "@/hooks/use-toast";
+import { formatRupees } from "@/lib/currency";
 
 interface WelcomeGiftRewardProps {
-    subtotal: number;
-    shippingCost: number;
-    cartItems?: any[]; // Add cartItems for BOGO calculations
-    onRewardApplied: (reward: any, discountAmount: number, additionalData?: any) => void;
-    onRewardRemoved: () => void;
-    appliedReward?: any;
-    isCheckout?: boolean;
+  cartItems?: any[];
+  onRewardRemoved: () => void;
+  appliedReward?: any;
+  onValidateReward: (gift: any, couponCode?: string) => void;
+  hasClaimedReward: boolean;
 }
 
 export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
-    subtotal,
-    shippingCost,
-    cartItems = [], // Add default empty array
-    onRewardApplied,
-    onRewardRemoved,
-    appliedReward,
-    isCheckout = false
+  onRewardRemoved,
+  appliedReward,
+  onValidateReward,
+  hasClaimedReward,
 }) => {
-    const { user } = useAuth();
-    const [userReward, setUserReward] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
-    const [applying, setApplying] = useState(false);
-    const [couponCode, setCouponCode] = useState('');
-    const [couponLoading, setCouponLoading] = useState(false);
-    const [couponError, setCouponError] = useState('');
+  const { user } = useAuth();
+  const [userReward, setUserReward] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
 
-    // Check if BOGO offer can be applied with current cart
-    const canApplyBOGO = useCallback(() => {
-        if (!userReward) return false;
-
-        const rewardText = (userReward.rewardText || userReward.reward || '').toLowerCase();
-        const isBOGO = rewardText.includes('bogo') || rewardText.includes('buy one get one');
-
-        if (!isBOGO) return true;
-
-        // For BOGO offers, check if we have enough items
-        const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
-        return totalItems >= 2;
-    }, [userReward, cartItems]);
-
-    // Check if BOGO offer is currently valid (for applied offers)
-    const isBOGOValid = useCallback(() => {
-        if (!appliedReward || appliedReward.type !== 'sample') return true;
-
-        // Check if the applied BOGO offer is valid
-        if (appliedReward.isValid === false) {
-            return false;
+  // Fetch user's claimed reward
+  useEffect(() => {
+    const fetchUserReward = async () => {
+      setLoading(true);
+      setUserReward(null); // Reset on each fetch
+      try {
+        let rewardData = null;
+        // 1. If user is logged in, prioritize fetching from the backend.
+        if (user) {
+          const rewards = await getUserRewards();
+          const unusedReward = rewards.find((reward: any) => !reward.isUsed);
+          if (unusedReward) {
+            rewardData = unusedReward;
+          }
         }
 
-        // If no validation state, check current cart
-        const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
-        return totalItems >= 2;
-    }, [appliedReward, cartItems]);
-
-    // Fetch user's claimed reward (for authenticated users)
-    useEffect(() => {
-        const fetchUserReward = async () => {
-            if (user) {
-                setLoading(true);
-                try {
-                    const rewards = await getUserRewards();
-                    const unusedReward = rewards.find((reward: any) => !reward.isUsed);
-                    setUserReward(unusedReward || null);
-                } catch (error) {
-                    console.error('Error fetching user reward:', error);
-                } finally {
-                    setLoading(false);
-                }
+        // 2. If no reward from backend OR user is a guest, fall back to localStorage.
+        if (!rewardData) {
+          const storedReward = localStorage.getItem("claimedRewardDetails");
+          if (storedReward) {
+            try {
+              rewardData = JSON.parse(storedReward);
+            } catch (e) {
+              console.error("Error parsing stored reward from localStorage", e);
             }
-        };
-
-        // Only fetch if user is authenticated and we don't already have a reward
-        if (user && !userReward) {
-            fetchUserReward();
+          }
         }
-    }, [user?._id]); // FIXED: Only run when user ID changes, not on every user state change
 
-    // Check localStorage for anonymous user rewards OR as fallback for authenticated users
-    useEffect(() => {
-        const hasClaimedReward = localStorage.getItem('rewardClaimed') === 'true';
-        console.log('WelcomeGiftReward: Checking localStorage for rewards');
-        console.log('WelcomeGiftReward: hasClaimedReward from localStorage:', hasClaimedReward);
-
-        if (hasClaimedReward) {
-            const storedReward = localStorage.getItem('claimedRewardDetails');
-            console.log('WelcomeGiftReward: storedReward from localStorage:', storedReward);
-
-            if (storedReward) {
-                try {
-                    const parsedReward = JSON.parse(storedReward);
-                    console.log('WelcomeGiftReward: parsedReward:', parsedReward);
-
-                    // Normalize the reward data structure
-                    const normalizedReward = {
-                        _id: parsedReward.id || parsedReward._id,
-                        rewardTitle: parsedReward.title || parsedReward.rewardTitle,
-                        rewardText: parsedReward.reward || parsedReward.rewardText,
-                        giftId: parsedReward.id || parsedReward._id,
-                        couponCode: parsedReward.couponCode || ''
-                    };
-                    console.log('WelcomeGiftReward: normalizedReward:', normalizedReward);
-
-                    // Set the reward from localStorage (this will override backend data if available)
-                    setUserReward(normalizedReward);
-                } catch (error) {
-                    console.error('Error parsing stored reward:', error);
-                }
-            }
+        // 3. If any reward is found, set the state.
+        if (rewardData) {
+          setUserReward(rewardData);
+          setCouponCode(rewardData.couponCode || "");
         }
-    }, []); // FIXED: Run only once on mount, not when user changes
-
-    // New function to validate and apply welcome gift coupon code
-    const handleApplyCouponCode = async () => {
-        if (!couponCode.trim()) return;
-
-        setCouponLoading(true);
-        setCouponError('');
-
-        try {
-            console.log('WelcomeGiftReward: Validating coupon code:', couponCode);
-            console.log('WelcomeGiftReward: Cart items being sent:', cartItems);
-            console.log('WelcomeGiftReward: Cart items structure:', {
-                count: cartItems.length,
-                items: cartItems.map(item => ({
-                    id: item._id,
-                    productId: item.productId?._id || item.productId,
-                    name: item.productId?.name,
-                    price: item.productId?.price || item.price,
-                    quantity: item.quantity,
-                    variant: item.variant
-                }))
-            });
-
-            // Debug authentication
-            const accessToken = localStorage.getItem('accesstoken');
-            const refreshToken = localStorage.getItem('refreshToken');
-            const isLoggedIn = localStorage.getItem('isLoggedIn');
-
-            console.log('WelcomeGiftReward: Access token exists:', !!accessToken);
-            console.log('WelcomeGiftReward: Access token length:', accessToken?.length);
-            console.log('WelcomeGiftReward: Refresh token exists:', !!refreshToken);
-            console.log('WelcomeGiftReward: isLoggedIn:', isLoggedIn);
-            console.log('WelcomeGiftReward: All localStorage keys:', Object.keys(localStorage));
-
-            // Check if token is expired
-            if (accessToken) {
-                try {
-                    const payload = JSON.parse(atob(accessToken.split('.')[1]));
-                    const currentTime = Math.floor(Date.now() / 1000);
-                    console.log('WelcomeGiftReward: Token payload:', payload);
-                    console.log('WelcomeGiftReward: Token expires at:', payload.exp);
-                    console.log('WelcomeGiftReward: Current time:', currentTime);
-                    console.log('WelcomeGiftReward: Token expired:', currentTime > payload.exp);
-                } catch (error) {
-                    console.log('WelcomeGiftReward: Error parsing token:', error);
-                }
-            }
-
-            // Double-check token before making the request
-            const tokenBeforeRequest = localStorage.getItem('accesstoken');
-            console.log('WelcomeGiftReward: Token before request:', !!tokenBeforeRequest);
-
-            const response = await Axios.post(SummaryApi.validateWelcomeGiftCoupon.url, {
-                couponCode: couponCode.trim(),
-                orderAmount: subtotal,
-                cartItems: cartItems
-            });
-
-            if (response.data.success) {
-                const { gift, discountAmount, reason, finalAmount, shippingDiscount, productDiscount } = response.data.data;
-
-                console.log('WelcomeGiftReward: Coupon validated successfully:', response.data.data);
-
-                // Apply the reward with enhanced data
-                onRewardApplied(gift, discountAmount, {
-                    rewardType: gift.rewardType,
-                    rewardValue: gift.rewardValue,
-                    maxDiscount: gift.maxDiscount,
-                    minOrderAmount: gift.minOrderAmount,
-                    displayText: gift.displayText,
-                    reason,
-                    finalAmount,
-                    shippingDiscount,
-                    productDiscount
-                });
-
-                // Show success message
-                toast({
-                    title: "Welcome Gift Applied!",
-                    description: `${gift.displayText} - ${reason}`,
-                });
-
-                // Clear the input
-                setCouponCode('');
-            }
-        } catch (error: any) {
-            console.error('WelcomeGiftReward: Error applying coupon code:', error);
-            const errorMessage = error.response?.data?.message || 'Failed to apply welcome gift';
-            setCouponError(errorMessage);
-
-            toast({
-                title: "Error",
-                description: errorMessage,
-                variant: "destructive",
-            });
-        } finally {
-            setCouponLoading(false);
-        }
+      } catch (error) {
+        console.error("Error fetching user reward:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    // Enhanced discount calculation using the new coupon code system
-    const calculateDiscountAmount = (reward: any, subtotal: number, shippingCost: number) => {
-        if (!reward) {
-            console.log('WelcomeGiftReward: No reward provided to calculateDiscountAmount');
-            return 0;
-        }
-
-        // Validate reward structure
-        if (typeof reward !== 'object') {
-            console.log('WelcomeGiftReward: Invalid reward structure:', reward);
-            return 0;
-        }
-
-        // Add null checks for reward properties with fallbacks
-        const rewardText = (reward.rewardText || reward.reward || '').toLowerCase();
-        const rewardTitle = (reward.rewardTitle || reward.title || '').toLowerCase();
-
-        console.log('WelcomeGiftReward: calculateDiscountAmount called');
-        console.log('WelcomeGiftReward: reward object:', reward);
-        console.log('WelcomeGiftReward: rewardText:', rewardText);
-        console.log('WelcomeGiftReward: rewardTitle:', rewardTitle);
-        console.log('WelcomeGiftReward: subtotal:', subtotal);
-        console.log('WelcomeGiftReward: shippingCost:', shippingCost);
-
-        // Check for percentage discounts
-        if (rewardText.includes('10%') || rewardText.includes('percent') || rewardTitle.includes('10%')) {
-            const discount = Math.min(subtotal * 0.1, subtotal);
-            console.log('WelcomeGiftReward: 10% discount calculated:', discount);
-            return discount;
-        }
-        // Check for flat amount discounts (₹100 off)
-        else if (rewardText.includes('100') || rewardText.includes('flat') || rewardTitle.includes('100') ||
-            rewardText.includes('flat100') || rewardTitle.includes('flat100') ||
-            rewardText.includes('use code: flat100') || rewardTitle.includes('use code: flat100')) {
-            const discount = Math.min(100, subtotal);
-            console.log('WelcomeGiftReward: ₹100 flat discount calculated:', discount);
-            return discount;
-        }
-        // Check for free shipping
-        else if (rewardText.includes('free shipping') || rewardText.includes('shipping') || rewardTitle.includes('shipping')) {
-            console.log('WelcomeGiftReward: Free shipping discount:', shippingCost);
-            return shippingCost;
-        }
-        // Check for other percentage discounts
-        else if (rewardText.includes('%') || rewardTitle.includes('%')) {
-            // Extract percentage from text (e.g., "25% off" -> 25)
-            const percentMatch = (rewardText + rewardTitle).match(/(\d+)%/);
-            if (percentMatch) {
-                const percentage = parseInt(percentMatch[1]);
-                const discount = Math.min((subtotal * percentage) / 100, subtotal);
-                console.log('WelcomeGiftReward: Percentage discount calculated:', discount, 'from', percentage + '%');
-                return discount;
-            }
-        }
-        // Check for BOGO offers
-        else if (rewardText.includes('buy one get one') || rewardText.includes('bogo') || rewardTitle.includes('bogo')) {
-            // Calculate BOGO discount based on cart items
-            const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
-
-            if (totalItems >= 2) {
-                // Find the cheapest item to give for free
-                const sortedItems = [...cartItems].sort((a, b) => (a.price || 0) - (b.price || 0));
-                const freeItemValue = sortedItems[0].price || 0;
-
-                console.log('WelcomeGiftReward: BOGO discount calculated:', freeItemValue, 'from', totalItems, 'items');
-                return freeItemValue;
-            } else {
-                console.log('WelcomeGiftReward: BOGO offer requires 2+ items, current items:', totalItems);
-                return 0;
-            }
-        }
-
-        console.log('WelcomeGiftReward: No discount pattern matched, returning 0');
-        return 0;
-    };
-
-    const handleApplyReward = async () => {
-        if (!userReward) return;
-
-        setApplying(true);
-        try {
-            console.log('🔍 DEBUG: handleApplyReward START');
-            console.log('🔍 DEBUG: userReward object:', JSON.stringify(userReward, null, 2));
-            console.log('🔍 DEBUG: cartItems:', JSON.stringify(cartItems, null, 2));
-            console.log('🔍 DEBUG: subtotal:', subtotal);
-            console.log('🔍 DEBUG: shippingCost:', shippingCost);
-
-            const discountAmount = calculateDiscountAmount(userReward, subtotal, shippingCost);
-            console.log('🔍 DEBUG: calculateDiscountAmount returned:', discountAmount);
-
-            console.log('WelcomeGiftReward: handleApplyReward called');
-            console.log('WelcomeGiftReward: userReward:', userReward);
-            console.log('WelcomeGiftReward: calculated discountAmount:', discountAmount);
-            console.log('WelcomeGiftReward: subtotal:', subtotal);
-            console.log('WelcomeGiftReward: shippingCost:', shippingCost);
-
-            if (discountAmount > 0) {
-                // Check if this is a BOGO offer
-                const rewardText = (userReward.rewardText || userReward.reward || '').toLowerCase();
-                const rewardTitle = (userReward.rewardTitle || userReward.title || '').toLowerCase();
-                const isBOGO = rewardText.includes('bogo') || rewardText.includes('buy one get one') ||
-                    rewardTitle.includes('bogo') || rewardTitle.includes('buy one get one');
-
-                console.log('🔍 DEBUG: rewardText:', rewardText);
-                console.log('🔍 DEBUG: rewardTitle:', rewardTitle);
-                console.log('🔍 DEBUG: isBOGO detected:', isBOGO);
-
-                // Prepare additional data for the CartContext
-                const additionalData = {
-                    rewardType: isBOGO ? 'buy_one_get_one' : 'discount',
-                    reason: isBOGO ? 'Buy 1 Get 1 Free' : 'Welcome Gift Discount'
-                };
-
-                console.log('🔍 DEBUG: additionalData being sent:', JSON.stringify(additionalData, null, 2));
-                console.log('🔍 DEBUG: Final call to onRewardApplied with:');
-                console.log('🔍 DEBUG: - reward:', JSON.stringify(userReward, null, 2));
-                console.log('🔍 DEBUG: - discountAmount:', discountAmount);
-                console.log('🔍 DEBUG: - additionalData:', JSON.stringify(additionalData, null, 2));
-
-                console.log('WelcomeGiftReward: Calling onRewardApplied with:', userReward, discountAmount, additionalData);
-                onRewardApplied(userReward, discountAmount, additionalData);
-                toast({
-                    title: "Welcome gift applied!",
-                    description: `${userReward.rewardTitle} has been applied to your order.`,
-                });
-            } else {
-                console.log('🔍 DEBUG: discountAmount is 0, reward not applicable');
-                console.log('🔍 DEBUG: This means calculateDiscountAmount returned 0');
-                console.log('WelcomeGiftReward: Reward not applicable - discountAmount is 0');
-                toast({
-                    title: "Reward not applicable",
-                    description: "This reward cannot be applied to your current order.",
-                    variant: "destructive",
-                });
-            }
-        } catch (error) {
-            console.error('🔍 DEBUG: Error in handleApplyReward:', error);
-            console.error('Error applying reward:', error);
-            toast({
-                title: "Error applying reward",
-                description: "Please try again.",
-                variant: "destructive",
-            });
-        } finally {
-            setApplying(false);
-        }
-    };
-
-    const handleRemoveReward = () => {
-        onRewardRemoved();
-        toast({
-            title: "Welcome gift removed",
-            description: "The welcome gift has been removed from your order.",
-        });
-    };
-
-    // Don't show anything if no reward (for both authenticated and anonymous users)
-    if (!userReward) {
-        console.log('WelcomeGiftReward: No userReward, returning null');
-        console.log('WelcomeGiftReward: user:', user);
-        console.log('WelcomeGiftReward: userReward state:', userReward);
-        return null;
+    if (hasClaimedReward) {
+      fetchUserReward();
+    } else {
+      setUserReward(null);
     }
+  }, [user, hasClaimedReward]);
 
-    console.log('WelcomeGiftReward: Rendering with userReward:', userReward);
-    console.log('WelcomeGiftReward: appliedReward:', appliedReward);
-    console.log('WelcomeGiftReward: userReward structure check:', {
-        hasReward: !!userReward,
-        hasTitle: userReward?.rewardTitle,
-        hasText: userReward?.rewardText,
-        hasCouponCode: userReward?.couponCode
+  const handleApply = async (couponToApply?: string) => {
+    const code = couponToApply || couponCode;
+    if (!userReward || !code) return;
+
+    const currentTarget = couponToApply ? setCouponLoading : setApplying;
+    currentTarget(true);
+
+    try {
+      onValidateReward(userReward, code);
+    } catch (error) {
+      console.error("Error during handleApply:", error);
+      toast({
+        title: "Error Applying Gift",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    } finally {
+      currentTarget(false);
+    }
+  };
+
+  const handleRemoveReward = () => {
+    onRewardRemoved();
+    toast({
+      title: "Welcome gift removed",
+      description: "The welcome gift has been removed from your order.",
     });
+  };
 
-    // If reward is already applied, show the applied state
-    if (appliedReward) {
-        // Safety check for appliedReward structure - handle both 'rewardTitle' and 'title'
-        const rewardTitle = appliedReward.reward?.rewardTitle || appliedReward.reward?.title;
-        if (!appliedReward.reward || !rewardTitle) {
-            console.log('WelcomeGiftReward: Invalid appliedReward structure:', appliedReward);
-            return null;
-        }
-
-        const discountAmount = calculateDiscountAmount(appliedReward.reward, subtotal, shippingCost);
-        const isBOGOOffer = appliedReward.type === 'sample';
-        const isCurrentlyValid = isBOGOOffer ? isBOGOValid() : true;
-
-        return (
-            <Card className={cn(
-                "border-2",
-                isCurrentlyValid ? "border-green-200 bg-green-50" : "border-orange-200 bg-orange-50"
-            )}>
-                <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className={cn(
-                                "w-8 h-8 rounded-full flex items-center justify-center",
-                                isCurrentlyValid ? "bg-green-100" : "bg-orange-100"
-                            )}>
-                                {isCurrentlyValid ? (
-                                    <Check className="w-4 h-4 text-green-600" />
-                                ) : (
-                                    <div className="w-4 h-4 text-orange-600">⚠️</div>
-                                )}
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <h4 className="font-semibold text-green-800">
-                                        {rewardTitle}
-                                    </h4>
-                                    <Badge variant="secondary" className={cn(
-                                        isCurrentlyValid ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"
-                                    )}>
-                                        {isCurrentlyValid ? "Applied" : "Condition Not Met"}
-                                    </Badge>
-                                </div>
-                                <p className="text-sm text-green-700">
-                                    {appliedReward.reward.rewardText || appliedReward.reward.reward}
-                                </p>
-                                {isCurrentlyValid ? (
-                                    <p className="text-sm font-medium text-green-800">
-                                        -{formatRupees(discountAmount)}
-                                    </p>
-                                ) : (
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium text-orange-800">
-                                            {appliedReward.validationMessage || "Add more items to activate this offer"}
-                                        </p>
-                                        {isBOGOOffer && (
-                                            <p className="text-xs text-orange-600">
-                                                💡 Add at least 2 items to cart to activate BOGO offer
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleRemoveReward}
-                            className={cn(
-                                isCurrentlyValid ? "text-green-600 hover:text-green-800 hover:bg-green-100" : "text-orange-600 hover:text-orange-800 hover:bg-orange-100"
-                            )}
-                        >
-                            <X className="w-4 h-4" />
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-        );
-    }
-
-    // Show available reward with coupon code input
-    if (!userReward) {
-        console.log('WelcomeGiftReward: No userReward available');
-        return null;
-    }
-
-    // Safety check for userReward structure
-    if (!userReward.rewardTitle || !userReward.rewardText) {
-        console.log('WelcomeGiftReward: Invalid userReward structure:', userReward);
-        return null;
-    }
-
-    const discountAmount = calculateDiscountAmount(userReward, subtotal, shippingCost);
-    const isApplicable = discountAmount > 0 || (userReward?.rewardText || '').toLowerCase().includes('bogo');
-    const canApplyBOGOOffer = canApplyBOGO();
-
+  if (loading) {
     return (
-        <Card className="border-orange-200 bg-orange-50">
-            <CardContent className="p-4">
-                <div className="space-y-4">
-                    {/* Welcome Gift Info */}
-                    <div className="flex items-start gap-3">
-                        <div className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center",
-                            "bg-orange-100"
-                        )}>
-                            <Gift className="w-4 h-4 text-orange-600" />
-                        </div>
-                        <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold text-orange-800">
-                                    Welcome Gift Available!
-                                </h4>
-                                <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                                    {user ? 'New Customer' : 'Guest User'}
-                                </Badge>
-                            </div>
-                            <p className="text-sm text-orange-700 mb-2">
-                                {userReward.rewardTitle}: {userReward.rewardText}
-                            </p>
-                            {isApplicable && (
-                                <div className="space-y-1">
-                                    {discountAmount > 0 && (
-                                        <p className="text-sm font-medium text-orange-800">
-                                            Save up to {formatRupees(discountAmount)}
-                                        </p>
-                                    )}
-                                    {userReward?.rewardText && (userReward.rewardText.toLowerCase().includes('bogo')) && (
-                                        <div className="space-y-2">
-                                            <p className="text-sm font-medium text-orange-800">
-                                                🎁 Buy One Get One Free offer
-                                            </p>
-                                            {!canApplyBOGOOffer && (
-                                                <p className="text-sm text-red-600 font-medium">
-                                                    ⚠️ Add at least 2 items to cart to use this offer
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            {/* Show the actual coupon code if available */}
-                            {userReward.couponCode && (
-                                <div className="p-2 bg-orange-100 rounded text-sm font-mono text-orange-800 mt-2">
-                                    Coupon Code: <strong>{userReward.couponCode}</strong>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Coupon Code Input - More Prominent */}
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium text-orange-800">
-                            Enter Coupon Code to Apply:
-                        </Label>
-                        <div className="flex gap-2">
-                            <Input
-                                placeholder="e.g., FLAT100, WELCOME10, BOGO"
-                                value={couponCode}
-                                onChange={(e) => setCouponCode(e.target.value)}
-                                className="flex-1 border-orange-300 focus:border-orange-500"
-                            />
-                            <Button
-                                onClick={handleApplyCouponCode}
-                                disabled={couponLoading || !couponCode.trim()}
-                                size="sm"
-                                className="bg-orange-600 hover:bg-orange-700 text-white"
-                            >
-                                {couponLoading ? 'Applying...' : 'Apply Code'}
-                            </Button>
-                        </div>
-                        {couponError && (
-                            <p className="text-xs text-red-600">{couponError}</p>
-                        )}
-                        <p className="text-xs text-orange-600">
-                            💡 <strong>Tip:</strong> You can also use the coupon code "{userReward.couponCode || 'from your reward'}" to apply this welcome gift!
-                        </p>
-
-                        {/* Debug button */}
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                                const token = localStorage.getItem('accesstoken');
-                                const refreshToken = localStorage.getItem('refreshToken');
-                                const isLoggedIn = localStorage.getItem('isLoggedIn');
-                                console.log('🔍 Debug - Current localStorage state:', {
-                                    accesstoken: !!token,
-                                    refreshToken: !!refreshToken,
-                                    isLoggedIn,
-                                    allKeys: Object.keys(localStorage)
-                                });
-                            }}
-                            className="text-xs"
-                        >
-                            Debug Token Status
-                        </Button>
-                    </div>
-
-                    {/* Apply Button */}
-                    <div className="flex gap-2">
-                        <Button
-                            size="sm"
-                            onClick={handleApplyReward}
-                            disabled={!isApplicable || applying || !canApplyBOGOOffer}
-                            className="bg-orange-600 hover:bg-orange-700 text-white"
-                        >
-                            {applying ? (
-                                <>Applying...</>
-                            ) : (
-                                <>Apply Now</>
-                            )}
-                        </Button>
-                        {!isApplicable && (
-                            <p className="text-xs text-orange-600 self-center">
-                                Minimum order required
-                            </p>
-                        )}
-                        {!canApplyBOGOOffer && userReward?.rewardText?.toLowerCase().includes('bogo') && (
-                            <p className="text-xs text-red-600 self-center">
-                                Need 2+ items for BOGO
-                            </p>
-                        )}
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
+      <Card>
+        <CardContent className="p-4 text-center">Loading gift...</CardContent>
+      </Card>
     );
+  }
+
+  if (appliedReward) {
+    const isValid = appliedReward.isValid !== false;
+    return (
+      <Card
+        className={cn(
+          "border-2",
+          isValid
+            ? "border-green-200 bg-green-50"
+            : "border-orange-200 bg-orange-50"
+        )}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center",
+                  isValid ? "bg-green-100" : "bg-orange-100"
+                )}
+              >
+                {isValid ? (
+                  <Check className="w-4 h-4 text-green-600" />
+                ) : (
+                  <div className="w-4 h-4 text-orange-600">⚠️</div>
+                )}
+              </div>
+              <div>
+                <h4 className="font-semibold text-green-800">
+                  {appliedReward.reward?.title}
+                </h4>
+                <p className="text-sm text-green-700">
+                  {appliedReward.validationMessage ||
+                    appliedReward.reward?.reward}
+                </p>
+                {isValid && (
+                  <p className="text-sm font-medium text-green-800">
+                    -{formatRupees(appliedReward.discountAmount)}
+                  </p>
+                )}
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRemoveReward}
+              className="text-red-600 hover:text-red-700"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!userReward) {
+    return (
+      <Card>
+        <CardContent className="p-4 text-center">
+          <p className="text-warm-taupe">No welcome gift claimed yet</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-orange-200 bg-orange-50">
+      <CardContent className="p-4">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-orange-100">
+              <Gift className="w-4 h-4 text-orange-600" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-orange-800">
+                Welcome Gift Available!
+              </h4>
+              <p className="text-sm text-orange-700 mb-2">
+                {userReward.title}: {userReward.reward}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-orange-800">
+              Enter Coupon Code to Apply:
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="e.g., WELCOME10"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                className="flex-1 border-orange-300 focus:border-orange-500"
+              />
+              <Button
+                onClick={() => handleApply(couponCode)}
+                disabled={couponLoading || !couponCode.trim()}
+                size="sm"
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                {couponLoading ? "Applying..." : "Apply Code"}
+              </Button>
+            </div>
+            {couponError && (
+              <p className="text-xs text-red-600">{couponError}</p>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => handleApply()}
+              disabled={applying}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              {applying ? <>Applying...</> : <>Apply Gift</>}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 };
 
 export default WelcomeGiftReward;

@@ -271,12 +271,16 @@ const SummaryApi = {
   },
   // Welcome Gift endpoints
   getAllWelcomeGifts: {
-    url: "/api/welcome-gifts",
+    url: `${baseURL}/api/welcome-gifts`,
     method: "get",
   },
   migrateAnonymousGift: {
     url: "/api/welcome-gifts/migrate-anonymous",
     method: "post",
+  },
+  getAnonymousId: {
+    url: `${baseURL}/api/welcome-gifts/anonymous-id`,
+    method: "get",
   },
   // User Reward endpoints
   claimReward: {
@@ -328,7 +332,7 @@ const SummaryApi = {
     method: "post",
   },
   checkWelcomeGiftEligibility: {
-    url: "/api/welcome-gifts/check-eligibility",
+    url: `${baseURL}/api/welcome-gifts/check-eligibility`,
     method: "get",
   },
   getUserRewards: {
@@ -336,8 +340,12 @@ const SummaryApi = {
     method: "get",
   },
   markRewardAsUsed: {
-    url: "/api/welcome-gifts/mark-used",
+    url: `${baseURL}/api/welcome-gifts/mark-used`,
     method: "post",
+  },
+  checkRewardStatus: {
+    url: `${baseURL}/api/welcome-gifts/status`,
+    method: "get",
   },
 };
 

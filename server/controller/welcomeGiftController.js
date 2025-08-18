@@ -1,10 +1,10 @@
 const asyncHandler = require("express-async-handler");
 const mongoose = require("mongoose");
 const rateLimit = require("express-rate-limit");
-const crypto = require("crypto");
 const WelcomeGift = require("../models/welcomeGiftModel");
 const UserReward = require("../models/userRewardModel");
 const ProductModel = require("../models/productModel");
+const { generateSecureAnonymousId, validateAnonymousId } = require("../utils/anonymousId");
 
 // Security helpers
 const sanitizeString = (str) => typeof str === 'string' ? str.trim().replace(/[<>\"']/g, '') : '';
@@ -20,48 +20,6 @@ const giftClaimLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-
-// Anonymous ID validation with cryptographic signature
-const generateSecureAnonymousId = () => {
-  const timestamp = Date.now();
-  const randomBytes = crypto.randomBytes(16).toString('hex');
-  const data = `${timestamp}-${randomBytes}`;
-  const signature = crypto.createHmac('sha256', process.env.ANONYMOUS_SECRET || 'fallback-secret')
-    .update(data).digest('hex').substring(0, 16);
-  return `${data}-${signature}`;
-};
-
-const validateAnonymousId = (anonymousId) => {
-  if (!anonymousId || typeof anonymousId !== 'string') return false;
-  const parts = anonymousId.split('-');
-  // Accept both 3-part (timestamp-random-signature) and 4-part variants; use last part as signature
-  if (parts.length < 3) return false;
-
-  const timestamp = parts[0];
-  const randomPart = parts[1];
-  const signature = parts[parts.length - 1];
-  const data = `${timestamp}-${randomPart}`;
-  const expectedSignature = crypto
-    .createHmac('sha256', process.env.ANONYMOUS_SECRET || 'fallback-secret')
-    .update(data)
-    .digest('hex')
-    .substring(0, 16);
-
-  // Check signature match (timing-safe) and timestamp age (< 24h)
-  let isValidSignature = false;
-  try {
-    isValidSignature = crypto.timingSafeEqual(
-      Buffer.from(signature, 'hex'),
-      Buffer.from(expectedSignature, 'hex')
-    );
-  } catch (e) {
-    return false;
-  }
-  const ts = parseInt(timestamp);
-  const isValidTimestamp = Number.isFinite(ts) && (Date.now() - ts) < (24 * 60 * 60 * 1000);
-
-  return isValidSignature && isValidTimestamp;
-};
 
 // Server-side cart validation
 const validateCartItems = async (cartItems) => {
@@ -92,16 +50,36 @@ const validateCartItems = async (cartItems) => {
   return { isValid: true, validatedItems };
 };
 
+// @desc Test endpoint to verify server functionality
+// @route GET /api/welcome-gifts/test
+// @access Public
+const testWelcomeGiftEndpoint = asyncHandler(async (req, res) => {
+  console.log('Welcome gift test endpoint called');
+  res.status(200).json({
+    success: true,
+    message: "Welcome gift test endpoint working",
+    timestamp: new Date().toISOString(),
+    serverStatus: "running"
+  });
+});
+
 // @desc Get all welcome gifts
 // @route GET /api/welcome-gifts
 // @access Public
 const getAllWelcomeGifts = asyncHandler(async (req, res) => {
-  const gifts = await WelcomeGift.find({ isActive: true }).sort({ order: 1 }).select('-__v');
-  res.status(200).json({
-    success: true,
-    data: gifts,
-    message: "Welcome gifts retrieved successfully"
-  });
+  try {
+    console.log('Getting all welcome gifts...');
+    const gifts = await WelcomeGift.find({ isActive: true }).sort({ order: 1 }).select('-__v');
+    console.log(`Found ${gifts.length} active welcome gifts`);
+    res.status(200).json({
+      success: true,
+      data: gifts,
+      message: "Welcome gifts retrieved successfully"
+    });
+  } catch (error) {
+    console.error('Error getting welcome gifts:', error);
+    throw error;
+  }
 });
 
 // @desc Get all welcome gifts (admin)
@@ -425,16 +403,26 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
   session.startTransaction();
 
   try {
-    const { anonymousId } = req.body;
-    const clientIP = req.ip || req.connection.remoteAddress;
+    let { anonymousId } = req.body;
+    const clientIP = req.ip || req.connection?.remoteAddress || 'unknown';
 
-    // Validate anonymous ID if provided
-    if (anonymousId && !validateAnonymousId(anonymousId)) {
+    // Generate anonymous ID if not provided or invalid
+    if (!anonymousId) {
+      anonymousId = generateSecureAnonymousId();
+      console.log('Generated new anonymous ID for claim:', anonymousId);
+    } else if (!validateAnonymousId(anonymousId)) {
       await session.abortTransaction();
       logSecurityEvent("INVALID_ANONYMOUS_ID", { anonymousId, clientIP });
       res.status(400);
       throw new Error("Invalid anonymous ID. Please refresh and try again.");
     }
+    
+    console.log('Claim function - anonymousId details:', {
+      anonymousId,
+      anonymousIdLength: anonymousId?.length,
+      anonymousIdParts: anonymousId?.split('-')?.length,
+      isValid: validateAnonymousId(anonymousId)
+    });
 
     // Get gift with session for atomic operation
     const gift = await WelcomeGift.findById(req.params.id).session(session);
@@ -450,6 +438,18 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error("This welcome gift is not active");
     }
+    
+    // Log gift object structure for debugging
+    console.log('Gift object structure:', {
+      id: gift._id,
+      title: gift.title,
+      reward: gift.reward,
+      rewardText: gift.rewardText,
+      description: gift.description,
+      hasReward: !!gift.reward,
+      hasRewardText: !!gift.rewardText,
+      hasDescription: !!gift.description
+    });
 
     // Check claim eligibility with atomic operations
     if (req.user) {
@@ -471,20 +471,45 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
     }
 
     // Atomic increment and reward creation
-    await gift.incrementUsage(session);
+    try {
+      console.log('Incrementing gift usage for gift:', gift._id);
+      await gift.incrementUsage(session);
+      console.log('Gift usage incremented successfully');
+    } catch (incrementError) {
+      console.error('Error incrementing gift usage:', incrementError);
+      await session.abortTransaction();
+      throw new Error('Failed to update gift usage. Please try again.');
+    }
 
     const userRewardData = {
       giftId: gift._id,
       rewardTitle: gift.title,
-      rewardText: gift.reward,
+      rewardText: gift.reward || gift.rewardText || gift.description || 'Welcome gift reward',
       wasLoggedIn: !!req.user,
       anonymousId: anonymousId || null,
       claimedAt: new Date(),
       clientIP: clientIP
     };
 
+    // Ensure either userId or anonymousId is set (but not both)
     if (req.user) {
       userRewardData.userId = req.user._id;
+      userRewardData.anonymousId = null; // Remove anonymousId for authenticated users
+    } else {
+      userRewardData.userId = null; // Ensure userId is null for anonymous users
+    }
+
+    console.log('Creating UserReward with data:', {
+      giftId: userRewardData.giftId,
+      rewardTitle: userRewardData.rewardTitle,
+      wasLoggedIn: userRewardData.wasLoggedIn,
+      hasAnonymousId: !!userRewardData.anonymousId,
+      anonymousId: userRewardData.anonymousId,
+      userId: userRewardData.userId,
+      clientIP: userRewardData.clientIP
+    });
+
+    if (req.user) {
       const User = require("../models/userModel");
       await User.findByIdAndUpdate(req.user._id, {
         rewardClaimed: true,
@@ -492,8 +517,46 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
       }, { session });
     }
 
-    const userReward = await UserReward.create([userRewardData], { session });
-    await session.commitTransaction();
+    try {
+      console.log('Attempting to create UserReward with session:', {
+        sessionId: session.id,
+        userRewardData: JSON.stringify(userRewardData, null, 2)
+      });
+      
+      // Log the exact data being sent to UserReward.create
+      console.log('UserReward data validation check:', {
+        hasGiftId: !!userRewardData.giftId,
+        hasRewardTitle: !!userRewardData.rewardTitle,
+        hasRewardText: !!userRewardData.rewardText,
+        hasWasLoggedIn: userRewardData.wasLoggedIn !== undefined,
+        hasAnonymousId: userRewardData.anonymousId !== null,
+        hasUserId: userRewardData.userId !== null,
+        hasClaimedAt: !!userRewardData.claimedAt,
+        hasClientIP: !!userRewardData.clientIP
+      });
+      
+      const userReward = await UserReward.create([userRewardData], { session });
+      console.log('UserReward created successfully:', userReward);
+      
+      await session.commitTransaction();
+      console.log('Transaction committed successfully');
+    } catch (createError) {
+      console.error('Error creating UserReward:', createError);
+      console.error('Error details:', {
+        name: createError.name,
+        message: createError.message,
+        code: createError.code,
+        keyPattern: createError.keyPattern,
+        keyValue: createError.keyValue,
+        stack: createError.stack
+      });
+      
+      // Log the exact data that failed
+      console.error('Failed UserReward data:', userRewardData);
+      
+      await session.abortTransaction();
+      throw new Error(`Failed to create reward record: ${createError.message}`);
+    }
 
     logSecurityEvent("GIFT_CLAIMED_SUCCESS", {
       giftId: gift._id,
@@ -527,7 +590,7 @@ const checkWelcomeGiftEligibility = asyncHandler(async (req, res) => {
   const { anonymousId } = req.query;
   let shouldShowPopup = true;
   let reason = "First time visitor";
-  const clientIP = req.ip || req.connection.remoteAddress;
+  const clientIP = req.ip || req.connection?.remoteAddress || 'unknown';
 
   // Validate anonymous ID if provided
   if (anonymousId && !validateAnonymousId(anonymousId)) {
@@ -659,7 +722,7 @@ const getUserRewards = asyncHandler(async (req, res) => {
 const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
   try {
     const { couponCode, orderAmount, cartItems, anonymousId: bodyAnonymousId } = req.body;
-    const clientIP = req.ip || req.connection.remoteAddress;
+    const clientIP = req.ip || req.connection?.remoteAddress || 'unknown';
 
     // Input validation
     if (!couponCode || typeof couponCode !== 'string') {
@@ -742,54 +805,38 @@ const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
       giftId: gift._id
     });
 
-    // Fallback: if user has not claimed but request includes a valid anonymousId
-    if (!userReward && bodyAnonymousId) {
-      const isValidAnon = validateAnonymousId(bodyAnonymousId);
-      if (isValidAnon) {
-        // Ensure user does not already have any reward to avoid unique index violations
-        const existingForUser = await UserReward.findOne({ userId: req.user._id });
-        if (!existingForUser) {
-          const anonReward = await UserReward.findOne({
-            anonymousId: bodyAnonymousId,
-            giftId: gift._id,
-            isUsed: false
-          });
-          if (anonReward) {
-            try {
-              // Migrate inline to unblock usage after login
-              anonReward.userId = req.user._id;
-              anonReward.migrationData = {
-                originalAnonymousId: bodyAnonymousId,
-                migratedAt: new Date(),
-                migratedFrom: 'anonymous'
-              };
-              anonReward.anonymousId = undefined;
-              await anonReward.save();
-              userReward = anonReward;
-            } catch (migrationError) {
-              logSecurityEvent('INLINE_MIGRATION_ERROR', {
-                error: migrationError.message,
-                userId: req.user._id,
-                giftId: gift._id,
-                clientIP
-              });
-              // fall through; userReward remains null
-            }
-          }
-        }
-      }
-    }
+    console.log('ValidateWelcomeGiftCoupon: Initial userReward lookup result:', {
+      userReward: !!userReward,
+      userId: req.user._id,
+      giftId: gift._id,
+      hasAnonymousId: !!bodyAnonymousId
+    });
+
+    // The primary migration path is now handled by AuthContext upon login.
+    // This function should only validate for an already authenticated and migrated user.
+    // The inline migration fallback has been removed to simplify the logic.
 
     if (!userReward) {
+      console.log('ValidateWelcomeGiftCoupon: No userReward found for authenticated user', {
+        userId: req.user._id,
+        giftId: gift._id,
+      });
+      
       logSecurityEvent("UNCLAIMED_GIFT_USAGE_ATTEMPT", {
         giftId: gift._id,
         userId: req.user._id,
         clientIP
       });
+      
       return res.status(400).json({
         success: false,
         message: "You have not claimed this welcome gift. Please claim a gift first.",
-        code: "UNCLAIMED_REWARD"
+        code: "UNCLAIMED_REWARD",
+        debug: {
+          hasAnonymousId: !!bodyAnonymousId,
+          userId: req.user._id,
+          giftId: gift._id
+        }
       });
     }
 
@@ -861,7 +908,7 @@ const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
       error: error.message,
       stack: process.env.NODE_ENV === 'production' ? undefined : error.stack,
       userId: req.user?._id,
-      clientIP: req.ip,
+      clientIP: req.ip || req.connection?.remoteAddress || 'unknown',
       requestBody: process.env.NODE_ENV === 'production' ? undefined : req.body
     });
     throw error;
@@ -883,9 +930,28 @@ const migrateAnonymousGift = asyncHandler(async (req, res) => {
     }
 
     const { anonymousId } = req.body;
-    const clientIP = req.ip || req.connection.remoteAddress;
+    const clientIP = req.ip || req.connection?.remoteAddress || 'unknown';
 
-    if (!anonymousId || !validateAnonymousId(anonymousId)) {
+    if (!anonymousId) {
+      await session.abortTransaction();
+      logSecurityEvent("MISSING_ANONYMOUS_ID", { 
+        userId: req.user._id, 
+        clientIP 
+      });
+      res.status(400);
+      throw new Error("Anonymous ID is required");
+    }
+    
+    // Validate anonymous ID with detailed logging
+    const isValidAnonymousId = validateAnonymousId(anonymousId);
+    console.log('Migration - Anonymous ID validation:', {
+      anonymousId,
+      isValidAnonymousId,
+      anonymousIdLength: anonymousId?.length,
+      anonymousIdParts: anonymousId?.split('-')?.length
+    });
+    
+    if (!isValidAnonymousId) {
       await session.abortTransaction();
       logSecurityEvent("INVALID_MIGRATION_ATTEMPT", { 
         userId: req.user._id, 
@@ -893,19 +959,82 @@ const migrateAnonymousGift = asyncHandler(async (req, res) => {
         clientIP 
       });
       res.status(400);
-      throw new Error("Valid anonymous ID is required");
+      throw new Error("Invalid anonymous ID. Please refresh and try again.");
+    }
+
+    // First, let's check what rewards exist for this user and anonymousId
+    const existingUserReward = await UserReward.findOne({ userId: req.user._id });
+    const anonymousRewards = await UserReward.find({ anonymousId });
+    const unusedAnonymousRewards = await UserReward.find({ anonymousId, isUsed: false });
+    
+    console.log('Migration Debug:', {
+      userId: req.user._id,
+      anonymousId,
+      anonymousIdLength: anonymousId?.length,
+      anonymousIdParts: anonymousId?.split('-')?.length,
+      existingUserReward: !!existingUserReward,
+      anonymousRewardsCount: anonymousRewards.length,
+      unusedAnonymousRewardsCount: unusedAnonymousRewards.length,
+      anonymousRewards: anonymousRewards.map(r => ({ 
+        id: r._id, 
+        isUsed: r.isUsed, 
+        giftId: r.giftId,
+        rewardTitle: r.rewardTitle,
+        storedAnonymousId: r.anonymousId,
+        storedAnonymousIdLength: r.anonymousId?.length
+      }))
+    });
+    
+    // Also check for any rewards with similar anonymous IDs (for debugging)
+    if (anonymousRewards.length === 0 && anonymousId) {
+      // Try to find rewards with similar anonymous IDs
+      const similarRewards = await UserReward.find({
+        anonymousId: { $regex: anonymousId.substring(0, 20) }
+      });
+      console.log('Similar anonymous IDs found:', similarRewards.map(r => ({
+        id: r._id,
+        anonymousId: r.anonymousId,
+        anonymousIdLength: r.anonymousId?.length
+      })));
+      
+      // Also try to find any rewards that might have been stored with a different format
+      const allAnonymousRewards = await UserReward.find({
+        anonymousId: { $exists: true, $ne: null }
+      });
+      console.log('All anonymous rewards in database:', allAnonymousRewards.map(r => ({
+        id: r._id,
+        anonymousId: r.anonymousId,
+        anonymousIdLength: r.anonymousId?.length,
+        createdAt: r.createdAt
+      })));
     }
 
     // Check if migration is possible with atomic operations
     const canMigrate = await UserReward.canMigrateAnonymousGift(anonymousId, req.user._id, session);
     if (!canMigrate) {
       await session.abortTransaction();
+      
+      if (existingUserReward) {
+        console.log('Migration not needed: User already has a reward', {
+          userId: req.user._id,
+          existingRewardId: existingUserReward._id
+        });
+      } else {
+        console.log('Migration not possible: No anonymous gift found for migration', {
+          userId: req.user._id,
+          anonymousId,
+          anonymousRewardsFound: anonymousRewards.length,
+          unusedRewardsFound: unusedAnonymousRewards.length
+        });
+      }
+      
       // Return success to prevent frontend errors for legitimate cases
       return res.status(200).json({
         success: true,
         data: {
           message: "No migration needed - user already has a gift or no anonymous gift found",
-          migrated: false
+          migrated: false,
+          userHasReward: !!existingUserReward
         },
         message: "Migration check completed successfully"
       });
@@ -966,12 +1095,52 @@ const migrateAnonymousGift = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc Generate a new anonymous ID
+// @route GET /api/welcome-gifts/anonymous-id
+// @access Public
+const getAnonymousId = asyncHandler(async (req, res) => {
+  const anonymousId = generateSecureAnonymousId();
+  res.status(200).json({
+    success: true,
+    data: { anonymousId },
+    message: "Anonymous ID generated successfully"
+  });
+});
+
 // Apply rate limiting to claim endpoint
 const applyGiftClaimLimiter = (req, res, next) => {
   if (req.path.includes('/claim')) {
     return giftClaimLimiter(req, res, next);
   }
   next();
+};
+
+// Check if a user has an active, unused welcome gift
+const checkRewardStatus = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const unusedReward = await UserReward.findOne({
+      userId: userId,
+      isUsed: false,
+      giftId: { $exists: true }, // Specifically check for welcome gifts
+    }).populate("giftId");
+
+    if (unusedReward) {
+      res.status(200).json({
+        success: true,
+        hasUnusedReward: true,
+        rewardDetails: unusedReward.giftId, // Send the details of the WelcomeGift
+      });
+    } else {
+      res
+        .status(200)
+        .json({ success: true, hasUnusedReward: false, rewardDetails: null });
+    }
+  } catch (error)
+ {
+    console.error("Error in checkRewardStatus:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
 };
 
 module.exports = {
@@ -991,6 +1160,7 @@ module.exports = {
   validateWelcomeGiftCoupon,
   migrateAnonymousGift,
   applyGiftClaimLimiter,
-  generateSecureAnonymousId,
-  validateAnonymousId 
+  testWelcomeGiftEndpoint,
+  getAnonymousId,
+  checkRewardStatus
 };
