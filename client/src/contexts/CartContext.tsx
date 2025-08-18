@@ -300,17 +300,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const clearCoupon = useCallback(() => setAppliedCoupon(null), []);
 
   const hasClaimedReward = useCallback((): boolean => {
+    // Prefer server state when logged-in, otherwise fallback to localStorage
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    if (isLoggedIn) return serverHasUnusedReward;
     const details = localStorage.getItem("claimedRewardDetails");
     if (!details) return false;
-    // For logged-in users, the server is the source of truth.
-    // For guests, we rely on localStorage.
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-    if (isLoggedIn) {
-      return serverHasUnusedReward;
-    }
     try {
-      const parsed = JSON.parse(details);
-      return !!parsed.couponCode;
+      return !!JSON.parse(details)?.couponCode;
     } catch {
       return false;
     }
@@ -569,30 +565,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   //
   //
 
+  // Backend source of truth: on cart changes, ask backend to validate current gift
   useEffect(() => {
-    if (!appliedWelcomeGift) return;
-    if (appliedWelcomeGift.type === "sample") {
-      const totalItems = cartItems.reduce(
-        (sum, it) => sum + (Number.isFinite(it.quantity) ? it.quantity : 1),
-        0
-      );
-      const isValid = totalItems >= 2;
-      const discount = isValid ? calculateBogoDiscount(cartItems) : 0;
-      setAppliedWelcomeGift((prev) => {
-        if (!prev) return prev;
-        if (prev.discountAmount === discount && prev.isValid === isValid)
-          return prev;
-        return {
-          ...prev,
-          discountAmount: discount,
-          isValid,
-          validationMessage: isValid
-            ? undefined
-            : "Add at least 2 items to activate BOGO offer",
-        };
-      });
-    }
-  }, [cartItems, appliedWelcomeGift, calculateBogoDiscount]);
+    const giftDetails = getClaimedRewardDetails();
+    if (!giftDetails) return;
+    if (cartItems.length === 0) return;
+    validateAndApplyWelcomeGift(giftDetails);
+  }, [cartItems, getClaimedRewardDetails, validateAndApplyWelcomeGift]);
 
   useEffect(() => {
     const savedCoupon = localStorage.getItem("appliedCoupon");
@@ -623,6 +602,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const handleLogin = async () => {
       console.log("CartContext: Login event received, fetching cart...");
       await fetchUserCart();
+      toast({
+        title: "Restoring your welcome gift...",
+        description: "Checking your account for any claimed gift",
+      });
+      // After login, if a reward exists on server, re-validate to populate UI
+      const giftDetails = getClaimedRewardDetails();
+      if (giftDetails) {
+        validateAndApplyWelcomeGift(giftDetails);
+      }
     };
     const handleMigrationComplete = () => {
       console.log(

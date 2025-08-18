@@ -26,6 +26,8 @@ const validateCartItems = async (cartItems) => {
   if (!Array.isArray(cartItems)) return { isValid: false, message: "Invalid cart items format" };
   
   const validatedItems = [];
+  let totalCartValue = 0;
+  
   for (const item of cartItems) {
     try {
       const product = await ProductModel.findById(item.productId || item.productId?._id);
@@ -37,17 +39,26 @@ const validateCartItems = async (cartItems) => {
         if (variant) actualPrice = variant.price;
       }
       
+      const quantity = Math.max(1, Math.min(99, parseInt(item.quantity) || 1));
+      const itemTotal = actualPrice * quantity;
+      totalCartValue += itemTotal;
+      
       validatedItems.push({
         ...item,
         actualPrice,
-        quantity: Math.max(1, Math.min(99, parseInt(item.quantity) || 1))
+        quantity,
+        itemTotal
       });
     } catch (error) {
       logSecurityEvent("CART_VALIDATION_ERROR", { item, error: error.message });
     }
   }
   
-  return { isValid: true, validatedItems };
+  return { 
+    isValid: validatedItems.length > 0, 
+    validatedItems,
+    totalCartValue: Math.round(totalCartValue * 100) / 100
+  };
 };
 
 // @desc Test endpoint to verify server functionality
@@ -753,24 +764,15 @@ const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
           hasVariant: !!i?.variant,
         })) : 'not-array'
       });
-    }
-    if (!cartValidation.isValid) {
-      logSecurityEvent("INVALID_CART_VALIDATION", { 
-        userId: req.user._id, 
-        clientIP, 
-        error: cartValidation.message 
-      });
       res.status(400);
       throw new Error(cartValidation.message);
     }
 
     const validatedCartItems = cartValidation.validatedItems;
     
-    // Calculate actual cart total server-side
-    const actualCartTotal = validatedCartItems.reduce((total, item) => 
-      total + (item.actualPrice * item.quantity), 0
-    );
-
+    // Use server-calculated cart total for more accurate validation
+    const actualCartTotal = cartValidation.totalCartValue;
+    
     // Security check: verify submitted order amount matches server calculation
     if (Math.abs(actualCartTotal - orderAmount) > 1) { // Allow 1 rupee tolerance for rounding
       logSecurityEvent("CART_TOTAL_MISMATCH", {

@@ -141,9 +141,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               "AuthContext: Attempting to migrate anonymous gift for anonymousId:",
               anonymousId
             );
+            const parsedReward = rewardDetails
+              ? JSON.parse(rewardDetails)
+              : null;
             const migrationResponse = await Axios.post(
               "/api/welcome-gifts/migrate-anonymous",
-              { anonymousId }
+              { anonymousId, couponCode: parsedReward?.couponCode }
             );
 
             if (migrationResponse.data.success) {

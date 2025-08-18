@@ -186,47 +186,47 @@ welcomeGiftSchema.methods.incrementUsage = async function (session = null) {
 
 // Server-side discount calculation with security validations
 welcomeGiftSchema.methods.calculateDiscount = function (subtotal, cartItems = []) {
-  // Validate inputs
+  // 1. Validate inputs
   if (!Number.isFinite(subtotal) || subtotal < 0) {
-    return {
-      discount: 0,
-      reason: "Invalid subtotal amount",
-      isValid: false
-    };
+    return { discount: 0, reason: "Invalid subtotal amount", isValid: false };
   }
 
+  // 2. Check minimum order amount
   if (subtotal < this.minOrderAmount) {
     return {
       discount: 0,
-      reason: `Minimum order amount of ₹${this.minOrderAmount} required`,
-      isValid: false
+      reason: `Minimum order of ₹${this.minOrderAmount} required`,
+      isValid: false,
     };
+  }
+
+  // 3. Special validation for BOGO
+  if (this.rewardType === 'buy_one_get_one') {
+    const totalItems = (cartItems || []).reduce((sum, item) => sum + (item.quantity || 1), 0);
+    if (totalItems < 2) {
+      return {
+        discount: 0,
+        reason: 'BOGO requires at least 2 items',
+        isValid: false,
+      };
+    }
   }
 
   let discount = 0;
   let reason = '';
 
+  // 4. Calculate discount based on type
   switch (this.rewardType) {
     case 'percentage':
-      discount = (subtotal * this.rewardValue) / 100;
-      if (this.maxDiscount && discount > this.maxDiscount) {
-        discount = this.maxDiscount;
-        reason = `${this.rewardValue}% off (max ₹${this.maxDiscount})`;
-      } else {
-        reason = `${this.rewardValue}% off`;
-      }
+      ({ discount, reason } = this.calculatePercentageDiscount(subtotal));
       break;
 
     case 'fixed_amount':
-      discount = Math.min(this.rewardValue, subtotal);
-      reason = `₹${this.rewardValue} off`;
+      ({ discount, reason } = this.calculateFixedDiscount(subtotal));
       break;
 
     case 'free_shipping':
-      // Calculate shipping cost based on business logic
-      const shippingCost = subtotal < 1000 ? 49 : 0;
-      discount = shippingCost;
-      reason = 'Free shipping';
+      ({ discount, reason } = this.calculateShippingDiscount(subtotal));
       break;
 
     case 'buy_one_get_one':
@@ -239,15 +239,15 @@ welcomeGiftSchema.methods.calculateDiscount = function (subtotal, cartItems = []
       reason = 'Unknown reward type';
   }
 
-  // Ensure discount doesn't exceed subtotal
-  discount = Math.min(discount, subtotal);
-  discount = Math.round(discount * 100) / 100; // Round to 2 decimal places
+  // 5. Final validation and formatting
+  discount = Math.max(0, Math.min(discount, subtotal)); // Ensure discount is valid
+  discount = Math.round(discount * 100) / 100;
 
   return {
     discount,
     reason,
-    isValid: discount > 0,
-    finalAmount: subtotal - discount
+    isValid: discount > 0 || this.rewardType === 'free_shipping',
+    finalAmount: subtotal - discount,
   };
 };
 
@@ -308,6 +308,37 @@ welcomeGiftSchema.methods.calculateBOGODiscount = function (cartItems) {
   });
 
   return Math.round(totalDiscount * 100) / 100;
+};
+
+// Calculate fixed amount discount with validation
+welcomeGiftSchema.methods.calculateFixedDiscount = function (subtotal) {
+  let discount = Number.isFinite(this.rewardValue) ? this.rewardValue : 0;
+  // Fixed discount cannot exceed subtotal
+  discount = Math.max(0, Math.min(discount, subtotal));
+  const reason = `₹${this.rewardValue} off`;
+  return { discount, reason };
+};
+
+// Calculate percentage discount with optional cap (maxDiscount)
+welcomeGiftSchema.methods.calculatePercentageDiscount = function (subtotal) {
+  const percentageValue = Number.isFinite(this.rewardValue) ? this.rewardValue : 0;
+  let discount = (subtotal * percentageValue) / 100;
+  const hasCap = Number.isFinite(this.maxDiscount) && this.maxDiscount > 0;
+  if (hasCap) {
+    discount = Math.min(discount, this.maxDiscount);
+  }
+  discount = Math.max(0, Math.min(discount, subtotal));
+  const reason = hasCap
+    ? `${percentageValue}% off (max ₹${this.maxDiscount})`
+    : `${percentageValue}% off`;
+  return { discount: Math.round(discount * 100) / 100, reason };
+};
+
+// Calculate shipping discount (e.g., free shipping below threshold)
+welcomeGiftSchema.methods.calculateShippingDiscount = function (subtotal) {
+  // Business rule: ₹49 shipping below ₹1000, free otherwise
+  const shippingCost = subtotal < 1000 ? 49 : 0;
+  return { discount: shippingCost, reason: 'Free shipping' };
 };
 
 // Enhanced validation for gift application

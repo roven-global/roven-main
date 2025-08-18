@@ -74,12 +74,9 @@ export const WelcomeGiftReward: React.FC<WelcomeGiftRewardProps> = ({
       }
     };
 
-    if (hasClaimedReward) {
-      fetchUserReward();
-    } else {
-      setUserReward(null);
-    }
-  }, [user, hasClaimedReward]);
+    // Always attempt to fetch. The component decides what to render.
+    fetchUserReward();
+  }, [user]);
 
   const handleApply = async (couponToApply?: string) => {
     const code = couponToApply || couponCode;
