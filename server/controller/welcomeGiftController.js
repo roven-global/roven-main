@@ -452,10 +452,7 @@ const getWelcomeGiftsAnalytics = asyncHandler(async (req, res) => {
 // @route POST /api/welcome-gifts/:id/claim
 // @access Public
 const claimWelcomeGift = asyncHandler(async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
+  const result = await executeWithOptionalTransaction(async (session) => {
     let { anonymousId } = req.body;
     const clientIP = req.ip || req.connection?.remoteAddress || 'unknown';
 
@@ -464,9 +461,7 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
       anonymousId = generateSecureAnonymousId();
       console.log('Generated new anonymous ID for claim:', anonymousId);
     } else if (!validateAnonymousId(anonymousId)) {
-      await session.abortTransaction();
       logSecurityEvent("INVALID_ANONYMOUS_ID", { anonymousId, clientIP });
-      res.status(400);
       throw new Error("Invalid anonymous ID. Please refresh and try again.");
     }
     
@@ -477,18 +472,17 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
       isValid: validateAnonymousId(anonymousId)
     });
 
-    // Get gift with session for atomic operation
-    const gift = await WelcomeGift.findById(req.params.id).session(session);
+    // Get gift with optional session for atomic operation
+    const gift = session 
+      ? await WelcomeGift.findById(req.params.id).session(session)
+      : await WelcomeGift.findById(req.params.id);
+      
     if (!gift) {
-      await session.abortTransaction();
-      res.status(404);
       throw new Error("Welcome gift not found");
     }
 
     if (!gift.isActive) {
-      await session.abortTransaction();
       logSecurityEvent("INACTIVE_GIFT_CLAIM_ATTEMPT", { giftId: req.params.id, clientIP });
-      res.status(400);
       throw new Error("This welcome gift is not active");
     }
     
@@ -506,19 +500,19 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
 
     // Check claim eligibility with atomic operations
     if (req.user) {
-      const canClaim = await UserReward.canUserClaimGift(req.user._id, session);
+      const canClaim = session 
+        ? await UserReward.canUserClaimGift(req.user._id, session)
+        : await UserReward.canUserClaimGift(req.user._id);
       if (!canClaim) {
-        await session.abortTransaction();
         logSecurityEvent("MULTIPLE_CLAIM_ATTEMPT", { userId: req.user._id, clientIP });
-        res.status(400);
         throw new Error("You have already claimed a welcome gift. Only one gift per user is allowed.");
       }
     } else if (anonymousId) {
-      const hasClaimed = await UserReward.hasAnonymousUserClaimed(anonymousId, session);
+      const hasClaimed = session
+        ? await UserReward.hasAnonymousUserClaimed(anonymousId, session)
+        : await UserReward.hasAnonymousUserClaimed(anonymousId);
       if (hasClaimed) {
-        await session.abortTransaction();
         logSecurityEvent("ANONYMOUS_MULTIPLE_CLAIM", { anonymousId, clientIP });
-        res.status(400);
         throw new Error("You have already claimed a welcome gift. Only one gift per user is allowed.");
       }
     }
@@ -530,7 +524,6 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
       console.log('Gift usage incremented successfully');
     } catch (incrementError) {
       console.error('Error incrementing gift usage:', incrementError);
-      await session.abortTransaction();
       throw new Error('Failed to update gift usage. Please try again.');
     }
 
@@ -564,15 +557,16 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
 
     if (req.user) {
       const User = require("../models/userModel");
+      const updateOptions = session ? { session } : {};
       await User.findByIdAndUpdate(req.user._id, {
         rewardClaimed: true,
         reward: gift._id
-      }, { session });
+      }, updateOptions);
     }
 
     try {
-      console.log('Attempting to create UserReward with session:', {
-        sessionId: session.id,
+      console.log('Attempting to create UserReward:', {
+        sessionId: session?.id,
         userRewardData: JSON.stringify(userRewardData, null, 2)
       });
       
@@ -588,11 +582,10 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
         hasClientIP: !!userRewardData.clientIP
       });
       
-      const userReward = await UserReward.create([userRewardData], { session });
+      const userReward = session
+        ? await UserReward.create([userRewardData], { session })
+        : await UserReward.create(userRewardData);
       console.log('UserReward created successfully:', userReward);
-      
-      await session.commitTransaction();
-      console.log('Transaction committed successfully');
     } catch (createError) {
       console.error('Error creating UserReward:', createError);
       console.error('Error details:', {
@@ -607,7 +600,6 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
       // Log the exact data that failed
       console.error('Failed UserReward data:', userRewardData);
       
-      await session.abortTransaction();
       throw new Error(`Failed to create reward record: ${createError.message}`);
     }
 
@@ -618,22 +610,19 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
       clientIP
     });
 
-    res.status(200).json({
-      success: true,
-      data: {
-        gift,
-        claimed: true,
-        anonymousId,
-        userUpdated: !!req.user
-      },
-      message: "Welcome gift claimed successfully"
-    });
-  } catch (error) {
-    await session.abortTransaction();
-    throw error;
-  } finally {
-    session.endSession();
-  }
+    return {
+      gift,
+      claimed: true,
+      anonymousId,
+      userUpdated: !!req.user
+    };
+  });
+
+  res.status(200).json({
+    success: true,
+    data: result,
+    message: "Welcome gift claimed successfully"
+  });
 });
 
 // @desc Check if user should see welcome gift popup
