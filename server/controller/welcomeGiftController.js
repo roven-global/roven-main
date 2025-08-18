@@ -25,6 +25,10 @@ const giftClaimLimiter = rateLimit({
 const validateCartItems = async (cartItems) => {
   if (!Array.isArray(cartItems)) return { isValid: false, message: "Invalid cart items format" };
   
+  if (cartItems.length === 0) {
+    return { isValid: false, message: "Cart is empty. Please add items to your cart before applying coupons." };
+  }
+  
   const validatedItems = [];
   let totalCartValue = 0;
   
@@ -55,6 +59,10 @@ const validateCartItems = async (cartItems) => {
     } catch (error) {
       logSecurityEvent("CART_VALIDATION_ERROR", { item, error: error.message });
     }
+  }
+  
+  if (validatedItems.length === 0) {
+    return { isValid: false, message: "No valid items found in cart. Please ensure cart has valid products." };
   }
   
   return { 
