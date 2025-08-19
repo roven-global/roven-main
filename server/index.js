@@ -27,21 +27,27 @@ const fs = require("fs");
 const https = require("https");
 const nocache = require("nocache");
 
-// Security-related constants
+// --- Constants ---
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const RATE_LIMIT_MAX_REQUESTS = 1000; // Max requests per window
-const BODY_LIMIT = "10mb"; // Max request body size
-
-const app = express();
+const RATE_LIMIT_MAX_REQUESTS = 1000;
+const BODY_LIMIT = "10mb";
 const PORT = process.env.PORT || 5000;
 const isProduction = process.env.NODE_ENV === "production";
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://roven-main.onrender.com";
 
-// Trust proxy for proper IP detection
-app.set('trust proxy', true);
+// --- Express Setup ---
+const app = express();
+app.set('trust proxy', true); // Required for proxies like Render
 
-// --- Security Middleware ---
+// --- Debug Origin Logging (temporary) ---
+app.use((req, res, next) => {
+  if (req.headers.origin) {
+    console.log(`Incoming request origin: ${req.headers.origin}`);
+  }
+  next();
+});
 
-// 1. HTTP security headers
+// --- Helmet Security Headers ---
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
@@ -51,94 +57,83 @@ app.use(
         scriptSrc: ["'self'", "'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", process.env.FRONTEND_URL || "http://localhost:5173"],
+        connectSrc: ["'self'", FRONTEND_URL],
       },
     },
     hidePoweredBy: true,
   })
 );
 
-// 2. CORS configuration
+// --- CORS Configuration ---
+const allowedOrigins = [
+  FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:5000"
+];
+
 app.use(
   cors({
-    credentials: true,
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      
-      const allowedOrigins = [
-        process.env.FRONTEND_URL || "https://roven-main.onrender.com",
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://localhost:5000"
-      ];
-      
+      if (!origin) return callback(null, true); // allow server-to-server, Postman, etc.
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        console.log(`CORS blocked origin: ${origin}`);
-        callback(new Error('Not allowed by CORS'));
+        console.warn(`CORS Blocked: ${origin}`);
+        callback(new Error("Not allowed by CORS"));
       }
     },
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// 3. Request parsing and rate limiting
+// --- Body & Cookie Parsers ---
 app.use(express.json({ limit: BODY_LIMIT }));
 app.use(express.urlencoded({ limit: BODY_LIMIT, extended: true }));
 app.use(cookieParser());
 
-// 4. Security against common attacks, no caching
+// --- Anti-Attack & No-Cache ---
 app.use(mongoSanitize());
 app.use(xss());
 app.use(hpp());
 app.use(nocache());
 
-// 5. Rate limiting APIs
+// --- Rate Limiting ---
 const apiLimiter = rateLimit({
   windowMs: RATE_LIMIT_WINDOW_MS,
   max: RATE_LIMIT_MAX_REQUESTS,
-  message: {
-    success: false,
-    message: "Too many requests from this IP, please try again later.",
-  },
+  message: { success: false, message: "Too many requests, please try later." },
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use("/api/", apiLimiter);
 
-// 6. Stricter rate limits for auth endpoints
+// Stricter Auth Limits
 const authLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000,
   max: 50,
-  message: {
-    success: false,
-    message: "Too many authentication attempts, please try again later.",
-  },
+  message: { success: false, message: "Too many authentication attempts, please try again later." },
 });
 app.use("/api/auth/", authLimiter);
 app.use("/api/user/login", authLimiter);
 app.use("/api/user/register", authLimiter);
 app.use("/api/user/forgot-password", authLimiter);
 
-// 7. Welcome Gift Claim stricter limiter (critical for abuse prevention!)
+// Welcome Gift Abuse Prevention
 const claimLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // 5 claims per hour per IP
-  message: {
-    success: false,
-    message: "Too many gift claim attempts. Please try again later.",
-  },
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { success: false, message: "Too many gift claim attempts. Please try again later." },
 });
 app.use("/api/welcome-gifts/:id/claim", claimLimiter);
 
-// 8. Compression & request logging
+// --- Compression & Logging ---
 app.use(compression());
 app.use(morgan(isProduction ? "combined" : "dev"));
 
-// 9. Secure session handling
+// --- Session Security ---
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "not-so-secret",
@@ -148,12 +143,12 @@ app.use(
       secure: isProduction,
       httpOnly: true,
       sameSite: isProduction ? "none" : "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 24 * 60 * 60 * 1000,
     },
   })
 );
 
-// 10. Passport authentication
+// --- Passport Auth ---
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -161,6 +156,8 @@ app.use(passport.session());
 app.get("/", (req, res) => {
   res.send("API is running!");
 });
+
+// Fix potential double-slash issue: No trailing slash on base path
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/product", productRouter);
@@ -172,40 +169,43 @@ app.use("/api/order", orderRouter);
 app.use("/api/coupon", couponRouter);
 app.use("/api/welcome-gifts", welcomeGiftRouter);
 
-// Default 404 handler for all unmatched API routes (optional, but user-friendly)
+// --- 404 Handler ---
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "API route not found" });
 });
 
-// --- Connect to DB and Start Server ---
-const startServer = async () => {
-  await connectDb();
-  if (isProduction && process.env.SSL_KEY && process.env.SSL_CERT) {
-    // HTTPS/SSL in production
-    const sslOptions = {
-      key: fs.readFileSync(process.env.SSL_KEY),
-      cert: fs.readFileSync(process.env.SSL_CERT),
-    };
-    https.createServer(sslOptions, app).listen(PORT, () => {
-      console.log(`HTTPS Server running on port ${PORT}`);
-    });
-  } else {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  }
-};
-
-// Global error handler (optionally add logError here)
+// --- Global Error Handler ---
 app.use((err, req, res, next) => {
-  if (process.env.NODE_ENV !== "production") {
-    console.error("[Global Error Handler]", err.stack || err);
-  }
+  console.error("[Global Error Handler]", err.stack || err);
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal Server Error",
-    error: process.env.NODE_ENV === "production" ? undefined : err.stack,
+    error: isProduction ? undefined : err.stack,
   });
 });
+
+// --- Start Server with DB Connection ---
+const startServer = async () => {
+  try {
+    await connectDb();
+    if (isProduction && process.env.SSL_KEY && process.env.SSL_CERT) {
+      // HTTPS in production if provided
+      const sslOptions = {
+        key: fs.readFileSync(process.env.SSL_KEY),
+        cert: fs.readFileSync(process.env.SSL_CERT),
+      };
+      https.createServer(sslOptions, app).listen(PORT, () => {
+        console.log(`HTTPS Server running on port ${PORT}`);
+      });
+    } else {
+      app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
+    }
+  } catch (err) {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+  }
+};
 
 startServer();
