@@ -26,6 +26,7 @@ const hpp = require("hpp");
 const fs = require("fs");
 const https = require("https");
 const nocache = require("nocache");
+const path = require("path");
 
 // --- Constants ---
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
@@ -168,6 +169,13 @@ app.use("/api/address", addressRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/coupon", couponRouter);
 app.use("/api/welcome-gifts", welcomeGiftRouter);
+
+// --- SERVE FRONTEND ---
+app.use(express.static(path.join(__dirname, "..", "client", "dist")));
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
+});
+
 
 // --- 404 Handler ---
 app.use((req, res) => {

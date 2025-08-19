@@ -612,30 +612,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [fetchUserCart, validateAndApplyWelcomeGift, getClaimedRewardDetails]);
 
-  useEffect(() => {
-    const hasReward = hasClaimedReward();
-    if (
-      hasReward &&
-      cartItems.length > 0 &&
-      !isValidatingGift &&
-      !appliedWelcomeGift
-    ) {
-      console.log(
-        "CartContext: Auto-validating welcome gift due to cart change"
-      );
-      const giftDetails = getClaimedRewardDetails();
-      if (giftDetails) {
-        validateAndApplyWelcomeGift(giftDetails);
-      }
-    }
-  }, [
-    cartItems.length,
-    isValidatingGift,
-    hasClaimedReward,
-    validateAndApplyWelcomeGift,
-    appliedWelcomeGift,
-    getClaimedRewardDetails,
-  ]);
 
   // Avoid revalidation loops: only re-validate when cart composition changes
   const appliedCouponCodeRef = useRef<string | null>(null);
