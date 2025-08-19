@@ -403,7 +403,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setIsValidatingGift(false);
       }
     },
-    [isValidatingGift, getClaimedRewardDetails, hasClaimedReward]
+    [getClaimedRewardDetails, hasClaimedReward]
   );
 
   const applyWelcomeGift = useCallback(
