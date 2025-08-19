@@ -530,7 +530,7 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
     const userRewardData = {
       giftId: gift._id,
       rewardTitle: gift.title,
-      rewardText: gift.reward || gift.rewardText || gift.description || 'Welcome gift reward',
+      rewardText: gift.reward || gift.description || 'Welcome gift reward',
       wasLoggedIn: !!req.user,
       anonymousId: anonymousId || null,
       claimedAt: new Date(),
