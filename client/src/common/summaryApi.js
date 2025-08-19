@@ -266,7 +266,7 @@ const SummaryApi = {
     method: "get",
   },
   googleLogin: {
-    url: `${baseURL}/api/auth/google`,
+    url: `/api/auth/google`,
     method: "get",
   },
   adminOverview: {
@@ -275,7 +275,7 @@ const SummaryApi = {
   },
   // Welcome Gift endpoints
   getAllWelcomeGifts: {
-    url: `${baseURL}/api/welcome-gifts`,
+    url: `/api/welcome-gifts`,
     method: "get",
   },
   migrateAnonymousGift: {
@@ -283,7 +283,7 @@ const SummaryApi = {
     method: "post",
   },
   getAnonymousId: {
-    url: `${baseURL}/api/welcome-gifts/anonymous-id`,
+    url: `/api/welcome-gifts/anonymous-id`,
     method: "get",
   },
   // User Reward endpoints
@@ -336,7 +336,7 @@ const SummaryApi = {
     method: "post",
   },
   checkWelcomeGiftEligibility: {
-    url: `${baseURL}/api/welcome-gifts/check-eligibility`,
+    url: `/api/welcome-gifts/check-eligibility`,
     method: "get",
   },
   getUserRewards: {
@@ -344,11 +344,11 @@ const SummaryApi = {
     method: "get",
   },
   markRewardAsUsed: {
-    url: `${baseURL}/api/welcome-gifts/mark-used`,
+    url: `/api/welcome-gifts/mark-used`,
     method: "post",
   },
   checkRewardStatus: {
-    url: `${baseURL}/api/welcome-gifts/status`,
+    url: `/api/welcome-gifts/status`,
     method: "get",
   },
 };
