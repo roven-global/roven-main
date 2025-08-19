@@ -11,6 +11,7 @@ import React, {
 import { toast } from "@/hooks/use-toast";
 import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface CartItem {
   _id: string;
@@ -536,13 +537,23 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   //
   //
 
+  const debouncedCartItems = useDebounce(cartItems, 500);
+
   // Backend source of truth: on cart changes, ask backend to validate current gift
   useEffect(() => {
     const giftDetails = getClaimedRewardDetails();
     if (!giftDetails) return;
-    if (cartItems.length === 0) return;
+
+    // Use the debounced cart items for this effect
+    if (debouncedCartItems.length === 0) {
+      if (appliedWelcomeGift) {
+        setAppliedWelcomeGift(null);
+      }
+      return;
+    }
+    
     validateAndApplyWelcomeGift(giftDetails);
-  }, [cartItems, getClaimedRewardDetails, validateAndApplyWelcomeGift]);
+  }, [debouncedCartItems, getClaimedRewardDetails, validateAndApplyWelcomeGift, appliedWelcomeGift]);
 
   useEffect(() => {
     const savedCoupon = localStorage.getItem("appliedCoupon");
