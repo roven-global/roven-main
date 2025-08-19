@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuest } from "@/contexts/GuestContext";
@@ -40,17 +41,14 @@ const Cart = () => {
     updateQuantity,
     removeFromCart,
     fetchUserCart,
-    appliedCoupon,
-    appliedWelcomeGift,
     applyCoupon,
     removeCoupon,
-    validateAndApplyWelcomeGift,
-    markRewardAsUsed,
     removeWelcomeGift,
+    orderQuote,
+    isQuoteLoading,
   } = useCart();
   const { guestCart, removeFromGuestCart, updateGuestCartQuantity } =
     useGuest();
-  const { hasClaimedReward } = useCart();
   const [loading, setLoading] = useState(true);
   const [couponCode, setCouponCode] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
@@ -63,15 +61,6 @@ const Cart = () => {
   const [lifetimeSavings, setLifetimeSavings] = useState<number>(0);
   const [lifetimeSavingsLoading, setLifetimeSavingsLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [quoteLoading, setQuoteLoading] = useState(false);
-  const [orderQuote, setOrderQuote] = useState<null | {
-    items: any[];
-    subtotal: number;
-    shippingCost: number;
-    discounts: { coupon: number; welcomeGift: number; total: number };
-    coupon?: any;
-    finalTotal: number;
-  }>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -108,48 +97,6 @@ const Cart = () => {
     console.log("Cart: Cart items changed, triggering re-render");
   }, [cartItems, guestCart]);
 
-  // Fetch server-authoritative quote when authenticated and inputs change
-  useEffect(() => {
-    const fetchQuote = async () => {
-      if (!isAuthenticated || cartItems.length === 0) {
-        setOrderQuote(null);
-        return;
-      }
-      setQuoteLoading(true);
-      try {
-        const response = await Axios.post(SummaryApi.getOrderQuote.url, {
-          cartItems,
-          couponCode: appliedCoupon?.coupon.code,
-          applyWelcomeGift: !!appliedWelcomeGift || hasClaimedReward(),
-        });
-        if (response.data?.success) {
-          setOrderQuote(response.data.data);
-        } else {
-          setOrderQuote(null);
-        }
-      } catch (error: any) {
-        const msg = error?.response?.data?.message;
-        if (msg) {
-          toast({
-            title: "Order quote error",
-            description: msg,
-            variant: "destructive",
-          });
-        }
-        setOrderQuote(null);
-      } finally {
-        setQuoteLoading(false);
-      }
-    };
-
-    fetchQuote();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    isAuthenticated,
-    cartItems,
-    appliedCoupon?.coupon.code,
-    appliedWelcomeGift,
-  ]);
 
   // Fetch available coupons
   useEffect(() => {
@@ -357,46 +304,16 @@ const Cart = () => {
 
   const displayCartItems = isAuthenticated ? cartItems : guestCart;
 
-  // Calculate cart summary metrics
   const totalUniqueItems = displayCartItems.length;
-  const totalQuantity = displayCartItems.reduce(
-    (acc, item) => acc + item.quantity,
-    0
-  );
-  // Server-authoritative totals when authenticated, otherwise local fallback
-  const subtotal = isAuthenticated
-    ? orderQuote?.subtotal || 0
-    : displayCartItems.reduce((sum, item) => {
-        const price =
-          (item as any).price ||
-          (item as any).variant?.price ||
-          (item as any).productId?.price ||
-          0;
-        return sum + price * item.quantity;
-      }, 0);
-  const shippingCost = isAuthenticated
-    ? orderQuote?.shippingCost || 0
-    : subtotal > 499
-    ? 0
-    : 40;
-  const couponDiscount = isAuthenticated
-    ? orderQuote?.discounts?.coupon || 0
-    : appliedCoupon?.discountAmount || 0;
-  const welcomeGiftDiscount = isAuthenticated
-    ? orderQuote?.discounts?.welcomeGift || 0
-    : appliedWelcomeGift?.discountAmount || 0;
-  const finalTotal = isAuthenticated
-    ? orderQuote?.finalTotal || 0
-    : Math.max(
-        0,
-        subtotal + shippingCost - (couponDiscount + welcomeGiftDiscount)
-      );
-  const totalAmount = subtotal;
-
-  // Total savings: server discounts + shipping savings heuristic
-  const totalSavings =
-    (orderQuote?.discounts?.total || couponDiscount + welcomeGiftDiscount) +
-    (shippingCost === 0 ? 40 : 0);
+  const totalQuantity = displayCartItems.reduce((acc, item) => acc + item.quantity, 0);
+  
+  // Use authoritative quote from context. Fallback to 0 for guest users or when quote is null.
+  const subtotal = orderQuote?.subtotal ?? 0;
+  const shippingCost = orderQuote?.shippingCost ?? 0;
+  const couponDiscount = orderQuote?.discounts?.coupon ?? 0;
+  const welcomeGiftDiscount = orderQuote?.discounts?.welcomeGift ?? 0;
+  const finalTotal = orderQuote?.finalTotal ?? 0;
+  const totalSavings = (orderQuote?.discounts?.total ?? 0) + (orderQuote?.shippingCost === 0 && subtotal > 0 ? 40 : 0);
 
   // Debug: Log price summary calculations
   console.log("Cart: Price summary recalculated:", {
@@ -891,13 +808,7 @@ const Cart = () => {
                           </h3>
                         </div>
                         <div className="p-4">
-                          <WelcomeGiftReward
-                            cartItems={displayCartItems}
-                            onValidateReward={handleValidateWelcomeGift}
-                            onRewardRemoved={removeWelcomeGift}
-                            appliedReward={appliedWelcomeGift}
-                            hasClaimedReward={hasClaimedReward()}
-                          />
+                          <WelcomeGiftReward />
                         </div>
                       </div>
 
@@ -911,77 +822,67 @@ const Cart = () => {
                           </span>
                         </div>
                         <div className="p-4 space-y-3">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-forest">Order Total</span>
-                            <span className="text-deep-forest font-bold">
-                              {formatRupees(subtotal)}
-                            </span>
-                          </div>
-                          {(appliedCoupon || isAuthenticated) && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-forest">
-                                Coupon Discount
-                              </span>
-                              <span className="text-green-600 font-bold">
-                                -
-                                {formatRupees(
-                                  isAuthenticated
-                                    ? orderQuote?.discounts?.coupon || 0
-                                    : appliedCoupon?.discountAmount || 0
-                                )}
-                              </span>
+                          {isQuoteLoading ? (
+                            <div className="space-y-4">
+                              <div className="flex justify-between">
+                                <Skeleton className="h-4 w-1/3" />
+                                <Skeleton className="h-4 w-1/4" />
+                              </div>
+                              <div className="flex justify-between">
+                                <Skeleton className="h-4 w-1/2" />
+                                <Skeleton className="h-4 w-1/4" />
+                              </div>
+                              <Separator />
+                              <div className="flex justify-between">
+                                <Skeleton className="h-6 w-1/4" />
+                                <Skeleton className="h-6 w-1/3" />
+                              </div>
                             </div>
-                          )}
-                          {(appliedWelcomeGift ||
-                            (isAuthenticated &&
-                              (orderQuote?.discounts?.welcomeGift || 0) >
-                                0)) && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-forest">Welcome Gift</span>
-                              <span className="text-green-600 font-bold">
-                                -
-                                {formatRupees(
-                                  isAuthenticated
-                                    ? orderQuote?.discounts?.welcomeGift || 0
-                                    : appliedWelcomeGift?.discountAmount || 0
-                                )}
-                              </span>
-                            </div>
-                          )}
-                          {!appliedWelcomeGift &&
-                            appliedWelcomeGift && // This condition is now redundant
-                            hasClaimedReward() && ( // Use context function
+                          ) : (
+                            <>
                               <div className="flex justify-between text-sm">
-                                <span className="text-forest">
-                                  Welcome Gift
-                                </span>
-                                <span className="text-orange-600 font-medium">
-                                  Will be applied
+                                <span className="text-forest">Order Total</span>
+                                <span className="text-deep-forest font-bold">
+                                  {formatRupees(subtotal)}
                                 </span>
                               </div>
-                            )}
-                          <div className="flex justify-between text-sm">
-                            <span className="text-forest">Shipping</span>
-                            <div className="text-right">
-                              {shippingCost === 0 ? (
-                                <span className="text-green-600 font-bold">
-                                  Free
-                                </span>
-                              ) : (
-                                <span className="text-deep-forest font-bold">
-                                  {formatRupees(shippingCost)}
-                                </span>
+                              {couponDiscount > 0 && (
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-forest">Coupon Discount</span>
+                                  <span className="text-green-600 font-bold">
+                                    -{formatRupees(couponDiscount)}
+                                  </span>
+                                </div>
                               )}
-                            </div>
-                          </div>
-
-                          <Separator />
-                          <div className="flex justify-between font-bold text-lg">
-                            <span className="text-deep-forest">To Pay</span>
-                            <span className="text-deep-forest">
-                              {formatRupees(finalTotal)}
-                            </span>
-                          </div>
+                              {welcomeGiftDiscount > 0 && (
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-forest">Welcome Gift</span>
+                                  <span className="text-green-600 font-bold">
+                                    -{formatRupees(welcomeGiftDiscount)}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex justify-between text-sm">
+                                <span className="text-forest">Shipping</span>
+                                <div className="text-right">
+                                  {shippingCost === 0 && subtotal > 0 ? (
+                                    <span className="text-green-600 font-bold">Free</span>
+                                  ) : (
+                                    <span className="text-deep-forest font-bold">
+                                      {formatRupees(shippingCost)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <Separator />
+                              <div className="flex justify-between font-bold text-lg">
+                                <span className="text-deep-forest">To Pay</span>
+                                <span className="text-deep-forest">
+                                  {formatRupees(finalTotal)}
+                                </span>
+                              </div>
+                            </>
+                          )}
                         </div>
                         <div className="p-4 border-t">
                           {totalSavings > 0 && (

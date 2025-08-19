@@ -7,52 +7,88 @@ const User = require("../models/userModel");
 const ProductModel = require("../models/productModel");
 const asyncHandler = require("express-async-handler");
 
-// Validate and recompute cart items using server-side prices
-const validateCartItemsForQuote = async (cartItems) => {
-    if (!Array.isArray(cartItems)) return { isValid: false, message: "Invalid cart items format" };
-    const validatedItems = [];
+// Server-side calculation engine
+const calculateOrderTotals = async (cartItems, user, couponCode, applyWelcomeGift) => {
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+        throw new Error("Cart is empty or invalid");
+    }
+
     let subtotal = 0;
+    const orderItems = [];
+
     for (const item of cartItems) {
-        try {
-            const productId = (item && item.productId && typeof item.productId === 'object')
-                ? (item.productId._id || item.productId.id)
-                : item?.productId;
-            if (!productId) continue;
+        const product = await ProductModel.findById(item.productId?._id || item.productId);
+        if (!product) continue;
 
-            const product = await ProductModel.findById(productId);
-            if (!product) continue;
+        let unitPrice = product.price;
+        if (item.variant?.sku && Array.isArray(product.variants)) {
+            const variant = product.variants.find(v => v.sku === item.variant.sku);
+            if (variant) unitPrice = variant.price;
+        }
 
-            let unitPrice = product.price;
-            if (item.variant?.sku && Array.isArray(product.variants)) {
-                const variant = product.variants.find(v => v.sku === item.variant.sku);
-                if (variant) unitPrice = variant.price;
+        const quantity = Math.max(1, Math.min(99, parseInt(item.quantity) || 1));
+        subtotal += unitPrice * quantity;
+        orderItems.push({
+            product: product._id,
+            name: product.name,
+            price: unitPrice,
+            quantity,
+            image: product.images[0]?.url || "",
+            volume: item.variant?.volume || product.volume,
+            variant: item.variant ? { sku: item.variant.sku, volume: item.variant.volume } : undefined,
+        });
+    }
+
+    if (orderItems.length === 0) throw new Error("No valid items in cart");
+
+    let couponDiscount = 0;
+    let appliedCoupon = null;
+    if (couponCode && user) {
+        const coupon = await CouponModel.findOne({ code: String(couponCode).toUpperCase(), isActive: true });
+        if (coupon?.isValid) {
+            const canUse = await CouponUsageModel.canUserUseCoupon(coupon._id, user._id, coupon.perUserLimit);
+            const userOrderCount = await OrderModel.countDocuments({ user: user._id });
+            const canApply = coupon.canBeApplied(subtotal, user._id, userOrderCount);
+            if (canUse && canApply.valid) {
+                couponDiscount = coupon.calculateDiscount(subtotal);
+                appliedCoupon = coupon;
             }
-
-            const quantity = Math.max(1, Math.min(99, parseInt(item.quantity) || 1));
-            const lineTotal = unitPrice * quantity;
-            subtotal += lineTotal;
-            validatedItems.push({
-                productId: product._id,
-                name: product.name,
-                quantity,
-                unitPrice,
-                lineTotal,
-                variant: item.variant?.sku ? { sku: item.variant.sku } : undefined,
-            });
-        } catch (_) {
-            // skip invalid item
         }
     }
-    return {
-        isValid: validatedItems.length > 0,
-        items: validatedItems,
-        subtotal: Math.round(subtotal * 100) / 100,
-    };
-};
+    
+    let welcomeGiftDiscount = 0;
+    let appliedWelcomeGiftId = null;
+    let freeShipping = false;
+    if (applyWelcomeGift && user?.rewardClaimed && !user?.rewardUsed) {
+        const userReward = await UserReward.findOne({ userId: user._id, isUsed: false }).populate('giftId');
+        if (userReward?.giftId) {
+            const gift = userReward.giftId;
+            const validation = gift.canBeApplied(subtotal, orderItems);
+            if (validation.canApply) {
+                welcomeGiftDiscount = validation.discount || 0;
+                if (gift.rewardType === 'free_shipping') freeShipping = true;
+                appliedWelcomeGiftId = userReward._id;
+            }
+        }
+    }
+    
+    const shippingCost = freeShipping ? 0 : (subtotal > 499 ? 0 : 40);
+    const totalDiscount = couponDiscount + welcomeGiftDiscount;
+    const finalTotal = Math.max(0, subtotal + shippingCost - totalDiscount);
 
-const computeShipping = (subtotal, hasFreeShippingGift = false) => {
-    if (hasFreeShippingGift) return 0;
-    return subtotal > 499 ? 0 : 40;
+    return {
+        items: orderItems,
+        subtotal,
+        shippingCost,
+        discounts: {
+            coupon: couponDiscount,
+            welcomeGift: welcomeGiftDiscount,
+            total: totalDiscount,
+        },
+        finalTotal,
+        appliedCoupon: appliedCoupon ? { _id: appliedCoupon._id, code: appliedCoupon.code, name: appliedCoupon.name } : null,
+        appliedWelcomeGiftId,
+    };
 };
 
 /**
@@ -77,129 +113,14 @@ const createOrder = asyncHandler(async (req, res) => {
         });
     }
 
-    // Get user's cart items
-    const cartItems = await CartModel.find({ userId: req.user._id }).populate({
-        path: 'productId',
-        model: 'Product'
-    });
-
-    if (cartItems.length === 0) {
-        return res.status(400).json({
-            success: false,
-            message: "Cart is empty",
-        });
-    }
-
-    // Get user for reward checking
     const user = await User.findById(req.user._id);
-    if (!user) {
-        return res.status(404).json({
-            success: false,
-            message: "User not found",
-        });
-    }
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    // Calculate totals
-    const subtotal = cartItems.reduce((acc, item) => acc + (item.productId.price * item.quantity), 0);
-    const shippingCost = subtotal > 499 ? 0 : 40;
+    const cartItems = await CartModel.find({ userId: req.user._id }).populate('productId');
+    if (cartItems.length === 0) return res.status(400).json({ success: false, message: "Cart is empty" });
 
-    // Handle coupon discount on server as source of truth
-    let discount = 0;
-    let appliedCoupon = null;
-
-    if (couponCode) {
-        const coupon = await CouponModel.findOne({
-            code: String(couponCode).toUpperCase(),
-            isActive: true,
-        });
-
-        if (coupon && coupon.isValid) {
-            // Check if user can use this coupon
-            const canUserUse = await CouponUsageModel.canUserUseCoupon(
-                coupon._id,
-                req.user._id,
-                coupon.perUserLimit
-            );
-
-            if (canUserUse) {
-                // Check if coupon can be applied to this order
-                const userOrderCount = await OrderModel.countDocuments({ user: req.user._id });
-                const canBeApplied = coupon.canBeApplied(subtotal, req.user._id, userOrderCount);
-
-                if (canBeApplied.valid) {
-                    discount = coupon.calculateDiscount(subtotal);
-                    appliedCoupon = coupon._id;
-                }
-            }
-        }
-    }
-
-    // Handle welcome gift discount
-    let welcomeGiftDiscount = 0;
-    let appliedWelcomeGiftId = null;
-    let freeShipping = false;
-
-    if (appliedWelcomeGift) {
-        const userReward = await UserReward.findOne({
-            userId: req.user._id,
-            _id: appliedWelcomeGift.rewardId,
-            isUsed: false
-        }).populate('giftId');
-
-        if (userReward && userReward.giftId) {
-            const gift = userReward.giftId;
-            const discountResult = gift.calculateDiscount(subtotal, cartItems);
-
-            if (gift.rewardType === 'free_shipping') {
-                freeShipping = true;
-                welcomeGiftDiscount = 0; // Discount will be applied to shipping
-            } else {
-                welcomeGiftDiscount = discountResult.discount;
-            }
-
-            appliedWelcomeGiftId = userReward._id;
-        }
-    }
-
-    // Apply free shipping from welcome gift
-    const finalShippingCost = (freeShipping || subtotal > 499) ? 0 : shippingCost;
-
-    // 3. ADD THIS BLOCK: Welcome Gift Logic
-    if (applyWelcomeGift && user.rewardClaimed && !user.rewardUsed) {
-        const userReward = await UserReward.findOne({ userId: req.user._id, isUsed: false }).populate('giftId');
-        if (userReward && userReward.giftId) {
-            const gift = userReward.giftId;
-
-            // Use the enhanced calculation method from the model
-            const validationResult = gift.canBeApplied(subtotal, orderItems);
-
-            if (validationResult.canApply) {
-                welcomeGiftDiscount = validationResult.discount;
-
-                // For free shipping, handle shipping charges
-                if (gift.rewardType === 'free_shipping') {
-                    const shippingCost = subtotal < 1000 ? 49 : 0;
-                    welcomeGiftDiscount = shippingCost; // The discount is the shipping cost saved
-                }
-
-                console.log(`Welcome gift applied: ${validationResult.reason}, Discount: ₹${welcomeGiftDiscount}`);
-            } else {
-                console.log(`Welcome gift cannot be applied: ${validationResult.reason}`);
-            }
-        }
-    }
-
-    const total = subtotal + finalShippingCost - discount - welcomeGiftDiscount;
-
-    // Prepare order items
-    const orderItems = cartItems.map(item => ({
-        product: item.productId._id,
-        name: item.productId.name,
-        price: item.productId.price,
-        quantity: item.quantity,
-        image: item.productId.images[0]?.url || "",
-        volume: item.productId.volume,
-    }));
+    // Use the single source of truth for all calculations
+    const totals = await calculateOrderTotals(cartItems, user, couponCode, applyWelcomeGift);
 
     // Generate unique order number
     let orderNumber;
@@ -233,58 +154,39 @@ const createOrder = asyncHandler(async (req, res) => {
     const orderData = {
         user: req.user._id,
         orderNumber,
-        items: orderItems,
+        items: totals.items,
         shippingAddress,
         paymentInfo: {
             method: paymentMethod,
             status: "pending",
         },
-        subtotal,
-        shippingCost: finalShippingCost,
-        discount,
-        welcomeGiftDiscount,
-        total,
+        subtotal: totals.subtotal,
+        shippingCost: totals.shippingCost,
+        discount: totals.discounts.coupon,
+        welcomeGiftDiscount: totals.discounts.welcomeGift,
+        total: totals.finalTotal,
         notes,
     };
 
     const newOrder = new OrderModel(orderData);
-
-    try {
-        await newOrder.save();
-    } catch (error) {
-        if (error.code === 11000) {
-            // Duplicate key error - try again with a new order number
-            return res.status(500).json({
-                success: false,
-                message: "Order number conflict. Please try again.",
-            });
-        }
-        throw error;
-    }
+    await newOrder.save();
 
     // Track coupon usage if coupon was applied
-    if (appliedCoupon) {
+    if (totals.appliedCoupon) {
         const couponUsage = new CouponUsageModel({
-            coupon: appliedCoupon,
+            coupon: totals.appliedCoupon._id,
             user: req.user._id,
             order: newOrder._id,
-            discountAmount: discount,
-            orderAmount: subtotal,
+            discountAmount: totals.discounts.coupon,
+            orderAmount: totals.subtotal,
         });
         await couponUsage.save();
-
-        // Update coupon usage count
-        await CouponModel.findByIdAndUpdate(appliedCoupon, {
-            $inc: { usedCount: 1 }
-        });
+        await CouponModel.findByIdAndUpdate(totals.appliedCoupon._id, { $inc: { usedCount: 1 } });
     }
 
     // Mark welcome gift as used if applied
-    if (appliedWelcomeGiftId) {
-        await UserReward.findByIdAndUpdate(appliedWelcomeGiftId, {
-            isUsed: true,
-            usedAt: new Date()
-        });
+    if (totals.appliedWelcomeGiftId) {
+        await UserReward.findByIdAndUpdate(totals.appliedWelcomeGiftId, { isUsed: true, usedAt: new Date() });
     }
 
     // Clear user's cart after successful order creation
@@ -539,92 +441,12 @@ const getLifetimeSavings = asyncHandler(async (req, res) => {
  */
 const getOrderQuote = asyncHandler(async (req, res) => {
     const { cartItems = [], couponCode, applyWelcomeGift } = req.body || {};
-
-    // Validate cart against server data
-    const { isValid, items, subtotal } = await validateCartItemsForQuote(cartItems);
-    if (!isValid) {
-        return res.status(400).json({ success: false, message: "Invalid cart items" });
+    try {
+        const quote = await calculateOrderTotals(cartItems, req.user, couponCode, applyWelcomeGift);
+        return res.json({ success: true, data: quote });
+    } catch (error) {
+        return res.status(400).json({ success: false, message: error.message });
     }
-
-    // Determine if a free shipping welcome gift applies
-    let freeShippingGift = false;
-    let welcomeGiftDiscount = 0;
-    if (applyWelcomeGift && req.user) {
-        const user = await User.findById(req.user._id);
-        if (user?.rewardClaimed && !user?.rewardUsed) {
-            const userReward = await UserReward.findOne({ userId: req.user._id, isUsed: false }).populate('giftId');
-            if (userReward?.giftId) {
-                const gift = userReward.giftId;
-                if (gift.rewardType === 'free_shipping') {
-                    freeShippingGift = true;
-                } else {
-                    // Use model method if available
-                    const validation = gift.canBeApplied ? gift.canBeApplied(subtotal, items) : { canApply: false, discount: 0 };
-                    if (validation.canApply) {
-                        welcomeGiftDiscount = validation.discount || 0;
-                    }
-                }
-            }
-        }
-    }
-
-    // Shipping from server logic
-    const shippingCost = computeShipping(subtotal, freeShippingGift);
-
-    // Coupon handling on server
-    let couponDiscount = 0;
-    let coupon = null;
-    if (couponCode) {
-        const found = await CouponModel.findOne({ code: String(couponCode).toUpperCase(), isActive: true });
-        if (found && found.isValid) {
-            let userOrderCount = 0;
-            if (req.user) {
-                userOrderCount = await OrderModel.countDocuments({ user: req.user._id });
-            }
-            const canApply = found.canBeApplied(subtotal, req.user?._id, userOrderCount);
-            if (canApply.valid) {
-                if (req.user) {
-                    const canUserUse = await CouponUsageModel.canUserUseCoupon(found._id, req.user._id, found.perUserLimit);
-                    if (!canUserUse) {
-                        return res.status(400).json({ success: false, message: `You have already used this coupon ${found.perUserLimit} time(s)` });
-                    }
-                }
-                couponDiscount = found.calculateDiscount(subtotal);
-                coupon = {
-                    _id: found._id,
-                    code: found.code,
-                    name: found.name,
-                    description: found.description,
-                    type: found.type,
-                    value: found.value,
-                    maxDiscount: found.maxDiscount,
-                };
-            } else {
-                return res.status(400).json({ success: false, message: canApply.message });
-            }
-        } else {
-            return res.status(404).json({ success: false, message: "Invalid coupon code" });
-        }
-    }
-
-    const totalDiscount = Math.max(0, (couponDiscount || 0) + (welcomeGiftDiscount || 0));
-    const total = Math.max(0, subtotal + shippingCost - totalDiscount);
-
-    return res.json({
-        success: true,
-        data: {
-            items,
-            subtotal,
-            shippingCost,
-            discounts: {
-                coupon: couponDiscount,
-                welcomeGift: welcomeGiftDiscount,
-                total: totalDiscount,
-            },
-            coupon,
-            finalTotal: total,
-        },
-    });
 });
 
 module.exports = {
