@@ -1047,15 +1047,8 @@ const migrateAnonymousGift = asyncHandler(async (req, res) => {
       userId: req.user?._id,
       clientIP: req.ip
     });
-    // Fail soft: return success with migrated=false so frontend UX continues smoothly
-    return res.status(200).json({
-      success: true,
-      data: {
-        migrated: false,
-        message: "Migration not possible at this time"
-      },
-      message: "Migration handled"
-    });
+    // Re-throw the error to be caught by the global error handler
+    throw error;
   }
 });
 

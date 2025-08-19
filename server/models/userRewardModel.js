@@ -182,7 +182,7 @@ userRewardSchema.statics.migrateAnonymousGift = async function (anonymousId, use
     return anonymousReward;
   } catch (error) {
     console.error('Migration error:', error);
-    return null;
+    return error;
   }
 };
 
