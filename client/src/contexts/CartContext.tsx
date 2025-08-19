@@ -403,7 +403,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setIsValidatingGift(false);
       }
     },
-    [isValidatingGift, cartItems, getClaimedRewardDetails, hasClaimedReward]
+    [isValidatingGift, getClaimedRewardDetails, hasClaimedReward]
   );
 
   const applyWelcomeGift = useCallback(
@@ -615,24 +615,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   // Avoid revalidation loops: only re-validate when cart composition changes
   const appliedCouponCodeRef = useRef<string | null>(null);
-  const lastCartKeyRef = useRef<string>("");
 
   useEffect(() => {
     appliedCouponCodeRef.current = appliedCoupon?.coupon.code || null;
   }, [appliedCoupon]);
 
   useEffect(() => {
-    const cartKey = cartItems
-      .map((i) => `${i._id}:${i.quantity}:${i.variant?.sku || ""}`)
-      .join("|");
-    if (cartKey === lastCartKeyRef.current) return;
-    lastCartKeyRef.current = cartKey;
-
-    if (appliedCouponCodeRef.current && cartItems.length > 0) {
+    // If a coupon was previously applied, re-validate it when the cart changes.
+    if (appliedCouponCodeRef.current && debouncedCartItems.length > 0) {
       console.log("CartContext: Auto-validating coupon due to cart change");
       applyCoupon(appliedCouponCodeRef.current);
     }
-  }, [cartItems, applyCoupon]);
+  }, [debouncedCartItems, applyCoupon]);
 
   return (
     <CartContext.Provider
