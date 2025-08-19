@@ -498,109 +498,59 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
       hasDescription: !!gift.description
     });
 
-    // Check claim eligibility with atomic operations
-    if (req.user) {
-      const canClaim = session 
-        ? await UserReward.canUserClaimGift(req.user._id, session)
-        : await UserReward.canUserClaimGift(req.user._id);
-      if (!canClaim) {
-        logSecurityEvent("MULTIPLE_CLAIM_ATTEMPT", { userId: req.user._id, clientIP });
-        throw new Error("You have already claimed a welcome gift. Only one gift per user is allowed.");
-      }
-    } else if (anonymousId) {
-      const hasClaimed = session
-        ? await UserReward.hasAnonymousUserClaimed(anonymousId, session)
-        : await UserReward.hasAnonymousUserClaimed(anonymousId);
-      if (hasClaimed) {
-        logSecurityEvent("ANONYMOUS_MULTIPLE_CLAIM", { anonymousId, clientIP });
-        throw new Error("You have already claimed a welcome gift. Only one gift per user is allowed.");
-      }
-    }
-
-    // Atomic increment and reward creation
-    try {
-      console.log('Incrementing gift usage for gift:', gift._id);
-      await gift.incrementUsage(session);
-      console.log('Gift usage incremented successfully');
-    } catch (incrementError) {
-      console.error('Error incrementing gift usage:', incrementError);
-      throw new Error('Failed to update gift usage. Please try again.');
-    }
-
-    const userRewardData = {
-      giftId: gift._id,
-      rewardTitle: gift.title,
-      rewardText: gift.reward || gift.description || 'Welcome gift reward',
-      wasLoggedIn: !!req.user,
-      anonymousId: anonymousId || null,
-      claimedAt: new Date(),
-      clientIP: clientIP
-    };
-
-    // Ensure either userId or anonymousId is set (but not both)
-    if (req.user) {
-      userRewardData.userId = req.user._id;
-      userRewardData.anonymousId = null; // Remove anonymousId for authenticated users
-    } else {
-      userRewardData.userId = null; // Ensure userId is null for anonymous users
-    }
-
-    console.log('Creating UserReward with data:', {
-      giftId: userRewardData.giftId,
-      rewardTitle: userRewardData.rewardTitle,
-      wasLoggedIn: userRewardData.wasLoggedIn,
-      hasAnonymousId: !!userRewardData.anonymousId,
-      anonymousId: userRewardData.anonymousId,
-      userId: userRewardData.userId,
-      clientIP: userRewardData.clientIP
-    });
-
-    if (req.user) {
-      const User = require("../models/userModel");
-      const updateOptions = session ? { session } : {};
-      await User.findByIdAndUpdate(req.user._id, {
-        rewardClaimed: true,
-        reward: gift._id
-      }, updateOptions);
-    }
+    // The pre-check for claimed gifts is removed to prevent race conditions.
+    // We now rely on the unique index on the UserReward collection and handle the duplicate key error.
 
     try {
-      console.log('Attempting to create UserReward:', {
-        sessionId: session?.id,
-        userRewardData: JSON.stringify(userRewardData, null, 2)
-      });
-      
-      // Log the exact data being sent to UserReward.create
-      console.log('UserReward data validation check:', {
-        hasGiftId: !!userRewardData.giftId,
-        hasRewardTitle: !!userRewardData.rewardTitle,
-        hasRewardText: !!userRewardData.rewardText,
-        hasWasLoggedIn: userRewardData.wasLoggedIn !== undefined,
-        hasAnonymousId: userRewardData.anonymousId !== null,
-        hasUserId: userRewardData.userId !== null,
-        hasClaimedAt: !!userRewardData.claimedAt,
-        hasClientIP: !!userRewardData.clientIP
-      });
-      
+      const userRewardData = {
+        giftId: gift._id,
+        rewardTitle: gift.title,
+        rewardText: gift.reward || gift.description || 'Welcome gift reward',
+        wasLoggedIn: !!req.user,
+        anonymousId: req.user ? null : (anonymousId || null),
+        userId: req.user ? req.user._id : null,
+        claimedAt: new Date(),
+        clientIP: clientIP
+      };
+
+      // Atomically create the reward. This will fail if a unique index is violated.
       const userReward = session
-        ? await UserReward.create([userRewardData], { session })
+        ? (await UserReward.create([userRewardData], { session }))[0]
         : await UserReward.create(userRewardData);
-      console.log('UserReward created successfully:', userReward);
-    } catch (createError) {
-      console.error('Error creating UserReward:', createError);
-      console.error('Error details:', {
-        name: createError.name,
-        message: createError.message,
-        code: createError.code,
-        keyPattern: createError.keyPattern,
-        keyValue: createError.keyValue,
-        stack: createError.stack
-      });
       
-      // Log the exact data that failed
-      console.error('Failed UserReward data:', userRewardData);
+      console.log('UserReward created successfully:', userReward._id);
+
+      // If successful, increment the usage count for the gift.
+      await gift.incrementUsage(session);
+      console.log('Gift usage incremented successfully for gift:', gift._id);
+
+      // If the user is logged in, update their user record.
+      if (req.user) {
+        const User = require("../models/userModel");
+        await User.findByIdAndUpdate(req.user._id, {
+          rewardClaimed: true,
+          reward: gift._id
+        }, { session });
+        console.log('User record updated for user:', req.user._id);
+      }
+
+    } catch (error) {
+      // Check for duplicate key error (code 11000)
+      if (error.code === 11000) {
+        logSecurityEvent("DUPLICATE_CLAIM_ATTEMPT", {
+          userId: req.user?._id,
+          anonymousId,
+          clientIP,
+          giftId: gift._id,
+          error: error.message
+        });
+        // Throw a user-friendly error message.
+        throw new Error("You have already claimed a welcome gift. Only one gift per user is allowed.");
+      }
       
-      throw new Error(`Failed to create reward record: ${createError.message}`);
+      // For any other error, log it and re-throw to be handled by the global error handler.
+      console.error('Error during reward claim process:', error);
+      throw error;
     }
 
     logSecurityEvent("GIFT_CLAIMED_SUCCESS", {
