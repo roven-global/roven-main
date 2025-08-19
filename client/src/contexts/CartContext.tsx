@@ -283,7 +283,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         return false;
       }
     },
-    [cartItems]
+    []
   );
 
   const removeCoupon = useCallback(() => {
@@ -553,7 +553,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
     
     validateAndApplyWelcomeGift(giftDetails);
-  }, [debouncedCartItems, getClaimedRewardDetails, validateAndApplyWelcomeGift, appliedWelcomeGift]);
+  }, [debouncedCartItems, getClaimedRewardDetails, validateAndApplyWelcomeGift]);
 
   useEffect(() => {
     const savedCoupon = localStorage.getItem("appliedCoupon");
