@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
+
 import {
   Select,
   SelectContent,
@@ -13,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Loader2,
@@ -33,7 +35,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import { formatRupees } from "@/lib/currency";
 import { useCart } from "@/contexts/CartContext";
 import { useGuest } from "@/contexts/GuestContext";
@@ -48,17 +50,11 @@ import { useIndianStatesAndCities } from "@/lib/cities";
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  // Get the flag from the state passed by the Cart page
-  const shouldApplyWelcomeGift = location.state?.applyWelcomeGift || false;
   const {
     cartItems,
     clearCart,
-    refreshCart,
     applyCoupon,
     removeCoupon,
-    applyWelcomeGift,
-    removeWelcomeGift,
     orderQuote,
     isQuoteLoading,
   } = useCart();
@@ -139,14 +135,6 @@ const Checkout = () => {
     };
   }, []);
 
-  // Separate useEffect for cart refresh
-  useEffect(() => {
-    if (isAuthenticated) {
-      // Call refreshCart directly to prevent infinite loops
-      // since refreshCart function reference changes on every render
-      refreshCart();
-    }
-  }, [isAuthenticated]); // Remove refreshCart from dependencies
 
 
   // Fetch lifetime savings
@@ -270,23 +258,26 @@ const Checkout = () => {
       const selectedAddr = savedAddresses.find(
         (addr) => addr._id === selectedAddressId
       );
-      const orderResponse = await Axios.post(SummaryApi.createOrder.url, {
+
+      // Construct the payload based on the authoritative orderQuote
+      const payload = {
         shippingAddress: selectedAddr,
         paymentMethod: "online",
-        couponCode: appliedCoupon ? appliedCoupon.coupon.code : undefined,
-        appliedWelcomeGift: appliedWelcomeGift
-          ? {
-              rewardId: appliedWelcomeGift.reward._id,
-              discountAmount: appliedWelcomeGift.discountAmount,
-            }
-          : undefined,
-        // Include the flag here!
-        applyWelcomeGift: shouldApplyWelcomeGift,
-      });
+        notes: "", // Add notes if you have a notes field
+        couponCode: orderQuote?.appliedCoupon?.code,
+        applyWelcomeGift: (orderQuote?.discounts?.welcomeGift ?? 0) > 0,
+      };
+
+      const orderResponse = await Axios.post(
+        SummaryApi.createOrder.url,
+        payload
+      );
 
       if (orderResponse.data.success) {
-        isAuthenticated ? clearCart() : clearGuestData();
-        clearCoupon(); // Clear coupon after successful order
+        // The cart is cleared on the backend. The context will update automatically
+        // when the user navigates away or to their profile.
+        // Clearing coupon is also handled implicitly as the cart is now empty.
+        isAuthenticated ? clearCart() : clearGuestData(); // Keep this for immediate UI update
         navigate(`/payment?orderId=${orderResponse.data.data._id}`);
       }
     } catch (error: any) {
@@ -739,31 +730,6 @@ const Checkout = () => {
 
               {/* Right Column - Price Summary */}
               <div className="space-y-6">
-                {/* Welcome Gift Reward */}
-                <WelcomeGiftReward />
-
-                {/* Display only server results; removed local warnings */}
-
-                {/* No local coupon warnings; only backend messages drive UI */}
-
-                {/* Welcome Gift Application Status */}
-                {shouldApplyWelcomeGift && (
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                    <div className="flex items-center gap-2">
-                      <Gift className="w-5 h-5 text-orange-600" />
-                      <div>
-                        <p className="text-sm text-orange-700 font-medium">
-                          Welcome Gift Will Be Applied
-                        </p>
-                        <p className="text-xs text-orange-600">
-                          Your claimed welcome gift will be applied to this
-                          order
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 <div className="bg-white rounded-lg border shadow-sm sticky top-4">
                   <div className="p-4 border-b">
                     <span className="font-semibold text-deep-forest flex items-center gap-2">

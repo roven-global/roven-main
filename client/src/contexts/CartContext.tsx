@@ -125,9 +125,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orderQuote, setOrderQuote] = useState<OrderQuote | null>(null);
   const [isQuoteLoading, setIsQuoteLoading] = useState(false);
-  const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(
-    null
-  );
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(null);
   const [shouldApplyWelcomeGift, setShouldApplyWelcomeGift] = useState(false);
 
   const debouncedCartItems = useDebounce(cartItems, 500);
@@ -167,55 +165,39 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       });
       if (response.data?.success) {
         setOrderQuote(response.data.data);
-        // Sync applied coupon code from quote
         if (response.data.data.coupon) {
           setAppliedCouponCode(response.data.data.coupon.code);
         } else if (!appliedCouponCode) {
-          // If no coupon was applied and we weren't trying one, ensure it's null
           setAppliedCouponCode(null);
         }
       } else {
         setOrderQuote(null);
-        toast({
-          title: "Error calculating totals",
-          description: response.data.message,
-          variant: "destructive",
-        });
+        toast({ title: "Error calculating totals", description: response.data.message, variant: "destructive" });
       }
     } catch (error: any) {
       setOrderQuote(null);
-      toast({
-        title: "Error calculating totals",
-        description:
-          error.response?.data?.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      toast({ title: "Error calculating totals", description: error.response?.data?.message || "An unexpected error occurred.", variant: "destructive" });
     } finally {
       setIsQuoteLoading(false);
     }
   }, [cartItems, appliedCouponCode, shouldApplyWelcomeGift, hasClaimedReward]);
-
+  
   useEffect(() => {
     fetchOrderQuote();
-  }, [
-    debouncedCartItems,
-    appliedCouponCode,
-    shouldApplyWelcomeGift,
-    fetchOrderQuote,
-  ]);
+  }, [debouncedCartItems, appliedCouponCode, shouldApplyWelcomeGift, fetchOrderQuote]);
 
-  const applyCoupon = useCallback(async (code: string) => {
+  const applyCoupon = useCallback((code: string) => {
     setAppliedCouponCode(code);
   }, []);
 
   const removeCoupon = useCallback(() => {
     setAppliedCouponCode(null);
   }, []);
-
+  
   const applyWelcomeGift = useCallback(() => {
     setShouldApplyWelcomeGift(true);
   }, []);
-
+  
   const removeWelcomeGift = useCallback(() => {
     setShouldApplyWelcomeGift(false);
   }, []);
@@ -227,40 +209,26 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setShouldApplyWelcomeGift(false);
   }, []);
 
-  const addToCart = useCallback(
-    async (item: any) => {
-      await Axios.post(SummaryApi.addToCart.url, { ...item });
-      await fetchUserCart();
-    },
-    [fetchUserCart]
-  );
+  const addToCart = useCallback(async (item: any) => {
+    await Axios.post(SummaryApi.addToCart.url, { ...item });
+    await fetchUserCart();
+  }, [fetchUserCart]);
 
-  const removeFromCart = useCallback(
-    async (cartItemId: string) => {
-      await Axios.delete(
-        SummaryApi.deleteFromCart.url.replace(":cartItemId", cartItemId)
-      );
-      await fetchUserCart();
-    },
-    [fetchUserCart]
-  );
+  const removeFromCart = useCallback(async (cartItemId: string) => {
+    await Axios.delete(SummaryApi.deleteFromCart.url.replace(":cartItemId", cartItemId));
+    await fetchUserCart();
+  }, [fetchUserCart]);
 
-  const updateQuantity = useCallback(
-    async (cartItemId: string, quantity: number) => {
-      await Axios.put(
-        SummaryApi.updateCart.url.replace(":cartItemId", cartItemId),
-        { quantity }
-      );
-      await fetchUserCart();
-    },
-    [fetchUserCart]
-  );
+  const updateQuantity = useCallback(async (cartItemId: string, quantity: number) => {
+    await Axios.put(SummaryApi.updateCart.url.replace(":cartItemId", cartItemId), { quantity });
+    await fetchUserCart();
+  }, [fetchUserCart]);
 
   const cartCount = useMemo(() => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   }, [cartItems]);
 
-  const value = {
+  const value: CartContextType = {
     cartItems,
     orderQuote,
     isQuoteLoading,
@@ -278,8 +246,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <CartContext.Provider value={value as CartContextType}>
-      {children}
-    </CartContext.Provider>
+    <CartContext.Provider value={value}>{children}</CartContext.Provider>
   );
 };

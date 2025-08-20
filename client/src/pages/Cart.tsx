@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Minus,
   Plus,
@@ -19,7 +20,6 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuest } from "@/contexts/GuestContext";
@@ -40,7 +40,6 @@ const Cart = () => {
     cartItems,
     updateQuantity,
     removeFromCart,
-    fetchUserCart,
     applyCoupon,
     removeCoupon,
     removeWelcomeGift,
@@ -49,7 +48,6 @@ const Cart = () => {
   } = useCart();
   const { guestCart, removeFromGuestCart, updateGuestCartQuantity } =
     useGuest();
-  const [loading, setLoading] = useState(true);
   const [couponCode, setCouponCode] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState("");
@@ -60,15 +58,6 @@ const Cart = () => {
   const [removingCouponId, setRemovingCouponId] = useState<string | null>(null);
   const [lifetimeSavings, setLifetimeSavings] = useState<number>(0);
   const [lifetimeSavingsLoading, setLifetimeSavingsLoading] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchUserCart().finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
-  }, [isAuthenticated, fetchUserCart]);
 
   // Fetch lifetime savings
   useEffect(() => {
@@ -97,7 +86,6 @@ const Cart = () => {
     console.log("Cart: Cart items changed, triggering re-render");
   }, [cartItems, guestCart]);
 
-
   // Fetch available coupons
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -125,40 +113,6 @@ const Cart = () => {
       }
     };
   }, []);
-
-  // Debug log for applied coupon
-  useEffect(() => {
-    console.log("Applied coupon state:", appliedCoupon);
-  }, [appliedCoupon]);
-
-  // Server-side coupon validation for welcome gift
-  const handleValidateWelcomeGift = async (gift: any, couponCode?: string) => {
-    setIsLoading(true);
-    try {
-      const success = await validateAndApplyWelcomeGift(gift, couponCode);
-      if (success) {
-        toast({
-          title: "Welcome Gift Applied!",
-          description: "Your welcome gift has been applied to this order.",
-        });
-      } else {
-        toast({
-          title: "Cannot Apply Gift",
-          description: "Your gift is not applicable to the current cart.",
-          variant: "destructive",
-        });
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description:
-          error?.response?.data?.message || "Failed to validate welcome gift",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleUpdateQuantity = async (
     cartItemId: string,
@@ -245,13 +199,9 @@ const Cart = () => {
       console.log("Subtotal:", subtotal);
       console.log("Cart items:", displayCartItems);
 
-      const success = await applyCoupon(couponToApply);
-      console.log("Coupon application result:", success);
-
-      if (success) {
-        setCouponCode("");
-        console.log("Coupon applied successfully, clearing input");
-      }
+      await applyCoupon(couponToApply);
+      setCouponCode("");
+      console.log("Coupon applied successfully, clearing input");
     } catch (error: any) {
       console.error("Error applying coupon:", error);
       const errorMessage =
@@ -305,15 +255,20 @@ const Cart = () => {
   const displayCartItems = isAuthenticated ? cartItems : guestCart;
 
   const totalUniqueItems = displayCartItems.length;
-  const totalQuantity = displayCartItems.reduce((acc, item) => acc + item.quantity, 0);
-  
+  const totalQuantity = displayCartItems.reduce(
+    (acc, item) => acc + item.quantity,
+    0
+  );
+
   // Use authoritative quote from context. Fallback to 0 for guest users or when quote is null.
   const subtotal = orderQuote?.subtotal ?? 0;
   const shippingCost = orderQuote?.shippingCost ?? 0;
   const couponDiscount = orderQuote?.discounts?.coupon ?? 0;
   const welcomeGiftDiscount = orderQuote?.discounts?.welcomeGift ?? 0;
   const finalTotal = orderQuote?.finalTotal ?? 0;
-  const totalSavings = (orderQuote?.discounts?.total ?? 0) + (orderQuote?.shippingCost === 0 && subtotal > 0 ? 40 : 0);
+  const totalSavings =
+    (orderQuote?.discounts?.total ?? 0) +
+    (orderQuote?.shippingCost === 0 && subtotal > 0 ? 40 : 0);
 
   // Debug: Log price summary calculations
   console.log("Cart: Price summary recalculated:", {
@@ -324,16 +279,9 @@ const Cart = () => {
     cartItemsCount: cartItems?.length || 0,
     guestCartCount: guestCart?.length || 0,
     isAuthenticated,
-    // Add detailed welcome gift debugging
-    appliedWelcomeGift: appliedWelcomeGift
-      ? {
-          type: appliedWelcomeGift.type,
-          isValid: appliedWelcomeGift.isValid,
-          discountAmount: appliedWelcomeGift.discountAmount,
-          validationMessage: appliedWelcomeGift.validationMessage,
-          rewardType: appliedWelcomeGift.reward?.rewardType,
-        }
-      : null,
+    welcomeGiftDiscount: orderQuote?.discounts.welcomeGift,
+    appliedCoupon: orderQuote?.appliedCoupon?.code,
+    couponDiscount: orderQuote?.discounts.coupon,
   });
 
   // Handle checkout navigation
@@ -351,7 +299,7 @@ const Cart = () => {
     navigate("/checkout");
   };
 
-  if (loading || authLoading) {
+  if (isQuoteLoading || authLoading) {
     // Check both loading states
     return (
       <div className="min-h-screen flex items-center justify-center bg-warm-cream">
@@ -466,7 +414,7 @@ const Cart = () => {
                           )}
 
                           {/* Applied Coupon Display */}
-                          {appliedCoupon && (
+                          {orderQuote?.appliedCoupon && (
                             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -474,19 +422,14 @@ const Cart = () => {
                                   <div>
                                     <p className="text-sm font-medium text-green-700">
                                       Coupon Applied:{" "}
-                                      {appliedCoupon.coupon.code}
+                                      {orderQuote.appliedCoupon.code}
                                     </p>
                                     <p className="text-xs text-green-600">
-                                      {appliedCoupon.coupon.name} -{" "}
+                                      {orderQuote.appliedCoupon.name} -{" "}
                                       {formatRupees(
-                                        appliedCoupon.discountAmount
+                                        orderQuote.discounts.coupon
                                       )}{" "}
                                       off
-                                      {appliedCoupon.isValid === false && (
-                                        <span className="text-orange-600 ml-1">
-                                          (Inactive)
-                                        </span>
-                                      )}
                                     </p>
                                   </div>
                                 </div>
@@ -550,7 +493,8 @@ const Cart = () => {
                               >
                                 {availableCoupons.map((coupon) => {
                                   const isApplied =
-                                    appliedCoupon?.coupon?.code === coupon.code;
+                                    orderQuote?.appliedCoupon?.code ===
+                                    coupon.code;
                                   const isRemoving =
                                     removingCouponId === coupon.code;
 
@@ -658,7 +602,7 @@ const Cart = () => {
                               <span>Quantity - {totalQuantity}</span>
                               <span className="mx-2">|</span>
                               <span className="font-semibold">
-                                Total - {formatRupees(totalAmount)}
+                                Total - {formatRupees(subtotal)}
                               </span>
                             </div>
                           </div>
@@ -848,7 +792,9 @@ const Cart = () => {
                               </div>
                               {couponDiscount > 0 && (
                                 <div className="flex justify-between text-sm">
-                                  <span className="text-forest">Coupon Discount</span>
+                                  <span className="text-forest">
+                                    Coupon Discount
+                                  </span>
                                   <span className="text-green-600 font-bold">
                                     -{formatRupees(couponDiscount)}
                                   </span>
@@ -856,7 +802,9 @@ const Cart = () => {
                               )}
                               {welcomeGiftDiscount > 0 && (
                                 <div className="flex justify-between text-sm">
-                                  <span className="text-forest">Welcome Gift</span>
+                                  <span className="text-forest">
+                                    Welcome Gift
+                                  </span>
                                   <span className="text-green-600 font-bold">
                                     -{formatRupees(welcomeGiftDiscount)}
                                   </span>
@@ -866,7 +814,9 @@ const Cart = () => {
                                 <span className="text-forest">Shipping</span>
                                 <div className="text-right">
                                   {shippingCost === 0 && subtotal > 0 ? (
-                                    <span className="text-green-600 font-bold">Free</span>
+                                    <span className="text-green-600 font-bold">
+                                      Free
+                                    </span>
                                   ) : (
                                     <span className="text-deep-forest font-bold">
                                       {formatRupees(shippingCost)}
@@ -924,9 +874,7 @@ const Cart = () => {
                             className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-md py-3 font-medium"
                             disabled={displayCartItems.length === 0}
                           >
-                            {appliedWelcomeGift
-                              ? "Proceed with Welcome Gift"
-                              : "Proceed to Checkout"}
+                            Proceed to Checkout
                           </Button>
                         </div>
                       </div>
