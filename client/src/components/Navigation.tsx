@@ -3,9 +3,9 @@ import { Link, NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, Search, Menu, X, Heart, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import SearchDropdown from './ui/SearchDropdown';
+import SearchDropdown from "./ui/SearchDropdown";
 import { Skeleton } from "@/components/ui/skeleton";
-import Axios from '@/utils/Axios';
+import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
 import UserDropdown from "@/components/UserDropdown"; // ✅ Import the fixed dropdown
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,7 +56,9 @@ const Navigation = () => {
     const fetchCategories = async () => {
       setIsLoading(true);
       try {
-        const response = await Axios.get(`${SummaryApi.getAllCategories.url}?parent=main`);
+        const response = await Axios.get(
+          `${SummaryApi.getAllCategories.url}?parent=main`
+        );
         if (response.data.success && Array.isArray(response.data.data)) {
           setCategories(response.data.data);
           setNavItems([
@@ -93,8 +95,8 @@ const Navigation = () => {
       fetchCartCount();
     };
 
-    window.addEventListener('cartUpdate', handleCartUpdate);
-    return () => window.removeEventListener('cartUpdate', handleCartUpdate);
+    window.addEventListener("cartUpdate", handleCartUpdate);
+    return () => window.removeEventListener("cartUpdate", handleCartUpdate);
   }, [isAuthenticated, fetchCartCount]);
 
   // Handle scroll events for navbar hide/show
@@ -114,19 +116,24 @@ const Navigation = () => {
       setLastScrollY(currentScrollY);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
   return (
-    <nav className={cn(
-      "sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-warm-taupe/50 transition-all duration-300 ease-in-out",
-      isVisible ? "translate-y-0 shadow-sm" : "-translate-y-full"
-    )}>
+    <nav
+      className={cn(
+        "sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-warm-taupe/50 transition-all duration-300 ease-in-out",
+        isVisible ? "translate-y-0 shadow-sm" : "-translate-y-full"
+      )}
+    >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="font-serif text-3xl font-bold text-deep-forest">
+          <Link
+            to="/"
+            className="font-serif text-3xl font-bold text-deep-forest"
+          >
             Roven
           </Link>
 
@@ -165,10 +172,16 @@ const Navigation = () => {
                       <ChevronDown className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-48 bg-white border-warm-taupe shadow-lg rounded-lg mt-2">
+                  <DropdownMenuContent
+                    align="start"
+                    className="w-48 bg-white border-warm-taupe shadow-lg rounded-lg mt-2"
+                  >
                     {categories.map((category) => (
                       <DropdownMenuItem key={category._id} asChild>
-                        <Link to={`/category/${category.slug}`} className="cursor-pointer text-forest hover:bg-warm-cream">
+                        <Link
+                          to={`/category/${category.slug}`}
+                          className="cursor-pointer text-forest hover:bg-warm-cream"
+                        >
                           {category.name}
                         </Link>
                       </DropdownMenuItem>
@@ -190,7 +203,10 @@ const Navigation = () => {
             >
               <Search className="h-5 w-5 text-forest" />
             </Button>
-            <SearchDropdown open={searchOpen} onClose={() => setSearchOpen(false)} />
+            <SearchDropdown
+              open={searchOpen}
+              onClose={() => setSearchOpen(false)}
+            />
 
             {isAuthenticated ? (
               <UserDropdown />
@@ -202,8 +218,18 @@ const Navigation = () => {
                   className="rounded-full hover:bg-warm-cream"
                   aria-label="Login"
                 >
-                  <svg className="h-6 w-6 text-forest" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  <svg
+                    className="h-6 w-6 text-forest"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
                   </svg>
                 </Button>
               </Link>
@@ -250,34 +276,51 @@ const Navigation = () => {
       </div>
 
       {/* Mobile Menu Panel */}
-      <div className={cn(
-        "md:hidden bg-white border-t border-warm-taupe/50",
-        isMenuOpen ? "block" : "hidden"
-      )}>
-        <div className="px-4 pt-2 pb-3 space-y-1">
+      <div
+        className={cn(
+          "md:hidden bg-white border-t border-warm-taupe/50 transition-all duration-300 ease-in-out",
+          isMenuOpen
+            ? "block opacity-100 transform translate-y-0"
+            : "hidden opacity-0 transform -translate-y-2"
+        )}
+      >
+        <div className="px-4 pt-2 pb-6 space-y-2 max-h-[80vh] overflow-y-auto">
+          {/* Main Navigation Links */}
           {navItems.map((item) => (
             <Link
               key={item.href}
               to={item.href}
-              className="block px-3 py-2 rounded-md text-base font-medium text-forest hover:bg-warm-cream"
+              className="block px-4 py-3 rounded-lg text-base font-medium text-forest hover:bg-warm-cream transition-colors duration-200 active:bg-sage/20"
               onClick={() => setIsMenuOpen(false)}
             >
               {item.name}
             </Link>
           ))}
+
+          {/* Categories Section */}
           <div className="border-t border-warm-taupe/50 pt-4 mt-4">
-            <h3 className="px-3 text-xs font-semibold text-warm-taupe uppercase tracking-wider">Categories</h3>
-            <div className="mt-2 space-y-1">
+            <h3 className="px-4 text-xs font-semibold text-warm-taupe uppercase tracking-wider mb-3">
+              Categories
+            </h3>
+            <div className="space-y-1">
               {categories.map((category) => (
                 <Link
                   key={category._id}
                   to={`/category/${category.slug}`}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-forest hover:bg-warm-cream"
+                  className="block px-4 py-3 rounded-lg text-base font-medium text-forest hover:bg-warm-cream transition-colors duration-200 active:bg-sage/20"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {category.name}
                 </Link>
               ))}
+            </div>
+          </div>
+
+          {/* Mobile Menu Footer */}
+          <div className="border-t border-warm-taupe/50 pt-4 mt-4 px-4">
+            <div className="text-xs text-warm-taupe text-center">
+              <p>Roven Global Beauty</p>
+              <p className="mt-1">Premium Beauty Products</p>
             </div>
           </div>
         </div>

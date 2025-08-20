@@ -370,9 +370,9 @@ const Cart = () => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
                     {/* Left Column */}
-                    <div className="lg:col-span-2 space-y-6">
+                    <div className="lg:col-span-2 space-y-4 lg:space-y-6 order-2 lg:order-1">
                       {/* Coupon Input Section */}
                       <div className="bg-white rounded-lg border shadow-sm">
                         <div className="p-4 border-b">
@@ -742,7 +742,7 @@ const Cart = () => {
                     </div>
 
                     {/* Right Column - Price Summary */}
-                    <div className="space-y-6">
+                    <div className="space-y-4 lg:space-y-6 order-1 lg:order-2">
                       {/* Welcome Gift Reward */}
                       <div className="bg-white rounded-lg border shadow-sm">
                         <div className="p-4 border-b">

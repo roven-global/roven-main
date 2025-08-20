@@ -1,0 +1,39 @@
+{
+  "name": "roven-global",
+  "version": "1.0.0",
+  "description": "Roven Global E-commerce Platform",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "server:dev": "cd server && npm run dev",
+    "client:dev": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd server && npm test",
+    "test:frontend": "cd client && npm test",
+    "test:backend:watch": "cd server && npm run test:watch",
+    "test:frontend:watch": "cd client && npm run test:watch",
+    "test:coverage": "npm run test:backend:coverage && npm run test:frontend:coverage",
+    "test:backend:coverage": "cd server && npm run test:coverage",
+    "test:frontend:coverage": "cd client && npm run test:coverage",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "cd server && npm run lint",
+    "lint:frontend": "cd client && npm run lint",
+    "lint:fix": "npm run lint:backend:fix && npm run lint:frontend:fix",
+    "lint:backend:fix": "cd server && npm run lint:fix",
+    "lint:frontend:fix": "cd client && npm run lint:fix"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "ecommerce",
+    "beauty",
+    "react",
+    "nodejs",
+    "mongodb"
+  ],
+  "author": "Roven Global",
+  "license": "ISC"
+}

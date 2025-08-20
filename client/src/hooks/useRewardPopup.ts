@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserReward } from '@/contexts/UserRewardContext';
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 import { toast } from '@/hooks/use-toast';
-
-// Client-side validation is no longer needed as we rely on the server's canonical ID.
-// The server will handle all validation.
 
 export const useRewardPopup = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,6 +11,7 @@ export const useRewardPopup = () => {
   const [loading, setLoading] = useState(false);
   const [selectedGift, setSelectedGift] = useState<any>(null);
   const { user, checkAuthStatus } = useAuth();
+  const { claimedReward, isLoading: isRewardLoading } = useUserReward();
   const hasCheckedRef = useRef(false);
   const eligibilityCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasRetriedRef = useRef(false);
@@ -79,16 +78,20 @@ export const useRewardPopup = () => {
     }
 
     try {
-      // Don't check eligibility if user is already logged in and has claimed a reward
-      if (user && user.rewardClaimed) {
-        console.log('User already has claimed reward, skipping eligibility check');
-        localStorage.setItem(eligibilityCheckKey, 'true');
-        localStorage.setItem('eligibilityCheckTimestamp', now.toString());
+      // Wait for the authoritative reward status to be loaded before checking eligibility.
+      if (isRewardLoading) {
+        console.log('Waiting for user reward status to load...');
+        return;
+      }
+
+      // If the context confirms a reward is claimed, don't show the popup.
+      if (claimedReward) {
+        console.log('User has a claimed reward from context, skipping eligibility check.');
         hasCheckedRef.current = true;
         return;
       }
 
-      // Don't check eligibility if we already have a valid reward in localStorage
+      // For anonymous users, check localStorage as a fallback.
       const hasClaimedReward = localStorage.getItem('rewardClaimed') === 'true';
       const rewardTimestamp = localStorage.getItem('rewardClaimedTimestamp');
       

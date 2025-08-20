@@ -214,7 +214,7 @@ const SummaryApi = {
     method: "post",
   },
   getOrderById: {
-    url: "/api/order",
+    url: "/api/order/:id",
     method: "get",
   },
   cancelOrder: {
@@ -267,7 +267,7 @@ const SummaryApi = {
     method: "get",
   },
   googleLogin: {
-    url: `/api/auth/google`,
+    url: "/api/auth/google",
     method: "get",
   },
   adminOverview: {
@@ -276,7 +276,7 @@ const SummaryApi = {
   },
   // Welcome Gift endpoints
   getAllWelcomeGifts: {
-    url: `/api/welcome-gifts`,
+    url: "/api/welcome-gifts",
     method: "get",
   },
   migrateAnonymousGift: {
@@ -284,7 +284,7 @@ const SummaryApi = {
     method: "post",
   },
   getAnonymousId: {
-    url: `/api/welcome-gifts/anonymous-id`,
+    url: "/api/welcome-gifts/anonymous-id",
     method: "get",
   },
   // User Reward endpoints
@@ -337,7 +337,7 @@ const SummaryApi = {
     method: "post",
   },
   checkWelcomeGiftEligibility: {
-    url: `/api/welcome-gifts/check-eligibility`,
+    url: "/api/welcome-gifts/check-eligibility",
     method: "get",
   },
   getUserRewards: {
@@ -345,11 +345,16 @@ const SummaryApi = {
     method: "get",
   },
   markRewardAsUsed: {
-    url: `/api/welcome-gifts/mark-used`,
+    url: "/api/welcome-gifts/mark-used",
     method: "post",
   },
   checkRewardStatus: {
-    url: `/api/welcome-gifts/status`,
+    url: "/api/welcome-gifts/status",
+    method: "get",
+  },
+  // New endpoint for fetching the user's claimed reward
+  getUserReward: {
+    url: "/api/user/reward",
     method: "get",
   },
 };

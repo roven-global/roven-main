@@ -126,4 +126,78 @@ yarn-error.log
 
 # distribuzione
 dist
-dist-ssr
+
+# Testing & Coverage
+# Test files and directories
+test/
+tests/
+**/test/
+**/tests/
+*.test.js
+*.test.jsx
+*.test.ts
+*.test.tsx
+*.spec.js
+*.spec.jsx
+*.spec.ts
+*.spec.tsx
+
+# Test coverage reports
+coverage/
+*.lcov
+.nyc_output
+coverage.json
+coverage.xml
+*.coverage
+
+# Test configuration files
+jest.config.js
+jest.config.ts
+vitest.config.js
+vitest.config.ts
+cypress.config.js
+cypress.config.ts
+playwright.config.js
+playwright.config.ts
+
+# Test utilities and setup
+test-utils/
+test-utils.js
+test-utils.ts
+test-setup.js
+test-setup.ts
+setupTests.js
+setupTests.ts
+
+# Test output and reports
+test-results/
+test-output/
+test-reports/
+*.test-report.json
+*.test-report.xml
+
+# Mobile testing
+mobile-testing-report.json
+test-mobile.js
+
+# Testing documentation
+TESTING.md
+MOBILE_TESTING_SUMMARY.md
+MOBILE_RESPONSIVENESS.md
+
+# Test environment files
+.env.test
+.env.testing
+.env.cypress
+.env.playwright
+
+# Test database files
+test.db
+test.sqlite
+test.sqlite3
+
+# Test cache
+.test-cache/
+.test-cache
+
+testsprite_tests

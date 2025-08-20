@@ -63,11 +63,10 @@ const Login = () => {
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerStep, setRegisterStep] = useState(1); // 1: name/email/mobile, 2: password
   const navigate = useNavigate();
-  const { checkAuthStatus } = useAuth();
+  const { login } = useAuth();
   // Capture redirect intent from navigation state
   const redirectTo =
     (history.state && history.state.usr && history.state.usr.redirectTo) || "/";
-  const { fetchUserCart } = useCart();
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -118,16 +117,10 @@ const Login = () => {
       if (response.data.data.refreshToken)
         localStorage.setItem("refreshToken", response.data.data.refreshToken);
       localStorage.setItem("isLoggedIn", "true");
-      window.dispatchEvent(new Event("loginStateChange"));
-      // Cart merging
-      const localCart = JSON.parse(
-        localStorage.getItem("shimmer_cart") || "[]"
-      );
-      if (localCart.length > 0) {
-        await Axios.post(SummaryApi.mergeCart.url, { localCart });
-        localStorage.removeItem("shimmer_cart");
-      }
-      await checkAuthStatus();
+
+      // Call the login function from context, which will handle all post-login logic
+      login();
+
       navigate(redirectTo || "/");
     } catch (err: any) {
       const errorMessage =
@@ -250,13 +243,13 @@ const Login = () => {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-8 sm:py-12 lg:py-16">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Login Section */}
             {activeTab === "login" && (
-              <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8 h-[450px] flex flex-col">
-                <h2 className="text-3xl font-bold text-deep-forest mb-6 text-center">
+              <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-4 sm:p-6 lg:p-8 min-h-[450px] flex flex-col">
+                <h2 className="text-2xl sm:text-3xl font-bold text-deep-forest mb-4 sm:mb-6 text-center">
                   LOGIN
                 </h2>
                 {loginError && (

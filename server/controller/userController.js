@@ -601,6 +601,34 @@ const useReward = asyncHandler(async (req, res) => {
   }
 });
 
+const getUserReward = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+  if (!userId) {
+    return res.status(401).json({ success: false, message: "Unauthorized: User ID missing." });
+  }
+
+  try {
+    // We need to import the UserReward model to query it.
+    const UserRewardModel = require("../models/userRewardModel");
+    const userReward = await UserRewardModel.findOne({ userId: userId, isUsed: false }).populate('giftId');
+    
+    if (userReward && userReward.giftId) {
+      // Return the details of the gift itself
+      return res.json({ success: true, data: userReward.giftId });
+    } else {
+      // If no active reward, return null
+      return res.json({ success: true, data: null });
+    }
+  } catch (error) {
+    logError("getUserReward", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching user reward",
+      error: error.message
+    });
+  }
+});
+
 module.exports = {
   registerUser,
   verifyEmail: asyncHandler(async (req, res) => {
@@ -632,4 +660,5 @@ module.exports = {
   getWishlist,
   claimReward,
   useReward,
+  getUserReward,
 };

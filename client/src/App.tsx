@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { GuestProvider } from "@/contexts/GuestContext";
+import { UserRewardProvider } from "@/contexts/UserRewardContext";
 import { AdminLayout } from "./components/Layout";
 import AdminRoute from "./AdminRoute";
 import RewardPopup from "@/components/RewardPopup";
@@ -126,9 +127,11 @@ const App = () => (
       <GuestProvider>
         <CartProvider>
           <AuthProvider>
-            <Toaster />
-            <Sonner />
-            <AppContent />
+  <UserRewardProvider>
+    <Toaster />
+    <Sonner />
+    <AppContent />
+  </UserRewardProvider>
           </AuthProvider>
         </CartProvider>
       </GuestProvider>
