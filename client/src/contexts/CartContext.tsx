@@ -85,7 +85,11 @@ interface OrderQuote {
   subtotal: number;
   shippingCost: number;
   discounts: { coupon: number; welcomeGift: number; total: number };
-  coupon?: any;
+  appliedCoupon: {
+    _id: string;
+    code: string;
+    name: string;
+  } | null;
   finalTotal: number;
 }
 

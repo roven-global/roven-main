@@ -135,8 +135,6 @@ const Checkout = () => {
     };
   }, []);
 
-
-
   // Fetch lifetime savings
   useEffect(() => {
     const fetchLifetimeSavings = async () => {
@@ -349,10 +347,8 @@ const Checkout = () => {
     setCouponError("");
 
     try {
-      const success = await applyCoupon(couponToApply);
-      if (success) {
-        setCouponCode("");
-      }
+      await applyCoupon(couponToApply);
+      setCouponCode("");
     } catch (error: any) {
       setCouponError(error.response?.data?.message || "Invalid coupon code");
     } finally {
@@ -383,7 +379,9 @@ const Checkout = () => {
   const discountAmount = orderQuote?.discounts?.coupon ?? 0;
   const welcomeGiftDiscount = orderQuote?.discounts?.welcomeGift ?? 0;
   const finalTotal = orderQuote?.finalTotal ?? 0;
-  const totalSavings = (orderQuote?.discounts?.total ?? 0) + (orderQuote?.shippingCost === 0 && subtotal > 0 ? 40 : 0);
+  const totalSavings =
+    (orderQuote?.discounts?.total ?? 0) +
+    (orderQuote?.shippingCost === 0 && subtotal > 0 ? 40 : 0);
 
   if (cartLoading) {
     return (
@@ -738,7 +736,7 @@ const Checkout = () => {
                     </span>
                   </div>
                   <div className="p-4 space-y-3">
-                    {quoteLoading ? (
+                    {isQuoteLoading ? (
                       <div className="space-y-4">
                         <div className="flex justify-between">
                           <Skeleton className="h-4 w-1/3" />
@@ -782,7 +780,9 @@ const Checkout = () => {
                           <span className="text-forest">Shipping</span>
                           <div className="text-right">
                             {shippingCost === 0 && subtotal > 0 ? (
-                              <span className="text-green-600 font-bold">Free</span>
+                              <span className="text-green-600 font-bold">
+                                Free
+                              </span>
                             ) : (
                               <span className="text-deep-forest font-bold">
                                 {formatRupees(shippingCost)}

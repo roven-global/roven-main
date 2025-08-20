@@ -618,7 +618,7 @@ const Cart = () => {
                             <span>Quantity - {totalQuantity}</span>
                             <span className="mx-2">|</span>
                             <span className="font-semibold">
-                              Total - {formatRupees(totalAmount)}
+                              Total - {formatRupees(subtotal)}
                             </span>
                           </div>
                         </div>
