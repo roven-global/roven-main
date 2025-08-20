@@ -95,22 +95,6 @@ export const useRewardPopup = () => {
         return;
       }
 
-      // Don't check eligibility if we already have a valid reward in localStorage
-      const hasClaimedReward = localStorage.getItem('rewardClaimed') === 'true';
-      const rewardTimestamp = localStorage.getItem('rewardClaimedTimestamp');
-      
-      if (hasClaimedReward && rewardTimestamp) {
-        const rewardAge = now - parseInt(rewardTimestamp);
-        const rewardValidityPeriod = 24 * 60 * 60 * 1000; // 24 hours
-        
-        if (rewardAge < rewardValidityPeriod) {
-          console.log('Valid reward already claimed, skipping eligibility check');
-          localStorage.setItem(eligibilityCheckKey, 'true');
-          localStorage.setItem('eligibilityCheckTimestamp', now.toString());
-          hasCheckedRef.current = true;
-          return;
-        }
-      }
 
       // For new visitors, show popup immediately if no eligibility check has been done
       const hasCheckedBefore = localStorage.getItem(eligibilityCheckKey) === 'true';
@@ -270,22 +254,6 @@ export const useRewardPopup = () => {
       if (response.data.success) {
         const { gift, claimed, anonymousId: claimedAnonymousId } = response.data.data;
 
-        // Store reward data with timestamp for validation
-        const now = Date.now();
-        localStorage.setItem('rewardClaimed', 'true');
-        localStorage.setItem('rewardClaimedTimestamp', now.toString());
-        localStorage.setItem('claimedRewardDetails', JSON.stringify({
-          id: gift._id,
-          title: gift.title,
-          reward: gift.reward,
-          couponCode: gift.couponCode || '',
-          claimedAt: new Date().toISOString(),
-          rewardType: gift.rewardType,
-          rewardValue: gift.rewardValue,
-          maxDiscount: gift.maxDiscount,
-          minOrderAmount: gift.minOrderAmount
-        }));
-
         // Always update anonymous ID from server response to keep it fresh
         if (claimedAnonymousId) {
           localStorage.setItem('anonymousId', claimedAnonymousId);
@@ -347,66 +315,6 @@ export const useRewardPopup = () => {
     console.log('Eligibility check flag reset');
   }, []);
 
-  // Get claimed reward details with validation
-  const getClaimedRewardDetails = useCallback(() => {
-    try {
-      const details = localStorage.getItem('claimedRewardDetails');
-      const timestamp = localStorage.getItem('rewardClaimedTimestamp');
-      
-      if (details && timestamp) {
-        const parsed = JSON.parse(details);
-        const rewardAge = Date.now() - parseInt(timestamp);
-        const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-        
-        // Check if reward is still valid
-        if (rewardAge < maxAge) {
-          return {
-            ...parsed,
-            claimedAt: parsed.claimedAt || new Date().toISOString(),
-            isExpired: false,
-            ageHours: Math.floor(rewardAge / (60 * 60 * 1000))
-          };
-        } else {
-          // Clean up expired reward
-          localStorage.removeItem('rewardClaimed');
-          localStorage.removeItem('rewardClaimedTimestamp');
-          localStorage.removeItem('claimedRewardDetails');
-          return null;
-        }
-      }
-
-      return null;
-    } catch (error) {
-      console.error('Error parsing claimed reward details:', error);
-      // Clean up corrupted data
-      localStorage.removeItem('claimedRewardDetails');
-      localStorage.removeItem('rewardClaimed');
-      localStorage.removeItem('rewardClaimedTimestamp');
-      return null;
-    }
-  }, []);
-
-  const hasClaimedReward = useCallback(() => {
-    const claimed = localStorage.getItem('rewardClaimed') === 'true';
-    const timestamp = localStorage.getItem('rewardClaimedTimestamp');
-    
-    if (claimed && timestamp) {
-      const rewardAge = Date.now() - parseInt(timestamp);
-      const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-      
-      if (rewardAge >= maxAge) {
-        // Clean up expired reward
-        localStorage.removeItem('rewardClaimed');
-        localStorage.removeItem('rewardClaimedTimestamp');
-        localStorage.removeItem('claimedRewardDetails');
-        return false;
-      }
-      
-      return true;
-    }
-    
-    return false;
-  }, []);
 
   // Debug function to manually trigger popup
   const debugOpenPopup = useCallback(() => {
@@ -425,8 +333,6 @@ export const useRewardPopup = () => {
     checkEligibility,
     claimReward,
     resetEligibilityCheck,
-    getClaimedRewardDetails,
-    hasClaimedReward,
     debugOpenPopup, // Add debug function
   };
 };

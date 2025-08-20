@@ -42,7 +42,6 @@ const Cart = () => {
     removeFromCart,
     applyCoupon,
     removeCoupon,
-    removeWelcomeGift,
     orderQuote,
     isQuoteLoading,
   } = useCart();

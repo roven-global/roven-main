@@ -32,22 +32,34 @@ import {
 import { toast } from '@/hooks/use-toast';
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
-interface WelcomeGift {
+const welcomeGiftSchema = z.object({
+  title: z.string().min(1, "Title is required").max(50, "Title cannot exceed 50 characters")
+    .regex(/^[a-zA-Z0-9\s\-_.,!?()]+$/, "Title contains invalid characters"),
+  description: z.string().min(1, "Description is required").max(200, "Description cannot exceed 200 characters")
+    .regex(/^[a-zA-Z0-9\s\-_.,!?()%₹]+$/, "Description contains invalid characters"),
+  icon: z.enum(["Percent", "Truck", "Gift", "Star", "DollarSign", "Clock", "Heart", "Shield", "Zap", "Award"]),
+  color: z.string().regex(/^text-(green|blue|purple|yellow|red|indigo|pink|orange)-600$/, "Invalid color format"),
+  bgColor: z.string().regex(/^bg-(green|blue|purple|yellow|red|indigo|pink|orange)-50 hover:bg-(green|blue|purple|yellow|red|indigo|pink|orange)-100$/, "Invalid background color format"),
+  reward: z.string().min(1, "Reward text is required").max(100, "Reward text cannot exceed 100 characters")
+    .regex(/^[a-zA-Z0-9\s\-_.,!?()%₹]+$/, "Reward text contains invalid characters"),
+  couponCode: z.string().min(3, "Coupon code must be at least 3 characters").max(20, "Coupon code cannot exceed 20 characters")
+    .regex(/^[A-Z0-9]+$/, "Coupon code must be uppercase letters and numbers only"),
+  rewardType: z.enum(["percentage", "fixed_amount", "free_shipping", "buy_one_get_one"]),
+  rewardValue: z.number().min(0, "Reward value cannot be negative").max(100000, "Reward value is too high"),
+  maxDiscount: z.number().min(0, "Max discount cannot be negative").max(100000, "Max discount is too high").nullable().optional(),
+  minOrderAmount: z.number().min(0, "Min order amount cannot be negative").max(100000, "Min order amount is too high"),
+  order: z.number().int().min(1, "Order must be between 1 and 6").max(6, "Order must be between 1 and 6"),
+  isActive: z.boolean(),
+});
+
+type WelcomeGiftFormValues = z.infer<typeof welcomeGiftSchema>;
+
+interface WelcomeGift extends WelcomeGiftFormValues {
   _id: string;
-  title: string;
-  description: string;
-  icon: string;
-  color: string;
-  bgColor: string;
-  reward: string;
-  couponCode: string;
-  rewardType: string;
-  rewardValue: number;
-  maxDiscount?: number;
-  minOrderAmount: number;
-  isActive: boolean;
-  order: number;
   usageCount: number;
   lastUsed?: string;
   createdAt: string;
@@ -117,20 +129,30 @@ const WelcomeGiftAdmin = () => {
   const [editingGift, setEditingGift] = useState<WelcomeGift | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    icon: 'Gift',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50 hover:bg-blue-100',
-    reward: '',
-    couponCode: '',
-    rewardType: 'percentage',
-    rewardValue: 10,
-    maxDiscount: null as number | null,
-    minOrderAmount: 0,
-    order: 1,
-    isActive: true
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+    setError,
+    control,
+  } = useForm<WelcomeGiftFormValues>({
+    resolver: zodResolver(welcomeGiftSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      icon: 'Gift',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50 hover:bg-blue-100',
+      reward: '',
+      couponCode: '',
+      rewardType: 'percentage',
+      rewardValue: 10,
+      maxDiscount: undefined,
+      minOrderAmount: 0,
+      order: 1,
+      isActive: true,
+    },
   });
 
   useEffect(() => {
@@ -163,16 +185,8 @@ const WelcomeGiftAdmin = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData({ ...formData, [name]: value });
-  };
-
   const resetForm = () => {
-    setFormData({
+    reset({
       title: '',
       description: '',
       icon: 'Gift',
@@ -182,28 +196,26 @@ const WelcomeGiftAdmin = () => {
       couponCode: '',
       rewardType: 'percentage',
       rewardValue: 10,
-      maxDiscount: null,
+      maxDiscount: undefined,
       minOrderAmount: 0,
       order: 1,
-      isActive: true
+      isActive: true,
     });
     setEditingGift(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const onSubmit = async (data: WelcomeGiftFormValues) => {
     try {
       if (editingGift) {
         const url = SummaryApi.updateWelcomeGift.url.replace(':id', editingGift._id);
-        const response = await Axios.put(url, formData);
+        const response = await Axios.put(url, data);
         if (response.data.success) {
           toast({ title: 'Welcome gift updated successfully!' });
           fetchGifts();
           fetchAnalytics();
         }
       } else {
-        const response = await Axios.post(SummaryApi.createWelcomeGift.url, formData);
+        const response = await Axios.post(SummaryApi.createWelcomeGift.url, data);
         if (response.data.success) {
           toast({ title: 'Welcome gift created successfully!' });
           fetchGifts();
@@ -214,9 +226,17 @@ const WelcomeGiftAdmin = () => {
       setIsDialogOpen(false);
       resetForm();
     } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'An unexpected error occurred.';
+      if (typeof errorMessage === 'string') {
+        if (errorMessage.includes('couponCode')) {
+          setError('couponCode', { type: 'manual', message: errorMessage });
+        } else if (errorMessage.includes('order')) {
+          setError('order', { type: 'manual', message: errorMessage });
+        }
+      }
       toast({
         title: 'Error saving welcome gift',
-        description: error.response?.data?.message,
+        description: errorMessage,
         variant: 'destructive'
       });
     }
@@ -224,7 +244,7 @@ const WelcomeGiftAdmin = () => {
 
   const handleEdit = (gift: WelcomeGift) => {
     setEditingGift(gift);
-    setFormData({
+    reset({
       title: gift.title,
       description: gift.description,
       icon: gift.icon,
@@ -237,7 +257,7 @@ const WelcomeGiftAdmin = () => {
       maxDiscount: gift.maxDiscount,
       minOrderAmount: gift.minOrderAmount || 0,
       order: gift.order,
-      isActive: gift.isActive
+      isActive: gift.isActive,
     });
     setIsDialogOpen(true);
   };
@@ -324,213 +344,153 @@ const WelcomeGiftAdmin = () => {
                   {editingGift ? 'Edit Welcome Gift' : 'Add New Welcome Gift'}
                 </DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="title">Title</Label>
-                    <Input
-                      id="title"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleInputChange}
-                      required
-                    />
+                    <Input id="title" {...register("title")} />
+                    {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
                   </div>
                   <div>
                     <Label htmlFor="order">Order (1-6)</Label>
-                    <Input
-                      id="order"
-                      name="order"
-                      type="number"
-                      min="1"
-                      max="6"
-                      value={formData.order}
-                      onChange={handleInputChange}
-                      required
-                    />
+                    <Input id="order" type="number" {...register("order", { valueAsNumber: true })} />
+                    {errors.order && <p className="text-red-500 text-xs mt-1">{errors.order.message}</p>}
                   </div>
                 </div>
 
                 <div>
                   <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    required
-                  />
+                  <Textarea id="description" {...register("description")} />
+                  {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="icon">Icon</Label>
-                    <Select value={formData.icon} onValueChange={(value) => handleSelectChange('icon', value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {iconOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            <div className="flex items-center gap-2">
-                              {option.icon}
-                              {option.label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Icon</Label>
+                    <Controller
+                      name="icon"
+                      control={control}
+                      render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {iconOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                <div className="flex items-center gap-2">{option.icon}{option.label}</div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.icon && <p className="text-red-500 text-xs mt-1">{errors.icon.message}</p>}
                   </div>
-
                   <div>
-                    <Label htmlFor="color">Text Color</Label>
-                    <Select value={formData.color} onValueChange={(value) => handleSelectChange('color', value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {colorOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Text Color</Label>
+                    <Controller
+                      name="color"
+                      control={control}
+                      render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {colorOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.color && <p className="text-red-500 text-xs mt-1">{errors.color.message}</p>}
                   </div>
-
                   <div>
-                    <Label htmlFor="bgColor">Background Color</Label>
-                    <Select value={formData.bgColor} onValueChange={(value) => handleSelectChange('bgColor', value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {bgColorOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Background Color</Label>
+                    <Controller
+                      name="bgColor"
+                      control={control}
+                      render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {bgColorOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.bgColor && <p className="text-red-500 text-xs mt-1">{errors.bgColor.message}</p>}
                   </div>
                 </div>
 
                 <div>
                   <Label htmlFor="reward">Reward Text</Label>
-                  <Input
-                    id="reward"
-                    name="reward"
-                    value={formData.reward}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Use code: WELCOME100"
-                    required
-                  />
+                  <Input id="reward" {...register("reward")} />
+                  {errors.reward && <p className="text-red-500 text-xs mt-1">{errors.reward.message}</p>}
                 </div>
 
                 <div>
                   <Label htmlFor="couponCode">Coupon Code</Label>
-                  <Input
-                    id="couponCode"
-                    name="couponCode"
-                    value={formData.couponCode}
-                    onChange={handleInputChange}
-                    placeholder="e.g., WELCOME100"
-                    required
-                  />
+                  <Input id="couponCode" {...register("couponCode")} />
+                  {errors.couponCode && <p className="text-red-500 text-xs mt-1">{errors.couponCode.message}</p>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="rewardType">Reward Type</Label>
-                    <Select value={formData.rewardType} onValueChange={(value) => handleSelectChange('rewardType', value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {rewardTypeOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            <div className="flex flex-col">
-                              <span className="font-medium">{option.label}</span>
-                              <span className="text-xs text-gray-500">{option.description}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="rewardValue">
-                      Reward Value {
-                        formData.rewardType === 'percentage' ? '(%)' :
-                          formData.rewardType === 'fixed_amount' ? '(₹)' :
-                            formData.rewardType === 'buy_one_get_one' ? '(Quantity)' : ''
-                      }
-                    </Label>
-                    <Input
-                      id="rewardValue"
-                      name="rewardValue"
-                      type="number"
-                      min="0"
-                      value={formData.rewardValue}
-                      onChange={handleInputChange}
-                      placeholder={
-                        formData.rewardType === 'percentage' ? 'e.g., 10 for 10%' :
-                          formData.rewardType === 'fixed_amount' ? 'e.g., 100 for ₹100' :
-                            formData.rewardType === 'buy_one_get_one' ? 'e.g., 1 for BOGO' : 'Enter value'
-                      }
-                      required
+                    <Label>Reward Type</Label>
+                    <Controller
+                      name="rewardType"
+                      control={control}
+                      render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {rewardTypeOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{option.label}</span>
+                                  <span className="text-xs text-gray-500">{option.description}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     />
-                    {formData.rewardType === 'buy_one_get_one' && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Set to 1 for standard BOGO (Buy 1 Get 1 Free)
-                      </p>
-                    )}
+                    {errors.rewardType && <p className="text-red-500 text-xs mt-1">{errors.rewardType.message}</p>}
+                  </div>
+                  <div>
+                    <Label htmlFor="rewardValue">Reward Value</Label>
+                    <Input id="rewardValue" type="number" {...register("rewardValue", { valueAsNumber: true })} />
+                    {errors.rewardValue && <p className="text-red-500 text-xs mt-1">{errors.rewardValue.message}</p>}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="maxDiscount">Max Discount (₹) - Optional</Label>
-                    <Input
-                      id="maxDiscount"
-                      name="maxDiscount"
-                      type="number"
-                      min="0"
-                      value={formData.maxDiscount || ''}
-                      onChange={handleInputChange}
-                      placeholder="Leave empty for no limit"
-                    />
-                    {formData.rewardType === 'percentage' && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Maximum discount amount for percentage-based rewards
-                      </p>
-                    )}
+                    <Input id="maxDiscount" type="number" {...register("maxDiscount", { valueAsNumber: true })} />
+                    {errors.maxDiscount && <p className="text-red-500 text-xs mt-1">{errors.maxDiscount.message}</p>}
                   </div>
-
                   <div>
                     <Label htmlFor="minOrderAmount">Min Order Amount (₹)</Label>
-                    <Input
-                      id="minOrderAmount"
-                      name="minOrderAmount"
-                      type="number"
-                      min="0"
-                      value={formData.minOrderAmount}
-                      onChange={handleInputChange}
-                      required
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Minimum cart total required to apply this reward
-                    </p>
+                    <Input id="minOrderAmount" type="number" {...register("minOrderAmount", { valueAsNumber: true })} />
+                    {errors.minOrderAmount && <p className="text-red-500 text-xs mt-1">{errors.minOrderAmount.message}</p>}
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <Switch
-                    id="isActive"
-                    checked={formData.isActive}
-                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                  />
+                    <Controller
+                        name="isActive"
+                        control={control}
+                        render={({ field }) => (
+                            <Switch
+                                id="isActive"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                            />
+                        )}
+                    />
                   <Label htmlFor="isActive">Active</Label>
                 </div>
 

@@ -10,6 +10,7 @@ import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
 import { useCart } from "./CartContext"; // Import useCart
 import { useGuest } from "./GuestContext"; // Import useGuest
+import { useUserReward } from "./UserRewardContext"; // Import useUserReward
 import { toast } from "@/hooks/use-toast";
 
 interface User {
@@ -62,6 +63,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
   const { fetchUserCart, clearCart } = useCart();
   const { guestCart, guestWishlist, clearGuestData } = useGuest();
+  const { fetchUserReward, clearUserReward } = useUserReward();
 
   const clearError = () => setError(null);
 
@@ -88,11 +90,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!anonymousId) return;
 
     try {
-      const rewardDetails = localStorage.getItem("claimedRewardDetails");
-      const parsedReward = rewardDetails ? JSON.parse(rewardDetails) : null;
       const migrationResponse = await Axios.post(
         "/api/welcome-gifts/migrate-anonymous",
-        { anonymousId, couponCode: parsedReward?.couponCode }
+        { anonymousId }
       );
 
       const responseData = migrationResponse.data.data;
@@ -111,7 +111,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       localStorage.removeItem("anonymousId");
       localStorage.removeItem("rewardClaimed");
-      localStorage.removeItem("claimedRewardDetails");
     }
   }, []);
 
@@ -137,6 +136,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await _handleGuestDataMigration();
         await _handleRewardMigration();
         await fetchUserCart();
+        await fetchUserReward(); // Fetch user reward status
         localStorage.removeItem("eligibilityCheckCompleted");
       } else {
         throw new Error("Invalid session");
@@ -177,16 +177,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.removeItem("isLoggedIn");
       localStorage.removeItem("shimmer_cart");
       localStorage.removeItem("rewardClaimed");
-      localStorage.removeItem("claimedRewardDetails");
       localStorage.removeItem("anonymousId");
       setIsAuthenticated(false);
       setUser(null);
       clearCart();
+      clearUserReward(); // Clear user reward on logout
       // Dispatch custom events for other parts of the app that need to react to logout
       window.dispatchEvent(new Event("cartClear"));
       window.dispatchEvent(new Event("resetEligibilityCheck"));
     }
-  }, [clearCart]);
+  }, [clearCart, clearUserReward]);
 
   const updateUser = (userData: User) => {
     setUser(userData);

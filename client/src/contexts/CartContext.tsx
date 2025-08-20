@@ -12,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useUserReward } from "./UserRewardContext";
 
 interface CartItem {
   _id: string;
@@ -110,8 +111,6 @@ interface CartContextType {
   clearCart: () => void;
   applyCoupon: (couponCode: string) => void;
   removeCoupon: () => void;
-  applyWelcomeGift: () => void;
-  removeWelcomeGift: () => void;
   hasClaimedReward: () => boolean;
 }
 
@@ -130,7 +129,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [orderQuote, setOrderQuote] = useState<OrderQuote | null>(null);
   const [isQuoteLoading, setIsQuoteLoading] = useState(false);
   const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(null);
-  const [shouldApplyWelcomeGift, setShouldApplyWelcomeGift] = useState(false);
+  const { userReward } = useUserReward();
 
   const debouncedCartItems = useDebounce(cartItems, 500);
 
@@ -144,15 +143,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const hasClaimedReward = useCallback((): boolean => {
-    const details = localStorage.getItem("claimedRewardDetails");
-    if (!details) return false;
-    try {
-      return !!JSON.parse(details)?.couponCode;
-    } catch {
-      return false;
-    }
-  }, []);
 
   const fetchOrderQuote = useCallback(async () => {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
@@ -162,10 +152,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
     setIsQuoteLoading(true);
     try {
+      const subtotal = cartItems.reduce((acc, item) => {
+        const price = item.variant?.price || item.productId.price;
+        return acc + price * item.quantity;
+      }, 0);
+
+      const shouldApplyWelcomeGift = userReward && subtotal >= userReward.minOrderAmount;
+
       const response = await Axios.post(SummaryApi.getOrderQuote.url, {
         cartItems,
         couponCode: appliedCouponCode,
-        applyWelcomeGift: shouldApplyWelcomeGift || hasClaimedReward(),
+        applyWelcomeGift: shouldApplyWelcomeGift,
       });
       if (response.data?.success) {
         setOrderQuote(response.data.data);
@@ -184,11 +181,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsQuoteLoading(false);
     }
-  }, [cartItems, appliedCouponCode, shouldApplyWelcomeGift, hasClaimedReward]);
+  }, [cartItems, appliedCouponCode, userReward]);
   
   useEffect(() => {
     fetchOrderQuote();
-  }, [debouncedCartItems, appliedCouponCode, shouldApplyWelcomeGift, fetchOrderQuote]);
+  }, [debouncedCartItems, appliedCouponCode, userReward, fetchOrderQuote]);
 
   const applyCoupon = useCallback((code: string) => {
     setAppliedCouponCode(code);
@@ -197,20 +194,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const removeCoupon = useCallback(() => {
     setAppliedCouponCode(null);
   }, []);
-  
-  const applyWelcomeGift = useCallback(() => {
-    setShouldApplyWelcomeGift(true);
-  }, []);
-  
-  const removeWelcomeGift = useCallback(() => {
-    setShouldApplyWelcomeGift(false);
-  }, []);
 
   const clearCart = useCallback(() => {
     setCartItems([]);
     setOrderQuote(null);
     setAppliedCouponCode(null);
-    setShouldApplyWelcomeGift(false);
   }, []);
 
   const addToCart = useCallback(async (item: any) => {
@@ -244,9 +232,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     clearCart,
     applyCoupon,
     removeCoupon,
-    applyWelcomeGift,
-    removeWelcomeGift,
-    hasClaimedReward,
+    hasClaimedReward: () => !!userReward,
   };
 
   return (

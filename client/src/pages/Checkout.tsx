@@ -40,6 +40,7 @@ import { formatRupees } from "@/lib/currency";
 import { useCart } from "@/contexts/CartContext";
 import { useGuest } from "@/contexts/GuestContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserReward } from "@/contexts/UserRewardContext";
 import { toast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -60,6 +61,7 @@ const Checkout = () => {
   } = useCart();
   const { guestCart, clearGuestData } = useGuest();
   const { isAuthenticated, user } = useAuth();
+  const { clearUserReward } = useUserReward();
   const { reactSelectData, getCitiesByState } = useIndianStatesAndCities();
 
   const [loading, setLoading] = useState(false);
@@ -276,6 +278,9 @@ const Checkout = () => {
         // when the user navigates away or to their profile.
         // Clearing coupon is also handled implicitly as the cart is now empty.
         isAuthenticated ? clearCart() : clearGuestData(); // Keep this for immediate UI update
+        if ((orderQuote?.discounts?.welcomeGift ?? 0) > 0) {
+            clearUserReward();
+        }
         navigate(`/payment?orderId=${orderResponse.data.data._id}`);
       }
     } catch (error: any) {
@@ -728,6 +733,17 @@ const Checkout = () => {
 
               {/* Right Column - Price Summary */}
               <div className="space-y-6">
+                <div className="bg-white rounded-lg border shadow-sm">
+                    <div className="p-4 border-b">
+                        <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
+                        <Gift className="w-5 h-5 text-orange-600" />
+                        Welcome Gift
+                        </h3>
+                    </div>
+                    <div className="p-4">
+                        <WelcomeGiftReward />
+                    </div>
+                </div>
                 <div className="bg-white rounded-lg border shadow-sm sticky top-4">
                   <div className="p-4 border-b">
                     <span className="font-semibold text-deep-forest flex items-center gap-2">

@@ -1,84 +1,69 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  ReactNode,
-} from "react";
-import Axios from "@/utils/Axios";
-import SummaryApi from "@/common/summaryApi";
-import { useAuth } from "./AuthContext";
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import Axios from '@/utils/Axios';
+import SummaryApi from '@/common/summaryApi';
+import { toast } from '@/hooks/use-toast';
 
-interface UserReward {
+interface WelcomeGift {
   _id: string;
   title: string;
   description: string;
-  reward: string;
-  couponCode?: string;
-  rewardType: "free_shipping" | "discount" | "sample";
-  rewardValue?: number;
-  // Add any other fields that come from the backend
+  couponCode: string;
+  rewardType: string;
+  rewardValue: number;
+  minOrderAmount: number;
 }
 
 interface UserRewardContextType {
-  claimedReward: UserReward | null;
-  isLoading: boolean;
-  error: string | null;
+  userReward: WelcomeGift | null;
+  loading: boolean;
   fetchUserReward: () => Promise<void>;
+  clearUserReward: () => void;
 }
 
-const UserRewardContext = createContext<UserRewardContextType | undefined>(
-  undefined
-);
+const UserRewardContext = createContext<UserRewardContextType | undefined>(undefined);
 
 export const useUserReward = () => {
   const context = useContext(UserRewardContext);
   if (!context) {
-    throw new Error("useUserReward must be used within a UserRewardProvider");
+    throw new Error('useUserReward must be used within a UserRewardProvider');
   }
   return context;
 };
 
 export const UserRewardProvider = ({ children }: { children: ReactNode }) => {
-  const [claimedReward, setClaimedReward] = useState<UserReward | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated } = useAuth();
+  const [userReward, setUserReward] = useState<WelcomeGift | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const fetchUserReward = useCallback(async () => {
-    if (!isAuthenticated) {
-      setClaimedReward(null);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
+    setLoading(true);
     try {
-      const response = await Axios.get(SummaryApi.getUserReward.url);
-      if (response.data.success && response.data.data) {
-        setClaimedReward(response.data.data);
+      const response = await Axios.get(SummaryApi.checkRewardStatus.url);
+      if (response.data.success && response.data.hasUnusedReward) {
+        setUserReward(response.data.rewardDetails);
+        toast({
+          title: 'Welcome gift restored',
+          description: 'Your previously claimed welcome gift is available.',
+        });
       } else {
-        setClaimedReward(null);
+        setUserReward(null);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to fetch user reward.");
-      setClaimedReward(null);
+    } catch (error) {
+      console.error('Failed to fetch user reward status:', error);
+      setUserReward(null);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, []);
 
-  useEffect(() => {
-    fetchUserReward();
-  }, [fetchUserReward]);
+  const clearUserReward = useCallback(() => {
+    setUserReward(null);
+  }, []);
 
   const value = {
-    claimedReward,
-    isLoading,
-    error,
+    userReward,
+    loading,
     fetchUserReward,
+    clearUserReward,
   };
 
   return (
