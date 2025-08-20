@@ -43,13 +43,19 @@ const Returns = lazy(() => import("./pages/Returns"));
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { isOpen, closePopup, checkEligibility, resetEligibilityCheck } =
-    useRewardPopup();
+  const {
+    isOpen,
+    closePopup,
+    checkEligibility,
+    resetEligibilityCheck,
+    debugOpenPopup,
+  } = useRewardPopup();
 
   console.log("AppContent - isPopupOpen:", isOpen);
 
   // Check eligibility only when component mounts
   useEffect(() => {
+    console.log("AppContent: Checking eligibility on mount");
     checkEligibility(true);
   }, []); // Empty dependency array - only run once
 
@@ -117,6 +123,17 @@ const AppContent = () => {
 
       {/* Reward Popup for First-Time Visitors */}
       <RewardPopup isOpen={isOpen} onClose={closePopup} />
+
+      {/* Temporary Debug Button - Remove after testing */}
+      {process.env.NODE_ENV === "development" && (
+        <button
+          onClick={debugOpenPopup}
+          className="fixed bottom-4 right-4 bg-red-500 text-white p-2 rounded-full z-50"
+          title="Debug: Open Reward Popup"
+        >
+          🎁
+        </button>
+      )}
     </>
   );
 };
@@ -127,11 +144,11 @@ const App = () => (
       <GuestProvider>
         <CartProvider>
           <AuthProvider>
-  <UserRewardProvider>
-    <Toaster />
-    <Sonner />
-    <AppContent />
-  </UserRewardProvider>
+            <UserRewardProvider>
+              <Toaster />
+              <Sonner />
+              <AppContent />
+            </UserRewardProvider>
           </AuthProvider>
         </CartProvider>
       </GuestProvider>

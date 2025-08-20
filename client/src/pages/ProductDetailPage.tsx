@@ -216,19 +216,19 @@ const ProductDetailPage = () => {
         <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
             <div>
-              <Skeleton className="w-full h-96 rounded-lg bg-soft-beige" />
-              <div className="flex gap-4 mt-4">
-                <Skeleton className="w-20 h-20 rounded-lg bg-soft-beige" />
-                <Skeleton className="w-20 h-20 rounded-lg bg-soft-beige" />
-                <Skeleton className="w-20 h-20 rounded-lg bg-soft-beige" />
+              <Skeleton className="w-full h-80 sm:h-96 rounded-lg bg-soft-beige" />
+              <div className="flex gap-2 mt-4 overflow-x-auto">
+                <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-soft-beige" />
+                <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-soft-beige" />
+                <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-soft-beige" />
               </div>
             </div>
             <div className="space-y-6">
-              <Skeleton className="h-6 w-1/4 bg-soft-beige" />
-              <Skeleton className="h-12 w-3/4 bg-soft-beige" />
+              <Skeleton className="h-6 w-1/3 bg-soft-beige" />
+              <Skeleton className="h-10 w-3/4 bg-soft-beige" />
               <Skeleton className="h-6 w-1/2 bg-soft-beige" />
               <Skeleton className="h-10 w-1/3 bg-soft-beige" />
-              <Skeleton className="h-20 w-full bg-soft-beige" />
+              <Skeleton className="h-16 w-full bg-soft-beige" />
               <Skeleton className="h-12 w-full bg-soft-beige" />
             </div>
           </div>
@@ -243,7 +243,7 @@ const ProductDetailPage = () => {
       <div className="bg-warm-cream">
         <Navigation />
         <div className="container mx-auto px-4 py-20 text-center">
-          <h2 className="text-2xl font-semibold text-destructive">
+          <h2 className="text-xl sm:text-2xl font-semibold text-destructive">
             {error || "Product not found."}
           </h2>
           <Link to="/shop">
@@ -265,20 +265,21 @@ const ProductDetailPage = () => {
       <Navigation />
       <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
         {/* Breadcrumb */}
-        <div className="flex items-center text-sm text-forest mb-4 sm:mb-6 lg:mb-8 overflow-x-auto">
-          <Link to="/" className="hover:text-sage whitespace-nowrap">
+        <div className="flex flex-nowrap items-center text-xs sm:text-sm text-forest mb-4 sm:mb-6 lg:mb-8 overflow-x-auto whitespace-nowrap">
+          <Link to="/" className="hover:text-sage flex-shrink-0">
             Home
           </Link>
-          <ChevronRight className="h-4 w-4 mx-1 flex-shrink-0" />
-          <Link to="/shop" className="hover:text-sage whitespace-nowrap">
+          <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 mx-1 flex-shrink-0" />
+          <Link to="/shop" className="hover:text-sage flex-shrink-0">
             Shop
           </Link>
-          <ChevronRight className="h-4 w-4 mx-1 flex-shrink-0" />
-          <span className="text-deep-forest font-medium whitespace-nowrap">
+          <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 mx-1 flex-shrink-0" />
+          <span className="text-deep-forest font-medium flex-shrink-0 truncate max-w-[120px] sm:max-w-none">
             {product.name}
           </span>
         </div>
 
+        {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-start">
           {/* Image Gallery */}
           <div className="md:sticky md:top-24">
@@ -295,7 +296,7 @@ const ProductDetailPage = () => {
                   key={image.public_id}
                   onClick={() => setSelectedImage(image.url)}
                   className={cn(
-                    "w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden cursor-pointer border-2 transition-all flex-shrink-0",
+                    "w-14 h-14 sm:w-20 sm:h-20 rounded-lg overflow-hidden cursor-pointer border-2 transition-all flex-shrink-0",
                     selectedImage === image.url
                       ? "border-sage"
                       : "border-transparent hover:border-sage/50"
@@ -312,18 +313,20 @@ const ProductDetailPage = () => {
           </div>
 
           {/* Product Details */}
-          <div className="space-y-6">
-            <h1 className="font-serif text-4xl font-bold text-deep-forest">
+          <div className="space-y-4 sm:space-y-6">
+            <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-forest">
               {product.name}
             </h1>
             {product.shortDescription && (
-              <p className="text-forest text-lg leading-relaxed">
+              <p className="text-forest text-sm sm:text-base leading-relaxed">
                 {product.shortDescription}
               </p>
             )}
-            <div className="flex items-center gap-4">
+
+            {/* Ratings */}
+            <div className="flex items-center gap-3 text-sm sm:text-base">
               <div className="flex items-center gap-1">
-                <Star className="h-5 w-5 text-gold-accent fill-current" />
+                <Star className="h-4 w-4 sm:h-5 sm:w-5 text-gold-accent fill-current" />
                 <span className="font-semibold text-deep-forest">
                   {product.ratings.average.toFixed(1)}
                 </span>
@@ -332,20 +335,25 @@ const ProductDetailPage = () => {
                 ({product.ratings.numOfReviews} Reviews)
               </span>
             </div>
-            <div className="flex items-baseline gap-3">
-              <span className="font-serif text-4xl font-bold text-deep-forest">
+
+            {/* Price */}
+            <div className="flex items-baseline gap-2 sm:gap-3">
+              <span className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-forest">
                 {formatRupees(currentPrice)}
               </span>
               {originalPrice && (
-                <span className="text-xl text-warm-taupe line-through">
+                <span className="text-base sm:text-xl text-warm-taupe line-through">
                   {formatRupees(originalPrice)}
                 </span>
               )}
             </div>
-            <p className="text-forest leading-relaxed">
+
+            {/* Description */}
+            <p className="text-forest text-sm sm:text-base leading-relaxed">
               {product.description.split(".")[0]}.
             </p>
 
+            {/* Size Selector */}
             {product.variants && product.variants.length > 0 && (
               <SizeSelector
                 variants={product.variants}
@@ -359,7 +367,8 @@ const ProductDetailPage = () => {
               />
             )}
 
-            <div className="flex items-center gap-4">
+            {/* Quantity + Add to Cart */}
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               <div className="flex items-center border border-warm-taupe rounded-full p-1">
                 <Button
                   variant="ghost"
@@ -369,7 +378,7 @@ const ProductDetailPage = () => {
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
-                <span className="w-10 text-center font-semibold">
+                <span className="w-8 sm:w-10 text-center font-semibold">
                   {quantity}
                 </span>
                 <Button
@@ -409,7 +418,7 @@ const ProductDetailPage = () => {
               </Button>
             </div>
 
-            <div className="text-sm text-forest flex items-center gap-2">
+            <div className="text-xs sm:text-sm text-forest flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-sage" />
               {selectedVariant?.stock
                 ? `${selectedVariant.stock} units available`
@@ -418,15 +427,15 @@ const ProductDetailPage = () => {
           </div>
         </div>
 
-        {/* Extended Product Info Section - Amazon style (no tabs, all sections visible) */}
-        <div className="mt-16 border-t border-warm-taupe/30 pt-12 space-y-12">
+        {/* Extended Info */}
+        <div className="mt-10 sm:mt-16 border-t border-warm-taupe/30 pt-8 sm:pt-12 space-y-8 sm:space-y-12">
           {/* Description */}
           <Card className="border-warm-taupe/30 bg-warm-cream/50">
-            <CardContent className="pt-6">
-              <h2 className="text-2xl font-serif font-bold text-deep-forest mb-4">
+            <CardContent className="pt-4 sm:pt-6">
+              <h2 className="text-xl sm:text-2xl font-serif font-bold text-deep-forest mb-3 sm:mb-4">
                 Description
               </h2>
-              <p className="text-forest leading-relaxed">
+              <p className="text-forest text-sm sm:text-base leading-relaxed">
                 {product.description}
               </p>
             </CardContent>
@@ -435,18 +444,18 @@ const ProductDetailPage = () => {
           {/* Hero Ingredients */}
           {product.ingredients && product.ingredients.length > 0 && (
             <Card className="border-warm-taupe/30 bg-warm-cream/50">
-              <CardContent className="pt-6">
-                <h2 className="text-2xl font-serif font-bold text-deep-forest mb-6">
+              <CardContent className="pt-4 sm:pt-6">
+                <h2 className="text-xl sm:text-2xl font-serif font-bold text-deep-forest mb-4">
                   Hero Ingredients
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {product.ingredients.map((ingredient: any, i: number) => (
                     <div
                       key={i}
                       className="bg-white rounded-xl shadow-md overflow-hidden border border-warm-taupe/20 hover:shadow-lg transition-shadow"
                     >
                       {ingredient.image && (
-                        <div className="w-full h-48 bg-warm-cream overflow-hidden">
+                        <div className="w-full h-36 sm:h-48 bg-warm-cream overflow-hidden">
                           <img
                             src={ingredient.image.url}
                             alt={ingredient.name || `Ingredient ${i + 1}`}
@@ -454,14 +463,14 @@ const ProductDetailPage = () => {
                           />
                         </div>
                       )}
-                      <div className="p-4 space-y-2">
+                      <div className="p-3 sm:p-4 space-y-1 sm:space-y-2">
                         {ingredient.name && (
-                          <h3 className="font-semibold text-lg text-deep-forest">
+                          <h3 className="font-semibold text-base sm:text-lg text-deep-forest">
                             {ingredient.name}
                           </h3>
                         )}
                         {ingredient.description && (
-                          <p className="text-sm text-forest leading-relaxed">
+                          <p className="text-xs sm:text-sm text-forest leading-relaxed">
                             {ingredient.description}
                           </p>
                         )}

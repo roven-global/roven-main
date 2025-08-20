@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserReward } from '@/contexts/UserRewardContext';
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 import { toast } from '@/hooks/use-toast';
+
+// Client-side validation is no longer needed as we rely on the server's canonical ID.
+// The server will handle all validation.
 
 export const useRewardPopup = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,7 +13,6 @@ export const useRewardPopup = () => {
   const [loading, setLoading] = useState(false);
   const [selectedGift, setSelectedGift] = useState<any>(null);
   const { user, checkAuthStatus } = useAuth();
-  const { claimedReward, isLoading: isRewardLoading } = useUserReward();
   const hasCheckedRef = useRef(false);
   const eligibilityCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasRetriedRef = useRef(false);
@@ -19,11 +20,18 @@ export const useRewardPopup = () => {
   useEffect(() => {
     fetchWelcomeGifts();
     
+    // Check eligibility after a short delay to ensure proper initialization
+    const timer = setTimeout(() => {
+      console.log('Initial eligibility check triggered');
+      checkEligibility(true);
+    }, 1000);
+    
     // Cleanup on unmount
     return () => {
       if (eligibilityCheckTimeoutRef.current) {
         clearTimeout(eligibilityCheckTimeoutRef.current);
       }
+      clearTimeout(timer);
     };
   }, []);
 
@@ -78,20 +86,16 @@ export const useRewardPopup = () => {
     }
 
     try {
-      // Wait for the authoritative reward status to be loaded before checking eligibility.
-      if (isRewardLoading) {
-        console.log('Waiting for user reward status to load...');
-        return;
-      }
-
-      // If the context confirms a reward is claimed, don't show the popup.
-      if (claimedReward) {
-        console.log('User has a claimed reward from context, skipping eligibility check.');
+      // Don't check eligibility if user is already logged in and has claimed a reward
+      if (user && user.rewardClaimed) {
+        console.log('User already has claimed reward, skipping eligibility check');
+        localStorage.setItem(eligibilityCheckKey, 'true');
+        localStorage.setItem('eligibilityCheckTimestamp', now.toString());
         hasCheckedRef.current = true;
         return;
       }
 
-      // For anonymous users, check localStorage as a fallback.
+      // Don't check eligibility if we already have a valid reward in localStorage
       const hasClaimedReward = localStorage.getItem('rewardClaimed') === 'true';
       const rewardTimestamp = localStorage.getItem('rewardClaimedTimestamp');
       
@@ -106,6 +110,17 @@ export const useRewardPopup = () => {
           hasCheckedRef.current = true;
           return;
         }
+      }
+
+      // For new visitors, show popup immediately if no eligibility check has been done
+      const hasCheckedBefore = localStorage.getItem(eligibilityCheckKey) === 'true';
+      if (!hasCheckedBefore && !user) {
+        console.log('New visitor detected, showing popup immediately');
+        setIsOpen(true);
+        localStorage.setItem(eligibilityCheckKey, 'true');
+        localStorage.setItem('eligibilityCheckTimestamp', now.toString());
+        hasCheckedRef.current = true;
+        return;
       }
 
       // Retrieve anonymous ID; if it doesn't exist, get one from the server.
@@ -147,6 +162,7 @@ export const useRewardPopup = () => {
 
         if (shouldShowPopup) {
           console.log('Eligibility check passed, opening popup');
+          console.log('Setting isOpen to true');
           setIsOpen(true);
           // Mark as checked with timestamp
           localStorage.setItem(eligibilityCheckKey, 'true');
@@ -191,7 +207,7 @@ export const useRewardPopup = () => {
       localStorage.setItem('eligibilityCheckTimestamp', now.toString());
       hasCheckedRef.current = true;
     }
-  }, [user, loading]);
+  }, [user, loading, checkAuthStatus]);
 
   const claimReward = useCallback(async (giftId: string) => {
     if (loading) {
@@ -313,8 +329,14 @@ export const useRewardPopup = () => {
     }
   }, [user, checkAuthStatus]);
   
-  const openPopup = useCallback(() => setIsOpen(true), []);
-  const closePopup = useCallback(() => setIsOpen(false), []);
+  const openPopup = useCallback(() => {
+    console.log('openPopup called, setting isOpen to true');
+    setIsOpen(true);
+  }, []);
+  const closePopup = useCallback(() => {
+    console.log('closePopup called, setting isOpen to false');
+    setIsOpen(false);
+  }, []);
 
   // Reset function to clear eligibility check flag
   const resetEligibilityCheck = useCallback(() => {
@@ -386,6 +408,12 @@ export const useRewardPopup = () => {
     return false;
   }, []);
 
+  // Debug function to manually trigger popup
+  const debugOpenPopup = useCallback(() => {
+    console.log('Debug: Manually opening popup');
+    setIsOpen(true);
+  }, []);
+
   return {
     isOpen,
     gifts,
@@ -399,5 +427,6 @@ export const useRewardPopup = () => {
     resetEligibilityCheck,
     getClaimedRewardDetails,
     hasClaimedReward,
+    debugOpenPopup, // Add debug function
   };
 };

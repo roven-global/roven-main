@@ -1,7 +1,14 @@
-import React, { createContext, useContext, useState, useCallback,useEffect , ReactNode } from 'react';
-import Axios from '@/utils/Axios';
-import SummaryApi from '@/common/summaryApi';
-import { useAuth } from './AuthContext';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  ReactNode,
+} from "react";
+import Axios from "@/utils/Axios";
+import SummaryApi from "@/common/summaryApi";
+import { useAuth } from "./AuthContext";
 
 interface UserReward {
   _id: string;
@@ -9,7 +16,7 @@ interface UserReward {
   description: string;
   reward: string;
   couponCode?: string;
-  rewardType: 'free_shipping' | 'discount' | 'sample';
+  rewardType: "free_shipping" | "discount" | "sample";
   rewardValue?: number;
   // Add any other fields that come from the backend
 }
@@ -21,12 +28,14 @@ interface UserRewardContextType {
   fetchUserReward: () => Promise<void>;
 }
 
-const UserRewardContext = createContext<UserRewardContextType | undefined>(undefined);
+const UserRewardContext = createContext<UserRewardContextType | undefined>(
+  undefined
+);
 
 export const useUserReward = () => {
   const context = useContext(UserRewardContext);
   if (!context) {
-    throw new Error('useUserReward must be used within a UserRewardProvider');
+    throw new Error("useUserReward must be used within a UserRewardProvider");
   }
   return context;
 };
@@ -39,11 +48,11 @@ export const UserRewardProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserReward = useCallback(async () => {
     if (!isAuthenticated) {
-        setClaimedReward(null);
-        setIsLoading(false);
-        return;
+      setClaimedReward(null);
+      setIsLoading(false);
+      return;
     }
-    
+
     setIsLoading(true);
     setError(null);
     try {
@@ -54,7 +63,7 @@ export const UserRewardProvider = ({ children }: { children: ReactNode }) => {
         setClaimedReward(null);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch user reward.');
+      setError(err.response?.data?.message || "Failed to fetch user reward.");
       setClaimedReward(null);
     } finally {
       setIsLoading(false);
