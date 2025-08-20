@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Plus,
     Search,
@@ -39,23 +40,42 @@ import { toast } from '@/hooks/use-toast';
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 import { formatRupees } from '@/lib/currency';
+import { z } from 'zod';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
-interface Coupon {
+const couponSchema = z.object({
+    code: z.string().min(1, "Coupon code is required").max(20, "Code cannot exceed 20 characters").regex(/^[A-Z0-9]+$/, "Code must be uppercase letters and numbers"),
+    name: z.string().min(1, "Coupon name is required").max(100, "Name cannot exceed 100 characters"),
+    description: z.string().max(500, "Description cannot exceed 500 characters").optional(),
+    type: z.enum(['percentage', 'fixed']),
+    value: z.number().min(0, "Value must be positive"),
+    maxDiscount: z.number().min(0).optional().nullable(),
+    minOrderAmount: z.number().min(0),
+    maxOrderAmount: z.number().min(0).optional().nullable(),
+    usageLimit: z.number().int().min(1, "Usage limit must be at least 1"),
+    perUserLimit: z.number().int().min(1, "Per user limit must be at least 1"),
+    validFrom: z.string().min(1, "Valid from date is required"),
+    validTo: z.string().min(1, "Valid to date is required"),
+    firstTimeUserOnly: z.boolean(),
+}).refine(data => {
+    if (data.type === 'percentage') {
+        return data.value > 0 && data.value <= 100;
+    }
+    return true;
+}, {
+    message: "Percentage value must be between 1 and 100",
+    path: ["value"],
+}).refine(data => new Date(data.validTo) > new Date(data.validFrom), {
+    message: "End date must be after start date",
+    path: ["validTo"],
+});
+
+type CouponFormValues = z.infer<typeof couponSchema>;
+
+interface Coupon extends CouponFormValues {
     _id: string;
-    code: string;
-    name: string;
-    description?: string;
-    type: 'percentage' | 'fixed';
-    value: number;
-    maxDiscount?: number;
-    minOrderAmount: number;
-    maxOrderAmount?: number;
-    usageLimit: number;
     usedCount: number;
-    perUserLimit: number;
-    validFrom: string;
-    validTo: string;
-    firstTimeUserOnly: boolean;
     isActive: boolean;
     createdAt: string;
     createdBy: {
@@ -72,25 +92,33 @@ const CouponAdmin = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
-    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-    const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
 
-    // Form states
-    const [formData, setFormData] = useState({
-        code: '',
-        name: '',
-        description: '',
-        type: 'percentage' as 'percentage' | 'fixed',
-        value: 0,
-        maxDiscount: 0,
-        minOrderAmount: 0,
-        maxOrderAmount: 0,
-        usageLimit: 1,
-        perUserLimit: 1,
-        validFrom: '',
-        validTo: '',
-        firstTimeUserOnly: false,
+    const {
+        register,
+        handleSubmit,
+        reset,
+        control,
+        setError,
+        formState: { errors },
+    } = useForm<CouponFormValues>({
+        resolver: zodResolver(couponSchema),
+        defaultValues: {
+            code: '',
+            name: '',
+            description: '',
+            type: 'percentage',
+            value: 10,
+            maxDiscount: undefined,
+            minOrderAmount: 0,
+            maxOrderAmount: undefined,
+            usageLimit: 100,
+            perUserLimit: 1,
+            validFrom: '',
+            validTo: '',
+            firstTimeUserOnly: false,
+        },
     });
 
     const fetchCoupons = async () => {
@@ -102,7 +130,6 @@ const CouponAdmin = () => {
                 search: searchTerm,
             });
 
-            // Only add status filter if it's not "all"
             if (statusFilter && statusFilter !== 'all') {
                 params.append('status', statusFilter);
             }
@@ -128,45 +155,30 @@ const CouponAdmin = () => {
         fetchCoupons();
     }, [currentPage, searchTerm, statusFilter]);
 
-    const handleCreateCoupon = async () => {
+    const onSubmit = async (data: CouponFormValues) => {
         try {
-            const response = await Axios.post(SummaryApi.createCoupon.url, formData);
-            if (response.data.success) {
-                toast({
-                    title: "Coupon created successfully",
-                    description: "The coupon has been added to your system",
-                });
-                setIsCreateDialogOpen(false);
-                resetForm();
-                fetchCoupons();
+            if (editingCoupon) {
+                const url = SummaryApi.updateCoupon.url.replace(':id', editingCoupon._id);
+                const response = await Axios.put(url, data);
+                if (response.data.success) {
+                    toast({ title: "Coupon updated successfully" });
+                }
+            } else {
+                const response = await Axios.post(SummaryApi.createCoupon.url, data);
+                if (response.data.success) {
+                    toast({ title: "Coupon created successfully" });
+                }
             }
+            setIsDialogOpen(false);
+            fetchCoupons();
         } catch (error: any) {
-            toast({
-                title: "Error creating coupon",
-                description: error.response?.data?.message || "Something went wrong",
-                variant: "destructive",
-            });
-        }
-    };
-
-    const handleUpdateCoupon = async () => {
-        if (!selectedCoupon) return;
-        try {
-            const url = SummaryApi.updateCoupon.url.replace(':id', selectedCoupon._id);
-            const response = await Axios.put(url, formData);
-            if (response.data.success) {
-                toast({
-                    title: "Coupon updated successfully",
-                    description: "The coupon has been updated",
-                });
-                setIsEditDialogOpen(false);
-                resetForm();
-                fetchCoupons();
+            const errorMessage = error.response?.data?.message || "An unexpected error occurred.";
+            if (typeof errorMessage === 'string' && errorMessage.includes('code')) {
+                setError('code', { type: 'manual', message: errorMessage });
             }
-        } catch (error: any) {
             toast({
-                title: "Error updating coupon",
-                description: error.response?.data?.message || "Something went wrong",
+                title: "Error saving coupon",
+                description: errorMessage,
                 variant: "destructive",
             });
         }
@@ -176,14 +188,9 @@ const CouponAdmin = () => {
         if (!window.confirm('Are you sure you want to delete this coupon?')) return;
         try {
             const url = SummaryApi.deleteCoupon.url.replace(':id', couponId);
-            const response = await Axios.delete(url);
-            if (response.data.success) {
-                toast({
-                    title: "Coupon deleted successfully",
-                    description: "The coupon has been removed",
-                });
-                fetchCoupons();
-            }
+            await Axios.delete(url);
+            toast({ title: "Coupon deleted successfully" });
+            fetchCoupons();
         } catch (error: any) {
             toast({
                 title: "Error deleting coupon",
@@ -197,13 +204,8 @@ const CouponAdmin = () => {
         try {
             const url = SummaryApi.toggleCouponStatus.url.replace(':id', couponId);
             const response = await Axios.patch(url);
-            if (response.data.success) {
-                toast({
-                    title: "Coupon status updated",
-                    description: response.data.message,
-                });
-                fetchCoupons();
-            }
+            toast({ title: "Coupon status updated", description: response.data.message });
+            fetchCoupons();
         } catch (error: any) {
             toast({
                 title: "Error updating status",
@@ -214,42 +216,23 @@ const CouponAdmin = () => {
     };
 
     const openEditDialog = (coupon: Coupon) => {
-        setSelectedCoupon(coupon);
-        setFormData({
-            code: coupon.code,
-            name: coupon.name,
-            description: coupon.description || '',
-            type: coupon.type,
-            value: coupon.value,
-            maxDiscount: coupon.maxDiscount || 0,
-            minOrderAmount: coupon.minOrderAmount,
-            maxOrderAmount: coupon.maxOrderAmount || 0,
-            usageLimit: coupon.usageLimit,
-            perUserLimit: coupon.perUserLimit,
+        setEditingCoupon(coupon);
+        reset({
+            ...coupon,
             validFrom: new Date(coupon.validFrom).toISOString().split('T')[0],
             validTo: new Date(coupon.validTo).toISOString().split('T')[0],
-            firstTimeUserOnly: coupon.firstTimeUserOnly,
         });
-        setIsEditDialogOpen(true);
+        setIsDialogOpen(true);
     };
-
-    const resetForm = () => {
-        setFormData({
-            code: '',
-            name: '',
-            description: '',
-            type: 'percentage',
-            value: 0,
-            maxDiscount: 0,
-            minOrderAmount: 0,
-            maxOrderAmount: 0,
-            usageLimit: 1,
-            perUserLimit: 1,
-            validFrom: '',
-            validTo: '',
-            firstTimeUserOnly: false,
+    
+    const openCreateDialog = () => {
+        setEditingCoupon(null);
+        reset({
+            code: '', name: '', description: '', type: 'percentage', value: 10,
+            maxDiscount: undefined, minOrderAmount: 0, maxOrderAmount: undefined,
+            usageLimit: 100, perUserLimit: 1, validFrom: '', validTo: '', firstTimeUserOnly: false,
         });
-        setSelectedCoupon(null);
+        setIsDialogOpen(true);
     };
 
     const getStatusBadge = (coupon: Coupon) => {
@@ -286,163 +269,10 @@ const CouponAdmin = () => {
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="font-serif text-3xl font-bold tracking-tight text-deep-forest">Coupon Management</h2>
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button className="bg-sage hover:bg-forest text-white">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Create Coupon
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                            <DialogTitle>Create New Coupon</DialogTitle>
-                            <DialogDescription>
-                                Add a new promotional coupon to your system
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <Label htmlFor="code">Coupon Code</Label>
-                                <Input
-                                    id="code"
-                                    value={formData.code}
-                                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                                    placeholder="e.g., WELCOME10"
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="name">Coupon Name</Label>
-                                <Input
-                                    id="name"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="e.g., Welcome Discount"
-                                />
-                            </div>
-                            <div className="col-span-2">
-                                <Label htmlFor="description">Description</Label>
-                                <Textarea
-                                    id="description"
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    placeholder="Describe the coupon offer..."
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="type">Discount Type</Label>
-                                <Select value={formData.type} onValueChange={(value: 'percentage' | 'fixed') => setFormData({ ...formData, type: value })}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="percentage">Percentage</SelectItem>
-                                        <SelectItem value="fixed">Fixed Amount</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label htmlFor="value">Discount Value</Label>
-                                <Input
-                                    id="value"
-                                    type="number"
-                                    value={formData.value}
-                                    onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
-                                    placeholder={formData.type === 'percentage' ? '10' : '50'}
-                                />
-                            </div>
-                            {formData.type === 'percentage' && (
-                                <div>
-                                    <Label htmlFor="maxDiscount">Max Discount (₹)</Label>
-                                    <Input
-                                        id="maxDiscount"
-                                        type="number"
-                                        value={formData.maxDiscount}
-                                        onChange={(e) => setFormData({ ...formData, maxDiscount: parseFloat(e.target.value) || 0 })}
-                                        placeholder="500"
-                                    />
-                                </div>
-                            )}
-                            <div>
-                                <Label htmlFor="minOrderAmount">Min Order Amount (₹)</Label>
-                                <Input
-                                    id="minOrderAmount"
-                                    type="number"
-                                    value={formData.minOrderAmount}
-                                    onChange={(e) => setFormData({ ...formData, minOrderAmount: parseFloat(e.target.value) || 0 })}
-                                    placeholder="100"
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="maxOrderAmount">Max Order Amount (₹)</Label>
-                                <Input
-                                    id="maxOrderAmount"
-                                    type="number"
-                                    value={formData.maxOrderAmount}
-                                    onChange={(e) => setFormData({ ...formData, maxOrderAmount: parseFloat(e.target.value) || 0 })}
-                                    placeholder="10000 (optional)"
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="usageLimit">Total Usage Limit</Label>
-                                <Input
-                                    id="usageLimit"
-                                    type="number"
-                                    value={formData.usageLimit}
-                                    onChange={(e) => setFormData({ ...formData, usageLimit: parseInt(e.target.value) || 1 })}
-                                    placeholder="1000"
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="perUserLimit">Per User Limit</Label>
-                                <Input
-                                    id="perUserLimit"
-                                    type="number"
-                                    value={formData.perUserLimit}
-                                    onChange={(e) => setFormData({ ...formData, perUserLimit: parseInt(e.target.value) || 1 })}
-                                    placeholder="1"
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="validFrom">Valid From</Label>
-                                <Input
-                                    id="validFrom"
-                                    type="date"
-                                    value={formData.validFrom}
-                                    onChange={(e) => setFormData({ ...formData, validFrom: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="validTo">Valid To</Label>
-                                <Input
-                                    id="validTo"
-                                    type="date"
-                                    value={formData.validTo}
-                                    onChange={(e) => setFormData({ ...formData, validTo: e.target.value })}
-                                />
-                            </div>
-                            <div className="col-span-2">
-                                <div className="flex items-center space-x-2">
-                                    <input
-                                        type="checkbox"
-                                        id="firstTimeUserOnly"
-                                        checked={formData.firstTimeUserOnly}
-                                        onChange={(e) => setFormData({ ...formData, firstTimeUserOnly: e.target.checked })}
-                                        className="rounded"
-                                    />
-                                    <Label htmlFor="firstTimeUserOnly">First-time users only</Label>
-                                </div>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                                Cancel
-                            </Button>
-                            <Button onClick={handleCreateCoupon} className="bg-sage hover:bg-forest">
-                                Create Coupon
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                <Button onClick={openCreateDialog} className="bg-sage hover:bg-forest text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Coupon
+                </Button>
             </div>
 
             {/* Filters */}
@@ -578,147 +408,108 @@ const CouponAdmin = () => {
                 </div>
             )}
 
-            {/* Edit Dialog */}
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            {/* Create/Edit Dialog */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>Edit Coupon</DialogTitle>
+                        <DialogTitle>{editingCoupon ? 'Edit Coupon' : 'Create New Coupon'}</DialogTitle>
                         <DialogDescription>
-                            Update the coupon details
+                            {editingCoupon ? 'Update the coupon details.' : 'Add a new promotional coupon to your system.'}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid grid-cols-2 gap-4">
+                    <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-2 gap-4 py-4">
                         <div>
-                            <Label htmlFor="edit-code">Coupon Code</Label>
-                            <Input
-                                id="edit-code"
-                                value={formData.code}
-                                onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                            />
+                            <Label htmlFor="code">Coupon Code</Label>
+                            <Input id="code" {...register("code")} placeholder="e.g., WELCOME10" />
+                            {errors.code && <p className="text-red-500 text-xs mt-1">{errors.code.message}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="edit-name">Coupon Name</Label>
-                            <Input
-                                id="edit-name"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            />
+                            <Label htmlFor="name">Coupon Name</Label>
+                            <Input id="name" {...register("name")} placeholder="e.g., Welcome Discount" />
+                            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
                         </div>
                         <div className="col-span-2">
-                            <Label htmlFor="edit-description">Description</Label>
-                            <Textarea
-                                id="edit-description"
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            />
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea id="description" {...register("description")} placeholder="Describe the coupon offer..." />
+                            {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="edit-type">Discount Type</Label>
-                            <Select value={formData.type} onValueChange={(value: 'percentage' | 'fixed') => setFormData({ ...formData, type: value })}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="percentage">Percentage</SelectItem>
-                                    <SelectItem value="fixed">Fixed Amount</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <Label>Discount Type</Label>
+                            <Controller
+                                name="type"
+                                control={control}
+                                render={({ field }) => (
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="percentage">Percentage</SelectItem>
+                                            <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
+                            {errors.type && <p className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="edit-value">Discount Value</Label>
-                            <Input
-                                id="edit-value"
-                                type="number"
-                                value={formData.value}
-                                onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
-                            />
-                        </div>
-                        {formData.type === 'percentage' && (
-                            <div>
-                                <Label htmlFor="edit-maxDiscount">Max Discount (₹)</Label>
-                                <Input
-                                    id="edit-maxDiscount"
-                                    type="number"
-                                    value={formData.maxDiscount}
-                                    onChange={(e) => setFormData({ ...formData, maxDiscount: parseFloat(e.target.value) || 0 })}
-                                />
-                            </div>
-                        )}
-                        <div>
-                            <Label htmlFor="edit-minOrderAmount">Min Order Amount (₹)</Label>
-                            <Input
-                                id="edit-minOrderAmount"
-                                type="number"
-                                value={formData.minOrderAmount}
-                                onChange={(e) => setFormData({ ...formData, minOrderAmount: parseFloat(e.target.value) || 0 })}
-                            />
+                            <Label htmlFor="value">Discount Value</Label>
+                            <Input id="value" type="number" {...register("value", { valueAsNumber: true })} />
+                            {errors.value && <p className="text-red-500 text-xs mt-1">{errors.value.message}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="edit-maxOrderAmount">Max Order Amount (₹)</Label>
-                            <Input
-                                id="edit-maxOrderAmount"
-                                type="number"
-                                value={formData.maxOrderAmount}
-                                onChange={(e) => setFormData({ ...formData, maxOrderAmount: parseFloat(e.target.value) || 0 })}
-                            />
+                            <Label htmlFor="maxDiscount">Max Discount (₹)</Label>
+                            <Input id="maxDiscount" type="number" {...register("maxDiscount", { valueAsNumber: true })} placeholder="Optional" />
+                            {errors.maxDiscount && <p className="text-red-500 text-xs mt-1">{errors.maxDiscount.message}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="edit-usageLimit">Total Usage Limit</Label>
-                            <Input
-                                id="edit-usageLimit"
-                                type="number"
-                                value={formData.usageLimit}
-                                onChange={(e) => setFormData({ ...formData, usageLimit: parseInt(e.target.value) || 1 })}
-                            />
+                            <Label htmlFor="minOrderAmount">Min Order Amount (₹)</Label>
+                            <Input id="minOrderAmount" type="number" {...register("minOrderAmount", { valueAsNumber: true })} />
+                            {errors.minOrderAmount && <p className="text-red-500 text-xs mt-1">{errors.minOrderAmount.message}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="edit-perUserLimit">Per User Limit</Label>
-                            <Input
-                                id="edit-perUserLimit"
-                                type="number"
-                                value={formData.perUserLimit}
-                                onChange={(e) => setFormData({ ...formData, perUserLimit: parseInt(e.target.value) || 1 })}
-                            />
+                            <Label htmlFor="maxOrderAmount">Max Order Amount (₹)</Label>
+                            <Input id="maxOrderAmount" type="number" {...register("maxOrderAmount", { valueAsNumber: true })} placeholder="Optional" />
+                            {errors.maxOrderAmount && <p className="text-red-500 text-xs mt-1">{errors.maxOrderAmount.message}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="edit-validFrom">Valid From</Label>
-                            <Input
-                                id="edit-validFrom"
-                                type="date"
-                                value={formData.validFrom}
-                                onChange={(e) => setFormData({ ...formData, validFrom: e.target.value })}
-                            />
+                            <Label htmlFor="usageLimit">Total Usage Limit</Label>
+                            <Input id="usageLimit" type="number" {...register("usageLimit", { valueAsNumber: true })} />
+                            {errors.usageLimit && <p className="text-red-500 text-xs mt-1">{errors.usageLimit.message}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="edit-validTo">Valid To</Label>
-                            <Input
-                                id="edit-validTo"
-                                type="date"
-                                value={formData.validTo}
-                                onChange={(e) => setFormData({ ...formData, validTo: e.target.value })}
-                            />
+                            <Label htmlFor="perUserLimit">Per User Limit</Label>
+                            <Input id="perUserLimit" type="number" {...register("perUserLimit", { valueAsNumber: true })} />
+                            {errors.perUserLimit && <p className="text-red-500 text-xs mt-1">{errors.perUserLimit.message}</p>}
+                        </div>
+                        <div>
+                            <Label htmlFor="validFrom">Valid From</Label>
+                            <Input id="validFrom" type="date" {...register("validFrom")} />
+                            {errors.validFrom && <p className="text-red-500 text-xs mt-1">{errors.validFrom.message}</p>}
+                        </div>
+                        <div>
+                            <Label htmlFor="validTo">Valid To</Label>
+                            <Input id="validTo" type="date" {...register("validTo")} />
+                            {errors.validTo && <p className="text-red-500 text-xs mt-1">{errors.validTo.message}</p>}
                         </div>
                         <div className="col-span-2">
                             <div className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
-                                    id="edit-firstTimeUserOnly"
-                                    checked={formData.firstTimeUserOnly}
-                                    onChange={(e) => setFormData({ ...formData, firstTimeUserOnly: e.target.checked })}
-                                    className="rounded"
+                                <Controller
+                                    name="firstTimeUserOnly"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Checkbox id="firstTimeUserOnly" checked={field.value} onCheckedChange={field.onChange} />
+                                    )}
                                 />
-                                <Label htmlFor="edit-firstTimeUserOnly">First-time users only</Label>
+                                <Label htmlFor="firstTimeUserOnly">First-time users only</Label>
                             </div>
+                            {errors.firstTimeUserOnly && <p className="text-red-500 text-xs mt-1">{errors.firstTimeUserOnly.message}</p>}
                         </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleUpdateCoupon} className="bg-sage hover:bg-forest">
-                            Update Coupon
-                        </Button>
-                    </DialogFooter>
+                        <DialogFooter className="col-span-2">
+                            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                            <Button type="submit" className="bg-sage hover:bg-forest">
+                                {editingCoupon ? 'Update Coupon' : 'Create Coupon'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
         </div>

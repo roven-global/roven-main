@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const rateLimit = require("express-rate-limit");
 const WelcomeGift = require("../models/welcomeGiftModel");
 const UserReward = require("../models/userRewardModel");
-const ProductModel = require("../models/productModel");
+const { validateCartItems } = require("../utils/cartValidator");
 const {
   generateSecureAnonymousId,
   validateAnonymousId,
@@ -62,68 +62,6 @@ const giftClaimLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Server-side cart validation
-const validateCartItems = async (cartItems) => {
-  if (!Array.isArray(cartItems))
-    return { isValid: false, message: "Invalid cart items format" };
-
-  if (cartItems.length === 0) {
-    return {
-      isValid: false,
-      message:
-        "Cart is empty. Please add items to your cart before applying coupons.",
-    };
-  }
-
-  const validatedItems = [];
-  let totalCartValue = 0;
-
-  for (const item of cartItems) {
-    try {
-      const productId =
-        item && item.productId && typeof item.productId === "object"
-          ? item.productId._id || item.productId.id
-          : item?.productId;
-      const product = await ProductModel.findById(productId);
-      if (!product) continue;
-
-      let actualPrice = product.price;
-      if (item.variant?.sku && product.variants?.length > 0) {
-        const variant = product.variants.find(
-          (v) => v.sku === item.variant.sku
-        );
-        if (variant) actualPrice = variant.price;
-      }
-
-      const quantity = Math.max(1, Math.min(99, parseInt(item.quantity) || 1));
-      const itemTotal = actualPrice * quantity;
-      totalCartValue += itemTotal;
-
-      validatedItems.push({
-        ...item,
-        actualPrice,
-        quantity,
-        itemTotal,
-      });
-    } catch (error) {
-      logSecurityEvent("CART_VALIDATION_ERROR", { item, error: error.message });
-    }
-  }
-
-  if (validatedItems.length === 0) {
-    return {
-      isValid: false,
-      message:
-        "No valid items found in cart. Please ensure cart has valid products.",
-    };
-  }
-
-  return {
-    isValid: validatedItems.length > 0,
-    validatedItems,
-    totalCartValue: Math.round(totalCartValue * 100) / 100,
-  };
-};
 
 // @desc Test endpoint to verify server functionality
 // @route GET /api/welcome-gifts/test

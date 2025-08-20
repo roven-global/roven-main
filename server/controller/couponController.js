@@ -1,53 +1,8 @@
 const CouponModel = require("../models/couponModel");
 const CouponUsageModel = require("../models/couponUsageModel");
 const OrderModel = require("../models/orderModel");
-const ProductModel = require("../models/productModel");
 const asyncHandler = require("express-async-handler");
-
-// Server-side cart validation (duplicated from welcome gift controller for now)
-const validateCartItems = async (cartItems) => {
-    if (!Array.isArray(cartItems)) return { isValid: false, message: "Invalid cart items format" };
-
-    const validatedItems = [];
-    let totalCartValue = 0;
-
-    for (const item of cartItems) {
-        try {
-            const productId = (item && item.productId && typeof item.productId === 'object')
-                ? (item.productId._id || item.productId.id)
-                : item?.productId;
-            if (!productId) continue;
-
-            const product = await ProductModel.findById(productId);
-            if (!product) continue;
-
-            let actualPrice = product.price;
-            if (item.variant?.sku && Array.isArray(product.variants) && product.variants.length > 0) {
-                const variant = product.variants.find(v => v.sku === item.variant.sku);
-                if (variant) actualPrice = variant.price;
-            }
-
-            const quantity = Math.max(1, Math.min(99, parseInt(item.quantity) || 1));
-            const itemTotal = actualPrice * quantity;
-            totalCartValue += itemTotal;
-
-            validatedItems.push({
-                ...item,
-                actualPrice,
-                quantity,
-                itemTotal
-            });
-        } catch (error) {
-            // skip invalid item
-        }
-    }
-
-    return {
-        isValid: validatedItems.length > 0,
-        validatedItems,
-        totalCartValue: Math.round(totalCartValue * 100) / 100,
-    };
-};
+const { validateCartItems } = require("../utils/cartValidator");
 
 /**
  * Validate coupon code
@@ -280,30 +235,6 @@ const createCoupon = asyncHandler(async (req, res) => {
         firstTimeUserOnly = false,
     } = req.body;
 
-    // Check if coupon code already exists
-    const existingCoupon = await CouponModel.findOne({ code: code.toUpperCase() });
-    if (existingCoupon) {
-        return res.status(400).json({
-            success: false,
-            message: "Coupon code already exists",
-        });
-    }
-
-    // Validate percentage coupon
-    if (type === "percentage" && (value <= 0 || value > 100)) {
-        return res.status(400).json({
-            success: false,
-            message: "Percentage value must be between 1 and 100",
-        });
-    }
-
-    // Validate fixed coupon
-    if (type === "fixed" && value <= 0) {
-        return res.status(400).json({
-            success: false,
-            message: "Fixed value must be greater than 0",
-        });
-    }
 
     const couponData = {
         code: code.toUpperCase(),
@@ -352,35 +283,9 @@ const updateCoupon = asyncHandler(async (req, res) => {
         });
     }
 
-    // If code is being updated, check for uniqueness
-    if (updateData.code && updateData.code !== coupon.code) {
-        const existingCoupon = await CouponModel.findOne({
-            code: updateData.code.toUpperCase(),
-            _id: { $ne: id }
-        });
-        if (existingCoupon) {
-            return res.status(400).json({
-                success: false,
-                message: "Coupon code already exists",
-            });
-        }
+    // If code is being updated, ensure it's uppercased
+    if (updateData.code) {
         updateData.code = updateData.code.toUpperCase();
-    }
-
-    // Validate percentage coupon
-    if (updateData.type === "percentage" && (updateData.value <= 0 || updateData.value > 100)) {
-        return res.status(400).json({
-            success: false,
-            message: "Percentage value must be between 1 and 100",
-        });
-    }
-
-    // Validate fixed coupon
-    if (updateData.type === "fixed" && updateData.value <= 0) {
-        return res.status(400).json({
-            success: false,
-            message: "Fixed value must be greater than 0",
-        });
     }
 
     // Convert date strings to Date objects
