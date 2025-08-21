@@ -59,7 +59,20 @@ const RelatedProducts: React.FC<RelatedProductsProps> = ({
       <h2 className="text-2xl font-bold mb-4 text-deep-forest font-serif">You May Also Like</h2>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
         {relatedProducts.map((product) => (
-          <ProductCard key={product._id} product={product} />
+          <ProductCard
+            key={product._id}
+            id={product._id}
+            slug={product.slug}
+            name={product.name}
+            price={product.price}
+            originalPrice={product.originalPrice}
+            image={product.images[0]?.url}
+            rating={product.ratings?.average}
+            reviews={product.ratings?.numOfReviews}
+            category={product.category?.name}
+            isNew={product.isNew}
+            isSale={product.isSale}
+          />
         ))}
       </div>
     </div>

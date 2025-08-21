@@ -21,8 +21,8 @@ interface ProductCardProps {
   price: number;
   originalPrice?: number;
   image: string;
-  rating: number;
-  reviews: number;
+  rating?: number;
+  reviews?: number;
   category: string;
   volume?: string;
   variants?: Array<{
@@ -45,8 +45,8 @@ const ProductCard = ({
   price,
   originalPrice,
   image,
-  rating,
-  reviews,
+  rating = 0,
+  reviews = 0,
   category,
   volume,
   variants,

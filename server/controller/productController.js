@@ -79,8 +79,15 @@ const createProduct = asyncHandler(async (req, res) => {
     if (!price || parseFloat(price) <= 0)
       return res.status(400).json({ success: false, message: "Price is required and must be > 0 for single products." });
   } else {
-    if (!variants || !Array.isArray(variants) || variants.length === 0)
-      return res.status(400).json({ success: false, message: "At least one variant is required for variant products." });
+    let parsedVariants;
+    try {
+      parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+      if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) {
+        return res.status(400).json({ success: false, message: "At least one variant is required for variant products." });
+      }
+    } catch (error) {
+      return res.status(400).json({ success: false, message: "Invalid variant format." });
+    }
   }
 
   // Check category exists
@@ -474,12 +481,19 @@ const updateProduct = asyncHandler(async (req, res) => {
   } else updateFields.benefits = product.benefits;
 
   // Handle related products
-  const { relatedProducts } = req.body;
-  if (relatedProducts !== undefined) {
-    if (!Array.isArray(relatedProducts)) {
-        return res.status(400).json({ success: false, message: "relatedProducts must be an array of product IDs." });
+  const { relatedProducts: relatedProductsBody } = req.body;
+  if (relatedProductsBody !== undefined) {
+    let parsedRelatedProducts;
+    try {
+      parsedRelatedProducts = typeof relatedProductsBody === 'string' ? JSON.parse(relatedProductsBody) : relatedProductsBody;
+    } catch (e) {
+      return res.status(400).json({ success: false, message: "Invalid format for relatedProducts." });
     }
-    updateFields.relatedProducts = relatedProducts;
+
+    if (!Array.isArray(parsedRelatedProducts)) {
+      return res.status(400).json({ success: false, message: "relatedProducts must be an array of product IDs." });
+    }
+    updateFields.relatedProducts = parsedRelatedProducts;
   }
 
   if (req.files && req.files.images && req.files.images.length > 0) {
@@ -567,18 +581,18 @@ const getProductsByCategory = asyncHandler(async (req, res) => {
 
 // ---- Search Products ----
 const searchProducts = asyncHandler(async (req, res) => {
-  const { q, page = 1, limit = 10 } = req.query;
-  if (!q)
+  const { search, page = 1, limit = 10 } = req.query;
+  if (!search)
     return res.status(400).json({ success: false, message: "Search query is required." });
 
   const skip = (page - 1) * Math.min(parseInt(limit), 50);
 
   const queryObj = {
     $or: [
-      { name: { $regex: q, $options: 'i' } },
-      { description: { $regex: q, $options: 'i' } },
-      { brand: { $regex: q, $options: 'i' } },
-      { tags: { $in: [new RegExp(q, 'i')] } },
+      { name: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } },
+      { brand: { $regex: search, $options: 'i' } },
+      { tags: { $in: [new RegExp(search, 'i')] } },
     ],
     isActive: true,
   };
@@ -593,7 +607,7 @@ const searchProducts = asyncHandler(async (req, res) => {
   return res.json({
     success: true, message: "Search results retrieved successfully.",
     data: {
-      products, searchQuery: q,
+      products, searchQuery: search,
       pagination: {
         currentPage: parseInt(page),
         totalPages, totalProducts,
