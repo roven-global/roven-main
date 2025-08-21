@@ -6,6 +6,9 @@ const UserReward = require("../models/userRewardModel");
 const User = require("../models/userModel");
 const ProductModel = require("../models/productModel");
 const asyncHandler = require("express-async-handler");
+const {
+  executeWithOptionalTransaction,
+} = require("../utils/transactionHandler");
 
 // Server-side calculation engine
 const calculateOrderTotals = async (cartItems, user, couponCode, applyWelcomeGift) => {
@@ -96,107 +99,126 @@ const calculateOrderTotals = async (cartItems, user, couponCode, applyWelcomeGif
  * @route POST /api/order/create
  */
 const createOrder = asyncHandler(async (req, res) => {
-    const {
-        shippingAddress,
-        paymentMethod = "online",
-        notes,
-        couponCode,
-        appliedWelcomeGift,
-        // 1. Get the new 'applyWelcomeGift' flag from the frontend request
-        applyWelcomeGift,
-    } = req.body;
+  const {
+    shippingAddress,
+    paymentMethod = "online",
+    notes,
+    couponCode,
+    applyWelcomeGift,
+  } = req.body;
 
-    if (!shippingAddress) {
-        return res.status(400).json({
-            success: false,
-            message: "Shipping address is required",
-        });
-    }
+  if (!shippingAddress) {
+    return res.status(400).json({
+      success: false,
+      message: "Shipping address is required",
+    });
+  }
 
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
 
-    const cartItems = await CartModel.find({ userId: req.user._id }).populate('productId');
-    if (cartItems.length === 0) return res.status(400).json({ success: false, message: "Cart is empty" });
+  const cartItems = await CartModel.find({ userId: req.user._id }).populate(
+    "productId"
+  );
+  if (cartItems.length === 0) {
+    return res.status(400).json({ success: false, message: "Cart is empty" });
+  }
 
-    // Use the single source of truth for all calculations
-    const totals = await calculateOrderTotals(cartItems, user, couponCode, applyWelcomeGift);
+  // All database operations are now wrapped in a transaction
+  const newOrder = await executeWithOptionalTransaction(async (session) => {
+    const totals = await calculateOrderTotals(
+      cartItems,
+      user,
+      couponCode,
+      applyWelcomeGift
+    );
 
-    // Generate unique order number
     let orderNumber;
     let isUnique = false;
     let attempts = 0;
-
     while (!isUnique && attempts < 10) {
-        const date = new Date();
-        const year = date.getFullYear().toString().slice(-2);
-        const month = (date.getMonth() + 1).toString().padStart(2, "0");
-        const day = date.getDate().toString().padStart(2, "0");
-        const random = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
-        orderNumber = `ORD${year}${month}${day}${random}`;
-
-        // Check if order number already exists
-        const existingOrder = await OrderModel.findOne({ orderNumber });
-        if (!existingOrder) {
-            isUnique = true;
-        }
-        attempts++;
+      const date = new Date();
+      const year = date.getFullYear().toString().slice(-2);
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const day = date.getDate().toString().padStart(2, "0");
+      const random = Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, "0");
+      orderNumber = `ORD${year}${month}${day}${random}`;
+      const existingOrder = await OrderModel.findOne({ orderNumber }).session(
+        session
+      );
+      if (!existingOrder) isUnique = true;
+      attempts++;
     }
 
     if (!isUnique) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to generate unique order number. Please try again.",
-        });
+      throw new Error(
+        "Failed to generate unique order number. Please try again."
+      );
     }
 
-    // Create order
     const orderData = {
-        user: req.user._id,
-        orderNumber,
-        items: totals.items,
-        shippingAddress,
-        paymentInfo: {
-            method: paymentMethod,
-            status: "pending",
-        },
-        subtotal: totals.subtotal,
-        shippingCost: totals.shippingCost,
-        discount: totals.discounts.coupon,
-        welcomeGiftDiscount: totals.discounts.welcomeGift,
-        total: totals.finalTotal,
-        notes,
+      user: req.user._id,
+      orderNumber,
+      items: totals.items,
+      shippingAddress,
+      paymentInfo: { method: paymentMethod, status: "pending" },
+      subtotal: totals.subtotal,
+      shippingCost: totals.shippingCost,
+      discount: totals.discounts.coupon,
+      welcomeGiftDiscount: totals.discounts.welcomeGift,
+      total: totals.finalTotal,
+      notes,
     };
 
-    const newOrder = new OrderModel(orderData);
-    await newOrder.save();
+    const order = new OrderModel(orderData);
+    await order.save({ session });
 
-    // Track coupon usage if coupon was applied
     if (totals.appliedCoupon) {
-        const couponUsage = new CouponUsageModel({
-            coupon: totals.appliedCoupon._id,
-            user: req.user._id,
-            order: newOrder._id,
-            discountAmount: totals.discounts.coupon,
-            orderAmount: totals.subtotal,
-        });
-        await couponUsage.save();
-        await CouponModel.findByIdAndUpdate(totals.appliedCoupon._id, { $inc: { usedCount: 1 } });
+      const couponUsage = new CouponUsageModel({
+        coupon: totals.appliedCoupon._id,
+        user: req.user._id,
+        order: order._id,
+        discountAmount: totals.discounts.coupon,
+        orderAmount: totals.subtotal,
+      });
+      await couponUsage.save({ session });
+      await CouponModel.findByIdAndUpdate(
+        totals.appliedCoupon._id,
+        { $inc: { usedCount: 1 } },
+        { session }
+      );
     }
 
-    // Mark welcome gift as used if applied
     if (totals.appliedWelcomeGiftId) {
-        await UserReward.findByIdAndUpdate(totals.appliedWelcomeGiftId, { isUsed: true, usedAt: new Date() });
+      await UserReward.findByIdAndUpdate(
+        totals.appliedWelcomeGiftId,
+        { isUsed: true, usedAt: new Date() },
+        { session }
+      );
     }
 
-    // Clear user's cart after successful order creation
-    await CartModel.deleteMany({ userId: req.user._id });
+    await CartModel.deleteMany({ userId: req.user._id }).session(session);
 
-    return res.status(201).json({
-        success: true,
-        message: "Order created successfully",
-        data: newOrder,
+    return order; // Return the created order from the transaction
+  });
+
+  if (newOrder) {
+    res.status(201).json({
+      success: true,
+      message: "Order created successfully",
+      data: newOrder,
     });
+  } else {
+    // This else block will likely not be hit if errors are thrown correctly, but serves as a fallback.
+    res.status(500).json({
+      success: false,
+      message: "Order creation failed. Please try again.",
+    });
+  }
 });
 
 /**

@@ -8,40 +8,9 @@ const {
   generateSecureAnonymousId,
   validateAnonymousId,
 } = require("../utils/anonymousId");
-
-// Check if MongoDB instance supports transactions
-const supportsTransactions = () => {
-  try {
-    return (
-      mongoose.connection.readyState === 1 &&
-      mongoose.connection.db.serverConfig.s.description.type ===
-        "ReplicaSetWithPrimary"
-    );
-  } catch {
-    return false;
-  }
-};
-
-// Helper function to execute with or without transactions
-const executeWithOptionalTransaction = async (callback) => {
-  if (supportsTransactions()) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    try {
-      const result = await callback(session);
-      await session.commitTransaction();
-      return result;
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
-    }
-  } else {
-    // Execute without transactions for local development
-    return await callback(null);
-  }
-};
+const {
+  executeWithOptionalTransaction,
+} = require("../utils/transactionHandler");
 
 // Security helpers
 const sanitizeString = (str) =>
