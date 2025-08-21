@@ -13,7 +13,7 @@ const validateCartItems = async (cartItems) => {
                 : item?.productId;
             if (!productId) continue;
 
-            const product = await ProductModel.findById(productId);
+            const product = await ProductModel.findById(productId).populate('category');
             if (!product) continue;
 
             let actualPrice = product.price;

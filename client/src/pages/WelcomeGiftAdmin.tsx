@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import {
   Plus,
@@ -27,7 +27,8 @@ import {
   Heart,
   Shield,
   Zap,
-  Award
+  Award,
+  ChevronsUpDown
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Axios from '@/utils/Axios';
@@ -35,6 +36,11 @@ import SummaryApi from '@/common/summaryApi';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Checkbox } from "@/components/ui/checkbox"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { MultiSelect } from '@/components/ui/MultiSelect';
+
 
 const welcomeGiftSchema = z.object({
   title: z.string().min(1, "Title is required").max(50, "Title cannot exceed 50 characters")
@@ -48,12 +54,16 @@ const welcomeGiftSchema = z.object({
     .regex(/^[a-zA-Z0-9\s\-_.,!?()%₹]+$/, "Reward text contains invalid characters"),
   couponCode: z.string().min(3, "Coupon code must be at least 3 characters").max(20, "Coupon code cannot exceed 20 characters")
     .regex(/^[A-Z0-9]+$/, "Coupon code must be uppercase letters and numbers only"),
-  rewardType: z.enum(["percentage", "fixed_amount", "free_shipping", "buy_one_get_one"]),
+  rewardType: z.enum(["percentage", "fixed_amount", "buy_one_get_one"]),
   rewardValue: z.number().min(0, "Reward value cannot be negative").max(100000, "Reward value is too high"),
   maxDiscount: z.number().min(0, "Max discount cannot be negative").max(100000, "Max discount is too high").nullable().optional(),
   minOrderAmount: z.number().min(0, "Min order amount cannot be negative").max(100000, "Min order amount is too high"),
   order: z.number().int().min(1, "Order must be between 1 and 6").max(6, "Order must be between 1 and 6"),
   isActive: z.boolean(),
+  // BOGO fields
+  buyQuantity: z.number().int().min(1, "Buy quantity must be at least 1").optional(),
+  getQuantity: z.number().int().min(1, "Get quantity must be at least 1").optional(),
+  applicableCategories: z.array(z.string()).optional(),
 });
 
 type WelcomeGiftFormValues = z.infer<typeof welcomeGiftSchema>;
@@ -117,7 +127,6 @@ const bgColorOptions = [
 const rewardTypeOptions = [
   { value: 'percentage', label: 'Percentage Discount', description: 'e.g., 10% off' },
   { value: 'fixed_amount', label: 'Fixed Amount Discount', description: 'e.g., ₹100 off' },
-  { value: 'free_shipping', label: 'Free Shipping', description: 'Free shipping on order' },
   { value: 'buy_one_get_one', label: 'Buy One Get One Free', description: 'BOGO offer on products' },
 ];
 
@@ -128,6 +137,35 @@ const WelcomeGiftAdmin = () => {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [editingGift, setEditingGift] = useState<WelcomeGift | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchProductsAndCategories = async () => {
+      try {
+        const [productsResponse, categoriesResponse] = await Promise.all([
+          Axios.get(SummaryApi.getAllProducts.url),
+          Axios.get(SummaryApi.getAllCategories.url)
+        ]);
+        if (productsResponse.data.success && Array.isArray(productsResponse.data.data)) {
+          setProducts(productsResponse.data.data);
+        } else {
+          setProducts([]); // Ensure products is always an array
+        }
+        if (categoriesResponse.data.success && Array.isArray(categoriesResponse.data.data)) {
+          setCategories(categoriesResponse.data.data);
+        } else {
+          setCategories([]); // Ensure categories is always an array
+        }
+      } catch (error) {
+        console.error("Error fetching products or categories", error);
+        toast({ title: 'Error fetching data for form', description: 'Could not load products or categories.', variant: 'destructive' });
+        setProducts([]); // Also set to empty array on error
+        setCategories([]);
+      }
+    };
+    fetchProductsAndCategories();
+  }, []);
 
   const {
     register,
@@ -136,6 +174,7 @@ const WelcomeGiftAdmin = () => {
     formState: { errors },
     setError,
     control,
+    watch,
   } = useForm<WelcomeGiftFormValues>({
     resolver: zodResolver(welcomeGiftSchema),
     defaultValues: {
@@ -152,6 +191,9 @@ const WelcomeGiftAdmin = () => {
       minOrderAmount: 0,
       order: 1,
       isActive: true,
+      buyQuantity: 1,
+      getQuantity: 1,
+      applicableCategories: [],
     },
   });
 
@@ -258,6 +300,9 @@ const WelcomeGiftAdmin = () => {
       minOrderAmount: gift.minOrderAmount || 0,
       order: gift.order,
       isActive: gift.isActive,
+      buyQuantity: gift.buyQuantity || 1,
+      getQuantity: gift.getQuantity || 1,
+      applicableCategories: gift.applicableCategories || [],
     });
     setIsDialogOpen(true);
   };
@@ -343,6 +388,9 @@ const WelcomeGiftAdmin = () => {
                 <DialogTitle>
                   {editingGift ? 'Edit Welcome Gift' : 'Add New Welcome Gift'}
                 </DialogTitle>
+                <DialogDescription>
+                  {editingGift ? 'Update the details of this welcome gift.' : 'Create a new welcome gift for users. Fill in the details below.'}
+                </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -459,13 +507,16 @@ const WelcomeGiftAdmin = () => {
                     />
                     {errors.rewardType && <p className="text-red-500 text-xs mt-1">{errors.rewardType.message}</p>}
                   </div>
+                  {watch("rewardType") !== 'buy_one_get_one' && (
                   <div>
                     <Label htmlFor="rewardValue">Reward Value</Label>
                     <Input id="rewardValue" type="number" {...register("rewardValue", { valueAsNumber: true })} />
                     {errors.rewardValue && <p className="text-red-500 text-xs mt-1">{errors.rewardValue.message}</p>}
                   </div>
+                  )}
                 </div>
 
+                {watch("rewardType") !== 'buy_one_get_one' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="maxDiscount">Max Discount (₹) - Optional</Label>
@@ -478,6 +529,45 @@ const WelcomeGiftAdmin = () => {
                     {errors.minOrderAmount && <p className="text-red-500 text-xs mt-1">{errors.minOrderAmount.message}</p>}
                   </div>
                 </div>
+                )}
+
+                {watch("rewardType") === 'buy_one_get_one' && (
+                  <Card className="bg-slate-50/50">
+                    <CardHeader>
+                      <CardTitle className="text-base">Buy One Get One Settings</CardTitle>
+                      <DialogDescription className="text-sm">Configure the rules for your BOGO offer.</DialogDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="buyQuantity">Buy Quantity</Label>
+                          <Input id="buyQuantity" type="number" {...register("buyQuantity", { valueAsNumber: true })} />
+                          {errors.buyQuantity && <p className="text-red-500 text-xs mt-1">{errors.buyQuantity.message}</p>}
+                        </div>
+                        <div>
+                          <Label htmlFor="getQuantity">Get Quantity (Free)</Label>
+                          <Input id="getQuantity" type="number" {...register("getQuantity", { valueAsNumber: true })} />
+                          {errors.getQuantity && <p className="text-red-500 text-xs mt-1">{errors.getQuantity.message}</p>}
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Applicable Categories (optional)</Label>
+                        <Controller
+                          name="applicableCategories"
+                          control={control}
+                          render={({ field }) => (
+                            <MultiSelect
+                              options={categories.map(c => ({ value: c._id, label: c.name }))}
+                              selected={field.value || []}
+                              onChange={field.onChange}
+                              placeholder="Select categories..."
+                            />
+                          )}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 <div className="flex items-center space-x-2">
                     <Controller

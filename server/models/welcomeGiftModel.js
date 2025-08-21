@@ -90,7 +90,7 @@ const welcomeGiftSchema = new mongoose.Schema({
     type: String,
     required: [true, "Reward type is required"],
     enum: {
-      values: ["percentage", "fixed_amount", "free_shipping", "buy_one_get_one"],
+      values: ["percentage", "fixed_amount", "buy_one_get_one"],
       message: "Invalid reward type"
     },
     default: "percentage"
@@ -140,13 +140,12 @@ const welcomeGiftSchema = new mongoose.Schema({
     type: Number,
     required: [true, "Order is required"],
     min: [1, "Order must be at least 1"],
-    max: [6, "Order cannot exceed 6"],
     unique: true,
     validate: {
       validator: function(v) {
-        return Number.isInteger(v) && v >= 1 && v <= 6;
+        return Number.isInteger(v) && v >= 1;
       },
-      message: "Order must be an integer between 1 and 6"
+      message: "Order must be an integer greater than or equal to 1"
     }
   },
   usageCount: {
@@ -165,16 +164,6 @@ const welcomeGiftSchema = new mongoose.Schema({
 // Create compound index for better performance
 welcomeGiftSchema.index({ isActive: 1, order: 1 });
 
-// Ensure only 6 gifts can exist
-welcomeGiftSchema.pre('save', async function (next) {
-  if (this.isNew) {
-    const count = await this.constructor.countDocuments();
-    if (count >= 6) {
-      throw new Error('Maximum 6 welcome gifts allowed');
-    }
-  }
-  next();
-});
 
 // Update usage count when gift is claimed (with session support)
 welcomeGiftSchema.methods.incrementUsage = async function (session = null) {
@@ -225,10 +214,6 @@ welcomeGiftSchema.methods.calculateDiscount = function (subtotal, cartItems = []
       ({ discount, reason } = this.calculateFixedDiscount(subtotal));
       break;
 
-    case 'free_shipping':
-      ({ discount, reason } = this.calculateShippingDiscount(subtotal));
-      break;
-
     case 'buy_one_get_one':
       discount = this.calculateBOGODiscount(cartItems);
       reason = 'Buy One Get One Free';
@@ -246,7 +231,7 @@ welcomeGiftSchema.methods.calculateDiscount = function (subtotal, cartItems = []
   return {
     discount,
     reason,
-    isValid: discount > 0 || this.rewardType === 'free_shipping',
+    isValid: discount > 0,
     finalAmount: subtotal - discount,
   };
 };
@@ -334,13 +319,6 @@ welcomeGiftSchema.methods.calculatePercentageDiscount = function (subtotal) {
   return { discount: Math.round(discount * 100) / 100, reason };
 };
 
-// Calculate shipping discount (e.g., free shipping below threshold)
-welcomeGiftSchema.methods.calculateShippingDiscount = function (subtotal) {
-  // Business rule: ₹49 shipping below ₹1000, free otherwise
-  const shippingCost = subtotal < 1000 ? 49 : 0;
-  return { discount: shippingCost, reason: 'Free shipping' };
-};
-
 // Enhanced validation for gift application
 welcomeGiftSchema.methods.canBeApplied = function (subtotal, cartItems = []) {
   // Basic validations
@@ -398,8 +376,6 @@ welcomeGiftSchema.methods.getDisplayText = function () {
       return `${this.rewardValue}% Off`;
     case 'fixed_amount':
       return `₹${this.rewardValue} Off`;
-    case 'free_shipping':
-      return 'Free Shipping';
     case 'buy_one_get_one':
       return 'Buy One Get One Free';
     default:

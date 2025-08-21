@@ -138,7 +138,6 @@ const createWelcomeGift = asyncHandler(async (req, res) => {
       order: sanitizedData.order,
     }).session(session);
     if (existingGift) {
-      await session.abortTransaction();
       res.status(400);
       throw new Error(`Gift with order ${sanitizedData.order} already exists`);
     }
@@ -148,7 +147,6 @@ const createWelcomeGift = asyncHandler(async (req, res) => {
       couponCode: sanitizedData.couponCode,
     }).session(session);
     if (existingCouponCode) {
-      await session.abortTransaction();
       res.status(400);
       throw new Error(`Coupon code ${sanitizedData.couponCode} already exists`);
     }
@@ -183,7 +181,6 @@ const updateWelcomeGift = asyncHandler(async (req, res) => {
   try {
     const gift = await WelcomeGift.findById(req.params.id).session(session);
     if (!gift) {
-      await session.abortTransaction();
       res.status(404);
       throw new Error("Welcome gift not found");
     }
@@ -230,7 +227,6 @@ const updateWelcomeGift = asyncHandler(async (req, res) => {
         _id: { $ne: req.params.id },
       }).session(session);
       if (existingGift) {
-        await session.abortTransaction();
         res.status(400);
         throw new Error(`Gift with order ${order} already exists`);
       }
@@ -247,7 +243,6 @@ const updateWelcomeGift = asyncHandler(async (req, res) => {
         _id: { $ne: req.params.id },
       }).session(session);
       if (existingCouponCode) {
-        await session.abortTransaction();
         res.status(400);
         throw new Error(`Coupon code ${couponCode} already exists`);
       }
@@ -289,7 +284,6 @@ const deleteWelcomeGift = asyncHandler(async (req, res) => {
   try {
     const gift = await WelcomeGift.findById(req.params.id).session(session);
     if (!gift) {
-      await session.abortTransaction();
       res.status(404);
       throw new Error("Welcome gift not found");
     }
@@ -299,7 +293,6 @@ const deleteWelcomeGift = asyncHandler(async (req, res) => {
       giftId: req.params.id,
     }).session(session);
     if (claimedCount > 0) {
-      await session.abortTransaction();
       res.status(400);
       throw new Error("Cannot delete gift that has been claimed by users");
     }
@@ -361,7 +354,6 @@ const reorderWelcomeGifts = asyncHandler(async (req, res) => {
   try {
     const { orders } = req.body;
     if (!Array.isArray(orders)) {
-      await session.abortTransaction();
       res.status(400);
       throw new Error("Orders must be an array");
     }
@@ -370,7 +362,6 @@ const reorderWelcomeGifts = asyncHandler(async (req, res) => {
     const orderValues = orders.map((o) => parseInt(o.order));
     const uniqueOrders = [...new Set(orderValues)];
     if (orderValues.length !== uniqueOrders.length) {
-      await session.abortTransaction();
       res.status(400);
       throw new Error("Duplicate order values not allowed");
     }
