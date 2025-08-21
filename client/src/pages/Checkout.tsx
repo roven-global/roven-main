@@ -45,6 +45,7 @@ import { toast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import WelcomeGiftReward from "@/components/WelcomeGiftReward";
+import PriceSummary from "@/components/PriceSummary";
 import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
 import { useIndianStatesAndCities } from "@/lib/cities";
@@ -60,7 +61,7 @@ const Checkout = () => {
     isQuoteLoading,
   } = useCart();
   const { guestCart, clearGuestData } = useGuest();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const { clearUserReward } = useUserReward();
   const { reactSelectData, getCitiesByState } = useIndianStatesAndCities();
 
@@ -104,11 +105,16 @@ const Checkout = () => {
     const initialize = async () => {
       if (isAuthenticated) {
         await loadSavedAddresses();
+      } else {
+        // For guest users, show the address form immediately
+        setShowNewAddressForm(true);
       }
       setCartLoading(false);
     };
-    initialize();
-  }, [isAuthenticated]); // Removed refreshCart from dependencies to prevent infinite loops
+    if (!authLoading) {
+      initialize();
+    }
+  }, [isAuthenticated, authLoading]); // Removed refreshCart from dependencies to prevent infinite loops
 
   // Fetch available coupons
   useEffect(() => {
@@ -169,7 +175,6 @@ const Checkout = () => {
       const response = await Axios.get(SummaryApi.getUserAddresses.url);
       if (response.data.success) {
         const addresses = response.data.data;
-        console.log("Loaded addresses:", addresses); // Debug log
         setSavedAddresses(addresses);
 
         // Only set default address if no address is currently selected
@@ -178,7 +183,6 @@ const Checkout = () => {
             addresses.find((addr: any) => addr.isDefault) || addresses[0];
           if (defaultAddress) {
             setSelectedAddressId(defaultAddress._id);
-            console.log("Selected default address:", defaultAddress._id); // Debug log
           } else {
             setShowNewAddressForm(true);
           }
@@ -246,22 +250,38 @@ const Checkout = () => {
   };
 
   const handleProceedToPayment = async () => {
-    if (!selectedAddressId) {
-      toast({
-        title: "Please select a shipping address.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setLoading(true);
-    try {
-      const selectedAddr = savedAddresses.find(
+    let shippingAddress;
+
+    if (isAuthenticated) {
+      if (!selectedAddressId) {
+        toast({
+          title: "Please select a shipping address.",
+          variant: "destructive",
+        });
+        return;
+      }
+      shippingAddress = savedAddresses.find(
         (addr) => addr._id === selectedAddressId
       );
+    } else {
+      // Guest user: validate and use form data
+      if (!formData.firstName || !formData.address || !formData.city || !formData.state || !formData.pincode || !formData.phone || !formData.email) {
+          toast({ title: "Please fill out all required address fields.", variant: "destructive" });
+          return;
+      }
+      shippingAddress = formData;
+    }
 
+    if (!shippingAddress) {
+        toast({ title: "Could not determine shipping address.", variant: "destructive" });
+        return;
+    }
+
+    setLoading(true);
+    try {
       // Construct the payload based on the authoritative orderQuote
       const payload = {
-        shippingAddress: selectedAddr,
+        shippingAddress: shippingAddress,
         paymentMethod: "online",
         notes: "", // Add notes if you have a notes field
         couponCode: orderQuote?.appliedCoupon?.code,
@@ -274,9 +294,6 @@ const Checkout = () => {
       );
 
       if (orderResponse.data.success) {
-        // The cart is cleared on the backend. The context will update automatically
-        // when the user navigates away or to their profile.
-        // Clearing coupon is also handled implicitly as the cart is now empty.
         isAuthenticated ? clearCart() : clearGuestData(); // Keep this for immediate UI update
         if ((orderQuote?.discounts?.welcomeGift ?? 0) > 0) {
             clearUserReward();
@@ -295,10 +312,8 @@ const Checkout = () => {
   };
 
   const handleDeleteAddress = async (addressId: string) => {
-    console.log("Deleting address with ID:", addressId);
     try {
       const deleteUrl = SummaryApi.deleteAddress.url.replace(":id", addressId);
-      console.log("Delete URL:", deleteUrl);
       const response = await Axios.delete(deleteUrl);
 
       if (response.data.success) {
@@ -386,15 +401,21 @@ const Checkout = () => {
   const finalTotal = orderQuote?.finalTotal ?? 0;
   const totalSavings =
     (orderQuote?.discounts?.total ?? 0) +
-    (orderQuote?.shippingCost === 0 && subtotal > 0 ? 40 : 0);
+    (shippingCost === 0 && subtotal > 0 ? 40 : 0);
 
-  if (cartLoading) {
+  if (cartLoading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="animate-spin rounded-full h-24 w-24 border-b-2 border-sage"></div>
       </div>
     );
   }
+
+  const isGuestFormValid = () => {
+    if (isAuthenticated) return false;
+    const { firstName, lastName, phone, email, address, city, state, pincode } = formData;
+    return !!(firstName && lastName && phone && email && address && city && state && pincode);
+  };
 
   return (
     <div className="min-h-screen bg-warm-cream">
@@ -515,10 +536,15 @@ const Checkout = () => {
                     {showNewAddressForm && (
                       <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                         <h3 className="font-semibold text-deep-forest mb-4">
-                          Add New Address
+                          {isAuthenticated
+                            ? "Add New Address"
+                            : "Enter Shipping Address"}
                         </h3>
                         <form
-                          onSubmit={handleSaveAddress}
+                          onSubmit={(e) => {
+                            if (isAuthenticated) handleSaveAddress(e);
+                            else e.preventDefault();
+                          }}
                           className="space-y-4"
                         >
                           <div className="grid grid-cols-2 gap-4">
@@ -675,51 +701,55 @@ const Checkout = () => {
                               />
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="saveForFuture"
-                              name="saveForFuture"
-                              checked={formData.saveForFuture}
-                              onCheckedChange={(checked) =>
-                                setFormData({
-                                  ...formData,
-                                  saveForFuture: checked as boolean,
-                                })
-                              }
-                            />
-                            <Label
-                              htmlFor="saveForFuture"
-                              className="text-sm text-deep-forest"
-                            >
-                              Save this address for future orders
-                            </Label>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              type="submit"
-                              disabled={addressLoading}
-                              className="bg-orange-500 hover:bg-orange-600 text-white"
-                            >
-                              {addressLoading ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <Save className="w-4 h-4" />
-                              )}
-                              Save Address
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => setShowNewAddressForm(false)}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
+                          {isAuthenticated && (
+                            <>
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id="saveForFuture"
+                                  name="saveForFuture"
+                                  checked={formData.saveForFuture}
+                                  onCheckedChange={(checked) =>
+                                    setFormData({
+                                      ...formData,
+                                      saveForFuture: checked as boolean,
+                                    })
+                                  }
+                                />
+                                <Label
+                                  htmlFor="saveForFuture"
+                                  className="text-sm text-deep-forest"
+                                >
+                                  Save this address for future orders
+                                </Label>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  type="submit"
+                                  disabled={addressLoading}
+                                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                                >
+                                  {addressLoading ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Save className="w-4 h-4" />
+                                  )}
+                                  Save Address
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => setShowNewAddressForm(false)}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </>
+                          )}
                         </form>
                       </div>
                     )}
 
-                    {!showNewAddressForm && (
+                    {isAuthenticated && !showNewAddressForm && (
                       <Button
                         onClick={() => setShowNewAddressForm(true)}
                         className="bg-orange-500 hover:bg-orange-600 text-white rounded-md px-6 py-2"
@@ -734,137 +764,48 @@ const Checkout = () => {
               {/* Right Column - Price Summary */}
               <div className="space-y-6">
                 <div className="bg-white rounded-lg border shadow-sm">
-                    <div className="p-4 border-b">
-                        <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
-                        <Gift className="w-5 h-5 text-orange-600" />
-                        Welcome Gift
-                        </h3>
-                    </div>
-                    <div className="p-4">
-                        <WelcomeGiftReward />
-                    </div>
-                </div>
-                <div className="bg-white rounded-lg border shadow-sm sticky top-4">
                   <div className="p-4 border-b">
-                    <span className="font-semibold text-deep-forest flex items-center gap-2">
-                      <ShieldCheck className="w-5 h-5" />
-                      Price Summary
-                    </span>
+                    <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
+                      <Gift className="w-5 h-5 text-orange-600" />
+                      Welcome Gift
+                    </h3>
                   </div>
-                  <div className="p-4 space-y-3">
-                    {isQuoteLoading ? (
-                      <div className="space-y-4">
-                        <div className="flex justify-between">
-                          <Skeleton className="h-4 w-1/3" />
-                          <Skeleton className="h-4 w-1/4" />
-                        </div>
-                        <div className="flex justify-between">
-                          <Skeleton className="h-4 w-1/2" />
-                          <Skeleton className="h-4 w-1/4" />
-                        </div>
-                        <Separator />
-                        <div className="flex justify-between">
-                          <Skeleton className="h-6 w-1/4" />
-                          <Skeleton className="h-6 w-1/3" />
-                        </div>
+                  <div className="p-4">
+                    <WelcomeGiftReward />
+                  </div>
+                </div>
+                <PriceSummary
+                  isQuoteLoading={isQuoteLoading}
+                  subtotal={subtotal}
+                  couponDiscount={discountAmount}
+                  welcomeGiftDiscount={welcomeGiftDiscount}
+                  shippingCost={shippingCost}
+                  finalTotal={finalTotal}
+                  totalSavings={totalSavings}
+                  isAuthenticated={isAuthenticated}
+                  lifetimeSavings={lifetimeSavings}
+                  lifetimeSavingsLoading={lifetimeSavingsLoading}
+                >
+                  <Button
+                    onClick={handleProceedToPayment}
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-md py-3 font-medium"
+                    disabled={
+                      loading ||
+                      (isAuthenticated
+                        ? !selectedAddressId
+                        : !isGuestFormValid())
+                    }
+                  >
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Processing...
                       </div>
                     ) : (
-                      <>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-forest">Order Total</span>
-                          <span className="text-deep-forest font-bold">
-                            {formatRupees(subtotal)}
-                          </span>
-                        </div>
-                        {discountAmount > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-forest">Coupon Discount</span>
-                            <span className="text-green-600 font-bold">
-                              -{formatRupees(discountAmount)}
-                            </span>
-                          </div>
-                        )}
-                        {welcomeGiftDiscount > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-forest">Welcome Gift</span>
-                            <span className="text-green-600 font-bold">
-                              -{formatRupees(welcomeGiftDiscount)}
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex justify-between text-sm">
-                          <span className="text-forest">Shipping</span>
-                          <div className="text-right">
-                            {shippingCost === 0 && subtotal > 0 ? (
-                              <span className="text-green-600 font-bold">
-                                Free
-                              </span>
-                            ) : (
-                              <span className="text-deep-forest font-bold">
-                                {formatRupees(shippingCost)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <Separator />
-                        <div className="flex justify-between font-bold text-lg">
-                          <span className="text-deep-forest">To Pay</span>
-                          <span className="text-deep-forest">
-                            {formatRupees(finalTotal)}
-                          </span>
-                        </div>
-                      </>
+                      "Proceed to Payment"
                     )}
-                  </div>
-                  <div className="p-4 border-t">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center gap-2">
-                      <span className="text-blue-600">✓</span>
-                      <p className="text-sm text-blue-700 font-medium">
-                        You are saving {formatRupees(totalSavings)} on this
-                        order
-                      </p>
-                    </div>
-
-                    {/* Lifetime Savings Section */}
-                    {isAuthenticated && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 flex items-center gap-2">
-                        <span className="text-green-600">🏆</span>
-                        <div className="flex-1">
-                          <p className="text-sm text-green-700 font-medium">
-                            Your lifetime savings with Roven Beauty
-                          </p>
-                          {lifetimeSavingsLoading ? (
-                            <div className="flex items-center gap-2 mt-1">
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-600"></div>
-                              <span className="text-xs text-green-600">
-                                Calculating...
-                              </span>
-                            </div>
-                          ) : (
-                            <p className="text-lg font-bold text-green-800 mt-1">
-                              {formatRupees(lifetimeSavings)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <Button
-                      onClick={handleProceedToPayment}
-                      className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-md py-3 font-medium"
-                      disabled={loading || !selectedAddressId}
-                    >
-                      {loading ? (
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Processing...
-                        </div>
-                      ) : (
-                        "Proceed to Payment"
-                      )}
-                    </Button>
-                  </div>
-                </div>
+                  </Button>
+                </PriceSummary>
               </div>
             </div>
           </div>

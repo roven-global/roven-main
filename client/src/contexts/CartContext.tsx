@@ -6,7 +6,6 @@ import React, {
   ReactNode,
   useCallback,
   useMemo,
-  useRef,
 } from "react";
 import { toast } from "@/hooks/use-toast";
 import Axios from "@/utils/Axios";
@@ -35,50 +34,6 @@ interface CartItem {
     volume: string;
     price: number;
   };
-}
-
-interface AppliedCoupon {
-  coupon: {
-    _id: string;
-    code: string;
-    name: string;
-    description?: string;
-    type: "percentage" | "fixed";
-    value: number;
-    maxDiscount?: number;
-    minOrderAmount?: number;
-    minCartItems?: number;
-  };
-  discountAmount: number;
-  finalAmount: number;
-  isValid?: boolean;
-  validationMessage?: string;
-}
-
-interface AppliedWelcomeGift {
-  reward: {
-    _id: string;
-    title: string;
-    description: string;
-    icon: string;
-    color: string;
-    bgColor: string;
-    reward: string;
-    couponCode: string;
-    rewardType: string;
-    rewardValue: number;
-    maxDiscount?: number;
-    minOrderAmount: number;
-  };
-  discountAmount: number;
-  type: "discount" | "shipping" | "sample";
-  reason?: string;
-  finalAmount?: number;
-  shippingDiscount?: number;
-  productDiscount?: number;
-  isValid?: boolean;
-  validationMessage?: string;
-  serverValidated?: boolean;
 }
 
 interface OrderQuote {

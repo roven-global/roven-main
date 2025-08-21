@@ -41,23 +41,9 @@ export const RewardPopup: React.FC<RewardPopupProps> = ({
   isOpen,
   onClose,
 }) => {
-  console.log("RewardPopup - isOpen:", isOpen);
-
   const { gifts, loading, claimReward } = useRewardPopup();
   const [selectedReward, setSelectedReward] = useState<any>(null);
-  const [isRevealed, setIsRevealed] = useState(false);
-  const [countdown, setCountdown] = useState(5);
-
-  useEffect(() => {
-    if (isRevealed && countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (isRevealed && countdown === 0) {
-      onClose();
-    }
-  }, [isRevealed, countdown, onClose]);
+  const [isClaimed, setIsClaimed] = useState(false);
 
   // Add keyboard shortcut to close popup
   useEffect(() => {
@@ -74,20 +60,21 @@ export const RewardPopup: React.FC<RewardPopupProps> = ({
   }, [isOpen]);
 
   const handleRewardClick = async (reward: any) => {
+    // Instantly claim the reward on click
     setSelectedReward(reward);
-    setIsRevealed(true);
-
-    // Use the new claimReward function from the hook
-    try {
-      await claimReward(reward._id);
-    } catch (error) {
-      console.error("Error claiming reward:", error);
+    const success = await claimReward(reward._id);
+    if (success) {
+      setIsClaimed(true); // Move to final "claimed" screen
     }
   };
 
   const handleClose = () => {
-    // Always allow closing, regardless of state
     onClose();
+    // Reset state for next time popup opens
+    setTimeout(() => {
+      setSelectedReward(null);
+      setIsClaimed(false);
+    }, 300);
   };
 
   if (!isOpen) return null;
@@ -118,14 +105,14 @@ export const RewardPopup: React.FC<RewardPopupProps> = ({
         <div className="flex items-center justify-between p-6 border-b">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
-              {isRevealed
+              {isClaimed
                 ? "🎉 Congratulations!"
                 : "🎁 Choose Your Welcome Gift!"}
             </h2>
             <p className="text-gray-600 mt-1">
-              {isRevealed
-                ? "Your reward has been claimed!"
-                : "Select one of these amazing rewards for your first visit"}
+              {isClaimed
+                ? "Your reward has been claimed and applied to your account."
+                : "Select a mystery gift to reveal and claim your prize!"}
             </p>
           </div>
           <Button
@@ -140,48 +127,28 @@ export const RewardPopup: React.FC<RewardPopupProps> = ({
 
         {/* Content */}
         <div className="p-6">
-          {!isRevealed ? (
+          {!isClaimed ? (
             <>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 {gifts.map((gift) => (
                   <Card
                     key={gift._id}
-                    className={cn(
-                      "cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-lg border-2 hover:border-gray-300",
-                      gift.bgColor
-                    )}
+                    className="cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-lg border-2 hover:border-blue-300 bg-gray-100"
                     onClick={() => handleRewardClick(gift)}
                   >
-                    <CardContent className="p-6 text-center">
-                      <div
-                        className={cn(
-                          "mx-auto mb-3 w-12 h-12 rounded-full flex items-center justify-center",
-                          gift.bgColor
-                        )}
-                      >
-                        <div className={gift.color}>
-                          {iconMap[gift.icon] || <Gift className="w-6 h-6" />}
-                        </div>
+                    <CardContent className="p-6 text-center flex flex-col items-center justify-center">
+                      <div className="mx-auto mb-3 w-12 h-12 rounded-full flex items-center justify-center bg-blue-100 text-blue-600">
+                        <Gift className="w-6 h-6" />
                       </div>
-                      <h3 className="font-semibold text-gray-900 mb-2">
-                        {gift.title}
+                      <h3 className="font-semibold text-gray-900">
+                        Mystery Gift
                       </h3>
-                      <p className="text-sm text-gray-600">
-                        {gift.description}
-                      </p>
-                      {gift.couponCode && (
-                        <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono">
-                          {gift.couponCode}
-                        </div>
-                      )}
+                      <p className="text-sm text-gray-600">Click to Claim</p>
                     </CardContent>
                   </Card>
                 ))}
               </div>
               <div className="text-center">
-                <p className="text-sm text-gray-500 mb-2">
-                  Click on any reward to claim it instantly!
-                </p>
                 <p className="text-xs text-gray-400">
                   Press ESC or click outside to close
                 </p>
@@ -190,43 +157,23 @@ export const RewardPopup: React.FC<RewardPopupProps> = ({
           ) : (
             <div className="text-center py-8">
               <div className="mb-6">
-                <div
-                  className={cn(
-                    "mx-auto mb-4 w-20 h-20 rounded-full flex items-center justify-center",
-                    selectedReward?.bgColor || "bg-green-100"
-                  )}
-                >
-                  <div className={selectedReward?.color || "text-green-600"}>
-                    {iconMap[selectedReward?.icon] || (
-                      <Gift className="w-10 h-10" />
-                    )}
-                  </div>
+                <div className="mx-auto mb-4 w-20 h-20 rounded-full flex items-center justify-center bg-green-100 text-green-600">
+                  <Award className="w-10 h-10" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">
                   {selectedReward?.title}
                 </h3>
-                <p className="text-gray-600 mb-4">{selectedReward?.reward}</p>
-                {selectedReward?.couponCode && (
-                  <div className="mb-4 p-3 bg-gray-100 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">
-                      Your Coupon Code:
-                    </p>
-                    <code className="text-lg font-mono font-bold text-gray-800">
-                      {selectedReward.couponCode}
-                    </code>
-                  </div>
-                )}
-                <div className="text-sm text-gray-500 mb-4">
-                  Closing in {countdown} seconds...
-                </div>
-                <Button
-                  onClick={handleClose}
-                  variant="outline"
-                  className="hover:bg-gray-100"
-                >
-                  Close Now
-                </Button>
+                <p className="text-gray-600 mb-4">
+                  This reward has been added to your account! It will be applied
+                  automatically at checkout.
+                </p>
               </div>
+              <Button
+                onClick={handleClose}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                Start Shopping
+              </Button>
             </div>
           )}
         </div>

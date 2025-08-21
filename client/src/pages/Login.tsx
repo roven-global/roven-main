@@ -18,7 +18,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import Axios from "@/utils/Axios";
 import SummaryApi from "../common/summaryApi";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCart } from "@/contexts/CartContext";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 
@@ -63,7 +62,7 @@ const Login = () => {
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerStep, setRegisterStep] = useState(1); // 1: name/email/mobile, 2: password
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { loginUser, error: authError, clearError } = useAuth();
   // Capture redirect intent from navigation state
   const redirectTo =
     (history.state && history.state.usr && history.state.usr.redirectTo) || "/";
@@ -89,13 +88,12 @@ const Login = () => {
   // Login API handler
   const handleLogin = async (values: z.infer<typeof loginSchema>) => {
     setLoginError("");
+    clearError();
     setLoginLoading(true);
     try {
-      const anonymousId = localStorage.getItem("anonymousId") || null;
       const input = values.emailOrMobile.trim();
       const payload: any = {
         password: values.password,
-        anonymousId,
       };
       if (isEmail(input)) payload.email = input;
       else if (isMobile(input)) payload.mobile = input;
@@ -105,33 +103,19 @@ const Login = () => {
         return;
       }
 
-      const response = await Axios({
-        method: SummaryApi.login.method,
-        url: SummaryApi.login.url,
-        data: payload,
-      });
+      const success = await loginUser(payload);
 
-      // Store tokens and trigger login state
-      if (response.data.data.accessToken)
-        localStorage.setItem("accesstoken", response.data.data.accessToken);
-      if (response.data.data.refreshToken)
-        localStorage.setItem("refreshToken", response.data.data.refreshToken);
-      localStorage.setItem("isLoggedIn", "true");
-
-      // Call the login function from context, which will handle all post-login logic
-      login();
-
-      navigate(redirectTo || "/");
-    } catch (err: any) {
-      const errorMessage =
-        err?.response?.data?.message || "Login failed. Please try again.";
-      if (errorMessage.includes("No account found"))
+      if (success) {
+        navigate(redirectTo || "/");
+      } else {
+        // Error is now set in the AuthContext, so we can use it here.
+        // We'll set a local error for immediate feedback.
         setLoginError(
-          "No account found. Please check your details or register."
+          authError || "Login failed. Please check your credentials."
         );
-      else if (errorMessage.includes("Incorrect password"))
-        setLoginError("Incorrect password.");
-      else setLoginError(errorMessage);
+      }
+    } catch (err: any) {
+      setLoginError("An unexpected error occurred during login.");
     } finally {
       setLoginLoading(false);
     }

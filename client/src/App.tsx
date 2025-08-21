@@ -46,23 +46,13 @@ const AppContent = () => {
   const {
     isOpen,
     closePopup,
-    checkEligibility,
     resetEligibilityCheck,
-    debugOpenPopup,
   } = useRewardPopup();
 
-  console.log("AppContent - isPopupOpen:", isOpen);
-
-  // Check eligibility only when component mounts
-  useEffect(() => {
-    console.log("AppContent: Checking eligibility on mount");
-    checkEligibility(true);
-  }, []); // Empty dependency array - only run once
-
+  
   // Listen for logout events to reset eligibility check
   useEffect(() => {
     const handleResetEligibility = () => {
-      console.log("AppContent: Resetting eligibility check");
       resetEligibilityCheck();
     };
 
@@ -123,17 +113,6 @@ const AppContent = () => {
 
       {/* Reward Popup for First-Time Visitors */}
       <RewardPopup isOpen={isOpen} onClose={closePopup} />
-
-      {/* Temporary Debug Button - Remove after testing */}
-      {process.env.NODE_ENV === "development" && (
-        <button
-          onClick={debugOpenPopup}
-          className="fixed bottom-4 right-4 bg-red-500 text-white p-2 rounded-full z-50"
-          title="Debug: Open Reward Popup"
-        >
-          🎁
-        </button>
-      )}
     </>
   );
 };

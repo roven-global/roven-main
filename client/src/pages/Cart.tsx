@@ -32,6 +32,7 @@ import WelcomeGiftReward from "@/components/WelcomeGiftReward";
 import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
 import { useRewardPopup } from "@/hooks/useRewardPopup";
+import PriceSummary from "@/components/PriceSummary";
 
 const Cart = () => {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -82,7 +83,6 @@ const Cart = () => {
   useEffect(() => {
     // This effect is minimal now; the context handles most logic.
     // It's kept to ensure re-renders on cart/guestCart changes if needed.
-    console.log("Cart: Cart items changed, triggering re-render");
   }, [cartItems, guestCart]);
 
   // Fetch available coupons
@@ -94,7 +94,6 @@ const Cart = () => {
         const response = await Axios.get(SummaryApi.getActiveCoupons.url);
         if (response.data.success) {
           setAvailableCoupons(response.data.data);
-          console.log("Available coupons loaded:", response.data.data);
         }
       } catch (error) {
         console.error("Error fetching available coupons:", error);
@@ -120,20 +119,11 @@ const Cart = () => {
   ) => {
     if (newQuantity < 1) return;
 
-    console.log("Cart: Updating quantity:", {
-      cartItemId,
-      newQuantity,
-      variant,
-      isAuthenticated,
-    });
-
     try {
       if (isAuthenticated) {
         await updateQuantity(cartItemId, newQuantity);
-        console.log("Cart: Quantity updated for authenticated user");
       } else {
         updateGuestCartQuantity(cartItemId, newQuantity, variant);
-        console.log("Cart: Quantity updated for guest user");
       }
 
       // Force a re-render to update price summary
@@ -194,13 +184,8 @@ const Cart = () => {
           )
         : guestCart.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-      console.log("Applying coupon:", couponToApply);
-      console.log("Subtotal:", subtotal);
-      console.log("Cart items:", displayCartItems);
-
       await applyCoupon(couponToApply);
       setCouponCode("");
-      console.log("Coupon applied successfully, clearing input");
     } catch (error: any) {
       console.error("Error applying coupon:", error);
       const errorMessage =
@@ -269,32 +254,9 @@ const Cart = () => {
     (orderQuote?.discounts?.total ?? 0) +
     (orderQuote?.shippingCost === 0 && subtotal > 0 ? 40 : 0);
 
-  // Debug: Log price summary calculations
-  console.log("Cart: Price summary recalculated:", {
-    subtotal,
-    totalQuantity,
-    finalTotal,
-    totalSavings,
-    cartItemsCount: cartItems?.length || 0,
-    guestCartCount: guestCart?.length || 0,
-    isAuthenticated,
-    welcomeGiftDiscount: orderQuote?.discounts.welcomeGift,
-    appliedCoupon: orderQuote?.appliedCoupon?.code,
-    couponDiscount: orderQuote?.discounts.coupon,
-  });
-
   // Handle checkout navigation
   const handleCheckout = () => {
-    if (!isAuthenticated) {
-      navigate("/login", { state: { redirectTo: "/checkout" } });
-      toast({
-        title: "Login required",
-        description: "Please login to continue to checkout.",
-      });
-      return;
-    }
-
-    // Navigate to checkout. The cart context will preserve the applied gift state.
+    // Allow both authenticated and guest users to proceed to checkout
     navigate("/checkout");
   };
 
@@ -306,15 +268,6 @@ const Cart = () => {
       </div>
     );
   }
-
-  // Debug: Log cart items being passed to WelcomeGiftReward
-  console.log("Cart: About to render with displayCartItems:", {
-    isAuthenticated,
-    cartItemsCount: cartItems?.length || 0,
-    guestCartCount: guestCart?.length || 0,
-    displayCartItemsCount: displayCartItems?.length || 0,
-    displayCartItems: displayCartItems,
-  });
 
   return (
     <div className="min-h-screen bg-white">
@@ -756,127 +709,26 @@ const Cart = () => {
                       </div>
 
                       {/* Removed local warning logic; rely on backend validation results */}
-
-                      <div className="bg-white rounded-lg border shadow-sm sticky top-4">
-                        <div className="p-4 border-b">
-                          <span className="font-semibold text-deep-forest flex items-center gap-2">
-                            <ShieldCheck className="w-5 h-5" />
-                            Price Summary
-                          </span>
-                        </div>
-                        <div className="p-4 space-y-3">
-                          {isQuoteLoading ? (
-                            <div className="space-y-4">
-                              <div className="flex justify-between">
-                                <Skeleton className="h-4 w-1/3" />
-                                <Skeleton className="h-4 w-1/4" />
-                              </div>
-                              <div className="flex justify-between">
-                                <Skeleton className="h-4 w-1/2" />
-                                <Skeleton className="h-4 w-1/4" />
-                              </div>
-                              <Separator />
-                              <div className="flex justify-between">
-                                <Skeleton className="h-6 w-1/4" />
-                                <Skeleton className="h-6 w-1/3" />
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex justify-between text-sm">
-                                <span className="text-forest">Order Total</span>
-                                <span className="text-deep-forest font-bold">
-                                  {formatRupees(subtotal)}
-                                </span>
-                              </div>
-                              {couponDiscount > 0 && (
-                                <div className="flex justify-between text-sm">
-                                  <span className="text-forest">
-                                    Coupon Discount
-                                  </span>
-                                  <span className="text-green-600 font-bold">
-                                    -{formatRupees(couponDiscount)}
-                                  </span>
-                                </div>
-                              )}
-                              {welcomeGiftDiscount > 0 && (
-                                <div className="flex justify-between text-sm">
-                                  <span className="text-forest">
-                                    Welcome Gift
-                                  </span>
-                                  <span className="text-green-600 font-bold">
-                                    -{formatRupees(welcomeGiftDiscount)}
-                                  </span>
-                                </div>
-                              )}
-                              <div className="flex justify-between text-sm">
-                                <span className="text-forest">Shipping</span>
-                                <div className="text-right">
-                                  {shippingCost === 0 && subtotal > 0 ? (
-                                    <span className="text-green-600 font-bold">
-                                      Free
-                                    </span>
-                                  ) : (
-                                    <span className="text-deep-forest font-bold">
-                                      {formatRupees(shippingCost)}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <Separator />
-                              <div className="flex justify-between font-bold text-lg">
-                                <span className="text-deep-forest">To Pay</span>
-                                <span className="text-deep-forest">
-                                  {formatRupees(finalTotal)}
-                                </span>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        <div className="p-4 border-t">
-                          {totalSavings > 0 && (
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center gap-2">
-                              <span className="text-blue-600">✓</span>
-                              <p className="text-sm text-blue-700 font-medium">
-                                You are saving {formatRupees(totalSavings)} on
-                                this order
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Lifetime Savings Section */}
-                          {isAuthenticated && (
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 flex items-center gap-2">
-                              <span className="text-green-600">🏆</span>
-                              <div className="flex-1">
-                                <p className="text-sm text-green-700 font-medium">
-                                  Your lifetime savings with Roven Beauty
-                                </p>
-                                {lifetimeSavingsLoading ? (
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-600"></div>
-                                    <span className="text-xs text-green-600">
-                                      Calculating...
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <p className="text-lg font-bold text-green-800 mt-1">
-                                    {formatRupees(lifetimeSavings)}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          <Button
-                            onClick={handleCheckout}
-                            className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-md py-3 font-medium"
-                            disabled={displayCartItems.length === 0}
-                          >
-                            Proceed to Checkout
-                          </Button>
-                        </div>
-                      </div>
+                      <PriceSummary
+                        isQuoteLoading={isQuoteLoading}
+                        subtotal={subtotal}
+                        couponDiscount={couponDiscount}
+                        welcomeGiftDiscount={welcomeGiftDiscount}
+                        shippingCost={shippingCost}
+                        finalTotal={finalTotal}
+                        totalSavings={totalSavings}
+                        isAuthenticated={isAuthenticated}
+                        lifetimeSavings={lifetimeSavings}
+                        lifetimeSavingsLoading={lifetimeSavingsLoading}
+                      >
+                        <Button
+                          onClick={handleCheckout}
+                          className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-md py-3 font-medium"
+                          disabled={displayCartItems.length === 0}
+                        >
+                          Proceed to Checkout
+                        </Button>
+                      </PriceSummary>
                     </div>
                   </div>
                 )}

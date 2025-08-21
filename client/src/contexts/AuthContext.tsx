@@ -35,7 +35,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
-  login: () => void;
+  loginUser: (credentials: any) => Promise<boolean>; // Modified login function
   logout: () => void;
   updateUser: (user: User) => void;
   checkAuthStatus: () => Promise<void>;
@@ -114,7 +114,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const checkAuthStatus = useCallback(async () => {
+  const checkAuthStatus = useCallback(async (isLoginEvent: boolean = false) => {
     setLoading(true);
     setError(null);
     try {
@@ -133,10 +133,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.data.success) {
         setIsAuthenticated(true);
         setUser(response.data.data);
-        await _handleGuestDataMigration();
-        await _handleRewardMigration();
+
+        // Only run migrations on a direct login event
+        if (isLoginEvent) {
+          await _handleGuestDataMigration();
+          await _handleRewardMigration();
+        }
+
         await fetchUserCart();
-        await fetchUserReward(); // Fetch user reward status
+        await fetchUserReward();
         localStorage.removeItem("eligibilityCheckCompleted");
       } else {
         throw new Error("Invalid session");
@@ -160,11 +165,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [fetchUserCart, _handleGuestDataMigration, _handleRewardMigration]);
 
-  const login = useCallback(() => {
-    // This function now simply triggers the auth check,
-    // which will fetch the user, set state, and run migrations.
-    checkAuthStatus();
-  }, [checkAuthStatus]);
+  const loginUser = async (credentials: any) => {
+    try {
+      const response = await Axios.post(SummaryApi.login.url, credentials);
+      if (response.data.success) {
+        localStorage.setItem("accesstoken", response.data.data.accessToken);
+        localStorage.setItem("isLoggedIn", "true");
+        // Explicitly trigger migrations after successful login
+        await checkAuthStatus(true);
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Login failed. Please try again.");
+      return false;
+    }
+  };
 
   const logout = useCallback(async () => {
     try {
@@ -201,7 +217,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     loading,
     error,
-    login,
+    loginUser,
     logout,
     updateUser,
     checkAuthStatus,

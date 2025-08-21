@@ -47,6 +47,8 @@ const Hero = () => {
               <img
                 src={heroImage}
                 alt="Elegant beauty product display"
+                loading="lazy"
+                decoding="async"
                 className="absolute inset-6 sm:inset-8 w-[calc(100%-3rem)] sm:w-[calc(100%-4rem)] h-[calc(100%-3rem)] sm:h-[calc(100%-4rem)] object-cover rounded-full shadow-2xl animate-slow-zoom"
               />
             </div>
