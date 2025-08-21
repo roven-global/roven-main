@@ -5,6 +5,12 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Star,
@@ -14,6 +20,7 @@ import {
   Plus,
   ChevronRight,
   CheckCircle,
+  AlertTriangle,
 } from "lucide-react";
 import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
@@ -23,7 +30,11 @@ import { useGuest } from "@/contexts/GuestContext";
 import { toast } from "@/hooks/use-toast";
 import { formatRupees } from "@/lib/currency";
 import { cn } from "@/lib/utils";
+import InnerImageZoom from 'react-inner-image-zoom';
+import 'react-inner-image-zoom/lib/styles.min.css';
 import SizeSelector from "@/components/SizeSelector";
+import RelatedProducts from "@/components/RelatedProducts";
+import CustomerReviews from "@/components/CustomerReviews";
 
 interface ProductVariant {
   volume: string;
@@ -70,6 +81,7 @@ const ProductDetailPage = () => {
     null
   );
   const [quantity, setQuantity] = useState(1);
+  const [isAdded, setIsAdded] = useState(false);
   const { isAuthenticated, user, updateUser } = useAuth();
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -160,7 +172,7 @@ const ProductDetailPage = () => {
   };
 
   const handleAddToCart = () => {
-    if (!product) return;
+    if (!product || isAdded) return;
 
     if (product.variants && product.variants.length > 0 && !selectedVariant) {
       toast({
@@ -207,6 +219,13 @@ const ProductDetailPage = () => {
         variant: cartItem.variant,
       });
     }
+
+    toast({
+      title: "Added to Cart!",
+      description: cartItem.name,
+    });
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 2000);
   };
 
   if (loading) {
@@ -266,11 +285,11 @@ const ProductDetailPage = () => {
       <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
         {/* Breadcrumb */}
         <div className="flex flex-nowrap items-center text-xs sm:text-sm text-forest mb-4 sm:mb-6 lg:mb-8 overflow-x-auto whitespace-nowrap">
-          <Link to="/" className="hover:text-sage flex-shrink-0">
+          <Link to="/" className="hover:text-sage-dark transition-colors flex-shrink-0">
             Home
           </Link>
           <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 mx-1 flex-shrink-0" />
-          <Link to="/shop" className="hover:text-sage flex-shrink-0">
+          <Link to="/shop" className="hover:text-sage-dark transition-colors flex-shrink-0">
             Shop
           </Link>
           <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 mx-1 flex-shrink-0" />
@@ -282,12 +301,18 @@ const ProductDetailPage = () => {
         {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-start">
           {/* Image Gallery */}
-          <div className="md:sticky md:top-24">
+          <div>
             <div className="w-full aspect-square rounded-xl overflow-hidden shadow-lg mb-4 bg-white">
-              <img
+              <InnerImageZoom
                 src={selectedImage}
-                alt={product.name}
-                className="w-full h-full object-cover"
+                zoomSrc={selectedImage} // Using same image for zoom as high-res is not available
+                zoomType="hover"
+                zoomPreload={true}
+                className="w-full h-full"
+                imgAttributes={{
+                  alt: product.name,
+                  className: "w-full h-full object-cover",
+                }}
               />
             </div>
             <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -299,7 +324,7 @@ const ProductDetailPage = () => {
                     "w-14 h-14 sm:w-20 sm:h-20 rounded-lg overflow-hidden cursor-pointer border-2 transition-all flex-shrink-0",
                     selectedImage === image.url
                       ? "border-sage"
-                      : "border-transparent hover:border-sage/50"
+                      : "border-transparent hover:border-sage"
                   )}
                 >
                   <img
@@ -313,25 +338,25 @@ const ProductDetailPage = () => {
           </div>
 
           {/* Product Details */}
-          <div className="space-y-4 sm:space-y-6">
+          <div className="space-y-4 sm:space-y-6 md:sticky md:top-24">
             <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-forest">
               {product.name}
             </h1>
             {product.shortDescription && (
-              <p className="text-forest text-sm sm:text-base leading-relaxed">
+              <p className="font-serif text-base sm:text-lg leading-relaxed text-forest">
                 {product.shortDescription}
               </p>
             )}
 
             {/* Ratings */}
-            <div className="flex items-center gap-3 text-sm sm:text-base">
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 sm:h-5 sm:w-5 text-gold-accent fill-current" />
-                <span className="font-semibold text-deep-forest">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 text-base sm:text-lg">
+                <Star className="h-5 w-5 text-gold-accent fill-current" />
+                <span className="font-bold text-deep-forest">
                   {product.ratings.average.toFixed(1)}
                 </span>
               </div>
-              <span className="text-forest">
+              <span className="text-sm text-forest mt-1">
                 ({product.ratings.numOfReviews} Reviews)
               </span>
             </div>
@@ -369,22 +394,22 @@ const ProductDetailPage = () => {
 
             {/* Quantity + Add to Cart */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-              <div className="flex items-center border border-warm-taupe rounded-full p-1">
+              <div className="flex items-center border border-sage rounded-full p-1">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full"
+                  className="rounded-full hover:bg-sage/10 transition-colors"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
-                <span className="w-8 sm:w-10 text-center font-semibold">
+                <span className="w-8 sm:w-10 text-center font-semibold text-deep-forest">
                   {quantity}
                 </span>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full"
+                  className="rounded-full hover:bg-sage/10 transition-colors"
                   onClick={() =>
                     setQuantity((q) =>
                       Math.min(selectedVariant?.stock ?? 10, q + 1)
@@ -396,171 +421,245 @@ const ProductDetailPage = () => {
               </div>
               <Button
                 size="lg"
-                className="flex-1 bg-forest text-white hover:bg-deep-forest rounded-full font-semibold"
+                className="flex-1 bg-forest text-white hover:bg-deep-forest rounded-full font-semibold transition-all"
                 onClick={handleAddToCart}
-                disabled={selectedVariant?.stock === 0}
+                disabled={selectedVariant?.stock === 0 || isAdded}
               >
-                <ShoppingBag className="mr-2 h-5 w-5" />
-                {selectedVariant?.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                {isAdded ? (
+                  <>
+                    <CheckCircle className="mr-2 h-5 w-5" />
+                    Added
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="mr-2 h-5 w-5" />
+                    {selectedVariant?.stock === 0
+                      ? "Out of Stock"
+                      : "Add to Cart"}
+                  </>
+                )}
               </Button>
               <Button
                 variant="outline"
                 size="icon"
-                className="rounded-full border-warm-taupe"
+                className={cn(
+                  "rounded-full transition-colors",
+                  isLiked
+                    ? "border-sage-dark bg-sage/10"
+                    : "border-sage hover:bg-sage/10"
+                )}
                 onClick={handleLikeClick}
               >
                 <Heart
                   className={cn(
-                    "h-5 w-5 text-deep-forest",
-                    isLiked && "fill-current text-sage"
+                    "h-5 w-5",
+                    isLiked
+                      ? "fill-sage text-sage-dark"
+                      : "text-deep-forest"
                   )}
                 />
               </Button>
             </div>
 
-            <div className="text-xs sm:text-sm text-forest flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-sage" />
-              {selectedVariant?.stock
-                ? `${selectedVariant.stock} units available`
-                : "In Stock"}
-            </div>
+            {selectedVariant ? (
+              <div className="text-xs sm:text-sm flex items-center gap-2">
+                {selectedVariant.stock > 0 &&
+                selectedVariant.stock <= selectedVariant.lowStockThreshold ? (
+                  <>
+                    <AlertTriangle className="h-4 w-4 text-orange-500" />
+                    <span className="text-orange-600 font-semibold">
+                      Only {selectedVariant.stock} left in stock!
+                    </span>
+                  </>
+                ) : selectedVariant.stock > 0 ? (
+                  <>
+                    <CheckCircle className="h-4 w-4 text-sage" />
+                    <span className="text-forest">
+                      {selectedVariant.stock} units available
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-destructive font-semibold">
+                    Out of Stock
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="text-xs sm:text-sm text-forest flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-sage" />
+                <span>In Stock</span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Extended Info */}
-        <div className="mt-10 sm:mt-16 border-t border-warm-taupe/30 pt-8 sm:pt-12 space-y-8 sm:space-y-12">
-          {/* Description */}
-          <Card className="border-warm-taupe/30 bg-warm-cream/50">
-            <CardContent className="pt-4 sm:pt-6">
-              <h2 className="text-xl sm:text-2xl font-serif font-bold text-deep-forest mb-3 sm:mb-4">
+        <div className="mt-10 sm:mt-16 border-t border-warm-taupe/30 pt-8 sm:pt-12">
+          <Accordion
+            type="multiple"
+            defaultValue={["item-1"]}
+            className="w-full space-y-4"
+          >
+            <AccordionItem
+              value="item-1"
+              className="border-warm-taupe/30 bg-warm-cream/50 rounded-xl shadow-elegant transition-shadow"
+            >
+              <AccordionTrigger className="text-xl sm:text-2xl font-serif font-bold text-deep-forest px-6">
                 Description
-              </h2>
-              <p className="text-forest text-sm sm:text-base leading-relaxed">
-                {product.description}
-              </p>
-            </CardContent>
-          </Card>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6">
+                <p className="text-forest text-sm sm:text-base leading-relaxed">
+                  {product.description}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
 
-          {/* Hero Ingredients */}
-          {product.ingredients && product.ingredients.length > 0 && (
-            <Card className="border-warm-taupe/30 bg-warm-cream/50">
-              <CardContent className="pt-4 sm:pt-6">
-                <h2 className="text-xl sm:text-2xl font-serif font-bold text-deep-forest mb-4">
+            {product.ingredients && product.ingredients.length > 0 && (
+              <AccordionItem
+                value="item-2"
+                className="border-warm-taupe/30 bg-warm-cream/50 rounded-xl shadow-elegant transition-shadow"
+              >
+                <AccordionTrigger className="text-xl sm:text-2xl font-serif font-bold text-deep-forest px-6">
                   Hero Ingredients
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  {product.ingredients.map((ingredient: any, i: number) => (
-                    <div
-                      key={i}
-                      className="bg-white rounded-xl shadow-md overflow-hidden border border-warm-taupe/20 hover:shadow-lg transition-shadow"
-                    >
-                      {ingredient.image && (
-                        <div className="w-full h-36 sm:h-48 bg-warm-cream overflow-hidden">
-                          <img
-                            src={ingredient.image.url}
-                            alt={ingredient.name || `Ingredient ${i + 1}`}
-                            className="w-full h-full object-cover"
-                          />
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    {product.ingredients.map((ingredient: any, i: number) => (
+                      <div
+                        key={i}
+                        className="bg-white rounded-xl shadow-md overflow-hidden border border-warm-taupe/20 hover:shadow-lg transition-shadow"
+                      >
+                        {ingredient.image && (
+                          <div className="w-full h-36 sm:h-48 bg-warm-cream overflow-hidden">
+                            <img
+                              src={ingredient.image.url}
+                              alt={ingredient.name || `Ingredient ${i + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="p-3 sm:p-4 space-y-1 sm:space-y-2">
+                          {ingredient.name && (
+                            <h3 className="font-semibold text-base sm:text-lg text-deep-forest">
+                              {ingredient.name}
+                            </h3>
+                          )}
+                          {ingredient.description && (
+                            <p className="text-xs sm:text-sm text-forest leading-relaxed">
+                              {ingredient.description}
+                            </p>
+                          )}
                         </div>
-                      )}
-                      <div className="p-3 sm:p-4 space-y-1 sm:space-y-2">
-                        {ingredient.name && (
-                          <h3 className="font-semibold text-base sm:text-lg text-deep-forest">
-                            {ingredient.name}
-                          </h3>
-                        )}
-                        {ingredient.description && (
-                          <p className="text-xs sm:text-sm text-forest leading-relaxed">
-                            {ingredient.description}
-                          </p>
-                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
 
-          {/* How to Use */}
-          {product.howToUse && product.howToUse.length > 0 && (
-            <Card className="border-warm-taupe/30 bg-warm-cream/50">
-              <CardContent className="pt-6">
-                <h2 className="text-2xl font-serif font-bold text-deep-forest mb-4">
+            {product.howToUse && product.howToUse.length > 0 && (
+              <AccordionItem
+                value="item-3"
+                className="border-warm-taupe/30 bg-warm-cream/50 rounded-xl shadow-elegant transition-shadow"
+              >
+                <AccordionTrigger className="text-xl sm:text-2xl font-serif font-bold text-deep-forest px-6">
                   How to Use
-                </h2>
-                <ol className="list-decimal pl-5 space-y-2 text-forest leading-relaxed">
-                  {product.howToUse.map((step: string, i: number) => (
-                    <li key={i}>{step}</li>
-                  ))}
-                </ol>
-              </CardContent>
-            </Card>
-          )}
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  <ol className="list-decimal pl-5 space-y-2 text-forest leading-relaxed">
+                    {product.howToUse.map((step: string, i: number) => (
+                      <li key={i}>{step}</li>
+                    ))}
+                  </ol>
+                </AccordionContent>
+              </AccordionItem>
+            )}
 
-          {/* Suitable For */}
-          {product.specifications?.suitableFor &&
-            product.specifications.suitableFor.length > 0 && (
-              <Card className="border-warm-taupe/30 bg-warm-cream/50">
-                <CardContent className="pt-6">
-                  <h2 className="text-2xl font-serif font-bold text-deep-forest mb-4">
+            {product.specifications?.suitableFor &&
+              product.specifications.suitableFor.length > 0 && (
+                <AccordionItem
+                  value="item-4"
+                  className="border-warm-taupe/30 bg-warm-cream/50 rounded-xl shadow-elegant transition-shadow"
+                >
+                  <AccordionTrigger className="text-xl sm:text-2xl font-serif font-bold text-deep-forest px-6">
                     Suitable For
-                  </h2>
-                  <ul className="list-disc pl-5 space-y-2 text-forest leading-relaxed">
-                    {product.specifications.suitableFor.map(
-                      (item: string, i: number) => (
-                        <li key={i}>{item}</li>
-                      )
-                    )}
-                  </ul>
-                </CardContent>
-              </Card>
-            )}
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pb-6">
+                    <ul className="list-disc pl-5 space-y-2 text-forest leading-relaxed">
+                      {product.specifications.suitableFor.map(
+                        (item: string, i: number) => (
+                          <li key={i}>{item}</li>
+                        )
+                      )}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
 
-          {/* Benefits */}
-          {product.benefits && product.benefits.length > 0 && (
-            <Card className="border-warm-taupe/30 bg-warm-cream/50">
-              <CardContent className="pt-6">
-                <h2 className="text-2xl font-serif font-bold text-deep-forest mb-4">
+            {product.benefits && product.benefits.length > 0 && (
+              <AccordionItem
+                value="item-5"
+                className="border-warm-taupe/30 bg-warm-cream/50 rounded-xl shadow-elegant transition-shadow"
+              >
+                <AccordionTrigger className="text-xl sm:text-2xl font-serif font-bold text-deep-forest px-6">
                   Benefits
-                </h2>
-                <ul className="list-disc pl-5 space-y-2 text-forest leading-relaxed">
-                  {product.benefits.map((benefit, i) => (
-                    <li key={i}>{benefit}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Specifications */}
-          {product.specifications &&
-            Object.keys(product.specifications).length > 0 && (
-              <Card className="border-warm-taupe/30 bg-warm-cream/50">
-                <CardContent className="pt-6">
-                  <h2 className="text-2xl font-serif font-bold text-deep-forest mb-4">
-                    Specifications
-                  </h2>
-                  <dl className="divide-y divide-warm-taupe/20">
-                    {Object.entries(product.specifications).map(
-                      ([key, value]) => (
-                        <div key={key} className="flex py-3">
-                          <dt className="w-1/3 font-semibold text-deep-forest capitalize">
-                            {key
-                              .replace(/([A-Z])/g, " $1")
-                              .replace(/^./, (str) => str.toUpperCase())}
-                          </dt>
-                          <dd className="w-2/3 text-forest">
-                            {Array.isArray(value) ? value.join(", ") : value}
-                          </dd>
-                        </div>
-                      )
-                    )}
-                  </dl>
-                </CardContent>
-              </Card>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  <ul className="list-disc pl-5 space-y-2 text-forest leading-relaxed">
+                    {product.benefits.map((benefit, i) => (
+                      <li key={i}>{benefit}</li>
+                    ))}
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
             )}
+
+            {product.specifications &&
+              Object.keys(product.specifications).length > 0 && (
+                <AccordionItem
+                  value="item-6"
+                  className="border-warm-taupe/30 bg-warm-cream/50 rounded-xl shadow-elegant transition-shadow"
+                >
+                  <AccordionTrigger className="text-xl sm:text-2xl font-serif font-bold text-deep-forest px-6">
+                    Specifications
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pb-6">
+                    <dl className="divide-y divide-warm-taupe/20">
+                      {Object.entries(product.specifications).map(
+                        ([key, value]) => (
+                          <div key={key} className="flex py-3">
+                            <dt className="w-1/3 font-semibold text-deep-forest capitalize">
+                              {key
+                                .replace(/([A-Z])/g, " $1")
+                                .replace(/^./, (str) => str.toUpperCase())}
+                            </dt>
+                            <dd className="w-2/3 text-forest">
+                              {Array.isArray(value) ? value.join(", ") : value}
+                            </dd>
+                          </div>
+                        )
+                      )}
+                    </dl>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+            <AccordionItem
+              value="item-7"
+              className="border-warm-taupe/30 bg-warm-cream/50 rounded-xl shadow-elegant transition-shadow"
+            >
+              <AccordionTrigger className="text-xl sm:text-2xl font-serif font-bold text-deep-forest px-6">
+                Customer Reviews ({product.ratings.numOfReviews})
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6">
+                <CustomerReviews
+                  productId={product._id}
+                  productName={product.name}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
+        {product && <RelatedProducts currentProductId={product._id} />}
       </div>
       <Footer />
     </div>

@@ -126,6 +126,10 @@ const SummaryApi = {
     url: "/api/product/category",
     method: "get",
   },
+  getRelatedProducts: {
+    url: "/api/product/related",
+    method: "get",
+  },
   createProduct: {
     url: "/api/product/create",
     method: "post",
@@ -356,6 +360,15 @@ const SummaryApi = {
   getUserReward: {
     url: "/api/user/reward",
     method: "get",
+  },
+  // Review endpoints
+  getReviews: {
+    url: "/api/reviews",
+    method: "get",
+  },
+  createReview: {
+    url: "/api/reviews",
+    method: "post",
   },
 };
 

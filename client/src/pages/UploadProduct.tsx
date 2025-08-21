@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { Upload, X, Plus, ArrowLeft, Save, Package, Image as ImageIcon, Tag } from 'lucide-react';
+import { Upload, X, Plus, ArrowLeft, Save, Package, Image as ImageIcon, Tag,Search } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
@@ -68,6 +68,7 @@ interface Product {
   isActive: boolean;
   isFeatured: boolean;
   howToUse?: string[];
+  relatedProducts?: any[];
 }
 
 interface ImagePreview {
@@ -98,7 +99,13 @@ const UploadProduct = () => {
   const [suitableFor, setSuitableFor] = useState<string[]>([]);
   const [newSuitableFor, setNewSuitableFor] = useState('');
   const [howToUse, setHowToUse] = useState<string[]>([]);
-  const [newHowToUse, setNewHowToUse] = useState('')
+  const [newHowToUse, setNewHowToUse] = useState('');
+
+  // State for Related Products
+  const [relatedProducts, setRelatedProducts] = useState<any[]>([]); // Using any for simplicity here
+  const [relatedProductSearch, setRelatedProductSearch] = useState('');
+  const [relatedProductSearchResults, setRelatedProductSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -201,6 +208,7 @@ const UploadProduct = () => {
         }
         setSuitableFor(product.suitableFor || []);
         setHowToUse(product.howToUse || []);
+        setRelatedProducts(product.relatedProducts || []);
       }
     } catch (error) {
       console.error('Error fetching product:', error);
@@ -332,6 +340,37 @@ const UploadProduct = () => {
   const removeListItem = (listSetter: React.Dispatch<React.SetStateAction<string[]>>, value: string) => {
     listSetter(prev => prev.filter(item => item !== value));
   };
+
+  // --- Related Products Functions ---
+  const handleRelatedProductSearch = async () => {
+    if (!relatedProductSearch.trim()) {
+      setRelatedProductSearchResults([]);
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const response = await Axios.get(`${SummaryApi.searchProducts.url}?search=${relatedProductSearch}&limit=5`);
+      if (response.data.success) {
+        // Filter out the current product and already added related products
+        const currentAndAddedIds = new Set([editProductId, ...relatedProducts.map(p => p._id)]);
+        setRelatedProductSearchResults(response.data.data.products.filter((p: any) => !currentAndAddedIds.has(p._id)));
+      }
+    } catch (error) {
+      console.error("Failed to search for products:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const addRelatedProduct = (product: any) => {
+    setRelatedProducts(prev => [...prev, product]);
+    setRelatedProductSearchResults(prev => prev.filter(p => p._id !== product._id));
+  };
+
+  const removeRelatedProduct = (productId: string) => {
+    setRelatedProducts(prev => prev.filter(p => p._id !== productId));
+  };
+
 
   // Variant management functions
   const addVariant = () => {
@@ -534,6 +573,9 @@ const UploadProduct = () => {
 
       // Add How to Use
       formDataToSend.append('howToUse', JSON.stringify(howToUse));
+
+      // Add related products
+      formDataToSend.append('relatedProducts', JSON.stringify(relatedProducts.map(p => p._id)));
 
       // Handle variants - be very explicit about the data structure
       if (isUsingVariants) {
@@ -1220,6 +1262,76 @@ const UploadProduct = () => {
                 <Button type="button" variant="outline" onClick={() => { addListItem(setHowToUse, newHowToUse); setNewHowToUse(''); }}>
                   Add
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Related Products */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Related Products
+              </CardTitle>
+              <CardDescription>
+                Manually select products to show in the "You May Also Like" section.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Search for products to add</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Search by name, brand, or tag..."
+                    value={relatedProductSearch}
+                    onChange={(e) => setRelatedProductSearch(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleRelatedProductSearch())}
+                  />
+                  <Button type="button" onClick={handleRelatedProductSearch} disabled={isSearching}>
+                    {isSearching ? 'Searching...' : <Search className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              {relatedProductSearchResults.length > 0 && (
+                <div className="border rounded-md max-h-60 overflow-y-auto">
+                  {relatedProductSearchResults.map(product => (
+                    <div key={product._id} className="flex items-center justify-between p-2 border-b">
+                      <div className="flex items-center gap-2">
+                        <img src={product.images[0]?.url} alt={product.name} className="w-10 h-10 object-cover rounded" />
+                        <div>
+                          <p className="font-medium">{product.name}</p>
+                          <p className="text-sm text-muted-foreground">{product.brand}</p>
+                        </div>
+                      </div>
+                      <Button type="button" size="sm" variant="outline" onClick={() => addRelatedProduct(product)}>Add</Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label>Current Related Products</Label>
+                {relatedProducts.length > 0 ? (
+                  <div className="space-y-2">
+                    {relatedProducts.map(product => (
+                      <div key={product._id} className="flex items-center justify-between p-2 border rounded-md">
+                        <div className="flex items-center gap-2">
+                          <img src={product.images[0]?.url} alt={product.name} className="w-10 h-10 object-cover rounded" />
+                          <div>
+                            <p className="font-medium">{product.name}</p>
+                            <p className="text-sm text-muted-foreground">{product.sku}</p>
+                          </div>
+                        </div>
+                        <Button type="button" size="sm" variant="destructive" onClick={() => removeRelatedProduct(product._id)}>Remove</Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No related products selected. The section will automatically show products from the same category.</p>
+                )}
               </div>
             </CardContent>
           </Card>

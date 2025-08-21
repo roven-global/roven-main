@@ -306,9 +306,9 @@ const getProductById = asyncHandler(async (req, res) => {
   const { identifier } = req.params;
   let product;
   if (identifier.match(/^[0-9a-fA-F]{24}$/)) {
-    product = await ProductModel.findById(identifier);
+    product = await ProductModel.findById(identifier).populate('relatedProducts');
   } else {
-    product = await ProductModel.findOne({ slug: identifier });
+    product = await ProductModel.findOne({ slug: identifier }).populate('relatedProducts');
   }
   if (!product)
     return res.status(404).json({ success: false, message: "Product not found." });
@@ -472,6 +472,15 @@ const updateProduct = asyncHandler(async (req, res) => {
     }
     updateFields.benefits = sanitizeArray(parsedBenefits);
   } else updateFields.benefits = product.benefits;
+
+  // Handle related products
+  const { relatedProducts } = req.body;
+  if (relatedProducts !== undefined) {
+    if (!Array.isArray(relatedProducts)) {
+        return res.status(400).json({ success: false, message: "relatedProducts must be an array of product IDs." });
+    }
+    updateFields.relatedProducts = relatedProducts;
+  }
 
   if (req.files && req.files.images && req.files.images.length > 0) {
     try {
@@ -645,6 +654,47 @@ const getFeaturedProducts = asyncHandler(async (req, res) => {
   });
 });
 
+// ---- Get Related Products ----
+const getRelatedProducts = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { limit = 10 } = req.query;
+
+  if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+    return res.status(400).json({ success: false, message: "Invalid product ID." });
+  }
+
+  const product = await ProductModel.findById(id);
+  if (!product) {
+    return res.status(404).json({ success: false, message: "Product not found." });
+  }
+
+  let relatedProducts = [];
+  const safeLimit = Math.min(parseInt(limit), 20);
+
+  // If there are hand-picked related products, use them
+  if (product.relatedProducts && product.relatedProducts.length > 0) {
+    relatedProducts = await ProductModel.find({
+      _id: { $in: product.relatedProducts },
+      isActive: true,
+    }).limit(safeLimit);
+  } else {
+    // Fallback: Find products in the same category
+    relatedProducts = await ProductModel.find({
+      category: product.category,
+      _id: { $ne: product._id },
+      isActive: true,
+    })
+    .limit(safeLimit)
+    .populate('category', 'name slug');
+  }
+
+  return res.json({
+    success: true,
+    message: "Related products retrieved successfully.",
+    data: relatedProducts,
+  });
+});
+
 module.exports = {
   createProduct,
   getAllProducts,
@@ -657,4 +707,5 @@ module.exports = {
   getFeaturedProducts,
   getProductVariants,
   updateVariantStock,
+  getRelatedProducts,
 };

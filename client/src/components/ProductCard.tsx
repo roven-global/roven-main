@@ -1,8 +1,8 @@
 // ProductCard.tsx
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Heart, ShoppingBag, Star, Sparkles } from "lucide-react";
+import { Heart, ShoppingBag, Star, Sparkles, CheckCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,7 @@ import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
 import { toast } from "@/hooks/use-toast";
 import { formatRupees } from "@/lib/currency";
+import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
   id: string;
@@ -62,6 +63,7 @@ const ProductCard = ({
     addToGuestCart,
     isInGuestWishlist,
   } = useGuest();
+  const [isAdded, setIsAdded] = useState(false);
 
   const isLiked = isAuthenticated
     ? user?.wishlist?.includes(id)
@@ -155,6 +157,8 @@ const ProductCard = ({
     e.preventDefault();
     e.stopPropagation();
 
+    if (isAdded) return;
+
     if (variants && variants.length > 1) {
       navigate(`/product/${slug}`);
       return;
@@ -164,52 +168,60 @@ const ProductCard = ({
       variants && variants.length === 1 ? variants[0] : null;
 
     if (selectedVariant && selectedVariant.stock === 0) {
+      toast({ title: "This item is out of stock.", variant: "destructive" });
       return;
     }
 
-    if (!isAuthenticated) {
-      addToGuestCart({
-        id,
-        name: selectedVariant ? `${name} - ${selectedVariant.volume}` : name,
-        price: selectedVariant ? selectedVariant.price : price,
-        image,
-        quantity: 1,
-        variant: selectedVariant
-          ? { volume: selectedVariant.volume, sku: selectedVariant.sku }
-          : undefined,
-      });
-      return;
-    }
-
-    addToCart({
-      productId: id,
+    const cartItem = {
+      id,
       name: selectedVariant ? `${name} - ${selectedVariant.volume}` : name,
+      price: selectedVariant ? selectedVariant.price : price,
+      image,
       quantity: 1,
       variant: selectedVariant
         ? { volume: selectedVariant.volume, sku: selectedVariant.sku }
         : undefined,
+    };
+
+    if (!isAuthenticated) {
+      addToGuestCart(cartItem);
+    } else {
+      addToCart({
+        productId: cartItem.id,
+        name: cartItem.name,
+        quantity: cartItem.quantity,
+        variant: cartItem.variant,
+      });
+    }
+
+    toast({
+      title: "Added to Cart!",
+      description: cartItem.name,
     });
+
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 2000);
   };
 
   const discount = calculateDiscount();
 
   return (
-    <Card className="group relative w-full h-full flex flex-col bg-white border border-gray-100 hover:border-sage/30 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden touch-manipulation">
+    <Card className="group relative w-full h-full flex flex-col bg-white border border-warm-taupe/20 hover:border-sage/30 rounded-xl shadow-sm hover:shadow-elegant transition-all duration-300 overflow-hidden touch-manipulation">
       <Link to={`/product/${slug}`} className="flex flex-col h-full">
         {/* Large Product Image */}
-        <div className="relative overflow-hidden bg-gray-50">
+        <div className="relative overflow-hidden bg-warm-cream">
           <div className="aspect-[4/5] w-full">
             <img
               src={image}
               alt={name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 active:scale-95"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           </div>
 
           {/* Discount Badge - Top Left */}
           {discount > 0 && (
             <div className="absolute top-3 left-3">
-              <Badge className="bg-red-500 text-white text-xs px-2 py-1 rounded-md font-semibold shadow-sm border-0">
+              <Badge className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold shadow-sm border-0">
                 {discount}% OFF
               </Badge>
             </div>
@@ -218,7 +230,7 @@ const ProductCard = ({
           {/* NEW Badge - Top Left (if no discount) */}
           {isNew && !discount && (
             <div className="absolute top-3 left-3">
-              <Badge className="bg-sage text-white text-xs px-2 py-1 rounded-md font-semibold shadow-sm border-0">
+              <Badge className="bg-sage text-white text-xs px-2 py-1 rounded-full font-semibold shadow-sm border-0">
                 <Sparkles className="w-3 h-3 mr-1" />
                 NEW
               </Badge>
@@ -229,15 +241,14 @@ const ProductCard = ({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-3 right-3 bg-white/90 hover:bg-white rounded-full shadow-sm w-8 h-8 backdrop-blur-sm transition-all duration-300 hover:scale-110"
+            className="absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full shadow-sm w-8 h-8 backdrop-blur-sm transition-all duration-300 hover:scale-110"
             onClick={handleLikeClick}
           >
             <Heart
-              className={`h-4 w-4 transition-all duration-300 ${
-                isLiked
-                  ? "fill-red-500 text-red-500"
-                  : "text-gray-600 hover:text-red-500"
-              }`}
+              className={cn(
+                "h-4 w-4 transition-all duration-300",
+                isLiked ? "fill-sage text-sage-dark" : "text-deep-forest"
+              )}
             />
           </Button>
         </div>
@@ -246,13 +257,13 @@ const ProductCard = ({
         <CardContent className="p-4 flex flex-col flex-grow bg-white">
           {/* Category */}
           <div className="mb-2">
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <span className="text-xs font-medium text-forest uppercase tracking-wide">
               {category}
             </span>
           </div>
 
           {/* Product Title */}
-          <h3 className="font-serif font-bold text-lg text-gray-900 mb-2 line-clamp-2 leading-tight flex-grow">
+          <h3 className="font-serif font-bold text-lg text-deep-forest mb-2 line-clamp-2 leading-tight flex-grow">
             {name}
           </h3>
 
@@ -264,18 +275,18 @@ const ProductCard = ({
                   key={i}
                   className={`w-3 h-3 ${
                     i < Math.floor(rating)
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-gray-200"
+                      ? "fill-gold-accent text-gold-accent"
+                      : "text-warm-taupe/50"
                   }`}
                 />
               ))}
-              <span className="text-xs font-medium text-gray-700 ml-1">
+              <span className="text-xs font-medium text-forest ml-1">
                 {rating.toFixed(1)}
               </span>
-              <span className="text-xs text-gray-500">({reviews})</span>
+              <span className="text-xs text-forest/70">({reviews})</span>
             </div>
             {getDisplayVolume() && (
-              <span className="text-xs text-gray-600 font-medium">
+              <span className="text-xs text-forest font-medium">
                 {getDisplayVolume()}
               </span>
             )}
@@ -285,13 +296,13 @@ const ProductCard = ({
           <div className="mb-4">
             <div className="flex items-baseline gap-2">
               {variants && variants.length > 1 && (
-                <span className="text-xs text-gray-500 font-medium">From</span>
+                <span className="text-xs text-forest/80 font-medium">From</span>
               )}
-              <span className="font-serif font-bold text-xl text-gray-900">
+              <span className="font-serif font-bold text-xl text-deep-forest">
                 {formatRupees(getDisplayPrice())}
               </span>
               {getDisplayOriginalPrice() && (
-                <span className="text-sm text-gray-400 line-through">
+                <span className="text-sm text-warm-taupe line-through">
                   {formatRupees(getDisplayOriginalPrice())}
                 </span>
               )}
@@ -303,16 +314,25 @@ const ProductCard = ({
             <div className="mt-auto">
               <Button
                 variant="default"
-                className="w-full bg-sage hover:bg-forest text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                className="w-full bg-forest hover:bg-deep-forest text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                 onClick={handleAddToCart}
-                disabled={getTotalStock() === 0}
+                disabled={getTotalStock() === 0 || isAdded}
               >
-                <ShoppingBag className="w-4 h-4 mr-2" />
-                {getTotalStock() === 0
-                  ? "OUT OF STOCK"
-                  : variants && variants.length > 1
-                  ? "SELECT OPTIONS"
-                  : "ADD TO CART"}
+                {isAdded ? (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Added
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="w-4 h-4 mr-2" />
+                    {getTotalStock() === 0
+                      ? "OUT OF STOCK"
+                      : variants && variants.length > 1
+                      ? "SELECT OPTIONS"
+                      : "ADD TO CART"}
+                  </>
+                )}
               </Button>
             </div>
           )}

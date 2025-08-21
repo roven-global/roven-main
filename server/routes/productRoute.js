@@ -12,6 +12,7 @@ const {
   getFeaturedProducts,
   getProductVariants,
   updateVariantStock,
+  getRelatedProducts,
 } = require("../controller/productController");
 const auth = require("../middleware/auth");
 const adminOnly = require("../middleware/adminOnly");
@@ -22,6 +23,7 @@ const router = express.Router();
 router.route("/all").get(getAllProducts);
 router.route("/search").get(searchProducts);
 router.route("/featured").get(getFeaturedProducts);
+router.route("/related/:id").get(getRelatedProducts);
 router.route("/category/:categoryId").get(getProductsByCategory);
 router.route("/:identifier").get(getProductById);
 router.route("/:id/variants").get(getProductVariants);

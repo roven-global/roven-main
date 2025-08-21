@@ -139,6 +139,12 @@ const productSchema = new mongoose.Schema(
       { type: String, trim: true, maxlength: [300, "How to use step cannot exceed 300 characters"] },
     ],
     tags: [{ type: String, trim: true, lowercase: true }],
+    relatedProducts: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+      },
+    ],
     isActive: { type: Boolean, default: true },
     isFeatured: { type: Boolean, default: false },
     ratings: {
