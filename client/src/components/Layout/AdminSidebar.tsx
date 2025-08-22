@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom"
-import { BarChart, Boxes, PanelsTopLeft, Tag, Gift } from "lucide-react"
+import { BarChart, Boxes, PanelsTopLeft, Tag, Gift, Users } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -18,6 +18,11 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
       title: "Overview",
       href: "/admin/overview",
       icon: <BarChart size={20} />
+    },
+    {
+      title: "Customers",
+      href: "/admin/customers",
+      icon: <Users size={20} />
     },
     {
       title: "Category",
