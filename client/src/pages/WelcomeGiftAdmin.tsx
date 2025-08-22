@@ -58,7 +58,6 @@ const welcomeGiftSchema = z.object({
   rewardValue: z.number().min(0, "Reward value cannot be negative").max(100000, "Reward value is too high"),
   maxDiscount: z.number().min(0, "Max discount cannot be negative").max(100000, "Max discount is too high").nullable().optional(),
   minOrderAmount: z.number().min(0, "Min order amount cannot be negative").max(100000, "Min order amount is too high"),
-  order: z.number().int().min(1, "Order must be between 1 and 6").max(6, "Order must be between 1 and 6"),
   isActive: z.boolean(),
   // BOGO fields
   buyQuantity: z.number().int().min(1, "Buy quantity must be at least 1").optional(),
@@ -139,6 +138,35 @@ const WelcomeGiftAdmin = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [activeGiftLimit, setActiveGiftLimit] = useState<number>(6);
+  const [newLimit, setNewLimit] = useState<number>(6);
+
+  const fetchSettings = async () => {
+    try {
+      const url = SummaryApi.getAdminSetting.url.replace(':key', 'activeWelcomeGiftLimit');
+      const response = await Axios.get(url);
+      if (response.data.success) {
+        const limit = Number(response.data.data.value);
+        setActiveGiftLimit(limit);
+        setNewLimit(limit);
+      }
+    } catch (error) {
+      // It's okay if the setting is not found, we'll use the default
+      console.log("Could not fetch active gift limit setting, using default.");
+    }
+  };
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      await Promise.all([
+        fetchGifts(),
+        fetchAnalytics(),
+        fetchSettings(),
+      ]);
+    };
+    fetchInitialData();
+  }, []);
+
 
   useEffect(() => {
     const fetchProductsAndCategories = async () => {
@@ -175,6 +203,7 @@ const WelcomeGiftAdmin = () => {
     setError,
     control,
     watch,
+    setValue,
   } = useForm<WelcomeGiftFormValues>({
     resolver: zodResolver(welcomeGiftSchema),
     defaultValues: {
@@ -189,7 +218,6 @@ const WelcomeGiftAdmin = () => {
       rewardValue: 10,
       maxDiscount: undefined,
       minOrderAmount: 0,
-      order: 1,
       isActive: true,
       buyQuantity: 1,
       getQuantity: 1,
@@ -197,10 +225,14 @@ const WelcomeGiftAdmin = () => {
     },
   });
 
+  const rewardType = watch("rewardType");
+
   useEffect(() => {
-    fetchGifts();
-    fetchAnalytics();
-  }, []);
+    if (rewardType === 'buy_one_get_one') {
+      setValue('rewardValue', 0, { shouldValidate: true });
+      setValue('maxDiscount', undefined);
+    }
+  }, [rewardType, setValue]);
 
   const fetchGifts = async () => {
     try {
@@ -240,7 +272,6 @@ const WelcomeGiftAdmin = () => {
       rewardValue: 10,
       maxDiscount: undefined,
       minOrderAmount: 0,
-      order: 1,
       isActive: true,
     });
     setEditingGift(null);
@@ -269,12 +300,8 @@ const WelcomeGiftAdmin = () => {
       resetForm();
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'An unexpected error occurred.';
-      if (typeof errorMessage === 'string') {
-        if (errorMessage.includes('couponCode')) {
-          setError('couponCode', { type: 'manual', message: errorMessage });
-        } else if (errorMessage.includes('order')) {
-          setError('order', { type: 'manual', message: errorMessage });
-        }
+      if (typeof errorMessage === 'string' && errorMessage.includes('couponCode')) {
+        setError('couponCode', { type: 'manual', message: errorMessage });
       }
       toast({
         title: 'Error saving welcome gift',
@@ -298,7 +325,6 @@ const WelcomeGiftAdmin = () => {
       rewardValue: gift.rewardValue || 10,
       maxDiscount: gift.maxDiscount,
       minOrderAmount: gift.minOrderAmount || 0,
-      order: gift.order,
       isActive: gift.isActive,
       buyQuantity: gift.buyQuantity || 1,
       getQuantity: gift.getQuantity || 1,
@@ -337,7 +363,28 @@ const WelcomeGiftAdmin = () => {
     } catch (error: any) {
       toast({
         title: 'Error updating status',
-        description: error.response?.data?.message,
+        description: error.response?.data?.message || 'An unexpected error occurred.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleUpdateLimit = async () => {
+    if (newLimit < 1 || newLimit > 20) {
+      toast({ title: 'Invalid Limit', description: 'Limit must be between 1 and 20.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const url = SummaryApi.updateAdminSetting.url.replace(':key', 'activeWelcomeGiftLimit');
+      const response = await Axios.put(url, { value: newLimit });
+      if (response.data.success) {
+        toast({ title: 'Success', description: 'Active gift limit updated successfully!' });
+        setActiveGiftLimit(newLimit);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error updating limit',
+        description: error.response?.data?.message || 'An unexpected error occurred.',
         variant: 'destructive'
       });
     }
@@ -369,7 +416,7 @@ const WelcomeGiftAdmin = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-serif text-2xl font-bold text-deep-forest">Welcome Gift Management</h1>
-          <p className="text-gray-600">Manage the 6 welcome gift options for first-time visitors</p>
+          <p className="text-gray-600">Manage welcome gift options for first-time visitors.</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setShowAnalytics(!showAnalytics)} variant="outline">
@@ -393,17 +440,10 @@ const WelcomeGiftAdmin = () => {
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="title">Title</Label>
-                    <Input id="title" {...register("title")} />
-                    {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
-                  </div>
-                  <div>
-                    <Label htmlFor="order">Order (1-6)</Label>
-                    <Input id="order" type="number" {...register("order", { valueAsNumber: true })} />
-                    {errors.order && <p className="text-red-500 text-xs mt-1">{errors.order.message}</p>}
-                  </div>
+                <div>
+                  <Label htmlFor="title">Title</Label>
+                  <Input id="title" {...register("title")} />
+                  {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
                 </div>
 
                 <div>
@@ -598,6 +638,34 @@ const WelcomeGiftAdmin = () => {
         </div>
       </div>
 
+      {/* Settings Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center gap-4">
+          <Label htmlFor="activeGiftLimit">Active Gift Limit</Label>
+          <Input
+            id="activeGiftLimit"
+            type="number"
+            value={newLimit}
+            onChange={(e) => setNewLimit(Number(e.target.value))}
+            className="w-24"
+            min="1"
+            max="20"
+          />
+          <Button onClick={handleUpdateLimit} size="sm">
+            <Save className="w-4 h-4 mr-2" />
+            Save Limit
+          </Button>
+          {analytics && (
+            <div className="ml-auto text-sm text-gray-600">
+              <span className="font-bold">{analytics.activeGifts}</span> / {activeGiftLimit} active gifts
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Analytics */}
       {showAnalytics && analytics && (
         <Card>
@@ -650,7 +718,6 @@ const WelcomeGiftAdmin = () => {
                   </div>
                   <div>
                     <CardTitle className="text-lg">{gift.title}</CardTitle>
-                    <Badge variant="outline">Order {gift.order}</Badge>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">

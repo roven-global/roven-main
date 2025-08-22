@@ -136,17 +136,20 @@ const welcomeGiftSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  order: {
+  buyQuantity: {
     type: Number,
-    required: [true, "Order is required"],
-    min: [1, "Order must be at least 1"],
-    unique: true,
-    validate: {
-      validator: function(v) {
-        return Number.isInteger(v) && v >= 1;
-      },
-      message: "Order must be an integer greater than or equal to 1"
-    }
+    default: 1,
+    min: [1, "Buy quantity must be at least 1"],
+  },
+  getQuantity: {
+    type: Number,
+    default: 1,
+    min: [1, "Get quantity must be at least 1"],
+  },
+  applicableCategories: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'Category',
+    default: [],
   },
   usageCount: {
     type: Number,
@@ -161,8 +164,8 @@ const welcomeGiftSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Create compound index for better performance
-welcomeGiftSchema.index({ isActive: 1, order: 1 });
+// Create index for better performance on queries for active gifts
+welcomeGiftSchema.index({ isActive: 1 });
 
 
 // Update usage count when gift is claimed (with session support)
@@ -236,61 +239,65 @@ welcomeGiftSchema.methods.calculateDiscount = function (subtotal, cartItems = []
   };
 };
 
-// Enhanced BOGO calculation with security validations
+// Dynamic BOGO calculation for "Buy X, Get Y Free" (Multiplier Logic)
 welcomeGiftSchema.methods.calculateBOGODiscount = function (cartItems) {
+  const buyQuantity = this.buyQuantity || 1;
+  const getQuantity = this.getQuantity || 1;
+  const applicableCategories = this.applicableCategories || [];
+
   if (!Array.isArray(cartItems) || cartItems.length === 0) {
     return 0;
   }
 
-  let totalDiscount = 0;
-  const processedItems = [];
+  // Filter cart items if applicableCategories is specified
+  const eligibleItems = applicableCategories.length > 0
+    ? cartItems.filter(item => 
+        item.productId && item.productId.category && applicableCategories.some(catId => catId.equals(item.productId.category))
+      )
+    : cartItems;
 
-  // Validate and process each cart item
-  cartItems.forEach(item => {
-    let productId, price, quantity;
+  const allItems = [];
+  // Create a flat list of all eligible items with their prices
+  eligibleItems.forEach(item => {
+    const quantity = parseInt(item.quantity) || 1;
+    let price = 0;
 
-    // Handle different cart item structures safely
-    try {
-      if (item.productId && typeof item.productId === 'object') {
-        productId = item.productId._id || item.productId;
-        price = item.actualPrice || item.variant?.price || item.productId?.price || item.price || 0;
-      } else if (item.productId) {
-        productId = item.productId;
-        price = item.actualPrice || item.price || 0;
-      } else {
-        productId = item._id || 'unknown';
-        price = item.actualPrice || item.price || 0;
+    if (item.productId && typeof item.productId === 'object') {
+      price = item.actualPrice || item.variant?.price || item.productId?.price || item.price || 0;
+    } else {
+      price = item.actualPrice || item.price || 0;
+    }
+    price = parseFloat(price) || 0;
+
+    if (price > 0) {
+      for (let i = 0; i < quantity; i++) {
+        allItems.push({ price });
       }
-
-      quantity = parseInt(item.quantity) || 1;
-      price = parseFloat(price) || 0;
-
-      // Validate price and quantity
-      if (price > 0 && quantity > 0 && quantity <= 99) {
-        processedItems.push({ productId, price, quantity });
-      }
-    } catch (error) {
-      console.error('Error processing BOGO item:', error);
     }
   });
 
-  if (processedItems.length === 0) return 0;
+  // BOGO offer requires at least 'buyQuantity' items
+  if (allItems.length < buyQuantity) {
+    return 0;
+  }
 
-  // Group items by product ID and calculate BOGO discount
-  const itemGroups = {};
-  processedItems.forEach(item => {
-    if (!itemGroups[item.productId]) {
-      itemGroups[item.productId] = { price: item.price, quantity: 0 };
-    }
-    itemGroups[item.productId].quantity += item.quantity;
-  });
+  // Sort items by price, cheapest first
+  allItems.sort((a, b) => a.price - b.price);
 
-  // Calculate discount for each product group
-  Object.values(itemGroups).forEach(group => {
-    const pairs = Math.floor(group.quantity / 2);
-    const discountPerPair = group.price;
-    totalDiscount += pairs * discountPerPair;
-  });
+  // Calculate how many times the offer can be applied
+  const numberOfTimesOfferApplies = Math.floor(allItems.length / buyQuantity);
+  if (numberOfTimesOfferApplies === 0) {
+    return 0;
+  }
+
+  // Determine the total number of items to get for free
+  const totalFreeItems = numberOfTimesOfferApplies * getQuantity;
+
+  // Take the cheapest 'totalFreeItems' from the sorted list
+  const itemsToDiscount = allItems.slice(0, totalFreeItems);
+
+  // Sum the prices of the cheapest items to get the total discount
+  const totalDiscount = itemsToDiscount.reduce((sum, item) => sum + item.price, 0);
 
   return Math.round(totalDiscount * 100) / 100;
 };
@@ -350,10 +357,11 @@ welcomeGiftSchema.methods.canBeApplied = function (subtotal, cartItems = []) {
       return sum + Math.min(quantity, 99); // Cap quantity for security
     }, 0);
 
-    if (totalItems < 2) {
+    const buyQuantity = this.buyQuantity || 1;
+    if (totalItems < buyQuantity) {
       return {
         canApply: false,
-        reason: 'BOGO offer requires at least 2 items in cart'
+        reason: `BOGO offer requires at least ${buyQuantity} items in cart`
       };
     }
   }

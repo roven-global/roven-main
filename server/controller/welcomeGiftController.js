@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const rateLimit = require("express-rate-limit");
 const WelcomeGift = require("../models/welcomeGiftModel");
 const UserReward = require("../models/userRewardModel");
+const AdminSetting = require("../models/adminSettingsModel");
 const { validateCartItems } = require("../utils/cartValidator");
 const {
   generateSecureAnonymousId,
@@ -51,10 +52,15 @@ const testWelcomeGiftEndpoint = asyncHandler(async (req, res) => {
 const getAllWelcomeGifts = asyncHandler(async (req, res) => {
   try {
     console.log("Getting all welcome gifts...");
-    const gifts = await WelcomeGift.find({ isActive: true })
-      .sort({ order: 1 })
-      .select("-__v");
-    console.log(`Found ${gifts.length} active welcome gifts`);
+    const limit = await AdminSetting.getSetting('activeWelcomeGiftLimit', 6); // Default to 6
+
+    const gifts = await WelcomeGift.aggregate([
+      { $match: { isActive: true } },
+      { $sample: { size: Number(limit) } },
+      { $project: { __v: 0 } } // Exclude the __v field
+    ]);
+
+    console.log(`Found and sampled ${gifts.length} active welcome gifts.`);
     res.status(200).json({
       success: true,
       data: gifts,
@@ -70,7 +76,7 @@ const getAllWelcomeGifts = asyncHandler(async (req, res) => {
 // @route GET /api/admin/welcome-gifts
 // @access Private/Admin
 const getAllWelcomeGiftsAdmin = asyncHandler(async (req, res) => {
-  const gifts = await WelcomeGift.find().sort({ order: 1 });
+  const gifts = await WelcomeGift.find().sort({ createdAt: -1 });
   res.status(200).json({
     success: true,
     data: gifts,
@@ -110,11 +116,13 @@ const createWelcomeGift = asyncHandler(async (req, res) => {
       bgColor,
       reward,
       couponCode,
-      order,
       rewardType,
       rewardValue,
       maxDiscount,
       minOrderAmount,
+      buyQuantity,
+      getQuantity,
+      applicableCategories,
     } = req.body;
 
     // Sanitize inputs
@@ -126,21 +134,14 @@ const createWelcomeGift = asyncHandler(async (req, res) => {
       bgColor: sanitizeString(bgColor),
       reward: sanitizeString(reward),
       couponCode: sanitizeString(couponCode).toUpperCase(),
-      order: parseInt(order),
       rewardType: sanitizeString(rewardType) || "percentage",
       rewardValue: parseFloat(rewardValue) || 10,
       maxDiscount: maxDiscount ? parseFloat(maxDiscount) : null,
       minOrderAmount: parseFloat(minOrderAmount) || 0,
+      buyQuantity: buyQuantity ? parseInt(buyQuantity) : 1,
+      getQuantity: getQuantity ? parseInt(getQuantity) : 1,
+      applicableCategories: applicableCategories || [],
     };
-
-    // Check if order already exists
-    const existingGift = await WelcomeGift.findOne({
-      order: sanitizedData.order,
-    }).session(session);
-    if (existingGift) {
-      res.status(400);
-      throw new Error(`Gift with order ${sanitizedData.order} already exists`);
-    }
 
     // Check if coupon code already exists
     const existingCouponCode = await WelcomeGift.findOne({
@@ -193,12 +194,14 @@ const updateWelcomeGift = asyncHandler(async (req, res) => {
       bgColor,
       reward,
       couponCode,
-      order,
       isActive,
       rewardType,
       rewardValue,
       maxDiscount,
       minOrderAmount,
+      buyQuantity,
+      getQuantity,
+      applicableCategories,
     } = req.body;
 
     // Build update object with sanitization
@@ -219,19 +222,12 @@ const updateWelcomeGift = asyncHandler(async (req, res) => {
       updateData.maxDiscount = maxDiscount ? parseFloat(maxDiscount) : null;
     if (minOrderAmount !== undefined)
       updateData.minOrderAmount = parseFloat(minOrderAmount);
-
-    // Check order conflicts
-    if (order && parseInt(order) !== gift.order) {
-      const existingGift = await WelcomeGift.findOne({
-        order: parseInt(order),
-        _id: { $ne: req.params.id },
-      }).session(session);
-      if (existingGift) {
-        res.status(400);
-        throw new Error(`Gift with order ${order} already exists`);
-      }
-      updateData.order = parseInt(order);
-    }
+    if (buyQuantity !== undefined)
+      updateData.buyQuantity = parseInt(buyQuantity);
+    if (getQuantity !== undefined)
+      updateData.getQuantity = parseInt(getQuantity);
+    if (applicableCategories !== undefined)
+      updateData.applicableCategories = applicableCategories;
 
     // Check coupon code conflicts
     if (
@@ -326,6 +322,18 @@ const toggleWelcomeGiftStatus = asyncHandler(async (req, res) => {
     throw new Error("Welcome gift not found");
   }
 
+  // If activating the gift, check against the limit
+  if (!gift.isActive) {
+    const limitSetting = await AdminSetting.getSetting('activeWelcomeGiftLimit', 6); // Default to 6 if not set
+    const activeGiftLimit = Number(limitSetting);
+    const activeGiftsCount = await WelcomeGift.countDocuments({ isActive: true });
+
+    if (activeGiftsCount >= activeGiftLimit) {
+      res.status(400);
+      throw new Error(`You have reached the limit of ${activeGiftLimit} active welcome gifts. Please deactivate another gift before activating a new one.`);
+    }
+  }
+
   gift.isActive = !gift.isActive;
   await gift.save();
 
@@ -344,64 +352,11 @@ const toggleWelcomeGiftStatus = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc Reorder welcome gifts
-// @route PUT /api/admin/welcome-gifts/reorder
-// @access Private/Admin
-const reorderWelcomeGifts = asyncHandler(async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const { orders } = req.body;
-    if (!Array.isArray(orders)) {
-      res.status(400);
-      throw new Error("Orders must be an array");
-    }
-
-    // Validate all orders exist and are unique
-    const orderValues = orders.map((o) => parseInt(o.order));
-    const uniqueOrders = [...new Set(orderValues)];
-    if (orderValues.length !== uniqueOrders.length) {
-      res.status(400);
-      throw new Error("Duplicate order values not allowed");
-    }
-
-    // Update each gift's order atomically
-    for (const { id, order } of orders) {
-      await WelcomeGift.findByIdAndUpdate(
-        id,
-        { order: parseInt(order) },
-        { session }
-      );
-    }
-
-    const updatedGifts = await WelcomeGift.find()
-      .sort({ order: 1 })
-      .session(session);
-    await session.commitTransaction();
-
-    logSecurityEvent("GIFTS_REORDERED", {
-      adminId: req.user._id,
-      orderCount: orders.length,
-    });
-    res.status(200).json({
-      success: true,
-      data: updatedGifts,
-      message: "Welcome gifts reordered successfully",
-    });
-  } catch (error) {
-    await session.abortTransaction();
-    throw error;
-  } finally {
-    session.endSession();
-  }
-});
-
 // @desc Get welcome gifts analytics
 // @route GET /api/admin/welcome-gifts/analytics
 // @access Private/Admin
 const getWelcomeGiftsAnalytics = asyncHandler(async (req, res) => {
-  const gifts = await WelcomeGift.find().sort({ order: 1 });
+  const gifts = await WelcomeGift.find().sort({ createdAt: -1 });
   const totalUsage = gifts.reduce((sum, gift) => sum + gift.usageCount, 0);
   const activeGifts = gifts.filter((gift) => gift.isActive).length;
 
@@ -1161,7 +1116,6 @@ module.exports = {
   updateWelcomeGift,
   deleteWelcomeGift,
   toggleWelcomeGiftStatus,
-  reorderWelcomeGifts,
   getWelcomeGiftsAnalytics,
   claimWelcomeGift,
   checkWelcomeGiftEligibility,

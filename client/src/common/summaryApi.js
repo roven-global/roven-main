@@ -324,10 +324,6 @@ const SummaryApi = {
     url: "/api/welcome-gifts/admin/:id/toggle",
     method: "patch",
   },
-  reorderWelcomeGifts: {
-    url: "/api/welcome-gifts/admin/reorder",
-    method: "put",
-  },
   getWelcomeGiftsAnalytics: {
     url: "/api/welcome-gifts/admin/analytics",
     method: "get",
@@ -369,6 +365,15 @@ const SummaryApi = {
   createReview: {
     url: "/api/reviews",
     method: "post",
+  },
+  // Admin Settings
+  getAdminSetting: {
+    url: "/api/admin/settings/:key",
+    method: "get",
+  },
+  updateAdminSetting: {
+    url: "/api/admin/settings/:key",
+    method: "put",
   },
 };
 

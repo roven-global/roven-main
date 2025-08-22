@@ -5,7 +5,6 @@ const WelcomeGift = require("../models/welcomeGiftModel");
 
 const gifts = [
   {
-    order: 1,
     title: "Beauty Starter Pack",
     description: "Get 15% off your first beauty haul",
     icon: "Gift",
@@ -20,7 +19,6 @@ const gifts = [
     isActive: true,
   },
   {
-    order: 2,
     title: "Free Shipping Delight",
     description: "Enjoy free shipping on orders over ₹499",
     icon: "Truck",
@@ -28,14 +26,13 @@ const gifts = [
     bgColor: "bg-purple-50 hover:bg-purple-100",
     reward: "Free shipping on orders over ₹499",
     couponCode: "FREESHIP",
-    rewardType: "free_shipping",
-    rewardValue: 0,
+    rewardType: "fixed_amount",
+    rewardValue: 50,
     maxDiscount: null,
     minOrderAmount: 499,
     isActive: true,
   },
   {
-    order: 3,
     title: "Premium Discount",
     description: "Save ₹200 on premium orders over ₹999",
     icon: "Star",
@@ -50,7 +47,6 @@ const gifts = [
     isActive: true,
   },
   {
-    order: 4,
     title: "Luxury Beauty Bundle",
     description: "Get 20% off luxury beauty products",
     icon: "Award",
@@ -65,7 +61,6 @@ const gifts = [
     isActive: true,
   },
   {
-    order: 5,
     title: "First Purchase Special",
     description: "Flat ₹150 off your first order",
     icon: "DollarSign",
@@ -80,7 +75,6 @@ const gifts = [
     isActive: true,
   },
   {
-    order: 6,
     title: "Buy One Get One Free",
     description: "BOGO on select beauty products",
     icon: "Gift",
@@ -90,9 +84,70 @@ const gifts = [
     couponCode: "BOGOBEAUTY",
     rewardType: "buy_one_get_one",
     rewardValue: 0,
+    buyQuantity: 1,
+    getQuantity: 1,
     maxDiscount: null,
     minOrderAmount: 599,
     isActive: true,
+  },
+  // New Gifts
+  {
+    title: "Skincare Special - Buy 2 Get 1",
+    description: "Buy any 2 skincare products, get the 3rd (cheapest) free.",
+    icon: "Heart",
+    color: "text-blue-600",
+    bgColor: "bg-blue-50 hover:bg-blue-100",
+    reward: "Buy 2 skincare items, get 1 free!",
+    couponCode: "SKINB2G1",
+    rewardType: "buy_one_get_one",
+    rewardValue: 0,
+    buyQuantity: 2,
+    getQuantity: 1,
+    maxDiscount: null,
+    minOrderAmount: 0,
+    isActive: true,
+  },
+  {
+    title: "Mega Discount",
+    description: "A huge 30% off everything!",
+    icon: "Percent",
+    color: "text-red-600",
+    bgColor: "bg-red-50 hover:bg-red-100",
+    reward: "30% off your entire order",
+    couponCode: "MEGA30",
+    rewardType: "percentage",
+    rewardValue: 30,
+    maxDiscount: 2000,
+    minOrderAmount: 1499,
+    isActive: true,
+  },
+  {
+    title: "Big Spender Bonus",
+    description: "Get ₹1000 off on orders over ₹5000",
+    icon: "Zap",
+    color: "text-purple-600",
+    bgColor: "bg-purple-50 hover:bg-purple-100",
+    reward: "₹1000 OFF",
+    couponCode: "SPEND5K",
+    rewardType: "fixed_amount",
+    rewardValue: 1000,
+    maxDiscount: null,
+    minOrderAmount: 5000,
+    isActive: true,
+  },
+  {
+    title: "Inactive Test Gift",
+    description: "This is a test gift that should not be visible to users.",
+    icon: "Shield",
+    color: "text-blue-600",
+    bgColor: "bg-blue-50 hover:bg-blue-100",
+    reward: "Inactive",
+    couponCode: "INACTIVE",
+    rewardType: "percentage",
+    rewardValue: 10,
+    maxDiscount: 100,
+    minOrderAmount: 100,
+    isActive: false,
   },
 ];
 
@@ -100,26 +155,36 @@ async function seedWelcomeGifts() {
   try {
     await connectDb();
 
-    const existingCount = await WelcomeGift.countDocuments();
-    console.log(`Existing welcome gifts: ${existingCount}`);
+    console.log("Starting to seed welcome gifts...");
+
+    // Clear existing welcome gifts and drop problematic indexes
+    console.log("Clearing existing welcome gifts...");
+    await WelcomeGift.deleteMany({});
+    console.log("Existing welcome gifts cleared.");
+
+    // Drop all indexes and recreate them according to current schema
+    try {
+      await WelcomeGift.collection.dropIndexes();
+      console.log("Indexes dropped successfully.");
+    } catch (indexError) {
+      console.log(
+        "No indexes to drop or error dropping indexes:",
+        indexError.message
+      );
+    }
 
     const results = [];
     for (const gift of gifts) {
-      const updated = await WelcomeGift.findOneAndUpdate(
-        { order: gift.order },
-        { $setOnInsert: gift },
-        { new: true, upsert: true, runValidators: true }
-      );
+      const created = await WelcomeGift.create(gift);
       results.push({
-        order: gift.order,
-        id: updated._id.toString(),
         coupon: gift.couponCode,
+        status: created ? "Created" : "Error",
       });
     }
 
     const finalCount = await WelcomeGift.countDocuments();
-    console.log("Seed complete. Current gifts:", results);
-    console.log(`Total welcome gifts: ${finalCount}`);
+    console.log("Seed results:", results);
+    console.log(`Seeding complete. Total welcome gifts in DB: ${finalCount}`);
   } catch (error) {
     console.error("Error seeding welcome gifts:", error.message);
     process.exitCode = 1;

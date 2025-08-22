@@ -11,7 +11,6 @@ const {
   updateWelcomeGift,
   deleteWelcomeGift,
   toggleWelcomeGiftStatus,
-  reorderWelcomeGifts,
   getWelcomeGiftsAnalytics,
   claimWelcomeGift,
   checkWelcomeGiftEligibility,
@@ -128,7 +127,6 @@ router.post("/mark-used", auth, markRewardAsUsed);
 // Admin routes - specific routes first, then parameterized routes
 router.get("/admin/all", auth, adminOnly, getAllWelcomeGiftsAdmin);
 router.get("/admin/analytics", auth, adminOnly, getWelcomeGiftsAnalytics);
-router.put("/admin/reorder", auth, adminOnly, reorderWelcomeGifts);
 router.post("/admin", auth, adminOnly, createWelcomeGift);
 
 // Admin routes with ID validation

@@ -10,6 +10,7 @@ const productRouter = require("./routes/productRoute");
 const categoryRouter = require("./routes/categoryRoute");
 const cartRouter = require("./routes/cartRoute");
 const adminRouter = require("./routes/adminRoute");
+const adminSettingsRouter = require("./routes/adminSettingsRoute");
 const addressRouter = require("./routes/addressRoute");
 const orderRouter = require("./routes/orderRoute");
 const couponRouter = require("./routes/couponRoute");
@@ -86,7 +87,7 @@ app.use(
       }
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -166,6 +167,7 @@ app.use("/api/product", productRouter);
 app.use("/api/category", categoryRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/admin/settings", adminSettingsRouter);
 app.use("/api/address", addressRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/coupon", couponRouter);
