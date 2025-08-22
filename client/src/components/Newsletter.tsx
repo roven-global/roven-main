@@ -1,7 +1,40 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Axios from "@/utils/Axios";
 
 const Newsletter = () => {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus("loading");
+    setMessage("");
+
+    if (!email) {
+      setStatus("error");
+      setMessage("Please enter a valid email address.");
+      return;
+    }
+
+    try {
+      const response = await Axios.post("/api/newsletter/subscribe", { email });
+      setStatus("success");
+      setMessage(response.data.message || "Thank you for subscribing!");
+      setEmail("");
+    } catch (error: any) {
+      setStatus("error");
+      if (error.response?.data?.message) {
+        setMessage(error.response.data.message);
+      } else {
+        setMessage("Subscription failed. Please try again later.");
+      }
+      console.error(error);
+    }
+  };
+
   return (
     <section className="py-20 bg-gradient-to-br from-sage/25 via-forest/10 to-sage/15">
       <div className="container mx-auto px-4 text-center">
@@ -14,20 +47,45 @@ const Newsletter = () => {
             and early access to new products.
           </p>
 
-          <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <Input
-              type="email"
-              placeholder="Enter your email address"
-              className="h-12 flex-grow bg-white border-warm-taupe focus:ring-sage-light focus:border-sage-dark rounded-full"
-            />
-            <Button size="lg" className="bg-sage text-white hover:bg-forest transition-all duration-300 rounded-full text-base font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-              Subscribe
-            </Button>
-          </form>
+          {status === "success" ? (
+            <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg">
+              <p className="font-semibold">{message}</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+              <label htmlFor="newsletter-email" className="sr-only">
+                Email address
+              </label>
+              <Input
+                id="newsletter-email"
+                type="email"
+                placeholder="Enter your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={status === "loading"}
+                required
+                className="h-12 flex-grow bg-white border-warm-taupe focus:ring-sage-light focus:border-sage-dark rounded-full"
+              />
+              <Button
+                type="submit"
+                size="lg"
+                disabled={status === "loading"}
+                className="bg-sage text-white hover:bg-forest transition-all duration-300 rounded-full text-base font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              >
+                {status === "loading" ? "Subscribing..." : "Subscribe"}
+              </Button>
+            </form>
+          )}
 
-          <p className="text-sm text-forest/70 mt-4">
-            We respect your privacy. Unsubscribe at any time.
-          </p>
+          {status === "error" && message && (
+            <p className="text-sm text-red-600 mt-4">{message}</p>
+          )}
+          
+          {status !== "success" && (
+            <p className="text-sm text-forest/70 mt-4">
+              We respect your privacy. Unsubscribe at any time.
+            </p>
+          )}
         </div>
       </div>
     </section>

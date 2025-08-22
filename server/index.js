@@ -16,6 +16,7 @@ const orderRouter = require("./routes/orderRoute");
 const couponRouter = require("./routes/couponRoute");
 const welcomeGiftRouter = require("./routes/welcomeGiftRoute");
 const reviewRouter = require("./routes/reviewRoute");
+const newsletterRouter = require("./routes/newsletterRoute");
 const session = require("express-session");
 const passport = require("passport");
 require("./config/passport-setup");
@@ -173,6 +174,7 @@ app.use("/api/order", orderRouter);
 app.use("/api/coupon", couponRouter);
 app.use("/api/welcome-gifts", welcomeGiftRouter);
 app.use("/api/reviews", reviewRouter);
+app.use("/api/newsletter", newsletterRouter);
 
 // --- SERVE FRONTEND ---
 app.use(express.static(path.join(__dirname, "..", "client", "dist")));

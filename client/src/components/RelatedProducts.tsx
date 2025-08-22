@@ -39,7 +39,6 @@ const RelatedProducts: React.FC<RelatedProductsProps> = ({
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <h2 className="text-2xl font-bold mb-4">You May Also Like</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Skeleton className="w-full h-64 bg-gray-200" />
           <Skeleton className="w-full h-64 bg-gray-200" />
@@ -56,7 +55,6 @@ const RelatedProducts: React.FC<RelatedProductsProps> = ({
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h2 className="text-2xl font-bold mb-4 text-deep-forest font-serif">You May Also Like</h2>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
         {relatedProducts.map((product) => (
           <ProductCard
