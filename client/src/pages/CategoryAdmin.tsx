@@ -1,18 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Search, Filter, ArrowLeft } from 'lucide-react';
-import Axios from '@/utils/Axios';
-import SummaryApi from '@/common/summaryApi';
-import UploadCategory from './UploadCategory';
-import { useNavigate } from 'react-router-dom';
+import { Plus, Edit, Trash2, Search, Filter, ArrowLeft } from "lucide-react";
+import Axios from "@/utils/Axios";
+import SummaryApi from "@/common/summaryApi";
+import UploadCategory from "./UploadCategory";
+import { useNavigate } from "react-router-dom";
 
 interface Category {
   _id: string;
@@ -29,6 +58,7 @@ interface Category {
   };
   subcategories?: Category[];
   isActive: boolean;
+  productsCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,10 +67,10 @@ const CategoryPage = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [filterParent, setFilterParent] = useState<string>('all');
+  const [filterParent, setFilterParent] = useState<string>("all");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -58,7 +88,7 @@ const CategoryPage = () => {
         setCategories(response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error("Error fetching categories:", error);
       toast({
         title: "Error",
         description: "Failed to fetch categories",
@@ -104,10 +134,11 @@ const CategoryPage = () => {
         fetchCategories();
       }
     } catch (error: any) {
-      console.error('Error deleting category:', error);
+      console.error("Error deleting category:", error);
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to delete category",
+        description:
+          error.response?.data?.message || "Failed to delete category",
         variant: "destructive",
       });
     }
@@ -130,46 +161,87 @@ const CategoryPage = () => {
         fetchCategories();
       }
     } catch (error: any) {
-      console.error('Error bulk deleting categories:', error);
+      console.error("Error bulk deleting categories:", error);
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to delete categories",
+        description:
+          error.response?.data?.message || "Failed to delete categories",
         variant: "destructive",
       });
     }
   };
 
-  const filteredCategories = categories.filter(category => {
-    const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterParent === 'all' ||
-      (filterParent === 'main' && !category.parentCategory) ||
-      (filterParent === 'sub' && category.parentCategory);
-    return matchesSearch && matchesFilter;
-  });
+  const parentCategories = categories.filter((cat) => !cat.parentCategory);
 
-  const parentCategories = categories.filter(cat => !cat.parentCategory);
+  const getVisibleCategories = () => {
+    if (searchTerm === "" && filterParent === "all") {
+      return categories.filter((c) => !c.parentCategory);
+    }
 
-  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+    const visibleIds = new Set<string>();
+    const categoriesById = new Map(categories.map((c) => [c._id, c]));
+
+    categories.forEach((category) => {
+      const matchesSearch = category.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesFilter =
+        filterParent === "all" ||
+        (filterParent === "main" && !category.parentCategory) ||
+        (filterParent === "sub" && !!category.parentCategory);
+
+      if (matchesSearch && matchesFilter) {
+        let current = category;
+        while (current) {
+          visibleIds.add(current._id);
+          current = current.parentCategory
+            ? categoriesById.get(current.parentCategory._id)
+            : null;
+        }
+      }
+    });
+
+    return categories.filter((c) => !c.parentCategory && visibleIds.has(c._id));
+  };
+
+  const visibleTopLevelCategories = getVisibleCategories();
+  const allVisibleIds = new Set<string>();
+  const addWithChildren = (category: Category) => {
+    allVisibleIds.add(category._id);
+    categories
+      .filter((c) => c.parentCategory?._id === category._id)
+      .forEach(addWithChildren);
+  };
+  visibleTopLevelCategories.forEach(addWithChildren);
+  const allVisibleCategories = categories.filter((c) =>
+    allVisibleIds.has(c._id)
+  );
+
+  const handleSelectAll = (checked: boolean | "indeterminate") => {
     if (checked === true) {
-      setSelectedCategories(filteredCategories.map(c => c._id));
+      setSelectedCategories(allVisibleCategories.map((c) => c._id));
     } else {
       setSelectedCategories([]);
     }
   };
 
   const handleSelectCategory = (categoryId: string, checked: boolean) => {
-    setSelectedCategories(prev =>
-      checked ? [...prev, categoryId] : prev.filter(id => id !== categoryId)
+    setSelectedCategories((prev) =>
+      checked ? [...prev, categoryId] : prev.filter((id) => id !== categoryId)
     );
   };
 
   const renderCategoryRow = (category: Category, level: number) => (
     <React.Fragment key={category._id}>
-      <TableRow data-state={selectedCategories.includes(category._id) && "selected"}>
+      <TableRow
+        data-state={selectedCategories.includes(category._id) && "selected"}
+      >
         <TableCell style={{ paddingLeft: `${level * 1.5 + 1}rem` }}>
           <Checkbox
             checked={selectedCategories.includes(category._id)}
-            onCheckedChange={(checked) => handleSelectCategory(category._id, !!checked)}
+            onCheckedChange={(checked) =>
+              handleSelectCategory(category._id, !!checked)
+            }
             aria-label={`Select category ${category.name}`}
           />
         </TableCell>
@@ -189,6 +261,9 @@ const CategoryPage = () => {
           ) : (
             <Badge variant="secondary">Main Category</Badge>
           )}
+        </TableCell>
+        <TableCell>
+          <Badge variant="secondary">{category.productsCount || 0}</Badge>
         </TableCell>
         <TableCell>
           {new Date(category.createdAt).toLocaleDateString()}
@@ -212,7 +287,8 @@ const CategoryPage = () => {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete Category</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to delete "{category.name}"? This action cannot be undone.
+                    Are you sure you want to delete "{category.name}"? This
+                    action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -229,7 +305,9 @@ const CategoryPage = () => {
           </div>
         </TableCell>
       </TableRow>
-      {categories.filter(c => c.parentCategory?._id === category._id).map(subCat => renderCategoryRow(subCat, level + 1))}
+      {categories
+        .filter((c) => c.parentCategory?._id === category._id)
+        .map((subCat) => renderCategoryRow(subCat, level + 1))}
     </React.Fragment>
   );
 
@@ -265,7 +343,9 @@ const CategoryPage = () => {
             </div>
             {selectedCategories.length > 0 && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{selectedCategories.length} selected</span>
+                <span className="text-sm text-muted-foreground">
+                  {selectedCategories.length} selected
+                </span>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="sm">
@@ -277,7 +357,8 @@ const CategoryPage = () => {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will permanently delete {selectedCategories.length} categories. This action cannot be undone.
+                        This will permanently delete {selectedCategories.length}{" "}
+                        categories. This action cannot be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -328,11 +409,13 @@ const CategoryPage = () => {
                   <TableHead className="w-[60px]">
                     <Checkbox
                       checked={
-                        selectedCategories.length > 0 && selectedCategories.length === filteredCategories.length
+                        allVisibleCategories.length > 0 &&
+                        selectedCategories.length ===
+                          allVisibleCategories.length
                           ? true
                           : selectedCategories.length > 0
-                            ? 'indeterminate'
-                            : false
+                          ? "indeterminate"
+                          : false
                       }
                       onCheckedChange={handleSelectAll}
                       aria-label="Select all"
@@ -341,79 +424,15 @@ const CategoryPage = () => {
                   <TableHead>Image</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Parent</TableHead>
+                  <TableHead>Products</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filterParent === 'all' && searchTerm.length === 0
-                  ? categories.filter(c => !c.parentCategory).map(cat => renderCategoryRow(cat, 0))
-                  : filteredCategories.map((category) => (
-                    <TableRow key={category._id} data-state={selectedCategories.includes(category._id) && "selected"}>
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedCategories.includes(category._id)}
-                          onCheckedChange={(checked) => handleSelectCategory(category._id, !!checked)}
-                          aria-label={`Select category ${category.name}`}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div className="w-12 h-12 rounded-lg overflow-hidden border">
-                          <img
-                            src={category.image.url}
-                            alt={category.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{category.name}</TableCell>
-                      <TableCell>
-                        {category.parentCategory ? (
-                          <Badge variant="outline">{category.parentCategory.name}</Badge>
-                        ) : (
-                          <Badge variant="secondary">Main Category</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(category.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditCategory(category)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Category</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete "{category.name}"? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteCategory(category._id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                {visibleTopLevelCategories.map((cat) =>
+                  renderCategoryRow(cat, 0)
+                )}
               </TableBody>
             </Table>
           )}

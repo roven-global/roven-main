@@ -110,6 +110,7 @@ const getAllCategories = asyncHandler(async (req, res) => {
   const categories = await CategoryModel.find(filter)
     .populate("parentCategory", "name slug")
     .populate("subcategories")
+    .populate("productsCount")
     .sort({ createdAt: -1 });
 
   return res.json({
