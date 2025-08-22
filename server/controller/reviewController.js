@@ -9,19 +9,7 @@ const createReview = asyncHandler(async (req, res) => {
   const { productId, rating, title, comment } = req.body;
   const userId = req.user._id;
 
-  // 1. Check if the product exists and has been purchased by the user
-  const hasPurchased = await Order.findOne({
-    user: userId,
-    "items.product": productId,
-    orderStatus: "delivered", // Or whatever status signifies a completed order
-  });
-
-  if (!hasPurchased) {
-    res.status(403);
-    throw new Error("You can only review products you have purchased.");
-  }
-
-  // 2. Check if the user has already reviewed this product
+  // 1. Check if the user has already reviewed this product
   const alreadyReviewed = await Review.findOne({
     product: productId,
     user: userId,
@@ -32,7 +20,7 @@ const createReview = asyncHandler(async (req, res) => {
     throw new Error("You have already submitted a review for this product.");
   }
 
-  // 3. Create and save the new review
+  // 2. Create and save the new review
   const review = await Review.create({
     product: productId,
     user: userId,

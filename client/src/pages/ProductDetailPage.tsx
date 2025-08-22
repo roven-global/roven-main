@@ -1,4 +1,3 @@
-// ProductDetailPage.tsx
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -11,7 +10,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Star,
   Heart,
@@ -230,25 +228,25 @@ const ProductDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="bg-warm-cream-light">
+      <div className="min-h-screen bg-background">
         <Navigation />
         <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
             <div>
-              <Skeleton className="w-full h-80 sm:h-96 rounded-xl bg-soft-beige-light" />
+              <Skeleton className="w-full h-80 sm:h-96 rounded-xl bg-warm-taupe/20" />
               <div className="flex gap-2 mt-4 overflow-x-auto">
-                <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-soft-beige-light" />
-                <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-soft-beige-light" />
-                <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-soft-beige-light" />
+                <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-warm-taupe/20" />
+                <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-warm-taupe/20" />
+                <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-warm-taupe/20" />
               </div>
             </div>
             <div className="space-y-6">
-              <Skeleton className="h-6 w-1/3 bg-soft-beige-light" />
-              <Skeleton className="h-10 w-3/4 bg-soft-beige-light" />
-              <Skeleton className="h-6 w-1/2 bg-soft-beige-light" />
-              <Skeleton className="h-10 w-1/3 bg-soft-beige-light" />
-              <Skeleton className="h-16 w-full bg-soft-beige-light" />
-              <Skeleton className="h-12 w-full bg-soft-beige-light" />
+              <Skeleton className="h-6 w-1/3 bg-warm-taupe/20" />
+              <Skeleton className="h-10 w-3/4 bg-warm-taupe/20" />
+              <Skeleton className="h-6 w-1/2 bg-warm-taupe/20" />
+              <Skeleton className="h-10 w-1/3 bg-warm-taupe/20" />
+              <Skeleton className="h-16 w-full bg-warm-taupe/20" />
+              <Skeleton className="h-12 w-full bg-warm-taupe/20" />
             </div>
           </div>
         </div>
@@ -259,16 +257,16 @@ const ProductDetailPage = () => {
 
   if (error || !product) {
     return (
-      <div className="bg-warm-cream-light">
+      <div className="min-h-screen bg-background">
         <Navigation />
         <div className="container mx-auto px-4 py-20 text-center">
-          <h2 className="text-xl sm:text-2xl font-semibold text-destructive">
+          <h2 className="text-xl sm:text-2xl font-semibold text-red-500">
             {error || "Product not found."}
           </h2>
           <Link to="/shop">
             <Button
               variant="outline"
-              className="mt-4 border-gold-accent text-gold-accent hover:bg-gold-accent/10"
+              className="mt-4 border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage"
             >
               Go back to Shop
             </Button>
@@ -286,33 +284,33 @@ const ProductDetailPage = () => {
     : 0;
 
   return (
-    <div className="bg-gradient-subtle min-h-screen">
+    <div className="min-h-screen bg-background">
       <Navigation />
       <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
         {/* Breadcrumb */}
-        <div className="flex flex-nowrap items-center text-xs sm:text-sm text-forest-dark mb-4 sm:mb-6 lg:mb-8 overflow-x-auto whitespace-nowrap">
+        <div className="flex flex-nowrap items-center text-sm text-forest mb-4 sm:mb-6 lg:mb-8 overflow-x-auto whitespace-nowrap">
           <Link
             to="/"
             className="hover:text-sage transition-colors flex-shrink-0"
           >
             Home
           </Link>
-          <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 mx-1 flex-shrink-0 text-warm-taupe" />
+          <ChevronRight className="h-4 w-4 mx-2 flex-shrink-0 text-warm-taupe" />
           <Link
             to="/shop"
             className="hover:text-sage transition-colors flex-shrink-0"
           >
             Shop
           </Link>
-          <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 mx-1 flex-shrink-0 text-warm-taupe" />
-          <span className="text-deep-forest font-medium flex-shrink-0 truncate max-w-[120px] sm:max-w-none">
+          <ChevronRight className="h-4 w-4 mx-2 flex-shrink-0 text-warm-taupe" />
+          <span className="text-deep-forest font-medium flex-shrink-0 truncate max-w-[150px] sm:max-w-none">
             {product.name}
           </span>
         </div>
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start bg-white rounded-2xl shadow-luxury p-6 lg:p-8">
-          {/* Image Gallery - Full width on mobile, left on desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start bg-white rounded-2xl shadow-luxury p-6 lg:p-8 border border-warm-taupe/20">
+          {/* Image Gallery */}
           <div className="order-1 lg:order-1">
             <div className="w-full aspect-square rounded-xl overflow-hidden shadow-elegant mb-4 bg-warm-cream-light">
               <InnerImageZoom
@@ -327,16 +325,16 @@ const ProductDetailPage = () => {
                 }}
               />
             </div>
-            <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
               {product.images.map((image) => (
                 <button
                   key={image.public_id}
                   onClick={() => setSelectedImage(image.url)}
                   className={cn(
-                    "w-14 h-14 sm:w-20 sm:h-20 rounded-lg overflow-hidden cursor-pointer border-2 transition-all flex-shrink-0 shadow-sm",
+                    "w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden cursor-pointer border-2 transition-all flex-shrink-0 shadow-sm",
                     selectedImage === image.url
-                      ? "border-gold-accent"
-                      : "border-soft-beige hover:border-gold-accent"
+                      ? "border-sage"
+                      : "border-warm-taupe hover:border-sage"
                   )}
                 >
                   <img
@@ -349,13 +347,13 @@ const ProductDetailPage = () => {
             </div>
           </div>
 
-          {/* Product Details - Sticky on desktop, below images on mobile */}
-          <div className="order-3 lg:order-2 space-y-4 sm:space-y-6 lg:sticky lg:top-24 self-start">
-            <h1 className="font-playfair text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-forest leading-tight">
+          {/* Product Details */}
+          <div className="order-3 lg:order-2 space-y-6 lg:sticky lg:top-24 self-start">
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-forest leading-tight">
               {product.name}
             </h1>
             {product.shortDescription && (
-              <p className="font-serif text-lg sm:text-xl leading-relaxed text-forest-dark italic">
+              <p className="text-lg sm:text-xl leading-relaxed text-forest italic">
                 {product.shortDescription}
               </p>
             )}
@@ -363,27 +361,27 @@ const ProductDetailPage = () => {
             {/* Ratings */}
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1 text-lg sm:text-xl">
-                <Star className="h-5 w-5 text-soft-bronze fill-current" />
+                <Star className="h-5 w-5 text-gold-accent fill-gold-accent" />
                 <span className="font-bold text-deep-forest">
                   {product.ratings.average.toFixed(1)}
                 </span>
               </div>
-              <span className="text-sm text-forest-dark mt-1">
+              <span className="text-sm text-forest mt-1">
                 ({product.ratings.numOfReviews} Reviews)
               </span>
             </div>
 
             {/* Price */}
             <div className="flex items-baseline gap-3 flex-wrap">
-              <span className="font-playfair text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-forest">
+              <span className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-forest">
                 {formatRupees(currentPrice)}
               </span>
               {originalPrice && (
                 <>
-                  <span className="text-xl sm:text-2xl text-warm-taupe-dark line-through">
+                  <span className="text-xl sm:text-2xl text-warm-taupe line-through">
                     {formatRupees(originalPrice)}
                   </span>
-                  <span className="text-lg text-sage-dark font-bold bg-sage/10 px-2 py-1 rounded-full">
+                  <span className="text-lg text-sage font-bold bg-sage/10 px-2 py-1 rounded-full">
                     {discount}% OFF
                   </span>
                 </>
@@ -391,7 +389,7 @@ const ProductDetailPage = () => {
             </div>
 
             {/* Description Snippet */}
-            <p className="text-forest-dark text-base sm:text-lg leading-relaxed">
+            <p className="text-forest text-base sm:text-lg leading-relaxed">
               {product.description.split(".")[0]}.
             </p>
 
@@ -414,22 +412,22 @@ const ProductDetailPage = () => {
 
             {/* Quantity + Add to Cart */}
             <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center border border-gold-accent rounded-full p-1 bg-warm-cream-light w-32">
+              <div className="flex items-center border border-warm-taupe rounded-full p-1 bg-white w-32">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full hover:bg-gold-accent/10 transition-colors text-deep-forest"
+                  className="rounded-full hover:bg-sage/20 hover:text-sage transition-colors text-forest"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
-                <span className="flex-1 text-center font-semibold text-deep-forest">
+                <span className="flex-1 text-center font-semibold text-forest">
                   {quantity}
                 </span>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full hover:bg-gold-accent/10 transition-colors text-deep-forest"
+                  className="rounded-full hover:bg-sage/20 hover:text-sage transition-colors text-forest"
                   onClick={() =>
                     setQuantity((q) =>
                       Math.min(selectedVariant?.stock ?? 10, q + 1)
@@ -441,7 +439,7 @@ const ProductDetailPage = () => {
               </div>
               <Button
                 size="lg"
-                className="flex-1 bg-sage text-warm-cream hover:bg-forest rounded-full font-semibold transition-all shadow-elegant text-lg py-6"
+                className="flex-1 bg-forest hover:bg-deep-forest text-white font-semibold rounded-lg transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-lg py-6"
                 onClick={handleAddToCart}
                 disabled={selectedVariant?.stock === 0 || isAdded}
               >
@@ -463,10 +461,10 @@ const ProductDetailPage = () => {
                 variant="outline"
                 size="icon"
                 className={cn(
-                  "rounded-full transition-colors border-gold-accent h-12 w-12",
+                  "rounded-full transition-colors border-warm-taupe h-12 w-12",
                   isLiked
-                    ? "bg-gold-accent/10 text-soft-bronze"
-                    : "hover:bg-gold-accent/10 text-forest"
+                    ? "bg-gold-accent/20 text-gold-accent border-gold-accent/30"
+                    : "hover:bg-sage/20 hover:text-sage text-forest"
                 )}
                 onClick={handleLikeClick}
               >
@@ -474,7 +472,7 @@ const ProductDetailPage = () => {
                   className={cn(
                     "h-5 w-5",
                     isLiked
-                      ? "fill-soft-bronze text-soft-bronze"
+                      ? "fill-gold-accent text-gold-accent"
                       : "text-forest"
                   )}
                 />
@@ -486,44 +484,41 @@ const ProductDetailPage = () => {
                 {selectedVariant.stock > 0 &&
                 selectedVariant.stock <= selectedVariant.lowStockThreshold ? (
                   <>
-                    <AlertTriangle className="h-4 w-4 text-soft-bronze" />
-                    <span className="text-soft-bronze font-semibold">
+                    <AlertTriangle className="h-4 w-4 text-gold-accent" />
+                    <span className="text-gold-accent font-semibold">
                       Only {selectedVariant.stock} left in stock!
                     </span>
                   </>
                 ) : selectedVariant.stock > 0 ? (
                   <>
                     <CheckCircle className="h-4 w-4 text-sage" />
-                    <span className="text-forest-dark">
+                    <span className="text-forest">
                       {selectedVariant.stock} units available
                     </span>
                   </>
                 ) : (
-                  <span className="text-destructive font-semibold">
+                  <span className="text-red-500 font-semibold">
                     Out of Stock
                   </span>
                 )}
               </div>
             ) : (
-              <div className="text-sm text-forest-dark flex items-center gap-2 pt-2">
+              <div className="text-sm text-forest flex items-center gap-2 pt-2">
                 <CheckCircle className="h-4 w-4 text-sage" />
                 <span>In Stock</span>
               </div>
             )}
           </div>
 
-          {/* Quick Benefits - New section between images and details on desktop */}
+          {/* Key Benefits */}
           {product.benefits && product.benefits.length > 0 && (
             <div className="order-2 lg:order-3 lg:col-span-2 mt-8 lg:mt-0">
-              <h2 className="font-playfair text-2xl font-bold text-deep-forest mb-4">
+              <h2 className="font-serif text-2xl font-bold text-deep-forest mb-4">
                 Key Benefits
               </h2>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {product.benefits.map((benefit, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-2 text-forest-dark"
-                  >
+                  <li key={i} className="flex items-start gap-2 text-forest">
                     <CheckCircle className="h-5 w-5 text-sage flex-shrink-0 mt-0.5" />
                     <span>{benefit}</span>
                   </li>
@@ -534,7 +529,7 @@ const ProductDetailPage = () => {
         </div>
 
         {/* Extended Info */}
-        <div className="mt-12 lg:mt-16 border-t border-soft-beige pt-8 lg:pt-12">
+        <div className="mt-12 lg:mt-16 border-t border-warm-taupe pt-8 lg:pt-12">
           <Accordion
             type="multiple"
             defaultValue={["item-1", "item-7"]}
@@ -542,12 +537,12 @@ const ProductDetailPage = () => {
           >
             <AccordionItem
               value="item-1"
-              className="border-forest-light/50 bg-forest-light/20 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
+              className="border-warm-taupe bg-sage/10 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
             >
-              <AccordionTrigger className="text-2xl font-playfair font-bold text-deep-forest px-6 py-4 hover:no-underline">
+              <AccordionTrigger className="text-2xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline">
                 Description
               </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6 text-forest-dark text-base leading-relaxed">
+              <AccordionContent className="px-6 pb-6 text-forest text-base leading-relaxed">
                 {product.description}
               </AccordionContent>
             </AccordionItem>
@@ -555,9 +550,9 @@ const ProductDetailPage = () => {
             {product.ingredients && product.ingredients.length > 0 && (
               <AccordionItem
                 value="item-2"
-                className="border-forest-light/50 bg-forest-light/20 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
+                className="border-warm-taupe bg-sage/10 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
               >
-                <AccordionTrigger className="text-2xl font-playfair font-bold text-deep-forest px-6 py-4 hover:no-underline">
+                <AccordionTrigger className="text-2xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline">
                   Hero Ingredients
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-6">
@@ -565,7 +560,7 @@ const ProductDetailPage = () => {
                     {product.ingredients.map((ingredient: any, i: number) => (
                       <div
                         key={i}
-                        className="bg-white rounded-xl shadow-elegant overflow-hidden border border-soft-beige hover:shadow-luxury transition-all hover:-translate-y-1"
+                        className="bg-white rounded-xl shadow-elegant overflow-hidden border border-warm-taupe hover:shadow-luxury transition-all hover:-translate-y-1"
                       >
                         {ingredient.image && (
                           <div className="w-full h-40 sm:h-52 bg-warm-cream-light overflow-hidden">
@@ -583,7 +578,7 @@ const ProductDetailPage = () => {
                             </h3>
                           )}
                           {ingredient.description && (
-                            <p className="text-sm text-forest-dark leading-relaxed">
+                            <p className="text-sm text-forest leading-relaxed">
                               {ingredient.description}
                             </p>
                           )}
@@ -598,13 +593,13 @@ const ProductDetailPage = () => {
             {product.howToUse && product.howToUse.length > 0 && (
               <AccordionItem
                 value="item-3"
-                className="border-forest-light/50 bg-forest-light/20 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
+                className="border-warm-taupe bg-sage/10 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
               >
-                <AccordionTrigger className="text-2xl font-playfair font-bold text-deep-forest px-6 py-4 hover:no-underline">
+                <AccordionTrigger className="text-2xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline">
                   How to Use
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-6">
-                  <ol className="list-decimal pl-5 space-y-3 text-forest-dark text-base leading-relaxed">
+                  <ol className="list-decimal pl-5 space-y-3 text-forest text-base leading-relaxed">
                     {product.howToUse.map((step: string, i: number) => (
                       <li key={i}>{step}</li>
                     ))}
@@ -617,13 +612,13 @@ const ProductDetailPage = () => {
               product.specifications.suitableFor.length > 0 && (
                 <AccordionItem
                   value="item-4"
-                  className="border-forest-light/50 bg-forest-light/20 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
+                  className="border-warm-taupe bg-sage/10 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
                 >
-                  <AccordionTrigger className="text-2xl font-playfair font-bold text-deep-forest px-6 py-4 hover:no-underline">
+                  <AccordionTrigger className="text-2xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline">
                     Suitable For
                   </AccordionTrigger>
                   <AccordionContent className="px-6 pb-6">
-                    <ul className="list-disc pl-5 space-y-3 text-forest-dark text-base leading-relaxed">
+                    <ul className="list-disc pl-5 space-y-3 text-forest text-base leading-relaxed">
                       {product.specifications.suitableFor.map(
                         (item: string, i: number) => (
                           <li key={i}>{item}</li>
@@ -637,13 +632,13 @@ const ProductDetailPage = () => {
             {product.benefits && product.benefits.length > 0 && (
               <AccordionItem
                 value="item-5"
-                className="border-forest-light/50 bg-forest-light/20 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
+                className="border-warm-taupe bg-sage/10 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
               >
-                <AccordionTrigger className="text-2xl font-playfair font-bold text-deep-forest px-6 py-4 hover:no-underline">
+                <AccordionTrigger className="text-2xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline">
                   Benefits
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-6">
-                  <ul className="list-disc pl-5 space-y-3 text-forest-dark text-base leading-relaxed">
+                  <ul className="list-disc pl-5 space-y-3 text-forest text-base leading-relaxed">
                     {product.benefits.map((benefit, i) => (
                       <li key={i}>{benefit}</li>
                     ))}
@@ -656,13 +651,13 @@ const ProductDetailPage = () => {
               Object.keys(product.specifications).length > 0 && (
                 <AccordionItem
                   value="item-6"
-                  className="border-forest-light/50 bg-forest-light/20 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
+                  className="border-warm-taupe bg-sage/10 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
                 >
-                  <AccordionTrigger className="text-2xl font-playfair font-bold text-deep-forest px-6 py-4 hover:no-underline">
+                  <AccordionTrigger className="text-2xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline">
                     Specifications
                   </AccordionTrigger>
                   <AccordionContent className="px-6 pb-6">
-                    <dl className="divide-y divide-soft-beige">
+                    <dl className="divide-y divide-warm-taupe">
                       {Object.entries(product.specifications).map(
                         ([key, value]) => (
                           <div key={key} className="flex py-4 items-center">
@@ -671,7 +666,7 @@ const ProductDetailPage = () => {
                                 .replace(/([A-Z])/g, " $1")
                                 .replace(/^./, (str) => str.toUpperCase())}
                             </dt>
-                            <dd className="w-2/3 text-forest-dark text-base">
+                            <dd className="w-2/3 text-forest text-base">
                               {Array.isArray(value) ? value.join(", ") : value}
                             </dd>
                           </div>
@@ -683,10 +678,10 @@ const ProductDetailPage = () => {
               )}
             <AccordionItem
               value="item-7"
-              className="border-forest-light/50 bg-forest-light/20 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
+              className="border-warm-taupe bg-sage/10 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
             >
-              <AccordionTrigger className="text-2xl font-playfair font-bold text-deep-forest px-6 py-4 hover:no-underline">
-                Customer Reviews ({product.ratings.numOfReviews})
+              <AccordionTrigger className="text-2xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline">
+                Customer Reviews
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
                 <CustomerReviews
@@ -701,7 +696,7 @@ const ProductDetailPage = () => {
         {/* Related Products */}
         {product && (
           <div className="mt-12 lg:mt-16">
-            <h2 className="font-playfair text-3xl font-bold text-deep-forest mb-6">
+            <h2 className="font-serif text-3xl font-bold text-deep-forest mb-6">
               You May Also Like
             </h2>
             <RelatedProducts currentProductId={product._id} />
