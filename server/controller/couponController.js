@@ -72,7 +72,7 @@ const validateCoupon = asyncHandler(async (req, res) => {
     }
 
     // Check if coupon can be applied using server total
-    const canBeApplied = coupon.canBeApplied(actualCartTotal, req.user?._id, userOrderCount);
+    const canBeApplied = coupon.canBeApplied(actualCartTotal, req.user?._id, userOrderCount, cartValidation.validatedItems);
     if (!canBeApplied.valid) {
         return res.status(400).json({
             success: false,
@@ -461,7 +461,57 @@ const getCouponUsage = asyncHandler(async (req, res) => {
     });
 });
 
+const getCouponAnalytics = asyncHandler(async (req, res) => {
+    const totalCoupons = await CouponModel.countDocuments();
+    const activeCoupons = await CouponModel.countDocuments({ isActive: true });
+
+    const usageData = await CouponUsageModel.aggregate([
+        {
+            $group: {
+                _id: "$coupon",
+                totalUsage: { $sum: 1 },
+                totalDiscount: { $sum: "$discountAmount" },
+            },
+        },
+        {
+            $lookup: {
+                from: "coupons",
+                localField: "_id",
+                foreignField: "_id",
+                as: "couponInfo",
+            },
+        },
+        { $unwind: "$couponInfo" },
+        {
+            $project: {
+                _id: 0,
+                couponId: "$_id",
+                code: "$couponInfo.code",
+                name: "$couponInfo.name",
+                totalUsage: "$totalUsage",
+                totalDiscount: "$totalDiscount",
+            }
+        },
+        { $sort: { totalUsage: -1 } },
+        { $limit: 5 }
+    ]);
+
+    const totalDiscountGiven = await CouponUsageModel.aggregate([
+        { $group: { _id: null, total: { $sum: "$discountAmount" } } }
+    ]);
+
+    const analytics = {
+        totalCoupons,
+        activeCoupons,
+        totalDiscountGiven: totalDiscountGiven[0]?.total || 0,
+        mostUsedCoupons: usageData,
+    };
+
+    res.json({ success: true, data: analytics });
+});
+
 module.exports = {
+    getCouponAnalytics,
     validateCoupon,
     getActiveCoupons,
     getAllCoupons,

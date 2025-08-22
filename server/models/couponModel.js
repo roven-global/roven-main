@@ -137,7 +137,7 @@ couponSchema.virtual("remainingUsage").get(function () {
 });
 
 // Method to check if coupon can be applied to an order
-couponSchema.methods.canBeApplied = function (orderAmount, userId, userOrderCount = 0) {
+couponSchema.methods.canBeApplied = function (orderAmount, userId, userOrderCount = 0, cartItems = []) {
     // Check basic validity
     if (!this.isValid) {
         return { valid: false, message: "Coupon is not valid" };
@@ -147,14 +147,14 @@ couponSchema.methods.canBeApplied = function (orderAmount, userId, userOrderCoun
     if (orderAmount < this.minOrderAmount) {
         return {
             valid: false,
-            message: `Minimum order amount of ${this.minOrderAmount} required`
+            message: `Minimum order amount of ₹${this.minOrderAmount} required`
         };
     }
 
     if (this.maxOrderAmount && orderAmount > this.maxOrderAmount) {
         return {
             valid: false,
-            message: `Maximum order amount of ${this.maxOrderAmount} exceeded`
+            message: `Maximum order amount of ₹${this.maxOrderAmount} exceeded`
         };
     }
 
@@ -164,6 +164,26 @@ couponSchema.methods.canBeApplied = function (orderAmount, userId, userOrderCoun
             valid: false,
             message: "This coupon is only for first-time users"
         };
+    }
+
+    // Check product and category restrictions
+    const hasApplicableProducts = this.applicableProducts.length > 0;
+    const hasApplicableCategories = this.applicableCategories.length > 0;
+
+    if (hasApplicableProducts || hasApplicableCategories) {
+        const isApplicable = cartItems.some(item => {
+            const productId = item.productId._id || item.productId;
+            const categoryId = item.productId.category;
+            
+            const productMatch = hasApplicableProducts ? this.applicableProducts.some(pId => pId.equals(productId)) : false;
+            const categoryMatch = hasApplicableCategories ? this.applicableCategories.some(cId => cId.equals(categoryId)) : false;
+
+            return productMatch || categoryMatch;
+        });
+
+        if (!isApplicable) {
+            return { valid: false, message: "Coupon is not applicable to any items in your cart." };
+        }
     }
 
     return { valid: true, message: "Coupon can be applied" };

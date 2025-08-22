@@ -270,6 +270,10 @@ const SummaryApi = {
     url: "/api/coupon/:id/usage",
     method: "get",
   },
+  getCouponAnalytics: {
+    url: "/api/coupon/analytics/summary",
+    method: "get",
+  },
   googleLogin: {
     url: "/api/auth/google",
     method: "get",

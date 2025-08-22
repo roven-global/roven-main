@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 const adminOnly = require("../middleware/adminOnly");
 const {
+    getCouponAnalytics,
     validateCoupon,
     getActiveCoupons,
     getAllCoupons,
@@ -44,5 +45,8 @@ router.patch("/:id/toggle", toggleCouponStatus);
 
 // Get coupon usage statistics
 router.get("/:id/usage", getCouponUsage);
+
+// Get coupon analytics summary
+router.get("/analytics/summary", getCouponAnalytics);
 
 module.exports = router;
