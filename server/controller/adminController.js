@@ -9,20 +9,30 @@ const ProductModel = require("../models/productModel");
  * @route GET /api/admin/overview
  */
 const getOverviewStats = asyncHandler(async (req, res) => {
+  const { startDate, endDate } = req.query;
+  
+  const dateFilter = {};
+  if (startDate && endDate) {
+    dateFilter.createdAt = {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate),
+    };
+  }
+
   // Total Sales
   const totalSalesResult = await OrderModel.aggregate([
-    { $match: { paymentStatus: "completed" } },
+    { $match: { ...dateFilter, paymentStatus: "completed" } },
     { $group: { _id: null, totalSales: { $sum: "$totalAmt" } } },
   ]);
   const totalSales = totalSalesResult.length > 0 ? totalSalesResult[0].totalSales : 0;
 
   // Order Counts
-  const pendingOrders = await OrderModel.countDocuments({ paymentStatus: "pending" });
-  const acceptedOrders = await OrderModel.countDocuments({ paymentStatus: "accepted" });
-  const rejectedOrders = await OrderModel.countDocuments({ paymentStatus: "rejected" });
-  const completedOrders = await OrderModel.countDocuments({ paymentStatus: "completed" });
+  const pendingOrders = await OrderModel.countDocuments({ ...dateFilter, paymentStatus: "pending" });
+  const acceptedOrders = await OrderModel.countDocuments({ ...dateFilter, paymentStatus: "accepted" });
+  const rejectedOrders = await OrderModel.countDocuments({ ...dateFilter, paymentStatus: "rejected" });
+  const completedOrders = await OrderModel.countDocuments({ ...dateFilter, paymentStatus: "completed" });
 
-  // Total Customers
+  // Total Customers (not time-sensitive)
   const totalCustomers = await UserModel.countDocuments({ role: "USER" });
 
   // Collection Counts

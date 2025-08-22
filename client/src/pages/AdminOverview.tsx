@@ -5,6 +5,7 @@ import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FaRupeeSign } from 'react-icons/fa';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface OverviewStats {
   totalSales: number;
@@ -22,12 +23,41 @@ interface OverviewStats {
 const AdminOverview = () => {
   const [stats, setStats] = useState<OverviewStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState('last30days');
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const response = await Axios.get(SummaryApi.adminOverview.url);
+
+        const now = new Date();
+        let startDate: Date | null = new Date();
+        const endDate = new Date(now);
+
+        switch (timeRange) {
+          case 'last7days':
+            startDate.setDate(now.getDate() - 7);
+            break;
+          case 'last30days':
+            startDate.setDate(now.getDate() - 30);
+            break;
+          case 'last90days':
+            startDate.setDate(now.getDate() - 90);
+            break;
+          case 'alltime':
+            startDate = null; // No start date for all time
+            break;
+          default:
+            startDate.setDate(now.getDate() - 30);
+        }
+
+        const params = new URLSearchParams();
+        if (startDate) {
+            params.append('startDate', startDate.toISOString());
+            params.append('endDate', endDate.toISOString());
+        }
+
+        const response = await Axios.get(`${SummaryApi.adminOverview.url}?${params.toString()}`);
         if (response.data.success) {
           setStats(response.data.data);
         }
@@ -39,7 +69,7 @@ const AdminOverview = () => {
     };
 
     fetchStats();
-  }, []);
+  }, [timeRange]);
 
   const summaryCards = [
     { title: "Total Sales", value: stats?.totalSales.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }), icon: FaRupeeSign, color: "bg-gold-accent/20 text-gold-accent border-gold-accent/30" },
@@ -58,6 +88,17 @@ const AdminOverview = () => {
     <div className="bg-warm-cream min-h-screen p-6">
       <div className="flex items-center justify-between space-y-2 mb-8">
         <h2 className="text-3xl font-bold tracking-tight text-deep-forest font-serif">Overview</h2>
+        <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger className="w-48">
+                <SelectValue placeholder="Select time range" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="last7days">Last 7 Days</SelectItem>
+                <SelectItem value="last30days">Last 30 Days</SelectItem>
+                <SelectItem value="last90days">Last 90 Days</SelectItem>
+                <SelectItem value="alltime">All Time</SelectItem>
+            </SelectContent>
+        </Select>
       </div>
       <div className="container mx-auto">
         {loading ? (
