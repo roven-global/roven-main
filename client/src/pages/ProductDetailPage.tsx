@@ -67,6 +67,8 @@ interface Product {
   benefits: string[];
   slug: string;
   howToUse?: string[];
+  nutrition?: Array<{ label: string; value: string }>;
+  sellerInfo?: string;
 }
 
 const ProductDetailPage = () => {
@@ -230,23 +232,27 @@ const ProductDetailPage = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
-        <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
-            <div>
-              <Skeleton className="w-full h-80 sm:h-96 rounded-xl bg-warm-taupe/20" />
-              <div className="flex gap-2 mt-4 overflow-x-auto">
-                <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-warm-taupe/20" />
-                <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-warm-taupe/20" />
-                <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-warm-taupe/20" />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div className="space-y-4">
+                <Skeleton className="w-full h-96 rounded-lg bg-warm-taupe/20" />
+                <div className="flex gap-2">
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton
+                      key={i}
+                      className="w-20 h-20 rounded-lg bg-warm-taupe/20"
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="space-y-6">
-              <Skeleton className="h-6 w-1/3 bg-warm-taupe/20" />
-              <Skeleton className="h-10 w-3/4 bg-warm-taupe/20" />
-              <Skeleton className="h-6 w-1/2 bg-warm-taupe/20" />
-              <Skeleton className="h-10 w-1/3 bg-warm-taupe/20" />
-              <Skeleton className="h-16 w-full bg-warm-taupe/20" />
-              <Skeleton className="h-12 w-full bg-warm-taupe/20" />
+              <div className="space-y-6">
+                <Skeleton className="h-8 w-3/4 bg-warm-taupe/20" />
+                <Skeleton className="h-6 w-1/2 bg-warm-taupe/20" />
+                <Skeleton className="h-12 w-1/3 bg-warm-taupe/20" />
+                <Skeleton className="h-20 w-full bg-warm-taupe/20" />
+                <Skeleton className="h-12 w-full bg-warm-taupe/20" />
+              </div>
             </div>
           </div>
         </div>
@@ -286,296 +292,375 @@ const ProductDetailPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
-        {/* Breadcrumb */}
-        <div className="flex flex-nowrap items-center text-sm text-forest mb-4 sm:mb-6 lg:mb-8 overflow-x-auto whitespace-nowrap">
-          <Link
-            to="/"
-            className="hover:text-sage transition-colors flex-shrink-0"
-          >
-            Home
-          </Link>
-          <ChevronRight className="h-4 w-4 mx-2 flex-shrink-0 text-warm-taupe" />
-          <Link
-            to="/shop"
-            className="hover:text-sage transition-colors flex-shrink-0"
-          >
-            Shop
-          </Link>
-          <ChevronRight className="h-4 w-4 mx-2 flex-shrink-0 text-warm-taupe" />
-          <span className="text-deep-forest font-medium flex-shrink-0 truncate max-w-[150px] sm:max-w-none">
-            {product.name}
-          </span>
-        </div>
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start bg-white rounded-2xl shadow-luxury p-6 lg:p-8 border border-warm-taupe/20">
-          {/* Image Gallery */}
-          <div className="order-1 lg:order-1">
-            <div className="w-full aspect-square rounded-xl overflow-hidden shadow-elegant mb-4 bg-warm-cream-light">
-              <InnerImageZoom
-                src={selectedImage}
-                zoomSrc={selectedImage}
-                zoomType="hover"
-                zoomPreload={true}
-                className="w-full h-full"
-                imgAttributes={{
-                  alt: product.name,
-                  className: "w-full h-full object-cover",
-                }}
-              />
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-              {product.images.map((image) => (
-                <button
-                  key={image.public_id}
-                  onClick={() => setSelectedImage(image.url)}
-                  className={cn(
-                    "w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden cursor-pointer border-2 transition-all flex-shrink-0 shadow-sm",
-                    selectedImage === image.url
-                      ? "border-sage"
-                      : "border-warm-taupe hover:border-sage"
-                  )}
-                >
-                  <img
-                    src={image.url}
-                    alt={`${product.name} thumbnail`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
+      {/* Main Product Section */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Breadcrumb */}
+          <div className="flex items-center text-sm text-forest mb-8 overflow-x-auto whitespace-nowrap">
+            <Link
+              to="/"
+              className="hover:text-sage transition-colors flex-shrink-0"
+            >
+              Home
+            </Link>
+            <ChevronRight className="h-4 w-4 mx-2 flex-shrink-0 text-warm-taupe" />
+            <Link
+              to="/shop"
+              className="hover:text-sage transition-colors flex-shrink-0"
+            >
+              Shop
+            </Link>
+            <ChevronRight className="h-4 w-4 mx-2 flex-shrink-0 text-warm-taupe" />
+            <span className="text-deep-forest font-medium flex-shrink-0 truncate max-w-[200px] sm:max-w-none">
+              {product.name}
+            </span>
           </div>
 
-          {/* Product Details */}
-          <div className="order-3 lg:order-2 space-y-6 lg:sticky lg:top-24 self-start">
-            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-forest leading-tight">
-              {product.name}
-            </h1>
-            {product.shortDescription && (
-              <p className="text-lg sm:text-xl leading-relaxed text-forest italic">
-                {product.shortDescription}
-              </p>
-            )}
-
-            {/* Ratings */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1 text-lg sm:text-xl">
-                <Star className="h-5 w-5 text-gold-accent fill-gold-accent" />
-                <span className="font-bold text-deep-forest">
-                  {product.ratings.average.toFixed(1)}
-                </span>
-              </div>
-              <span className="text-sm text-forest mt-1">
-                ({product.ratings.numOfReviews} Reviews)
-              </span>
-            </div>
-
-            {/* Price */}
-            <div className="flex items-baseline gap-3 flex-wrap">
-              <span className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-forest">
-                {formatRupees(currentPrice)}
-              </span>
-              {originalPrice && (
-                <>
-                  <span className="text-xl sm:text-2xl text-warm-taupe line-through">
-                    {formatRupees(originalPrice)}
-                  </span>
-                  <span className="text-lg text-sage font-bold bg-sage/10 px-2 py-1 rounded-full">
-                    {discount}% OFF
-                  </span>
-                </>
-              )}
-            </div>
-
-            {/* Description Snippet */}
-            <p className="text-forest text-base sm:text-lg leading-relaxed">
-              {product.description.split(".")[0]}.
-            </p>
-
-            {/* Size Selector */}
-            {product.variants && product.variants.length > 0 && (
-              <div>
-                <SizeSelector
-                  variants={product.variants}
-                  selectedVariant={selectedVariant}
-                  onVariantChange={(variant) => {
-                    const fullVariant = product.variants?.find(
-                      (v) =>
-                        v.volume === variant.volume && v.sku === variant.sku
-                    );
-                    setSelectedVariant(fullVariant || null);
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            {/* Left Image Section */}
+            <div className="space-y-4">
+              {/* Main Image */}
+              <div className="w-full aspect-square rounded-xl overflow-hidden bg-warm-cream-light border border-warm-taupe/20">
+                <InnerImageZoom
+                  src={selectedImage}
+                  zoomSrc={selectedImage}
+                  zoomType="hover"
+                  zoomPreload={true}
+                  className="w-full h-full"
+                  imgAttributes={{
+                    alt: product.name,
+                    className: "w-full h-full object-cover",
                   }}
                 />
               </div>
-            )}
 
-            {/* Quantity + Add to Cart */}
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center border border-warm-taupe rounded-full p-1 bg-white w-32">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full hover:bg-sage/20 hover:text-sage transition-colors text-forest"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="flex-1 text-center font-semibold text-forest">
-                  {quantity}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full hover:bg-sage/20 hover:text-sage transition-colors text-forest"
-                  onClick={() =>
-                    setQuantity((q) =>
-                      Math.min(selectedVariant?.stock ?? 10, q + 1)
-                    )
-                  }
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+              {/* Thumbnail Gallery */}
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {product.images.map((image: any, index) => (
+                  <button
+                    key={image.public_id}
+                    onClick={() => setSelectedImage(image.url)}
+                    className={cn(
+                      "w-20 h-20 flex-shrink-0 rounded-lg border-2 overflow-hidden cursor-pointer transition-all",
+                      selectedImage === image.url
+                        ? "border-sage"
+                        : "border-warm-taupe/30 hover:border-sage"
+                    )}
+                  >
+                    <img
+                      src={image.url}
+                      alt={`${product.name} view ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
               </div>
-              <Button
-                size="lg"
-                className="flex-1 bg-forest hover:bg-deep-forest text-white font-semibold rounded-lg transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-lg py-6"
-                onClick={handleAddToCart}
-                disabled={selectedVariant?.stock === 0 || isAdded}
-              >
-                {isAdded ? (
-                  <>
-                    <CheckCircle className="mr-2 h-5 w-5" />
-                    Added
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="mr-2 h-5 w-5" />
-                    {selectedVariant?.stock === 0
-                      ? "Out of Stock"
-                      : "Add to Cart"}
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className={cn(
-                  "rounded-full transition-colors border-warm-taupe h-12 w-12",
-                  isLiked
-                    ? "bg-gold-accent/20 text-gold-accent border-gold-accent/30"
-                    : "hover:bg-sage/20 hover:text-sage text-forest"
-                )}
-                onClick={handleLikeClick}
-              >
-                <Heart
-                  className={cn(
-                    "h-5 w-5",
-                    isLiked
-                      ? "fill-gold-accent text-gold-accent"
-                      : "text-forest"
-                  )}
-                />
-              </Button>
             </div>
 
-            {selectedVariant ? (
-              <div className="text-sm flex items-center gap-2 pt-2">
-                {selectedVariant.stock > 0 &&
-                selectedVariant.stock <= selectedVariant.lowStockThreshold ? (
-                  <>
-                    <AlertTriangle className="h-4 w-4 text-gold-accent" />
-                    <span className="text-gold-accent font-semibold">
-                      Only {selectedVariant.stock} left in stock!
+            {/* Right Product Info */}
+            <div className="space-y-6">
+              {/* Product Name */}
+              <div>
+                <h1 className="font-serif text-3xl lg:text-4xl font-bold text-deep-forest leading-tight">
+                  {product.name}
+                </h1>
+                {product.shortDescription && (
+                  <p className="text-forest mt-2 text-lg">
+                    {product.shortDescription}
+                  </p>
+                )}
+              </div>
+
+              {/* Ratings */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={cn(
+                        "h-4 w-4",
+                        i < Math.floor(product.ratings.average)
+                          ? "text-gold-accent fill-gold-accent"
+                          : "text-warm-taupe"
+                      )}
+                    />
+                  ))}
+                </div>
+                <span className="font-semibold text-deep-forest">
+                  {product.ratings.average.toFixed(1)}
+                </span>
+                <span className="text-sm text-forest">
+                  {product.ratings.numOfReviews} reviews
+                </span>
+              </div>
+
+              {/* Price */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <span className="font-serif text-3xl font-bold text-deep-forest">
+                    {formatRupees(currentPrice)}
+                  </span>
+                  {originalPrice && (
+                    <span className="text-lg text-warm-taupe line-through">
+                      {formatRupees(originalPrice)}
                     </span>
-                  </>
-                ) : selectedVariant.stock > 0 ? (
-                  <>
-                    <CheckCircle className="h-4 w-4 text-sage" />
-                    <span className="text-forest">
-                      {selectedVariant.stock} units available
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-red-500 font-semibold">
-                    Out of Stock
+                  )}
+                </div>
+                {discount > 0 && (
+                  <span className="bg-sage/10 text-sage px-2 py-1 rounded-full text-sm font-semibold inline-block">
+                    {discount}% OFF
                   </span>
                 )}
               </div>
-            ) : (
-              <div className="text-sm text-forest flex items-center gap-2 pt-2">
-                <CheckCircle className="h-4 w-4 text-sage" />
-                <span>In Stock</span>
+
+              {/* Size Selector */}
+              {product.variants && product.variants.length > 0 && (
+                <div>
+                  <SizeSelector
+                    variants={product.variants}
+                    selectedVariant={selectedVariant}
+                    onVariantChange={(variant) => {
+                      const fullVariant = product.variants?.find(
+                        (v) =>
+                          v.volume === variant.volume && v.sku === variant.sku
+                      );
+                      setSelectedVariant(fullVariant || null);
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Stock Status */}
+              {selectedVariant && (
+                <div className="text-sm flex items-center gap-2">
+                  {selectedVariant.stock > 0 &&
+                  selectedVariant.stock <= selectedVariant.lowStockThreshold ? (
+                    <>
+                      <AlertTriangle className="h-4 w-4 text-gold-accent" />
+                      <span className="text-gold-accent font-semibold">
+                        Only {selectedVariant.stock} left in stock!
+                      </span>
+                    </>
+                  ) : selectedVariant.stock > 0 ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 text-sage" />
+                      <span className="text-forest">In Stock</span>
+                    </>
+                  ) : (
+                    <span className="text-red-500 font-semibold">
+                      Out of Stock
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Quantity and Add to Cart */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  {/* Quantity Selector */}
+                  <div className="flex items-center border border-warm-taupe rounded-lg overflow-hidden bg-white">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="px-3 py-2 hover:bg-sage/20 hover:text-sage transition-colors text-forest"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="px-4 py-2 font-semibold text-forest min-w-[3rem] text-center">
+                      {quantity}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="px-3 py-2 hover:bg-sage/20 hover:text-sage transition-colors text-forest"
+                      onClick={() =>
+                        setQuantity(
+                          Math.min(selectedVariant?.stock ?? 10, quantity + 1)
+                        )
+                      }
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Wishlist Button */}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className={cn(
+                      "rounded-lg h-10 w-10 transition-colors border-warm-taupe",
+                      isLiked
+                        ? "bg-gold-accent/20 text-gold-accent border-gold-accent/30"
+                        : "hover:bg-sage/20 hover:text-sage text-forest"
+                    )}
+                    onClick={handleLikeClick}
+                  >
+                    <Heart
+                      className={cn(
+                        "h-5 w-5",
+                        isLiked
+                          ? "fill-gold-accent text-gold-accent"
+                          : "text-forest"
+                      )}
+                    />
+                  </Button>
+                </div>
+
+                {/* Add to Cart Button */}
+                <Button
+                  size="lg"
+                  className="w-full bg-forest hover:bg-deep-forest text-white font-semibold rounded-lg transition-all py-3"
+                  onClick={handleAddToCart}
+                  disabled={selectedVariant?.stock === 0 || isAdded}
+                >
+                  {isAdded ? (
+                    <>
+                      <CheckCircle className="mr-2 h-5 w-5" />
+                      Added to Cart
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="mr-2 h-5 w-5" />
+                      {selectedVariant?.stock === 0
+                        ? "Out of Stock"
+                        : "Add to Cart"}
+                    </>
+                  )}
+                </Button>
               </div>
-            )}
-          </div>
 
-          {/* Key Benefits */}
-          {product.benefits && product.benefits.length > 0 && (
-            <div className="order-2 lg:order-3 lg:col-span-2 mt-8 lg:mt-0">
-              <h2 className="font-serif text-2xl font-bold text-deep-forest mb-4">
-                Key Benefits
-              </h2>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {product.benefits.map((benefit, i) => (
-                  <li key={i} className="flex items-start gap-2 text-forest">
-                    <CheckCircle className="h-5 w-5 text-sage flex-shrink-0 mt-0.5" />
-                    <span>{benefit}</span>
-                  </li>
-                ))}
-              </ul>
+              {/* What Makes It Good */}
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem
+                  value="what-makes-it-good"
+                  className="border border-sage/20 rounded-xl overflow-hidden"
+                >
+                  <AccordionTrigger className="text-lg font-semibold text-deep-forest px-6 py-4 hover:no-underline bg-sage/5">
+                    What Makes It Good
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 py-6 bg-white">
+                    <p className="text-forest text-sm leading-relaxed">
+                      {product.description.split(".").slice(0, 2).join(".")}.
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+
+              {/* Additional Product Details */}
+              <Accordion type="multiple" className="w-full space-y-3">
+                {/* How to Use */}
+                {product.howToUse && product.howToUse.length > 0 && (
+                  <AccordionItem
+                    value="how-to-use"
+                    className="border border-sage/20 rounded-xl overflow-hidden"
+                  >
+                    <AccordionTrigger className="text-lg font-semibold text-deep-forest px-6 py-4 hover:no-underline bg-sage/5">
+                      How to Use
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 py-6 bg-white">
+                      <ol className="list-decimal pl-5 space-y-2 text-forest text-sm">
+                        {product.howToUse.map((step: string, i: number) => (
+                          <li key={i}>{step}</li>
+                        ))}
+                      </ol>
+                    </AccordionContent>
+                  </AccordionItem>
+                )}
+
+                {/* Benefits */}
+                {product.benefits && product.benefits.length > 0 && (
+                  <AccordionItem
+                    value="benefits"
+                    className="border border-sage/20 rounded-xl overflow-hidden"
+                  >
+                    <AccordionTrigger className="text-lg font-semibold text-deep-forest px-6 py-4 hover:no-underline bg-sage/5">
+                      Benefits
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 py-6 bg-white">
+                      <ul className="list-disc pl-5 space-y-2 text-forest text-sm">
+                        {product.benefits.map((benefit, i) => (
+                          <li key={i}>{benefit}</li>
+                        ))}
+                      </ul>
+                    </AccordionContent>
+                  </AccordionItem>
+                )}
+
+                {/* Specifications */}
+                {product.specifications &&
+                  Object.keys(product.specifications).length > 0 && (
+                    <AccordionItem
+                      value="specifications"
+                      className="border border-sage/20 rounded-xl overflow-hidden"
+                    >
+                      <AccordionTrigger className="text-lg font-semibold text-deep-forest px-6 py-4 hover:no-underline bg-sage/5">
+                        Specifications
+                      </AccordionTrigger>
+                      <AccordionContent className="px-6 py-6 bg-white">
+                        <dl className="divide-y divide-sage/20">
+                          {Object.entries(product.specifications).map(
+                            ([key, value]) => (
+                              <div key={key} className="flex py-3">
+                                <dt className="w-1/3 font-semibold text-deep-forest capitalize text-sm">
+                                  {key
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())}
+                                </dt>
+                                <dd className="w-2/3 text-forest text-sm">
+                                  {Array.isArray(value)
+                                    ? value.join(", ")
+                                    : value}
+                                </dd>
+                              </div>
+                            )
+                          )}
+                        </dl>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+              </Accordion>
             </div>
-          )}
+          </div>
         </div>
+      </div>
 
-        {/* Extended Info */}
-        <div className="mt-12 lg:mt-16 border-t border-warm-taupe pt-8 lg:pt-12">
-          <Accordion
-            type="multiple"
-            defaultValue={["item-1", "item-7"]}
-            className="w-full space-y-6"
-          >
-            <AccordionItem
-              value="item-1"
-              className="border-warm-taupe bg-sage/10 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
+      {/* Product Details Tabs */}
+      <div className="bg-white border-t border-warm-taupe/20">
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-4xl mx-auto">
+            <Accordion
+              type="multiple"
+              defaultValue={["item-2"]}
+              className="w-full space-y-4"
             >
-              <AccordionTrigger className="text-2xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline">
-                Description
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6 text-forest text-base leading-relaxed">
-                {product.description}
-              </AccordionContent>
-            </AccordionItem>
-
-            {product.ingredients && product.ingredients.length > 0 && (
-              <AccordionItem
-                value="item-2"
-                className="border-warm-taupe bg-sage/10 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
-              >
-                <AccordionTrigger className="text-2xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline">
-                  Hero Ingredients
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {product.ingredients.map((ingredient: any, i: number) => (
-                      <div
-                        key={i}
-                        className="bg-white rounded-xl shadow-elegant overflow-hidden border border-warm-taupe hover:shadow-luxury transition-all hover:-translate-y-1"
-                      >
-                        {ingredient.image && (
-                          <div className="w-full h-40 sm:h-52 bg-warm-cream-light overflow-hidden">
-                            <img
-                              src={ingredient.image.url}
-                              alt={ingredient.name || `Ingredient ${i + 1}`}
-                              className="w-full h-full object-cover transition-transform hover:scale-110 duration-300"
-                            />
-                          </div>
-                        )}
-                        <div className="p-4 space-y-2">
+              {/* Hero Ingredients */}
+              {product.ingredients && product.ingredients.length > 0 && (
+                <AccordionItem
+                  value="item-2"
+                  className="border border-warm-taupe/20 rounded-xl overflow-hidden"
+                >
+                  <AccordionTrigger className="text-xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline bg-sage/5">
+                    Hero Ingredients
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 py-6 bg-white">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {product.ingredients.map((ingredient: any, i: number) => (
+                        <div key={i} className="text-center space-y-3">
+                          {ingredient.image && (
+                            <div className="w-24 h-24 mx-auto rounded-full overflow-hidden bg-warm-cream-light">
+                              <img
+                                src={ingredient.image.url}
+                                alt={ingredient.name || `Ingredient ${i + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
                           {ingredient.name && (
-                            <h3 className="font-semibold text-lg text-deep-forest">
+                            <h4 className="font-semibold text-deep-forest">
                               {ingredient.name}
-                            </h3>
+                            </h4>
                           )}
                           {ingredient.description && (
                             <p className="text-sm text-forest leading-relaxed">
@@ -583,126 +668,83 @@ const ProductDetailPage = () => {
                             </p>
                           )}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-
-            {product.howToUse && product.howToUse.length > 0 && (
-              <AccordionItem
-                value="item-3"
-                className="border-warm-taupe bg-sage/10 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
-              >
-                <AccordionTrigger className="text-2xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline">
-                  How to Use
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  <ol className="list-decimal pl-5 space-y-3 text-forest text-base leading-relaxed">
-                    {product.howToUse.map((step: string, i: number) => (
-                      <li key={i}>{step}</li>
-                    ))}
-                  </ol>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-
-            {product.specifications?.suitableFor &&
-              product.specifications.suitableFor.length > 0 && (
-                <AccordionItem
-                  value="item-4"
-                  className="border-warm-taupe bg-sage/10 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
-                >
-                  <AccordionTrigger className="text-2xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline">
-                    Suitable For
-                  </AccordionTrigger>
-                  <AccordionContent className="px-6 pb-6">
-                    <ul className="list-disc pl-5 space-y-3 text-forest text-base leading-relaxed">
-                      {product.specifications.suitableFor.map(
-                        (item: string, i: number) => (
-                          <li key={i}>{item}</li>
-                        )
-                      )}
-                    </ul>
+                      ))}
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
               )}
+            </Accordion>
 
-            {product.benefits && product.benefits.length > 0 && (
-              <AccordionItem
-                value="item-5"
-                className="border-warm-taupe bg-sage/10 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
-              >
-                <AccordionTrigger className="text-2xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline">
-                  Benefits
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  <ul className="list-disc pl-5 space-y-3 text-forest text-base leading-relaxed">
-                    {product.benefits.map((benefit, i) => (
-                      <li key={i}>{benefit}</li>
-                    ))}
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-
-            {product.specifications &&
-              Object.keys(product.specifications).length > 0 && (
-                <AccordionItem
-                  value="item-6"
-                  className="border-warm-taupe bg-sage/10 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
+            {/* Customer Reviews Section */}
+            <div className="mt-12">
+              <div className="text-center">
+                <h2 className="font-serif text-xl font-bold text-deep-forest mb-2">
+                  — READ THE REVIEWS —
+                </h2>
+                <button
+                  onClick={() => {
+                    const reviewsSection =
+                      document.getElementById("customer-reviews");
+                    if (reviewsSection) {
+                      reviewsSection.scrollIntoView({ behavior: "smooth" });
+                    }
+                  }}
+                  className="text-forest hover:text-sage text-sm cursor-pointer hover:underline transition-colors"
                 >
-                  <AccordionTrigger className="text-2xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline">
-                    Specifications
-                  </AccordionTrigger>
-                  <AccordionContent className="px-6 pb-6">
-                    <dl className="divide-y divide-warm-taupe">
-                      {Object.entries(product.specifications).map(
-                        ([key, value]) => (
-                          <div key={key} className="flex py-4 items-center">
-                            <dt className="w-1/3 font-semibold text-deep-forest capitalize text-base">
-                              {key
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                            </dt>
-                            <dd className="w-2/3 text-forest text-base">
-                              {Array.isArray(value) ? value.join(", ") : value}
-                            </dd>
-                          </div>
-                        )
+                  See All
+                </button>
+              </div>
+              <div className="flex justify-center items-center mt-4 mb-4">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={cn(
+                        "h-5 w-5",
+                        i < Math.floor(product.ratings.average)
+                          ? "text-gold-accent fill-gold-accent"
+                          : "text-warm-taupe"
                       )}
-                    </dl>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
-            <AccordionItem
-              value="item-7"
-              className="border-warm-taupe bg-sage/10 rounded-xl shadow-luxury transition-shadow hover:shadow-xl overflow-hidden"
-            >
-              <AccordionTrigger className="text-2xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline">
-                Customer Reviews
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6">
+                    />
+                  ))}
+                </div>
+                <span className="ml-2 text-forest text-sm">
+                  {product.ratings.numOfReviews} reviews
+                </span>
+              </div>
+              <div className="text-center mb-8">
+                <Button
+                  variant="outline"
+                  className="border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage"
+                >
+                  Write a Review
+                </Button>
+              </div>
+              <div id="customer-reviews">
                 <CustomerReviews
                   productId={product._id}
                   productName={product.name}
                 />
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </div>
-
-        {/* Related Products */}
-        {product && (
-          <div className="mt-12 lg:mt-16">
-            <h2 className="font-serif text-3xl font-bold text-deep-forest mb-6">
-              You May Also Like
-            </h2>
-            <RelatedProducts currentProductId={product._id} />
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Related Products */}
+      {product && (
+        <div className="bg-background">
+          <div className="container mx-auto px-4 py-12">
+            <div className="max-w-6xl mx-auto">
+              <h2 className="font-serif text-2xl font-bold text-deep-forest mb-8 text-center">
+                You May Also Like
+              </h2>
+              <RelatedProducts currentProductId={product._id} />
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );
