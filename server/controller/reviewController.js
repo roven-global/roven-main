@@ -1,5 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const Review = require("../models/reviewModel");
+const Product = require("../models/productModel");
 const Order = require("../models/orderModel");
 
 // @desc    Create a new review
@@ -42,18 +43,33 @@ const createReview = asyncHandler(async (req, res) => {
 });
 
 // @desc    Get reviews for a product
-// @route   GET /api/reviews/:productId
+// @route   GET /api/reviews/:productSlug
 // @access  Public
 const getReviewsForProduct = asyncHandler(async (req, res) => {
-  const { productId } = req.params;
-  const { page = 1, limit = 5, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+  const { productSlug } = req.params;
+  const {
+    page = 1,
+    limit = 5,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+  } = req.query;
+
+  // Find the product by slug to get its ID
+  const product = await Product.findOne({ slug: productSlug });
+
+  if (!product) {
+    res.status(404);
+    throw new Error("Product not found.");
+  }
+
+  const productId = product._id;
 
   const pageNum = parseInt(page);
   const limitNum = parseInt(limit);
   const skip = (pageNum - 1) * limitNum;
 
   const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  sort[sortBy] = sortOrder === "desc" ? -1 : 1;
 
   const reviews = await Review.find({ product: productId })
     .populate("user", "name avatar") // Populate user's name and avatar

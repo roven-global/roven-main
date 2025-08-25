@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -32,7 +32,23 @@ import InnerImageZoom from "react-inner-image-zoom";
 import "react-inner-image-zoom/lib/styles.min.css";
 import SizeSelector from "@/components/SizeSelector";
 import RelatedProducts from "@/components/RelatedProducts";
-import CustomerReviews from "@/components/CustomerReviews";
+import CustomerReviews, {
+  CustomerReviewsHandles,
+} from "@/components/CustomerReviews";
+import FeaturedReviews from "@/components/FeaturedReviews";
+
+interface Review {
+  _id: string;
+  user: {
+    _id: string;
+    name: string;
+    avatar?: { url: string };
+  };
+  rating: number;
+  title: string;
+  comment: string;
+  createdAt: string;
+}
 
 interface ProductVariant {
   volume: string;
@@ -85,6 +101,9 @@ const ProductDetailPage = () => {
   const { isAuthenticated, user, updateUser } = useAuth();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const reviewsRef = useRef<CustomerReviewsHandles>(null);
+  const [allReviews, setAllReviews] = useState<Review[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   const {
     addToGuestWishlist,
     removeFromGuestWishlist,
@@ -99,15 +118,17 @@ const ProductDetailPage = () => {
   useEffect(() => {
     if (!slug) return;
 
-    const fetchProduct = async () => {
+    const fetchProductAndReviews = async () => {
       setLoading(true);
+      setReviewsLoading(true);
       setError(null);
       try {
-        const response = await Axios.get(
+        // Fetch product details
+        const productResponse = await Axios.get(
           `${SummaryApi.getProductById.url}/${slug}`
         );
-        if (response.data.success) {
-          const productData = response.data.data;
+        if (productResponse.data.success) {
+          const productData = productResponse.data.data;
           setProduct(productData);
           setSelectedImage(productData.images[0]?.url || "");
           if (productData.variants && productData.variants.length > 0) {
@@ -120,14 +141,23 @@ const ProductDetailPage = () => {
         } else {
           throw new Error("Product not found.");
         }
+
+        // Fetch all reviews
+        const reviewsResponse = await Axios.get(
+          `${SummaryApi.getReviews.url}/${slug}?limit=100` // Fetch a large number to get all
+        );
+        if (reviewsResponse.data.success) {
+          setAllReviews(reviewsResponse.data.data.reviews);
+        }
       } catch (err) {
         setError("Could not load the product. Please try again later.");
       } finally {
         setLoading(false);
+        setReviewsLoading(false);
       }
     };
 
-    fetchProduct();
+    fetchProductAndReviews();
   }, [slug]);
 
   const handleLikeClick = async () => {
@@ -233,7 +263,7 @@ const ProductDetailPage = () => {
       <div className="min-h-screen bg-background">
         <Navigation />
         <div className="container mx-auto px-4 py-8">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div className="space-y-4">
                 <Skeleton className="w-full h-96 rounded-lg bg-warm-taupe/20" />
@@ -694,36 +724,26 @@ const ProductDetailPage = () => {
                   See All
                 </button>
               </div>
-              <div className="flex justify-center items-center mt-4 mb-4">
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={cn(
-                        "h-5 w-5",
-                        i < Math.floor(product.ratings.average)
-                          ? "text-gold-accent fill-gold-accent"
-                          : "text-warm-taupe"
-                      )}
-                    />
-                  ))}
-                </div>
-                <span className="ml-2 text-forest text-sm">
-                  {product.ratings.numOfReviews} reviews
-                </span>
-              </div>
-              <div className="text-center mb-8">
+              <FeaturedReviews reviews={allReviews.slice(0, 3)} />
+              <div className="text-center mt-8 mb-8">
                 <Button
                   variant="outline"
                   className="border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage"
+                  onClick={() => reviewsRef.current?.toggleForm()}
                 >
                   Write a Review
                 </Button>
               </div>
-              <div id="customer-reviews">
+              <div
+                id="customer-reviews"
+                className="mt-12 pt-12 border-t border-warm-taupe/20"
+              >
                 <CustomerReviews
+                  ref={reviewsRef}
                   productId={product._id}
                   productName={product.name}
+                  initialReviews={allReviews}
+                  isLoading={reviewsLoading}
                 />
               </div>
             </div>
@@ -736,8 +756,8 @@ const ProductDetailPage = () => {
         <div className="bg-background">
           <div className="container mx-auto px-4 py-12">
             <div className="max-w-6xl mx-auto">
-              <h2 className="font-serif text-2xl font-bold text-deep-forest mb-8 text-center">
-                You May Also Like
+              <h2 className="font-serif text-xl font-bold text-deep-forest mb-2 text-center">
+                — You May Also Like —
               </h2>
               <RelatedProducts currentProductId={product._id} />
             </div>

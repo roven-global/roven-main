@@ -11,9 +11,9 @@ const router = express.Router();
 // @access  Private
 router.route("/").post(auth, createReview);
 
-// @route   GET /api/reviews/:productId
+// @route   GET /api/reviews/:productSlug
 // @desc    Get all reviews for a specific product
 // @access  Public
-router.route("/:productId").get(getReviewsForProduct);
+router.route("/:productSlug").get(getReviewsForProduct);
 
 module.exports = router;
