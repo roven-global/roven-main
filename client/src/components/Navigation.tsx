@@ -3,8 +3,8 @@ import { Link, NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, Search, Menu, X, Heart, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import SearchDropdown from "./ui/SearchDropdown";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSearch } from "@/contexts/SearchContext";
 import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
 import UserDropdown from "@/components/UserDropdown"; // ✅ Import the fixed dropdown
@@ -29,7 +29,6 @@ interface NavItem {
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [navItems, setNavItems] = useState<NavItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,6 +37,7 @@ const Navigation = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
   const { isAuthenticated } = useAuth();
   const { guestCartCount } = useGuest();
+  const { openSearch } = useSearch();
 
   const fetchCartCount = useCallback(async () => {
     if (isAuthenticated) {
@@ -198,15 +198,11 @@ const Navigation = () => {
               variant="ghost"
               size="icon"
               className="rounded-full hover:bg-warm-cream"
-              onClick={() => setSearchOpen(true)}
+              onClick={openSearch}
               aria-label="Search"
             >
               <Search className="h-5 w-5 text-forest" />
             </Button>
-            <SearchDropdown
-              open={searchOpen}
-              onClose={() => setSearchOpen(false)}
-            />
 
             {isAuthenticated ? (
               <UserDropdown />

@@ -87,6 +87,7 @@ const Checkout = () => {
     saveForFuture: true,
   });
   const [availableCities, setAvailableCities] = useState<string[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Coupon states
   const [couponCode, setCouponCode] = useState("");
@@ -196,34 +197,57 @@ const Checkout = () => {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    // Clear the error for the field being edited
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: "" });
+    }
   };
 
   const handleStateChange = (stateName: string) => {
     setFormData({ ...formData, state: stateName, city: "" });
     setAvailableCities([...getCitiesByState(stateName)]);
+     if (errors.state) {
+      setErrors({ ...errors, state: "", city: "" });
+    }
+  };
+
+  const validateFormData = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.firstName.trim() || formData.firstName.length < 2) newErrors.firstName = "First name must be at least 2 characters.";
+    if (!/^[a-zA-Z\s]+$/.test(formData.firstName)) newErrors.firstName = "First name can only contain letters.";
+    if (!formData.lastName.trim() || formData.lastName.length < 2) newErrors.lastName = "Last name must be at least 2 characters.";
+    if (!/^[a-zA-Z\s]+$/.test(formData.lastName)) newErrors.lastName = "Last name can only contain letters.";
+    if (!/^[0-9]{10}$/.test(formData.phone)) newErrors.phone = "Phone number must be exactly 10 digits.";
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.email)) newErrors.email = "Please enter a valid email address.";
+    if (formData.address.trim().length < 10) newErrors.address = "Address must be at least 10 characters long.";
+    if (!formData.state) newErrors.state = "Please select a state.";
+    if (!formData.city) newErrors.city = "Please select a city.";
+    if (!/^[0-9]{6}$/.test(formData.pincode)) newErrors.pincode = "Pincode must be exactly 6 digits.";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateFormData()) {
+      toast({
+        title: "Please fix the errors in the form.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setAddressLoading(true);
     try {
       const response = await Axios.post(SummaryApi.saveAddress.url, formData);
       if (response.data.success) {
         toast({ title: "Address saved successfully!" });
-        // Force reload addresses and select the newly saved one
-        const addressesResponse = await Axios.get(
-          SummaryApi.getUserAddresses.url
-        );
-        if (addressesResponse.data.success) {
-          const addresses = addressesResponse.data.data;
-          setSavedAddresses(addresses);
-          // Select the newly saved address (should be the last one)
-          if (addresses.length > 0) {
-            const newAddress = addresses[addresses.length - 1];
-            setSelectedAddressId(newAddress._id);
-          }
-        }
+        await loadSavedAddresses(); // Reload addresses
+        setSelectedAddressId(response.data.data._id); // Select the new address
         setShowNewAddressForm(false);
         setFormData({
           firstName: "",
@@ -237,13 +261,23 @@ const Checkout = () => {
           country: "India",
           saveForFuture: true,
         });
+        setErrors({}); // Clear errors
       }
     } catch (error: any) {
-      toast({
-        title: "Failed to save address",
-        description: error.response?.data?.message,
-        variant: "destructive",
-      });
+        if (error.response?.data?.errors) {
+            setErrors(error.response.data.errors);
+            toast({
+                title: "Validation failed",
+                description: "Please check the form for errors.",
+                variant: "destructive",
+            });
+        } else {
+            toast({
+                title: "Failed to save address",
+                description: error.response?.data?.message || "An unknown error occurred.",
+                variant: "destructive",
+            });
+        }
     } finally {
       setAddressLoading(false);
     }
@@ -265,8 +299,8 @@ const Checkout = () => {
       );
     } else {
       // Guest user: validate and use form data
-      if (!formData.firstName || !formData.address || !formData.city || !formData.state || !formData.pincode || !formData.phone || !formData.email) {
-          toast({ title: "Please fill out all required address fields.", variant: "destructive" });
+      if (!validateFormData()) {
+          toast({ title: "Please fill out the address form correctly.", variant: "destructive" });
           return;
       }
       shippingAddress = formData;
@@ -563,6 +597,7 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
+                              {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
                             </div>
                             <div>
                               <Label
@@ -579,6 +614,7 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
+                              {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
                             </div>
                           </div>
                           <div className="grid grid-cols-2 gap-4">
@@ -597,6 +633,7 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
+                              {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
                             </div>
                             <div>
                               <Label
@@ -614,6 +651,7 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
+                              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                             </div>
                           </div>
                           <div>
@@ -631,6 +669,7 @@ const Checkout = () => {
                               required
                               className="mt-1"
                             />
+                            {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
                           </div>
                           <div className="grid grid-cols-3 gap-4">
                             <div>
@@ -658,6 +697,7 @@ const Checkout = () => {
                                   ))}
                                 </SelectContent>
                               </Select>
+                              {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state}</p>}
                             </div>
                             <div>
                               <Label
@@ -683,6 +723,7 @@ const Checkout = () => {
                                   ))}
                                 </SelectContent>
                               </Select>
+                              {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
                             </div>
                             <div>
                               <Label
@@ -699,6 +740,7 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
+                              {errors.pincode && <p className="text-red-500 text-xs mt-1">{errors.pincode}</p>}
                             </div>
                           </div>
                           {isAuthenticated && (

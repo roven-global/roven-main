@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const addressSubSchema = require("./shared/addressSchema");
 
 const orderItemSchema = new mongoose.Schema({
   product: {
@@ -42,43 +43,8 @@ const orderSchema = new mongoose.Schema(
     },
     items: [orderItemSchema],
     shippingAddress: {
-      firstName: {
-        type: String,
-        required: true,
-      },
-      lastName: {
-        type: String,
-        required: true,
-      },
-      phone: {
-        type: String,
-        required: true,
-      },
-      email: {
-        type: String,
-        required: true,
-      },
-      address: {
-        type: String,
-        required: true,
-      },
-      city: {
-        type: String,
-        required: true,
-      },
-      state: {
-        type: String,
-        required: true,
-      },
-      pincode: {
-        type: String,
-        required: true,
-      },
-      country: {
-        type: String,
-        required: true,
-        default: "India",
-      },
+      type: new mongoose.Schema(addressSubSchema, { _id: false }),
+      required: true,
     },
     paymentInfo: {
       id: {

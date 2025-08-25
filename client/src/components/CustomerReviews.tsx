@@ -27,7 +27,10 @@ interface CustomerReviewsProps {
   productName: string;
 }
 
-const CustomerReviews: React.FC<CustomerReviewsProps> = ({ productId, productName }) => {
+const CustomerReviews: React.FC<CustomerReviewsProps> = ({
+  productId,
+  productName,
+}) => {
   const { isAuthenticated, user } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +45,9 @@ const CustomerReviews: React.FC<CustomerReviewsProps> = ({ productId, productNam
     const fetchReviews = async () => {
       setLoading(true);
       try {
-        const response = await Axios.get(`${SummaryApi.getReviews.url}/${productId}`);
+        const response = await Axios.get(
+          `${SummaryApi.getReviews.url}/${productId}`
+        );
         if (response.data.success) {
           setReviews(response.data.data.reviews);
         }
@@ -89,7 +94,7 @@ const CustomerReviews: React.FC<CustomerReviewsProps> = ({ productId, productNam
       setIsSubmitting(false);
     }
   };
-  
+
   const StarRating = ({ readOnly = false, value = 0 }) => (
     <div className="flex items-center">
       {[1, 2, 3, 4, 5].map((star) => (
@@ -97,8 +102,12 @@ const CustomerReviews: React.FC<CustomerReviewsProps> = ({ productId, productNam
           key={star}
           className={`h-5 w-5 cursor-pointer ${
             readOnly
-              ? (star <= value ? "text-gold-accent fill-gold-accent" : "text-gray-300")
-              : (star <= (hoverRating || rating) ? "text-gold-accent fill-gold-accent" : "text-gray-300")
+              ? star <= value
+                ? "text-gold-accent fill-gold-accent"
+                : "text-gray-300"
+              : star <= (hoverRating || rating)
+              ? "text-gold-accent fill-gold-accent"
+              : "text-gray-300"
           }`}
           onClick={() => !readOnly && setRating(star)}
           onMouseEnter={() => !readOnly && setHoverRating(star)}
@@ -120,19 +129,46 @@ const CustomerReviews: React.FC<CustomerReviewsProps> = ({ productId, productNam
       </div>
 
       {showForm && (
-        <form onSubmit={handleReviewSubmit} className="mb-8 p-4 border rounded-lg bg-white space-y-4">
+        <form
+          onSubmit={handleReviewSubmit}
+          className="mb-8 p-4 border rounded-lg bg-white space-y-4"
+        >
           <h4 className="font-semibold">Write your review for {productName}</h4>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Rating
+            </label>
             <StarRating />
           </div>
           <div>
-            <label htmlFor="review-title" className="block text-sm font-medium text-gray-700">Title</label>
-            <Input id="review-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="A short summary" required />
+            <label
+              htmlFor="review-title"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Title
+            </label>
+            <Input
+              id="review-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="A short summary"
+              required
+            />
           </div>
           <div>
-            <label htmlFor="review-comment" className="block text-sm font-medium text-gray-700">Comment</label>
-            <Textarea id="review-comment" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Share your thoughts..." required />
+            <label
+              htmlFor="review-comment"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Comment
+            </label>
+            <Textarea
+              id="review-comment"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Share your thoughts..."
+              required
+            />
           </div>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Submitting..." : "Submit Review"}
@@ -142,8 +178,8 @@ const CustomerReviews: React.FC<CustomerReviewsProps> = ({ productId, productNam
 
       {loading ? (
         <div className="space-y-4">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
         </div>
       ) : reviews.length > 0 ? (
         <div className="space-y-6">
@@ -151,16 +187,28 @@ const CustomerReviews: React.FC<CustomerReviewsProps> = ({ productId, productNam
             <div key={review._id} className="border-b pb-4">
               <div className="flex items-center mb-2">
                 <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden mr-3">
-                  <img src={review.user.avatar?.url || `https://api.dicebear.com/8.x/initials/svg?seed=${review.user.name}`} alt={review.user.name} />
+                  <img
+                    src={
+                      review.user?.avatar?.url ||
+                      `https://api.dicebear.com/8.x/initials/svg?seed=${
+                        review.user?.name || "User"
+                      }`
+                    }
+                    alt={review.user?.name || "User"}
+                  />
                 </div>
                 <div>
-                  <p className="font-semibold">{review.user.name}</p>
+                  <p className="font-semibold">
+                    {review.user?.name || "Anonymous User"}
+                  </p>
                   <StarRating readOnly value={review.rating} />
                 </div>
               </div>
               <h5 className="font-semibold mb-1">{review.title}</h5>
               <p className="text-sm text-gray-600">{review.comment}</p>
-              <p className="text-xs text-gray-400 mt-2">{new Date(review.createdAt).toLocaleDateString()}</p>
+              <p className="text-xs text-gray-400 mt-2">
+                {new Date(review.createdAt).toLocaleDateString()}
+              </p>
             </div>
           ))}
         </div>

@@ -1,4 +1,3 @@
-
 # MERN eCommerce Full-Stack Application
 
 This is a full-stack eCommerce application built with the MERN stack (MongoDB, Express, React, Node.js). It includes a variety of features for both customers and administrators.
@@ -30,11 +29,13 @@ This is a full-stack eCommerce application built with the MERN stack (MongoDB, E
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/your-username/your-repo-name.git
    ```
 
 2. Install the dependencies for the server:
+
    ```bash
    cd server
    npm install
@@ -49,6 +50,7 @@ This is a full-stack eCommerce application built with the MERN stack (MongoDB, E
 ### Running the Application
 
 1. Start the server:
+
    ```bash
    cd server
    npm start

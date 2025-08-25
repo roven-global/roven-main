@@ -37,11 +37,12 @@ const RATE_LIMIT_MAX_REQUESTS = 1000;
 const BODY_LIMIT = "10mb";
 const PORT = process.env.PORT || 5000;
 const isProduction = process.env.NODE_ENV === "production";
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://roven-main.onrender.com";
+const FRONTEND_URL =
+  process.env.FRONTEND_URL || "https://roven-main.onrender.com";
 
 // --- Express Setup ---
 const app = express();
-app.set('trust proxy', true); // Required for proxies like Render
+app.set("trust proxy", true); // Required for proxies like Render
 
 // --- Debug Origin Logging (temporary) ---
 app.use((req, res, next) => {
@@ -73,7 +74,7 @@ const allowedOrigins = [
   FRONTEND_URL,
   "http://localhost:5173",
   "http://localhost:3000",
-  "http://localhost:5000"
+  "http://localhost:5000",
 ];
 
 app.use(
@@ -118,7 +119,10 @@ app.use("/api/", apiLimiter);
 const authLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 50,
-  message: { success: false, message: "Too many authentication attempts, please try again later." },
+  message: {
+    success: false,
+    message: "Too many authentication attempts, please try again later.",
+  },
 });
 app.use("/api/auth/", authLimiter);
 app.use("/api/user/login", authLimiter);
@@ -129,7 +133,10 @@ app.use("/api/user/forgot-password", authLimiter);
 const claimLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
-  message: { success: false, message: "Too many gift claim attempts. Please try again later." },
+  message: {
+    success: false,
+    message: "Too many gift claim attempts. Please try again later.",
+  },
 });
 app.use("/api/welcome-gifts/:id/claim", claimLimiter);
 
@@ -181,7 +188,6 @@ app.use(express.static(path.join(__dirname, "..", "client", "dist")));
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
 });
-
 
 // --- 404 Handler ---
 app.use((req, res) => {

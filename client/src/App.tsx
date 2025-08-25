@@ -8,6 +8,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { GuestProvider } from "@/contexts/GuestContext";
 import { UserRewardProvider } from "@/contexts/UserRewardContext";
+import { SearchProvider, useSearch } from "@/contexts/SearchContext";
+import SearchDropdown from "@/components/ui/SearchDropdown";
 import { AdminLayout } from "./components/Layout";
 import AdminRoute from "./AdminRoute";
 import RewardPopup from "@/components/RewardPopup";
@@ -46,12 +48,12 @@ const queryClient = new QueryClient();
 
 const AppContent = () => {
   const {
-    isOpen,
-    closePopup,
+    isOpen: isRewardPopupOpen,
+    closePopup: closeRewardPopup,
     resetEligibilityCheck,
   } = useRewardPopup();
+  const { isSearchOpen, closeSearch } = useSearch();
 
-  
   // Listen for logout events to reset eligibility check
   useEffect(() => {
     const handleResetEligibility = () => {
@@ -113,10 +115,12 @@ const AppContent = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
+        {/* Search Overlay */}
+        <SearchDropdown open={isSearchOpen} onClose={closeSearch} />
       </BrowserRouter>
 
       {/* Reward Popup for First-Time Visitors */}
-      <RewardPopup isOpen={isOpen} onClose={closePopup} />
+      <RewardPopup isOpen={isRewardPopupOpen} onClose={closeRewardPopup} />
     </>
   );
 };
@@ -128,9 +132,11 @@ const App = () => (
         <UserRewardProvider>
           <CartProvider>
             <AuthProvider>
-              <Toaster />
-              <Sonner />
-              <AppContent />
+              <SearchProvider>
+                <Toaster />
+                <Sonner />
+                <AppContent />
+              </SearchProvider>
             </AuthProvider>
           </CartProvider>
         </UserRewardProvider>

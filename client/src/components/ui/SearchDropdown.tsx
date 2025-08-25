@@ -1,9 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
-import Axios from '@/utils/Axios';
-import { Input } from './input';
-import { useNavigate } from 'react-router-dom';
-import { Loader2, Search, X } from 'lucide-react';
-import ProductCard from '../ProductCard';
+import React, { useState, useRef, useEffect } from "react";
+import Axios from "@/utils/Axios";
+import { Input } from "./input";
+import { useNavigate } from "react-router-dom";
+import { Loader2, X } from "lucide-react";
+import ProductCard from "../ProductCard";
+import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
+import { useTypewriter } from "@/hooks/useTypewriter";
 
 interface SearchDropdownProps {
   open: boolean;
@@ -11,37 +14,46 @@ interface SearchDropdownProps {
 }
 
 const SearchDropdown: React.FC<SearchDropdownProps> = ({ open, onClose }) => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<{ categories: any[]; products: any[] }>({ categories: [], products: [] });
-  const [error, setError] = useState('');
+  const [results, setResults] = useState<{
+    categories: any[];
+    products: any[];
+  }>({ categories: [], products: [] });
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
-  const [isClosing, setIsClosing] = useState(false);
-  const ANIMATION_DURATION = 400; // ms, match CSS
+  const placeholderText = useTypewriter(
+    [
+      "Search for products...",
+      "Search for cleansers...",
+      "Search for serums...",
+      "Search for moisturizers...",
+    ],
+    { loop: true }
+  );
 
   // Close on escape key
   useEffect(() => {
     if (!open) return;
     function handleEscape(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         onClose();
       }
     }
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
   }, [open, onClose]);
 
   // Focus input when opened
   useEffect(() => {
-    if (open && inputRef.current) {
-      inputRef.current.focus();
-    }
-    if (!open) {
-      setQuery('');
+    if (open) {
+      setTimeout(() => inputRef.current?.focus(), 500);
+    } else {
+      setQuery("");
       setResults({ categories: [], products: [] });
-      setError('');
+      setError("");
     }
   }, [open]);
 
@@ -49,135 +61,144 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({ open, onClose }) => {
   useEffect(() => {
     if (!query.trim()) {
       setResults({ categories: [], products: [] });
-      setError('');
+      setError("");
       return;
     }
     setLoading(true);
-    setError('');
+    setError("");
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     debounceTimeout.current = setTimeout(async () => {
       try {
         const [catRes, prodRes] = await Promise.all([
           Axios.get(`/api/category/search?q=${encodeURIComponent(query)}`),
-          Axios.get(`/api/product/search?q=${encodeURIComponent(query)}&limit=10`),
+          Axios.get(
+            `/api/product/search?search=${encodeURIComponent(query)}&limit=10`
+          ),
         ]);
         setResults({
           categories: catRes.data.data || [],
           products: prodRes.data.data?.products || [],
         });
       } catch (err: any) {
-        setError('Search failed.');
+        setError("Search failed.");
       } finally {
         setLoading(false);
       }
     }, 350);
-    // Cleanup
     return () => {
       if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     };
   }, [query]);
 
-  const handleResultClick = (type: 'category' | 'product', slug: string) => {
+  const handleResultClick = (type: "category" | "product", slug: string) => {
     onClose();
-    if (type === 'category') {
+    if (type === "category") {
       navigate(`/category/${slug}`);
     } else {
       navigate(`/product/${slug}`);
     }
   };
 
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      setIsClosing(false);
-      onClose();
-    }, ANIMATION_DURATION);
-  };
-
-  if (!open && !isClosing) return null;
-
   return (
-    <div className="fixed left-0 right-0 top-20 bottom-0 z-50">
-      <div className={`fixed left-0 right-0 top-20 bottom-0 bg-white ${isClosing ? 'animate-slide-down' : 'animate-slide-up'}`}>
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
-            <div className="flex-1"></div>
-            <button
-              onClick={handleClose}
-              className="text-gray-500 hover:text-gray-700 text-4xl font-bold p-4"
-              aria-label="Close search"
-            >
-              <X className="h-10 w-10" />
-            </button>
+    <div
+      className={cn(
+        "fixed inset-x-0 top-20 bottom-0 bg-white z-[9999] transition-transform duration-500 ease-in-out",
+        {
+          "translate-y-0": open,
+          "translate-y-full": !open,
+          "pointer-events-auto": open,
+          "pointer-events-none": !open,
+        }
+      )}
+    >
+      <div className="flex flex-col h-full w-[80%] mx-auto px-6">
+        {/* Combined Header/Input row */}
+        <div className="flex items-center gap-4 py-6 border-b">
+          <div className="relative flex-grow">
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={placeholderText}
+              className="w-full text-2xl font-bold bg-transparent border-none outline-none placeholder-gray-400"
+            />
           </div>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+            aria-label="Close search"
+          >
+            <X className="h-8 w-8" />
+          </button>
+        </div>
 
-          {/* Search Content */}
-          <div className="flex-1 flex flex-col items-center justify-center px-6 w-full">
-            <div className="w-full max-w-6xl">
-              {/* Search Input */}
-              <div className="relative mb-4">
-                <input
-                  ref={inputRef}
-                  value={query}
-                  onChange={e => setQuery(e.target.value)}
-                  placeholder="Search for products"
-                  className="w-full text-4xl md:text-5xl font-bold text-center bg-transparent border-none outline-none placeholder-gray-400"
-                />
-              </div>
+        {/* Search Results Area */}
+        <div className="flex-1 overflow-y-auto py-8 scrollbar-hide">
+          {!query && !loading && (
+            <p className="text-center text-gray-500 text-lg">
+              Start typing to see products you are looking for.
+            </p>
+          )}
 
-              {/* Instructional Text */}
-              {!query && (
-                <p className="text-center text-gray-500 text-lg mb-8">
-                  Start typing to see products you are looking for.
-                </p>
-              )}
-
-              {/* Search Results */}
-              {query && (
-                <div className="w-full">
-                  {loading && (
-                    <div className="flex items-center justify-center py-6">
-                      <Loader2 className="animate-spin h-6 w-6 text-primary" />
-                    </div>
-                  )}
-                  {!loading && error && (
-                    <div className="text-red-500 text-center py-4">{error}</div>
-                  )}
-                  {!loading && !error && (
-                    <>
-                      {results.products.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-                          {results.products.map((prod) => (
-                            <ProductCard
-                              key={prod._id}
-                              id={prod._id}
-                              slug={prod.slug}
-                              name={prod.name}
-                              price={prod.price}
-                              originalPrice={prod.originalPrice}
-                              image={prod.images && prod.images[0]?.url}
-                              rating={prod.ratings?.average || 0}
-                              reviews={prod.ratings?.numOfReviews || 0}
-                              category={prod.category?.name || ''}
-                              volume={prod.volume}
-                              isNew={prod.isNew}
-                              isSale={prod.isSale}
-                              benefits={prod.benefits}
-                            />
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center text-gray-500 py-8">
-                          No results found for "{query}"
-                        </div>
-                      )}
-                    </>
-                  )}
+          {loading ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="animate-spin h-6 w-6 text-primary" />
+            </div>
+          ) : error ? (
+            <div className="text-red-500 text-center py-4">{error}</div>
+          ) : (
+            <div>
+              {results.categories.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-lg font-semibold text-gray-500 mb-4 text-center">
+                    Categories
+                  </h3>
+                  <div className="flex flex-wrap justify-center gap-4">
+                    {results.categories.map((cat: any) => (
+                      <button
+                        key={cat._id}
+                        onClick={() => handleResultClick("category", cat.slug)}
+                        className="px-4 py-2 bg-gray-100 text-gray-800 rounded-full hover:bg-gray-200 transition"
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
+
+              {results.products.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {results.products.map((prod: any) => (
+                    <ProductCard
+                      key={prod._id}
+                      id={prod._id}
+                      slug={prod.slug}
+                      name={prod.name}
+                      price={prod.price}
+                      originalPrice={prod.originalPrice}
+                      image={prod.images && prod.images[0]?.url}
+                      rating={prod.ratings?.average || 0}
+                      reviews={prod.ratings?.numOfReviews || 0}
+                      category={prod.category?.name || ""}
+                      volume={prod.volume}
+                      isNew={prod.isNew}
+                      isSale={prod.isSale}
+                      benefits={prod.benefits}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {query &&
+                results.products.length === 0 &&
+                results.categories.length === 0 && (
+                  <div className="text-center text-gray-500 py-8">
+                    No results found for "{query}"
+                  </div>
+                )}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
