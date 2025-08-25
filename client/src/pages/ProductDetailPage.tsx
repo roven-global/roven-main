@@ -35,7 +35,6 @@ import RelatedProducts from "@/components/RelatedProducts";
 import CustomerReviews, {
   CustomerReviewsHandles,
 } from "@/components/CustomerReviews";
-import FeaturedReviews from "@/components/FeaturedReviews";
 
 interface Review {
   _id: string;
@@ -724,7 +723,6 @@ const ProductDetailPage = () => {
                   See All
                 </button>
               </div>
-              <FeaturedReviews reviews={allReviews.slice(0, 3)} />
               <div className="text-center mt-8 mb-8">
                 <Button
                   variant="outline"
