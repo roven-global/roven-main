@@ -113,7 +113,7 @@ const Profile = () => {
       <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-6 sm:mb-8">
-            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-deep-forest">
+            <h1 className="font-sans text-3xl sm:text-4xl font-bold text-deep-forest">
               My Profile
             </h1>
             <p className="text-forest mt-2 text-sm sm:text-base">

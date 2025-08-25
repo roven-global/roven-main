@@ -10,7 +10,7 @@ const Hero = () => {
         <div className="flex flex-col md:flex-row items-center justify-between min-h-[60vh] sm:min-h-[70vh] md:min-h-[80vh] py-12 sm:py-16 md:py-20">
           {/* Left Side: Text Content */}
           <div className="w-full md:w-1/2 text-center md:text-left z-10 animate-fade-in-up">
-            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold text-deep-forest mb-4 sm:mb-6 text-balance">
+            <h1 className="font-sans text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold text-deep-forest mb-4 sm:mb-6 text-balance">
               Discover Your Natural Radiance
             </h1>
             <p className="text-base sm:text-lg text-forest mb-6 sm:mb-8 max-w-lg mx-auto md:mx-0 text-balance">

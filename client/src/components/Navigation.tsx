@@ -132,7 +132,7 @@ const Navigation = () => {
           {/* Logo */}
           <Link
             to="/"
-            className="font-serif text-3xl font-bold text-deep-forest"
+            className="font-sans text-3xl font-bold text-deep-forest"
           >
             Roven
           </Link>

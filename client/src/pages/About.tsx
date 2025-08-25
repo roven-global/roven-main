@@ -121,7 +121,7 @@ const About = () => {
       <section className="relative bg-gradient-to-br from-sage/10 via-forest/10 to-deep-forest/10 py-12 sm:py-16 md:py-20">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="font-serif text-5xl md:text-6xl font-bold text-deep-forest mb-6">
+            <h1 className="font-sans text-5xl md:text-6xl font-bold text-deep-forest mb-6">
               Our Story of
               <span className="block text-transparent bg-gradient-to-r from-sage to-forest bg-clip-text">
                 Natural Beauty
@@ -155,7 +155,7 @@ const About = () => {
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="font-serif text-4xl font-bold text-deep-forest mb-8">
+            <h2 className="font-sans text-4xl font-bold text-deep-forest mb-8">
               Our Mission
             </h2>
             <p className="text-2xl text-forest leading-relaxed mb-8 italic">
@@ -205,7 +205,7 @@ const About = () => {
       <section className="py-12 sm:py-16 bg-gradient-to-br from-sage/5 via-white to-sage/5">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12 sm:mb-16">
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-deep-forest mb-4">
+            <h2 className="font-sans text-3xl sm:text-4xl font-bold text-deep-forest mb-4">
               Our Core Values
             </h2>
             <p className="text-lg sm:text-xl text-forest">
@@ -240,7 +240,7 @@ const About = () => {
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="font-serif text-4xl font-bold text-deep-forest mb-4">
+            <h2 className="font-sans text-4xl font-bold text-deep-forest mb-4">
               Our Journey
             </h2>
             <p className="text-xl text-forest">
@@ -273,7 +273,7 @@ const About = () => {
       <section className="py-16 bg-gradient-to-br from-sage/5 via-white to-sage/5">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="font-serif text-4xl font-bold text-deep-forest mb-4">
+            <h2 className="font-sans text-4xl font-bold text-deep-forest mb-4">
               Meet Our Team
             </h2>
             <p className="text-xl text-forest">
@@ -314,7 +314,7 @@ const About = () => {
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="font-serif text-4xl font-bold text-deep-forest mb-4">
+            <h2 className="font-sans text-4xl font-bold text-deep-forest mb-4">
               Our Commitments
             </h2>
             <p className="text-xl text-forest">
@@ -348,7 +348,7 @@ const About = () => {
       <section className="py-16 bg-gradient-to-r from-sage to-forest text-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="font-serif text-4xl font-bold mb-4">
+            <h2 className="font-sans text-4xl font-bold mb-4">
               What Our Customers Say
             </h2>
             <p className="text-xl text-white/90">
@@ -379,7 +379,7 @@ const About = () => {
       {/* CTA Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="font-serif text-4xl font-bold text-deep-forest mb-4">
+          <h2 className="font-sans text-4xl font-bold text-deep-forest mb-4">
             Join Our Beauty Revolution
           </h2>
           <p className="text-xl text-forest mb-8 max-w-2xl mx-auto">

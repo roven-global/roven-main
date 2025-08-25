@@ -227,7 +227,7 @@ const ProductAdmin = () => {
     <>
       <div className="flex items-center justify-between space-y-2">
         <div>
-          <h2 className="font-serif text-3xl font-bold tracking-tight text-deep-forest">
+          <h2 className="font-sans text-3xl font-bold tracking-tight text-deep-forest">
             Product Management
           </h2>
           <p className="text-muted-foreground">

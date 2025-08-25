@@ -66,7 +66,7 @@ const FeaturedProducts = () => {
     <section id="featured-products" className="py-20 bg-gradient-to-br from-sage/5 via-white to-sage/5">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="font-serif text-4xl md:text-5xl font-bold text-deep-forest mb-4">
+          <h2 className="font-sans text-4xl md:text-5xl font-bold text-deep-forest mb-4">
             Featured Products
           </h2>
           <p className="text-forest text-lg max-w-2xl mx-auto text-balance">

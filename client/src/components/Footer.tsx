@@ -10,7 +10,7 @@ const Footer = () => {
           <div className="col-span-1 md:col-span-2">
             <Link
               to="/"
-              className="font-serif text-3xl font-bold text-deep-forest mb-4 block hover:text-white transition-all duration-500 transform hover:scale-105"
+              className="font-sans text-3xl font-bold text-deep-forest mb-4 block hover:text-white transition-all duration-500 transform hover:scale-105"
             >
               Roven
             </Link>

@@ -3,7 +3,7 @@ import React from "react";
 const Returns = () => {
   return (
     <div className="max-w-2xl mx-auto py-8 sm:py-12 px-4">
-      <h1 className="font-serif text-2xl sm:text-3xl font-bold mb-4 text-deep-forest">
+      <h1 className="font-sans text-2xl sm:text-3xl font-bold mb-4 text-deep-forest">
         Returns & Exchanges
       </h1>
       <p className="mb-4 text-sm sm:text-base text-muted-foreground">

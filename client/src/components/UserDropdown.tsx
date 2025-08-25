@@ -42,7 +42,7 @@ const UserDropdown = () => {
         ) : isAuthenticated ? (
           // Authenticated user menu
           <>
-            <DropdownMenuLabel className="font-serif">
+            <DropdownMenuLabel className="font-sans">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">{user?.name}</p>
                 <p className="text-xs leading-none text-muted-foreground">
@@ -94,7 +94,7 @@ const UserDropdown = () => {
         ) : (
           // Non-authenticated user menu
           <>
-            <DropdownMenuLabel className="font-serif">Account</DropdownMenuLabel>
+            <DropdownMenuLabel className="font-sans">Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to="/login" className="flex items-center cursor-pointer">

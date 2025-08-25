@@ -657,7 +657,7 @@ const UploadProduct = () => {
     <>
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <h2 className="font-serif text-3xl font-bold tracking-tight text-deep-forest">
+          <h2 className="font-sans text-3xl font-bold tracking-tight text-deep-forest">
             {isEditing ? "Edit Product" : "Add New Product"}
           </h2>
           <p className="text-muted-foreground">

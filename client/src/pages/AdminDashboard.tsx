@@ -39,7 +39,7 @@ const AdminDashboard = () => {
 
   return (
     <>
-      <h1 className="text-3xl font-serif font-bold text-deep-forest mb-6">Dashboard</h1>
+      <h1 className="text-3xl font-sans font-bold text-deep-forest mb-6">Dashboard</h1>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

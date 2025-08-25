@@ -87,7 +87,7 @@ const AdminOverview = () => {
   return (
     <div className="bg-warm-cream min-h-screen p-6">
       <div className="flex items-center justify-between space-y-2 mb-8">
-        <h2 className="text-3xl font-bold tracking-tight text-deep-forest font-serif">Overview</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-deep-forest font-sans">Overview</h2>
         <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-48">
                 <SelectValue placeholder="Select time range" />

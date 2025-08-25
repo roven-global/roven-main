@@ -138,7 +138,7 @@ const OtpVerification = () => {
       <div className="container mx-auto flex items-center justify-center py-24">
         <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe p-8 w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="font-serif text-3xl font-bold text-deep-forest">Check Your Email</h1>
+            <h1 className="font-sans text-3xl font-bold text-deep-forest">Check Your Email</h1>
             <p className="text-forest mt-2">We've sent a 6-digit code to <span className="font-semibold text-sage">{email}</span>.</p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-6">

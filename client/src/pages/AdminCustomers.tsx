@@ -243,7 +243,7 @@ const AdminCustomers = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-serif font-bold text-deep-forest mb-6">Customers</h1>
+      <h1 className="text-3xl font-sans font-bold text-deep-forest mb-6">Customers</h1>
 
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <Input

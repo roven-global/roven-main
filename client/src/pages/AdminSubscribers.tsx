@@ -82,7 +82,7 @@ const AdminSubscribers = () => {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-serif font-bold text-deep-forest">
+        <h1 className="text-3xl font-sans font-bold text-deep-forest">
           Newsletter Subscribers
         </h1>
         <Button onClick={handleExport}>

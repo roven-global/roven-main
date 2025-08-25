@@ -66,7 +66,7 @@ const ResetPassword = () => {
 
         {/* Content */}
         <div className="relative z-10 container mx-auto px-4 text-center">
-          <h1 className="font-serif text-5xl md:text-6xl font-bold text-deep-forest mb-4">
+          <h1 className="font-sans text-5xl md:text-6xl font-bold text-deep-forest mb-4">
             Reset Password
           </h1>
         </div>
@@ -79,7 +79,7 @@ const ResetPassword = () => {
             onSubmit={handleSubmit}
             className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8"
           >
-            <h2 className="font-serif text-3xl font-bold text-deep-forest mb-6 text-center">Reset Password</h2>
+            <h2 className="font-sans text-3xl font-bold text-deep-forest mb-6 text-center">Reset Password</h2>
             <p className="text-forest text-center mb-6">
               Reset password for <span className="font-semibold text-deep-forest">{email}</span>
             </p>

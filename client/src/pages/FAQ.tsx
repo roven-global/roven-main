@@ -29,7 +29,7 @@ const faqs = [
 const FAQ = () => {
   return (
     <div className="max-w-2xl mx-auto py-8 sm:py-12 px-4">
-      <h1 className="font-serif text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-deep-forest">
+      <h1 className="font-sans text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-deep-forest">
         Frequently Asked Questions
       </h1>
       <div className="space-y-4 sm:space-y-6">

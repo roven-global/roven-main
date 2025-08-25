@@ -391,7 +391,7 @@ const ProductDetailPage = () => {
             <div className="space-y-6">
               {/* Product Name */}
               <div>
-                <h1 className="font-serif text-3xl lg:text-4xl font-bold text-deep-forest leading-tight">
+                <h1 className="font-sans text-3xl lg:text-4xl font-bold text-deep-forest leading-tight">
                   {product.name}
                 </h1>
                 {product.shortDescription && (
@@ -427,7 +427,7 @@ const ProductDetailPage = () => {
               {/* Price */}
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <span className="font-serif text-3xl font-bold text-deep-forest">
+                  <span className="font-sans text-3xl font-bold text-deep-forest">
                     {formatRupees(currentPrice)}
                   </span>
                   {originalPrice && (
@@ -670,7 +670,7 @@ const ProductDetailPage = () => {
                   value="item-2"
                   className="border border-warm-taupe/20 rounded-xl overflow-hidden"
                 >
-                  <AccordionTrigger className="text-xl font-serif font-bold text-deep-forest px-6 py-4 hover:no-underline bg-sage/5">
+                  <AccordionTrigger className="text-xl font-sans font-bold text-deep-forest px-6 py-4 hover:no-underline bg-sage/5">
                     Hero Ingredients
                   </AccordionTrigger>
                   <AccordionContent className="px-6 py-6 bg-white">
@@ -707,7 +707,7 @@ const ProductDetailPage = () => {
             {/* Customer Reviews Section */}
             <div className="mt-12">
               <div className="text-center">
-                <h2 className="font-serif text-xl font-bold text-deep-forest mb-2">
+                <h2 className="font-sans text-xl font-bold text-deep-forest mb-2">
                   — READ THE REVIEWS —
                 </h2>
                 <button
@@ -754,7 +754,7 @@ const ProductDetailPage = () => {
         <div className="bg-background">
           <div className="container mx-auto px-4 py-12">
             <div className="max-w-6xl mx-auto">
-              <h2 className="font-serif text-xl font-bold text-deep-forest mb-2 text-center">
+              <h2 className="font-sans text-xl font-bold text-deep-forest mb-2 text-center">
                 — You May Also Like —
               </h2>
               <RelatedProducts currentProductId={product._id} />

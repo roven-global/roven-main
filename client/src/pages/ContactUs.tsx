@@ -13,7 +13,7 @@ const ContactUs = () => {
       <div className="container mx-auto px-4 py-12 sm:py-16 md:py-20">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8 sm:mb-12">
-            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-deep-forest">
+            <h1 className="font-sans text-3xl sm:text-4xl md:text-5xl font-bold text-deep-forest">
               Get in Touch
             </h1>
             <p className="mt-4 text-base sm:text-lg text-forest">
