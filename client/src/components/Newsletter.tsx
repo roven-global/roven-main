@@ -70,7 +70,7 @@ const Newsletter = () => {
                 type="submit"
                 size="lg"
                 disabled={status === "loading"}
-                className="bg-sage text-white hover:bg-forest transition-all duration-300 rounded-full text-base font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                className="bg-sage text-deep-forest hover:bg-forest hover:text-white transition-all duration-300 rounded-full text-base font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 {status === "loading" ? "Subscribing..." : "Subscribe"}
               </Button>

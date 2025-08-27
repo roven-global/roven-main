@@ -29,7 +29,7 @@ const UserDropdown = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="bg-sage rounded-full shadow w-10 h-10 flex items-center justify-center">
+        <Button variant="ghost" size="icon" className="bg-sage rounded-full shadow w-10 h-10 flex items-center justify-center" aria-label="User menu">
           <User className="h-5 w-5 text-white" />
           {isAuthenticated && (
             <span className="absolute -top-1 -right-1 bg-white text-orange-500 text-xs rounded-full h-2 w-2"></span>

@@ -167,6 +167,7 @@ const Navigation = () => {
                     <Button
                       variant="ghost"
                       className="font-medium text-forest transition-colors hover:text-sage hover:bg-transparent flex items-center gap-1 p-0"
+                      aria-label="Product categories"
                     >
                       Categories
                       <ChevronDown className="h-4 w-4" />

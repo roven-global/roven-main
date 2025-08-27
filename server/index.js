@@ -73,6 +73,7 @@ app.use(
 const allowedOrigins = [
   FRONTEND_URL,
   "http://localhost:5173",
+  "http://localhost:4173",
   "http://localhost:3000",
   "http://localhost:5000",
 ];
@@ -141,7 +142,19 @@ const claimLimiter = rateLimit({
 app.use("/api/welcome-gifts/:id/claim", claimLimiter);
 
 // --- Compression & Logging ---
-app.use(compression());
+app.use(
+  compression({
+    level: 9,
+    filter: (req, res) => {
+      if (req.headers["x-no-compression"]) {
+        // don't compress responses with this request header
+        return false;
+      }
+      // fallback to standard filter function
+      return compression.filter(req, res);
+    },
+  })
+);
 app.use(morgan(isProduction ? "combined" : "dev"));
 
 // --- Session Security ---

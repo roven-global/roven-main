@@ -23,8 +23,8 @@
     /* Deep Forest */
 
     /* Primary: Sage Green */
-    --primary: 158 13% 58%;
-    /* #8B9D94 */
+    --primary: 158 13% 75%;
+    /* #B6C7C1 */
     --primary-foreground: 158 24% 12%;
     /* Deep Forest for text on primary */
 
@@ -37,7 +37,7 @@
     /* Muted: Soft Beige */
     --muted: 36 27% 89%;
     /* #E8E0D6 */
-    --muted-foreground: 157 11% 39%;
+    --muted-foreground: 157 11% 30%;
     /* Forest Green for muted text */
 
     /* Accent: Gold */

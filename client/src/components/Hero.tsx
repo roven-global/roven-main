@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import heroImage from "@/assets/hero-beauty1.jpg";
+// import heroImage from "@/assets/hero-beauty1.jpg";
 import { Link } from "react-router-dom";
 import { MoveRight } from "lucide-react";
 
@@ -22,7 +22,7 @@ const Hero = () => {
               <Button
                 asChild
                 size="lg"
-                className="bg-sage text-white hover:bg-forest transition-all duration-300 rounded-full px-6 sm:px-8 py-4 sm:py-6 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 w-full sm:w-auto"
+                className="bg-sage text-deep-forest hover:bg-forest hover:text-white transition-all duration-300 rounded-full px-6 sm:px-8 py-4 sm:py-6 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 w-full sm:w-auto"
               >
                 <Link to="/shop">
                   Shop Collection
@@ -44,13 +44,12 @@ const Hero = () => {
           <div className="w-full md:w-1/2 mt-8 sm:mt-10 md:mt-0 flex justify-center items-center">
             <div className="relative w-[250px] h-[250px] sm:w-[300px] sm:h-[300px] md:w-[450px] md:h-[450px] lg:w-[500px] lg:h-[500px] animate-fade-in">
               <div className="absolute inset-0 bg-gradient-to-br from-soft-beige to-warm-cream rounded-full transform-gpu"></div>
-              <img
+              {/* <img
                 src={heroImage}
                 alt="Elegant beauty product display"
-                loading="lazy"
                 decoding="async"
                 className="absolute inset-6 sm:inset-8 w-[calc(100%-3rem)] sm:w-[calc(100%-4rem)] h-[calc(100%-3rem)] sm:h-[calc(100%-4rem)] object-cover rounded-full shadow-2xl animate-slow-zoom"
-              />
+              /> */}
             </div>
           </div>
         </div>

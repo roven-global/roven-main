@@ -243,6 +243,7 @@ const ProductCard = ({
             size="icon"
             className="absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full shadow-sm w-8 h-8 backdrop-blur-sm transition-all duration-300 hover:scale-110"
             onClick={handleLikeClick}
+            aria-label={isLiked ? "Remove from Wishlist" : "Add to Wishlist"}
           >
             <Heart
               className={cn(
@@ -283,7 +284,7 @@ const ProductCard = ({
               <span className="text-xs font-medium text-forest ml-1">
                 {rating.toFixed(1)}
               </span>
-              <span className="text-xs text-forest/70">({reviews})</span>
+              <span className="text-xs text-forest">({reviews})</span>
             </div>
             {getDisplayVolume() && (
               <span className="text-xs text-forest font-medium">
@@ -296,7 +297,7 @@ const ProductCard = ({
           <div className="mb-4">
             <div className="flex items-baseline gap-2">
               {variants && variants.length > 1 && (
-                <span className="text-xs text-forest/80 font-medium">From</span>
+                <span className="text-xs text-forest font-medium">From</span>
               )}
               <span className="font-sans font-bold text-xl text-deep-forest">
                 {formatRupees(getDisplayPrice())}

@@ -24,24 +24,28 @@ const Footer = () => {
               <a
                 href="https://www.instagram.com/roven_beauty/"
                 className="text-forest hover:text-white transition-all duration-300 transform hover:scale-110 hover:rotate-3"
+                aria-label="Instagram"
               >
                 <Instagram className="h-4 w-4 sm:h-5 sm:w-5" />
               </a>
               <a
                 href="#"
                 className="text-forest hover:text-white transition-all duration-300 transform hover:scale-110 hover:-rotate-3"
+                aria-label="Facebook"
               >
                 <Facebook className="h-4 w-4 sm:h-5 sm:w-5" />
               </a>
               <a
                 href="#"
                 className="text-forest hover:text-white transition-all duration-300 transform hover:scale-110 hover:rotate-3"
+                aria-label="Twitter"
               >
                 <Twitter className="h-4 w-4 sm:h-5 sm:w-5" />
               </a>
               <a
                 href="#"
                 className="text-forest hover:text-white transition-all duration-300 transform hover:scale-110 hover:-rotate-3"
+                aria-label="YouTube"
               >
                 <Youtube className="h-4 w-4 sm:h-5 sm:w-5" />
               </a>
@@ -50,9 +54,9 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-semibold text-deep-forest mb-4 text-sm sm:text-lg border-b border-gold-accent/30 pb-2">
+            <h2 className="font-semibold text-deep-forest mb-4 text-sm sm:text-lg border-b border-gold-accent/30 pb-2">
               Quick Links
-            </h4>
+            </h2>
             <ul className="space-y-3 text-xs sm:text-sm md:text-base">
               <li>
                 <Link
@@ -75,9 +79,9 @@ const Footer = () => {
 
           {/* Customer Care */}
           <div>
-            <h4 className="font-semibold text-deep-forest mb-4 text-sm sm:text-lg border-b border-gold-accent/30 pb-2">
+            <h2 className="font-semibold text-deep-forest mb-4 text-sm sm:text-lg border-b border-gold-accent/30 pb-2">
               Customer Care
-            </h4>
+            </h2>
             <ul className="space-y-3 text-xs sm:text-sm md:text-base">
               <li>
                 <Link
