@@ -474,6 +474,53 @@ const Checkout = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Right Column - Price Summary */}
+              <div className="space-y-6 lg:col-span-1">
+                <div className="bg-white rounded-lg border shadow-sm">
+                  <div className="p-4 border-b">
+                    <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
+                      <Gift className="w-5 h-5 text-primary" />
+                      Welcome Gift
+                    </h3>
+                  </div>
+                  <div className="p-4">
+                    <WelcomeGiftReward />
+                  </div>
+                </div>
+                <PriceSummary
+                  isQuoteLoading={isQuoteLoading}
+                  subtotal={subtotal}
+                  couponDiscount={discountAmount}
+                  welcomeGiftDiscount={welcomeGiftDiscount}
+                  shippingCost={shippingCost}
+                  finalTotal={finalTotal}
+                  totalSavings={totalSavings}
+                  isAuthenticated={isAuthenticated}
+                  lifetimeSavings={lifetimeSavings}
+                  lifetimeSavingsLoading={lifetimeSavingsLoading}
+                >
+                  <Button
+                    onClick={handleProceedToPayment}
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-md py-3 font-medium"
+                    disabled={
+                      loading ||
+                      (isAuthenticated
+                        ? !selectedAddressId
+                        : !isGuestFormValid())
+                    }
+                  >
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Processing...
+                      </div>
+                    ) : (
+                      "Proceed to Payment"
+                    )}
+                  </Button>
+                </PriceSummary>
+              </div>
+              
               {/* Left Column */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Shipping Address Section */}
@@ -498,8 +545,8 @@ const Checkout = () => {
                             }}
                             className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
                               selectedAddressId === addr._id
-                                ? "border-orange-500 bg-orange-50"
-                                : "border-gray-200 hover:border-orange-300"
+                                ? "border-primary bg-primary/10"
+                                : "border-border hover:border-primary/50"
                             }`}
                           >
                             <div className="flex items-start justify-between">
@@ -517,7 +564,7 @@ const Checkout = () => {
                               </div>
                               <div className="flex items-center gap-2">
                                 {selectedAddressId === addr._id && (
-                                  <div className="text-orange-500">
+                                  <div className="text-primary">
                                     <svg
                                       className="w-5 h-5"
                                       fill="currentColor"
@@ -538,7 +585,7 @@ const Checkout = () => {
                                     e.stopPropagation();
                                     handleDeleteAddress(addr._id);
                                   }}
-                                  className="h-8 w-8 text-warm-taupe hover:text-red-600 hover:bg-red-50"
+                                  className="h-8 w-8 text-warm-taupe hover:text-destructive hover:bg-destructive/10"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -549,26 +596,30 @@ const Checkout = () => {
                       </div>
                     )}
 
-                    {/* Show Add New Address button when no saved addresses */}
-                    {isAuthenticated &&
-                      savedAddresses.length === 0 &&
-                      !showNewAddressForm && (
-                        <div className="text-center py-4">
+                    {/* Show Add New Address button or form */}
+                    {isAuthenticated && !showNewAddressForm ? (
+                      <div
+                        className={
+                          savedAddresses.length === 0 ? "text-center py-4" : ""
+                        }
+                      >
+                        {savedAddresses.length === 0 && (
                           <p className="text-forest mb-4">
                             No saved addresses found.
                           </p>
-                          <Button
-                            onClick={() => setShowNewAddressForm(true)}
-                            className="bg-orange-500 hover:bg-orange-600 text-white rounded-md px-6 py-2"
-                          >
-                            Add New Address
-                          </Button>
-                        </div>
-                      )}
+                        )}
+                        <Button
+                          onClick={() => setShowNewAddressForm(true)}
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md px-6 py-2"
+                        >
+                          Add New Address
+                        </Button>
+                      </div>
+                    ) : null}
 
                     {/* New Address Form */}
                     {showNewAddressForm && (
-                      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div className="border border-border rounded-lg p-4 bg-muted/20">
                         <h3 className="font-semibold text-deep-forest mb-4">
                           {isAuthenticated
                             ? "Add New Address"
@@ -581,7 +632,7 @@ const Checkout = () => {
                           }}
                           className="space-y-4"
                         >
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <Label
                                 htmlFor="firstName"
@@ -597,7 +648,7 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
-                              {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
+                              {errors.firstName && <p className="text-destructive text-xs mt-1">{errors.firstName}</p>}
                             </div>
                             <div>
                               <Label
@@ -614,10 +665,10 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
-                              {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
+                              {errors.lastName && <p className="text-destructive text-xs mt-1">{errors.lastName}</p>}
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <Label
                                 htmlFor="phone"
@@ -633,7 +684,7 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
-                              {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                              {errors.phone && <p className="text-destructive text-xs mt-1">{errors.phone}</p>}
                             </div>
                             <div>
                               <Label
@@ -651,7 +702,7 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
-                              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                              {errors.email && <p className="text-destructive text-xs mt-1">{errors.email}</p>}
                             </div>
                           </div>
                           <div>
@@ -669,9 +720,9 @@ const Checkout = () => {
                               required
                               className="mt-1"
                             />
-                            {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
+                            {errors.address && <p className="text-destructive text-xs mt-1">{errors.address}</p>}
                           </div>
-                          <div className="grid grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
                               <Label
                                 htmlFor="state"
@@ -697,7 +748,7 @@ const Checkout = () => {
                                   ))}
                                 </SelectContent>
                               </Select>
-                              {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state}</p>}
+                              {errors.state && <p className="text-destructive text-xs mt-1">{errors.state}</p>}
                             </div>
                             <div>
                               <Label
@@ -723,7 +774,7 @@ const Checkout = () => {
                                   ))}
                                 </SelectContent>
                               </Select>
-                              {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
+                              {errors.city && <p className="text-destructive text-xs mt-1">{errors.city}</p>}
                             </div>
                             <div>
                               <Label
@@ -740,7 +791,7 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
-                              {errors.pincode && <p className="text-red-500 text-xs mt-1">{errors.pincode}</p>}
+                              {errors.pincode && <p className="text-destructive text-xs mt-1">{errors.pincode}</p>}
                             </div>
                           </div>
                           {isAuthenticated && (
@@ -768,14 +819,14 @@ const Checkout = () => {
                                 <Button
                                   type="submit"
                                   disabled={addressLoading}
-                                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
                                 >
                                   {addressLoading ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                   ) : (
                                     <Save className="w-4 h-4" />
                                   )}
-                                  Save Address
+                                  <span className="hidden sm:inline ml-2">Save Address</span>
                                 </Button>
                                 <Button
                                   type="button"
@@ -790,64 +841,8 @@ const Checkout = () => {
                         </form>
                       </div>
                     )}
-
-                    {isAuthenticated && !showNewAddressForm && (
-                      <Button
-                        onClick={() => setShowNewAddressForm(true)}
-                        className="bg-orange-500 hover:bg-orange-600 text-white rounded-md px-6 py-2"
-                      >
-                        Add New Address
-                      </Button>
-                    )}
                   </div>
                 </div>
-              </div>
-
-              {/* Right Column - Price Summary */}
-              <div className="space-y-6">
-                <div className="bg-white rounded-lg border shadow-sm">
-                  <div className="p-4 border-b">
-                    <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
-                      <Gift className="w-5 h-5 text-orange-600" />
-                      Welcome Gift
-                    </h3>
-                  </div>
-                  <div className="p-4">
-                    <WelcomeGiftReward />
-                  </div>
-                </div>
-                <PriceSummary
-                  isQuoteLoading={isQuoteLoading}
-                  subtotal={subtotal}
-                  couponDiscount={discountAmount}
-                  welcomeGiftDiscount={welcomeGiftDiscount}
-                  shippingCost={shippingCost}
-                  finalTotal={finalTotal}
-                  totalSavings={totalSavings}
-                  isAuthenticated={isAuthenticated}
-                  lifetimeSavings={lifetimeSavings}
-                  lifetimeSavingsLoading={lifetimeSavingsLoading}
-                >
-                  <Button
-                    onClick={handleProceedToPayment}
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-md py-3 font-medium"
-                    disabled={
-                      loading ||
-                      (isAuthenticated
-                        ? !selectedAddressId
-                        : !isGuestFormValid())
-                    }
-                  >
-                    {loading ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Processing...
-                      </div>
-                    ) : (
-                      "Proceed to Payment"
-                    )}
-                  </Button>
-                </PriceSummary>
               </div>
             </div>
           </div>

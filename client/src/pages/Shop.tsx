@@ -24,6 +24,16 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 // Interfaces for type safety
 interface Product {
@@ -52,7 +62,11 @@ interface Product {
   };
   brand: string;
   volume?: string;
-  specifications?: { volume?: string };
+  specifications?: {
+    volume?: string;
+    skinType?: string | string[];
+    hairType?: string | string[];
+  };
   benefits?: string[];
   isActive: boolean;
   isFeatured: boolean;
@@ -72,18 +86,29 @@ const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filtering and Sorting State
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [priceRange, setPriceRange] = useState([0, 500]);
-  const [rating, setRating] = useState(0);
-  const [sortBy, setSortBy] = useState("createdAt-desc");
-  const [maxPrice, setMaxPrice] = useState(1000);
+  // Pending filter states
+  const [pendingCategory, setPendingCategory] = useState("all");
+  const [pendingSkinTypes, setPendingSkinTypes] = useState<string[]>([]);
+  const [pendingHairTypes, setPendingHairTypes] = useState<string[]>([]);
+  const [pendingPriceRange, setPendingPriceRange] = useState<string>("");
+  const [pendingCustomMin, setPendingCustomMin] = useState<string>("");
+  const [pendingCustomMax, setPendingCustomMax] = useState<string>("");
 
-  const debouncedPriceRange = useDebounce(priceRange, 500);
+  // Active filter states
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeSkinTypes, setActiveSkinTypes] = useState<string[]>([]);
+  const [activeHairTypes, setActiveHairTypes] = useState<string[]>([]);
+  const [activePriceRange, setActivePriceRange] = useState<string>("");
+  const [activeCustomMin, setActiveCustomMin] = useState<string>("");
+  const [activeCustomMax, setActiveCustomMax] = useState<string>("");
+
+  const [sortBy, setSortBy] = useState("createdAt-desc");
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [maxPrice, setMaxPrice] = useState(1000);
+  const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
 
   const perPage = 9;
 
@@ -131,21 +156,63 @@ const Shop = () => {
       const mp =
         Math.ceil(Math.max(...products.map((p) => p.price)) / 10) * 10 || 1000;
       setMaxPrice(mp);
-      setPriceRange([0, mp]);
     }
   }, [products]);
 
   // Compute filtered and sorted products
   const computedProducts = useMemo(() => {
-    // Filter
-    const filtered = products.filter((p) => {
-      if (activeCategory !== "all" && p.category._id !== activeCategory)
-        return false;
-      if (p.price < debouncedPriceRange[0] || p.price > debouncedPriceRange[1])
-        return false;
-      if (rating > 0 && p.ratings.average < rating) return false;
-      return true;
-    });
+    let filtered = products;
+
+    // Filter by category
+    if (activeCategory !== "all") {
+      filtered = filtered.filter((p) => p.category._id === activeCategory);
+    }
+
+    // Filter by price
+    if (activePriceRange) {
+      const [min, max] = activePriceRange.split("-").map(Number);
+      filtered = filtered.filter((p) => p.price >= min && p.price <= max);
+    } else if (activeCustomMin || activeCustomMax) {
+      const min = activeCustomMin ? Number(activeCustomMin) : 0;
+      const max = activeCustomMax ? Number(activeCustomMax) : Infinity;
+      filtered = filtered.filter((p) => p.price >= min && p.price <= max);
+    }
+
+    // Filter by skin type
+    if (activeSkinTypes.length > 0 && !activeSkinTypes.includes("All")) {
+      const skinTypesToFilter = new Set(activeSkinTypes);
+      filtered = filtered.filter((p) => {
+        if (!p.specifications?.skinType) return false;
+
+        // Handle both array and string skinType for backward compatibility
+        const productSkinTypes = Array.isArray(p.specifications.skinType)
+          ? p.specifications.skinType
+          : [p.specifications.skinType];
+
+        // Check if any of the product's skin types match the filter
+        return productSkinTypes.some((skinType) =>
+          skinTypesToFilter.has(skinType)
+        );
+      });
+    }
+
+    // Filter by hair type
+    if (activeHairTypes.length > 0 && !activeHairTypes.includes("All")) {
+      const hairTypesToFilter = new Set(activeHairTypes);
+      filtered = filtered.filter((p) => {
+        if (!p.specifications?.hairType) return false;
+
+        // Handle both array and string hairType for backward compatibility
+        const productHairTypes = Array.isArray(p.specifications.hairType)
+          ? p.specifications.hairType
+          : [p.specifications.hairType];
+
+        // Check if any of the product's hair types match the filter
+        return productHairTypes.some((hairType) =>
+          hairTypesToFilter.has(hairType)
+        );
+      });
+    }
 
     // Sort
     return [...filtered].sort((a, b) => {
@@ -161,7 +228,6 @@ const Shop = () => {
         case "rating-desc":
           return b.ratings.average - a.ratings.average;
         case "featured-desc":
-          // Assuming featured sorts by number of reviews descending, with average as tiebreaker
           return (
             b.ratings.numOfReviews - a.ratings.numOfReviews ||
             b.ratings.average - a.ratings.average
@@ -170,7 +236,16 @@ const Shop = () => {
           return 0;
       }
     });
-  }, [products, activeCategory, debouncedPriceRange, rating, sortBy]);
+  }, [
+    products,
+    activeCategory,
+    sortBy,
+    activePriceRange,
+    activeCustomMin,
+    activeCustomMax,
+    activeSkinTypes,
+    activeHairTypes,
+  ]);
 
   // Paginate
   const displayedProducts = computedProducts.slice(0, currentPage * perPage);
@@ -180,7 +255,6 @@ const Shop = () => {
   const handleLoadMore = () => {
     if (hasMore && !loadingMore) {
       setLoadingMore(true);
-      // Simulate a short delay for UX, even though data is local
       setTimeout(() => {
         setCurrentPage((prev) => prev + 1);
         setLoadingMore(false);
@@ -188,122 +262,163 @@ const Shop = () => {
     }
   };
 
-  const resetFilters = () => {
+  const handleApplyFilters = () => {
+    setActiveCategory(pendingCategory);
+    setActiveSkinTypes(pendingSkinTypes);
+    setActiveHairTypes(pendingHairTypes);
+    setActivePriceRange(pendingPriceRange);
+    setActiveCustomMin(pendingCustomMin);
+    setActiveCustomMax(pendingCustomMax);
+  };
+
+  const handleClearFilters = () => {
+    setPendingCategory("all");
+    setPendingSkinTypes([]);
+    setPendingHairTypes([]);
+    setPendingPriceRange("");
+    setPendingCustomMin("");
+    setPendingCustomMax("");
     setActiveCategory("all");
-    setPriceRange([0, maxPrice]);
-    setRating(0);
-    setSortBy("featured-desc");
+    setActiveSkinTypes([]);
+    setActiveHairTypes([]);
+    setActivePriceRange("");
+    setActiveCustomMin("");
+    setActiveCustomMax("");
+    setOpenAccordionItems([]);
   };
 
   const FilterContent = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="font-semibold text-lg flex items-center gap-2 text-deep-forest">
-          <SlidersHorizontal className="h-5 w-5 text-sage" />
-          Filters
-        </h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={resetFilters}
-          className="text-sm text-forest hover:text-sage hover:bg-sage/20"
-        >
-          <X className="h-4 w-4 mr-1" /> Clear All
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-bold text-xl">FILTERS</h3>
+        <Button variant="ghost" size="sm" onClick={handleClearFilters}>
+          Clear
         </Button>
       </div>
-
-      <Separator className="bg-warm-taupe" />
-
-      <div>
-        <h4 className="font-medium mb-3 text-deep-forest">Categories</h4>
-        <div className="space-y-1 max-h-60 overflow-y-auto pr-2">
-          <button
-            onClick={() => setActiveCategory("all")}
-            className={`w-full text-left p-2 rounded-md transition-colors text-sm ${
-              activeCategory === "all"
-                ? "bg-sage/20 text-sage font-semibold border border-sage/30"
-                : "hover:bg-sage/20 text-forest"
-            }`}
-          >
-            All Categories
-          </button>
-          {categories.length > 0
-            ? categories.map((category) => (
-                <button
-                  key={category._id}
-                  onClick={() => setActiveCategory(category._id)}
-                  className={`w-full text-left p-2 rounded-md transition-colors text-sm ${
-                    activeCategory === category._id
-                      ? "bg-sage/20 text-sage font-semibold border border-sage/30"
-                      : "hover:bg-sage/20 text-forest"
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))
-            : Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton
-                  key={i}
-                  className="h-8 w-full mt-1 bg-warm-taupe/20"
-                />
+      <Accordion
+        type="multiple"
+        value={openAccordionItems}
+        onValueChange={setOpenAccordionItems}
+        className="w-full space-y-4"
+      >
+        <AccordionItem value="product-type">
+          <AccordionTrigger>Product Type</AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-2">
+              {categories.map((category) => (
+                <div key={category._id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`cat-${category._id}`}
+                    checked={pendingCategory === category._id}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setPendingCategory(category._id);
+                      } else {
+                        setPendingCategory("all");
+                      }
+                    }}
+                  />
+                  <label htmlFor={`cat-${category._id}`}>{category.name}</label>
+                </div>
               ))}
-        </div>
-      </div>
-
-      <Separator className="bg-warm-taupe" />
-
-      <div>
-        <h4 className="font-medium mb-4 text-deep-forest">Price Range</h4>
-        <Slider
-          value={priceRange}
-          onValueChange={setPriceRange}
-          max={maxPrice}
-          step={10}
-          className="w-full"
-        />
-        <div className="flex justify-between text-sm text-forest mt-2">
-          <span>₹{priceRange[0]}</span>
-          <span>₹{priceRange[1]}</span>
-        </div>
-      </div>
-
-      <Separator className="bg-warm-taupe" />
-
-      <div>
-        <h4 className="font-medium mb-4 text-deep-forest">Rating</h4>
-        <div className="flex items-center space-x-1">
-          <button
-            onClick={() => setRating(0)}
-            className={`flex items-center p-2 rounded-md transition-colors border ${
-              rating === 0
-                ? "bg-gold-accent/20 border-gold-accent/30 text-gold-accent"
-                : "hover:bg-sage/20 border-warm-taupe text-forest"
-            }`}
-          >
-            <span className="text-sm">Any</span>
-          </button>
-          {[5, 4, 3, 2, 1].map((star) => (
-            <button
-              key={star}
-              onClick={() => setRating(star)}
-              className={`flex items-center p-2 rounded-md transition-colors border ${
-                rating === star
-                  ? "bg-gold-accent/20 border-gold-accent/30 text-gold-accent"
-                  : "hover:bg-sage/20 border-warm-taupe text-forest"
-              }`}
-            >
-              <span className="text-sm">{star}</span>
-              <Star
-                className={`h-4 w-4 ml-1 ${
-                  rating >= star
-                    ? "text-gold-accent fill-gold-accent"
-                    : "text-warm-taupe"
-                }`}
-              />
-            </button>
-          ))}
-        </div>
-      </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="skin-type">
+          <AccordionTrigger>Skin Type</AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-2">
+              {["All", "Combination", "Oily", "Dry", "Normal", "Sensitive"].map(
+                (type) => (
+                  <div key={type} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`skin-${type}`}
+                      checked={pendingSkinTypes.includes(type)}
+                      onCheckedChange={(checked) => {
+                        setPendingSkinTypes((prev) =>
+                          checked
+                            ? [...prev, type]
+                            : prev.filter((t) => t !== type)
+                        );
+                      }}
+                    />
+                    <label htmlFor={`skin-${type}`}>{type}</label>
+                  </div>
+                )
+              )}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="hair-type">
+          <AccordionTrigger>Hair Type</AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-2">
+              {["All", "Normal", "Dry", "Oily", "Damaged", "Color-Treated"].map(
+                (type) => (
+                  <div key={type} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`hair-${type}`}
+                      checked={pendingHairTypes.includes(type)}
+                      onCheckedChange={(checked) => {
+                        setPendingHairTypes((prev) =>
+                          checked
+                            ? [...prev, type]
+                            : prev.filter((t) => t !== type)
+                        );
+                      }}
+                    />
+                    <label htmlFor={`hair-${type}`}>{type}</label>
+                  </div>
+                )
+              )}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="price-range">
+          <AccordionTrigger>Price Range</AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-4">
+              <RadioGroup
+                value={pendingPriceRange}
+                onValueChange={setPendingPriceRange}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="0-500" id="price-1" />
+                  <Label htmlFor="price-1">Under ₹500</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="500-1000" id="price-2" />
+                  <Label htmlFor="price-2">₹500 - ₹1000</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="1000-2000" id="price-3" />
+                  <Label htmlFor="price-3">₹1000 - ₹2000</Label>
+                </div>
+              </RadioGroup>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  placeholder="Min"
+                  value={pendingCustomMin}
+                  onChange={(e) => setPendingCustomMin(e.target.value)}
+                  className="w-full"
+                />
+                <span>-</span>
+                <Input
+                  type="number"
+                  placeholder="Max"
+                  value={pendingCustomMax}
+                  onChange={(e) => setPendingCustomMax(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+      <Button className="w-full mt-6" onClick={handleApplyFilters}>
+        Apply
+      </Button>
     </div>
   );
 
@@ -324,163 +439,170 @@ const Shop = () => {
 
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
-          <main className="w-full">
-            <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-              <div>
-                <h2 className="text-3xl font-sans font-bold text-deep-forest">
-                  {activeCategory === "all"
-                    ? "Products"
-                    : categories.find((c) => c._id === activeCategory)?.name ||
-                      "Products"}
-                </h2>
-                <p className="text-forest mt-1">
-                  Showing {displayedProducts.length} of {totalFiltered} products
-                </p>
+          <div className="grid grid-cols-1 lg:grid-cols-4 lg:gap-8">
+            <aside className="hidden lg:block col-span-1">
+              <div className="sticky top-24">
+                <FilterContent />
+              </div>
+            </aside>
+            <main className="col-span-1 lg:col-span-3">
+              <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+                <div>
+                  <h2 className="text-3xl font-sans font-bold text-deep-forest">
+                    {activeCategory === "all"
+                      ? "All Products"
+                      : categories.find((c) => c._id === activeCategory)
+                          ?.name || "Products"}
+                  </h2>
+                  <p className="text-forest mt-1">
+                    Showing {displayedProducts.length} of {totalFiltered}{" "}
+                    products
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full sm:w-auto border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage lg:hidden"
+                      >
+                        <Filter className="mr-2 h-4 w-4" /> Filters
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent
+                      side="left"
+                      className="w-[300px] bg-white border-warm-taupe"
+                    >
+                      <SheetHeader>
+                        <SheetTitle className="text-deep-forest">
+                          Filter Products
+                        </SheetTitle>
+                      </SheetHeader>
+                      <div className="p-4 overflow-y-auto">
+                        <FilterContent />
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-full sm:w-[180px] border-warm-taupe text-forest">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-warm-taupe">
+                      <SelectItem
+                        value="featured-desc"
+                        className="text-forest hover:bg-sage/20"
+                      >
+                        Featured
+                      </SelectItem>
+                      <SelectItem
+                        value="price-asc"
+                        className="text-forest hover:bg-sage/20"
+                      >
+                        Price: Low to High
+                      </SelectItem>
+                      <SelectItem
+                        value="price-desc"
+                        className="text-forest hover:bg-sage/20"
+                      >
+                        Price: High to Low
+                      </SelectItem>
+                      <SelectItem
+                        value="createdAt-desc"
+                        className="text-forest hover:bg-sage/20"
+                      >
+                        Newest
+                      </SelectItem>
+                      <SelectItem
+                        value="rating-desc"
+                        className="text-forest hover:bg-sage/20"
+                      >
+                        Rating
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div className="flex items-center gap-4 w-full sm:w-auto">
-                {/* Filter Trigger - Works for both mobile and desktop */}
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full sm:w-auto border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage"
-                    >
-                      <Filter className="mr-2 h-4 w-4" /> Filters
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent
-                    side="left"
-                    className="w-[300px] sm:w-[400px] lg:w-[400px] bg-white border-warm-taupe"
-                  >
-                    <SheetHeader>
-                      <SheetTitle className="text-deep-forest">
-                        Filter Products
-                      </SheetTitle>
-                    </SheetHeader>
-                    <div className="p-4">
-                      <FilterContent />
+              {loading ? (
+                <div className="grid gap-4 sm:gap-6 grid-cols-2 sm:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <Skeleton className="h-64 w-full bg-warm-taupe/20" />
+                      <Skeleton className="h-4 w-2/3 bg-warm-taupe/20" />
+                      <Skeleton className="h-4 w-1/2 bg-warm-taupe/20" />
                     </div>
-                  </SheetContent>
-                </Sheet>
+                  ))}
+                </div>
+              ) : error ? (
+                <div className="text-center text-red-500 py-10">{error}</div>
+              ) : computedProducts.length === 0 ? (
+                <div className="text-center text-forest py-20 rounded-lg bg-gradient-to-br from-sage/10 via-white to-sage/10 border border-warm-taupe">
+                  <h3 className="text-2xl font-semibold mb-2 text-deep-forest">
+                    No Products Found
+                  </h3>
+                  <p>
+                    Try adjusting your filters to find what you're looking for.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:gap-6 grid-cols-2 sm:grid-cols-3">
+                  {displayedProducts.map((product) => {
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    const isNew = new Date(product.createdAt) > thirtyDaysAgo;
 
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full sm:w-[180px] border-warm-taupe text-forest">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border-warm-taupe">
-                    <SelectItem
-                      value="featured-desc"
-                      className="text-forest hover:bg-sage/20"
-                    >
-                      Featured
-                    </SelectItem>
-                    <SelectItem
-                      value="price-asc"
-                      className="text-forest hover:bg-sage/20"
-                    >
-                      Price: Low to High
-                    </SelectItem>
-                    <SelectItem
-                      value="price-desc"
-                      className="text-forest hover:bg-sage/20"
-                    >
-                      Price: High to Low
-                    </SelectItem>
-                    <SelectItem
-                      value="createdAt-desc"
-                      className="text-forest hover:bg-sage/20"
-                    >
-                      Newest
-                    </SelectItem>
-                    <SelectItem
-                      value="rating-desc"
-                      className="text-forest hover:bg-sage/20"
-                    >
-                      Rating
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                    return (
+                      <ProductCard
+                        key={product._id}
+                        id={product._id}
+                        slug={product.slug}
+                        name={product.name}
+                        price={product.price}
+                        originalPrice={product.originalPrice}
+                        image={product.images[0]?.url || ""}
+                        rating={product.ratings.average}
+                        reviews={product.ratings.numOfReviews}
+                        category={product.category.name}
+                        volume={product.volume}
+                        variants={product.variants}
+                        isSale={
+                          !!(
+                            product.originalPrice &&
+                            product.originalPrice > product.price
+                          )
+                        }
+                        isNew={isNew}
+                        benefits={product.benefits}
+                      />
+                    );
+                  })}
+                </div>
+              )}
 
-            {loading ? (
-              <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <div key={i} className="space-y-2">
-                    <Skeleton className="h-64 w-full bg-warm-taupe/20" />
-                    <Skeleton className="h-4 w-2/3 bg-warm-taupe/20" />
-                    <Skeleton className="h-4 w-1/2 bg-warm-taupe/20" />
-                  </div>
-                ))}
-              </div>
-            ) : error ? (
-              <div className="text-center text-red-500 py-10">{error}</div>
-            ) : computedProducts.length === 0 ? (
-              <div className="text-center text-forest py-20 rounded-lg bg-gradient-to-br from-sage/10 via-white to-sage/10 border border-warm-taupe">
-                <h3 className="text-2xl font-semibold mb-2 text-deep-forest">
-                  No Products Found
-                </h3>
-                <p>
-                  Try adjusting your filters to find what you're looking for.
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
-                {displayedProducts.map((product) => {
-                  const thirtyDaysAgo = new Date();
-                  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                  const isNew = new Date(product.createdAt) > thirtyDaysAgo;
-
-                  return (
-                    <ProductCard
-                      key={product._id}
-                      id={product._id}
-                      slug={product.slug}
-                      name={product.name}
-                      price={product.price}
-                      originalPrice={product.originalPrice}
-                      image={product.images[0]?.url || ""}
-                      rating={product.ratings.average}
-                      reviews={product.ratings.numOfReviews}
-                      category={product.category.name}
-                      volume={product.volume}
-                      variants={product.variants}
-                      isSale={
-                        !!(
-                          product.originalPrice &&
-                          product.originalPrice > product.price
-                        )
-                      }
-                      isNew={isNew}
-                      benefits={product.benefits}
-                    />
-                  );
-                })}
-              </div>
-            )}
-
-            {hasMore && (
-              <div className="text-center mt-12">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                  className="border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage"
-                >
-                  {loadingMore ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    "Load More Products"
-                  )}
-                </Button>
-              </div>
-            )}
-          </main>
+              {hasMore && (
+                <div className="text-center mt-12">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      "Load More Products"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </main>
+          </div>
         </div>
       </section>
 

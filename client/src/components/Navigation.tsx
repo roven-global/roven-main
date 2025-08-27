@@ -193,7 +193,7 @@ const Navigation = () => {
           </div>
 
           {/* Icon Buttons & Mobile Menu */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             <Button
               variant="ghost"
               size="icon"
@@ -274,10 +274,10 @@ const Navigation = () => {
       {/* Mobile Menu Panel */}
       <div
         className={cn(
-          "md:hidden bg-white border-t border-warm-taupe/50 transition-all duration-300 ease-in-out",
+          "md:hidden absolute inset-x-0 top-full bg-white border-t border-warm-taupe/50 transition-all duration-300 ease-in-out z-40 shadow-lg",
           isMenuOpen
-            ? "block opacity-100 transform translate-y-0"
-            : "hidden opacity-0 transform -translate-y-2"
+            ? "visible opacity-100 transform translate-y-0"
+            : "invisible opacity-0 transform -translate-y-4"
         )}
       >
         <div className="px-4 pt-2 pb-6 space-y-2 max-h-[80vh] overflow-y-auto">

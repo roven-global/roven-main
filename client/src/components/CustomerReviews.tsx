@@ -108,10 +108,10 @@ const CustomerReviews = forwardRef<CustomerReviewsHandles, CustomerReviewsProps>
               readOnly
                 ? star <= value
                   ? "text-gold-accent fill-gold-accent"
-                  : "text-gray-300"
+                  : "text-warm-taupe/50"
                 : star <= (hoverRating || rating)
                 ? "text-gold-accent fill-gold-accent"
-                : "text-gray-300"
+                : "text-warm-taupe/50"
             }`}
             onClick={() => !readOnly && setRating(star)}
             onMouseEnter={() => !readOnly && setHoverRating(star)}
@@ -148,7 +148,7 @@ const CustomerReviews = forwardRef<CustomerReviewsHandles, CustomerReviewsProps>
               </Button>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-forest mb-1">
                 Rating
               </label>
               <StarRating />
@@ -156,7 +156,7 @@ const CustomerReviews = forwardRef<CustomerReviewsHandles, CustomerReviewsProps>
             <div>
               <label
                 htmlFor="review-title"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-forest"
               >
                 Title
               </label>
@@ -171,7 +171,7 @@ const CustomerReviews = forwardRef<CustomerReviewsHandles, CustomerReviewsProps>
             <div>
               <label
                 htmlFor="review-comment"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-forest"
               >
                 Comment
               </label>
@@ -200,7 +200,7 @@ const CustomerReviews = forwardRef<CustomerReviewsHandles, CustomerReviewsProps>
             {reviews.map((review) => (
               <div key={review._id} className="border-b pb-4">
                 <div className="flex items-center mb-2">
-                  <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden mr-3">
+                  <div className="w-10 h-10 rounded-full bg-warm-cream overflow-hidden mr-3">
                     <img
                       src={
                         review.user?.avatar?.url ||
@@ -219,8 +219,8 @@ const CustomerReviews = forwardRef<CustomerReviewsHandles, CustomerReviewsProps>
                   </div>
                 </div>
                 <h5 className="font-semibold mb-1">{review.title}</h5>
-                <p className="text-sm text-gray-600">{review.comment}</p>
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="text-sm text-forest">{review.comment}</p>
+                <p className="text-xs text-warm-taupe mt-2">
                   {new Date(review.createdAt).toLocaleDateString()}
                 </p>
               </div>

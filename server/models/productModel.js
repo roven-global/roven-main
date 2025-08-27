@@ -8,7 +8,7 @@ const ingredientSchema = new mongoose.Schema(
     description: { type: String, trim: true, maxlength: 300 },
     image: {
       public_id: { type: String, trim: true }, // Cloudinary public ID
-      url: { type: String, trim: true },       // Cloudinary secure URL
+      url: { type: String, trim: true }, // Cloudinary secure URL
     },
   },
   { _id: false }
@@ -113,14 +113,40 @@ const productSchema = new mongoose.Schema(
     specifications: {
       volume: { type: String, trim: true },
       skinType: {
-        type: String,
-        enum: ["Normal", "Dry", "Oily", "Combination", "Sensitive", "All Types"],
-        default: "All Types",
+        type: [String],
+        enum: [
+          "Normal",
+          "Dry",
+          "Oily",
+          "Combination",
+          "Sensitive",
+          "All Types",
+        ],
+        default: ["All Types"],
+        validate: {
+          validator: function (v) {
+            return Array.isArray(v) && v.length > 0;
+          },
+          message: "Skin type must be a non-empty array",
+        },
       },
       hairType: {
-        type: String,
-        enum: ["Normal", "Dry", "Oily", "Damaged", "Color-Treated", "All Types"],
-        default: "All Types",
+        type: [String],
+        enum: [
+          "Normal",
+          "Dry",
+          "Oily",
+          "Damaged",
+          "Color-Treated",
+          "All Types",
+        ],
+        default: ["All Types"],
+        validate: {
+          validator: function (v) {
+            return Array.isArray(v) && v.length > 0;
+          },
+          message: "Hair type must be a non-empty array",
+        },
       },
       fragrance: { type: String, trim: true },
     },
@@ -133,10 +159,18 @@ const productSchema = new mongoose.Schema(
       },
     ],
     benefits: [
-      { type: String, trim: true, maxlength: [100, "Benefit cannot exceed 100 characters"] },
+      {
+        type: String,
+        trim: true,
+        maxlength: [100, "Benefit cannot exceed 100 characters"],
+      },
     ],
     howToUse: [
-      { type: String, trim: true, maxlength: [300, "How to use step cannot exceed 300 characters"] },
+      {
+        type: String,
+        trim: true,
+        maxlength: [300, "How to use step cannot exceed 300 characters"],
+      },
     ],
     tags: [{ type: String, trim: true, lowercase: true }],
     relatedProducts: [
@@ -148,8 +182,17 @@ const productSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     isFeatured: { type: Boolean, default: false },
     ratings: {
-      average: { type: Number, default: 0, min: [0, "Rating cannot be less than 0"], max: [5, "Rating cannot be more than 5"] },
-      numOfReviews: { type: Number, default: 0, min: [0, "Number of reviews cannot be negative"] },
+      average: {
+        type: Number,
+        default: 0,
+        min: [0, "Rating cannot be less than 0"],
+        max: [5, "Rating cannot be more than 5"],
+      },
+      numOfReviews: {
+        type: Number,
+        default: 0,
+        min: [0, "Number of reviews cannot be negative"],
+      },
     },
     slug: {
       type: String,
@@ -164,14 +207,22 @@ const productSchema = new mongoose.Schema(
 // Slug pre-save
 productSchema.pre("save", function (next) {
   if (this.isModified("name")) {
-    this.slug = slugify(this.name, { lower: true, remove: /[*+~.()'"!:@]/g, strict: true });
+    this.slug = slugify(this.name, {
+      lower: true,
+      remove: /[*+~.()'"!:@]/g,
+      strict: true,
+    });
   }
 
   if (this.variants && this.variants.length > 0) {
-    this.price = Math.min(...this.variants.map(v => v.price));
-    const variantsWithOriginalPrice = this.variants.filter(v => v.originalPrice);
+    this.price = Math.min(...this.variants.map((v) => v.price));
+    const variantsWithOriginalPrice = this.variants.filter(
+      (v) => v.originalPrice
+    );
     if (variantsWithOriginalPrice.length > 0) {
-      this.originalPrice = Math.min(...variantsWithOriginalPrice.map(v => v.originalPrice));
+      this.originalPrice = Math.min(
+        ...variantsWithOriginalPrice.map((v) => v.originalPrice)
+      );
     }
   }
 
@@ -181,7 +232,9 @@ productSchema.pre("save", function (next) {
 // Virtuals
 productSchema.virtual("discountPercentage").get(function () {
   if (this.originalPrice && this.originalPrice > this.price) {
-    return Math.round(((this.originalPrice - this.price) / this.originalPrice) * 100);
+    return Math.round(
+      ((this.originalPrice - this.price) / this.originalPrice) * 100
+    );
   }
   return 0;
 });
@@ -189,7 +242,9 @@ productSchema.virtual("discountPercentage").get(function () {
 productSchema.virtual("stockStatus").get(function () {
   if (!this.variants || this.variants.length === 0) return "Out of Stock";
   const totalStock = this.variants.reduce((t, v) => t + (v.stock || 0), 0);
-  const minThreshold = Math.min(...this.variants.map(v => v.lowStockThreshold || 10));
+  const minThreshold = Math.min(
+    ...this.variants.map((v) => v.lowStockThreshold || 10)
+  );
   if (totalStock === 0) return "Out of Stock";
   if (totalStock <= minThreshold) return "Low Stock";
   return "In Stock";
@@ -197,17 +252,17 @@ productSchema.virtual("stockStatus").get(function () {
 
 productSchema.virtual("minPrice").get(function () {
   if (!this.variants || this.variants.length === 0) return this.price;
-  return Math.min(...this.variants.map(v => v.price));
+  return Math.min(...this.variants.map((v) => v.price));
 });
 
 productSchema.virtual("maxPrice").get(function () {
   if (!this.variants || this.variants.length === 0) return this.price;
-  return Math.max(...this.variants.map(v => v.price));
+  return Math.max(...this.variants.map((v) => v.price));
 });
 
 productSchema.virtual("availableVariants").get(function () {
   if (!this.variants) return [];
-  return this.variants.filter(v => v.isActive && v.stock > 0);
+  return this.variants.filter((v) => v.isActive && v.stock > 0);
 });
 
 productSchema.virtual("reviews", {

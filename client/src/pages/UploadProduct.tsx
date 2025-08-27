@@ -1,18 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Upload, X, Plus, ArrowLeft, Save, Package, Image as ImageIcon, Tag,Search } from 'lucide-react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import Axios from '@/utils/Axios';
-import SummaryApi from '@/common/summaryApi';
+import {
+  Upload,
+  X,
+  Plus,
+  ArrowLeft,
+  Save,
+  Package,
+  Image as ImageIcon,
+  Tag,
+  Search,
+} from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import Axios from "@/utils/Axios";
+import SummaryApi from "@/common/summaryApi";
 
 interface Category {
   _id: string;
@@ -61,7 +84,11 @@ interface Product {
     public_id: string;
   }>;
   specifications: Record<string, any>;
-  ingredients?: Array<{ name: string; description: string; image?: { url: string; public_id?: string } }>;
+  ingredients?: Array<{
+    name: string;
+    description: string;
+    image?: { url: string; public_id?: string };
+  }>;
   suitableFor?: string[];
   tags: string[];
   benefits?: string[];
@@ -80,45 +107,52 @@ interface ImagePreview {
 const UploadProduct = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const editProductId = searchParams.get('edit');
+  const editProductId = searchParams.get("edit");
   const isEditing = Boolean(editProductId);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState<ImagePreview[]>([]);
-  const [specifications, setSpecifications] = useState<Array<{ key: string, value: string }>>([]);
+  const [specifications, setSpecifications] = useState<
+    Array<{ key: string; value: string }>
+  >([]);
   const [tags, setTags] = useState<string[]>([]);
-  const [newTag, setNewTag] = useState('');
+  const [newTag, setNewTag] = useState("");
   const [benefits, setBenefits] = useState<string[]>([]);
-  const [newBenefit, setNewBenefit] = useState('');
+  const [newBenefit, setNewBenefit] = useState("");
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [useVariants, setUseVariants] = useState(false);
 
   // New fields
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [suitableFor, setSuitableFor] = useState<string[]>([]);
-  const [newSuitableFor, setNewSuitableFor] = useState('');
+  const [newSuitableFor, setNewSuitableFor] = useState("");
   const [howToUse, setHowToUse] = useState<string[]>([]);
-  const [newHowToUse, setNewHowToUse] = useState('');
+  const [newHowToUse, setNewHowToUse] = useState("");
 
   // State for Related Products
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]); // Using any for simplicity here
-  const [relatedProductSearch, setRelatedProductSearch] = useState('');
-  const [relatedProductSearchResults, setRelatedProductSearchResults] = useState<any[]>([]);
+  const [relatedProductSearch, setRelatedProductSearch] = useState("");
+  const [relatedProductSearchResults, setRelatedProductSearchResults] =
+    useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    shortDescription: '',
-    price: '',
-    originalPrice: '',
-    category: '',
-    brand: '',
-    sku: '',
-    volume: '',
+    name: "",
+    description: "",
+    shortDescription: "",
+    price: "",
+    originalPrice: "",
+    category: "",
+    brand: "",
+    sku: "",
+    volume: "",
     isActive: true,
     isFeatured: false,
+    specifications: {
+      skinType: [] as string[],
+      hairType: [] as string[],
+    },
   });
 
   useEffect(() => {
@@ -127,6 +161,17 @@ const UploadProduct = () => {
       fetchProduct(editProductId);
     }
   }, [isEditing, editProductId]);
+
+  // Cleanup ingredient image URLs on unmount
+  useEffect(() => {
+    return () => {
+      ingredients.forEach((ing) => {
+        if (ing.imageUrl && ing.imageUrl.startsWith("blob:")) {
+          URL.revokeObjectURL(ing.imageUrl);
+        }
+      });
+    };
+  }, [ingredients]);
 
   const fetchCategories = async () => {
     try {
@@ -138,7 +183,7 @@ const UploadProduct = () => {
         setCategories(response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error("Error fetching categories:", error);
     }
   };
 
@@ -154,33 +199,57 @@ const UploadProduct = () => {
         setFormData({
           name: product.name,
           description: product.description,
-          shortDescription: product.shortDescription || '',
+          shortDescription: product.shortDescription || "",
           price: product.price.toString(),
-          originalPrice: product.originalPrice?.toString() || '',
+          originalPrice: product.originalPrice?.toString() || "",
           category: product.category._id,
           brand: product.brand,
           sku: product.sku,
-          volume: product.volume || '',
+          volume: product.volume || "",
           isActive: product.isActive,
           isFeatured: product.isFeatured,
+          specifications: {
+            skinType: Array.isArray(product.specifications?.skinType)
+              ? product.specifications.skinType
+              : product.specifications?.skinType
+              ? [product.specifications.skinType]
+              : [],
+            hairType: Array.isArray(product.specifications?.hairType)
+              ? product.specifications.hairType
+              : product.specifications?.hairType
+              ? [product.specifications.hairType]
+              : [],
+          },
         });
 
         // Set existing images
-        const existingImages: ImagePreview[] = product.images.map((img, index) => ({
-          file: new File([], `existing-${index}`),
-          url: img.url,
-          id: `existing-${index}`,
-        }));
+        const existingImages: ImagePreview[] = product.images.map(
+          (img, index) => ({
+            file: new File([], `existing-${index}`),
+            url: img.url,
+            id: `existing-${index}`,
+          })
+        );
         setImageFiles(existingImages);
 
         // Set specifications (filter out suitableFor and ingredients as they are separate fields)
         const specs = Object.entries(product.specifications)
-          .filter(([key]) => key.toLowerCase() !== 'suitablefor' && key.toLowerCase() !== 'ingredients')
+          .filter(
+            ([key]) =>
+              key.toLowerCase() !== "suitablefor" &&
+              key.toLowerCase() !== "ingredients"
+          )
           .map(([key, value]) => ({
             key,
             value: value.toString(),
           }));
-        setSpecifications(specs);
+        setSpecifications(
+          specs.filter(
+            (spec) =>
+              spec.key.toLowerCase() !== "skintype" &&
+              spec.key.toLowerCase() !== "hairtype"
+          )
+        );
 
         // Set tags
         setTags(product.tags);
@@ -197,10 +266,10 @@ const UploadProduct = () => {
         // Set new fields
         if (product.ingredients) {
           const ingredientsData = product.ingredients.map((ing: any) => ({
-            name: ing.name || '',
-            description: ing.description || '',
+            name: ing.name || "",
+            description: ing.description || "",
             imageFile: null,
-            imageUrl: ing.image?.url || ''
+            imageUrl: ing.image?.url || "",
           }));
           setIngredients(ingredientsData);
         } else {
@@ -211,7 +280,7 @@ const UploadProduct = () => {
         setRelatedProducts(product.relatedProducts || []);
       }
     } catch (error) {
-      console.error('Error fetching product:', error);
+      console.error("Error fetching product:", error);
       toast({
         title: "Error",
         description: "Failed to fetch product details",
@@ -225,8 +294,9 @@ const UploadProduct = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
 
-    files.forEach(file => {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+    files.forEach((file) => {
+      if (file.size > 10 * 1024 * 1024) {
+        // 10MB limit
         toast({
           title: "Error",
           description: "Image size should be less than 10MB",
@@ -242,103 +312,176 @@ const UploadProduct = () => {
           url: e.target?.result as string,
           id: Date.now().toString() + Math.random(),
         };
-        setImageFiles(prev => [...prev, imagePreview]);
+        setImageFiles((prev) => [...prev, imagePreview]);
       };
       reader.readAsDataURL(file);
     });
   };
 
   const removeImage = (id: string) => {
-    setImageFiles(prev => prev.filter(img => img.id !== id));
+    setImageFiles((prev) => prev.filter((img) => img.id !== id));
   };
 
   const addSpecification = () => {
-    setSpecifications(prev => [...prev, { key: '', value: '' }]);
+    setSpecifications((prev) => [...prev, { key: "", value: "" }]);
   };
 
-  const updateSpecification = (index: number, field: 'key' | 'value', value: string) => {
+  const updateSpecification = (
+    index: number,
+    field: "key" | "value",
+    value: string
+  ) => {
     // Prevent users from setting specification keys to reserved names
-    if (field === 'key') {
+    if (field === "key") {
       const lowerValue = value.toLowerCase();
-      if (lowerValue === 'suitablefor' || lowerValue === 'ingredients') {
+      if (
+        lowerValue === "suitablefor" ||
+        lowerValue === "ingredients" ||
+        lowerValue === "skintype" ||
+        lowerValue === "hairtype"
+      ) {
         toast({
           title: "Invalid Specification Name",
-          description: "'suitableFor' and 'ingredients' are reserved field names and cannot be used as specification keys.",
+          description:
+            "'suitableFor', 'ingredients', 'skinType', and 'hairType' are reserved field names and cannot be used as specification keys.",
           variant: "destructive",
         });
         return;
       }
     }
 
-    setSpecifications(prev => prev.map((spec, i) =>
-      i === index ? { ...spec, [field]: value } : spec
-    ));
+    setSpecifications((prev) =>
+      prev.map((spec, i) => (i === index ? { ...spec, [field]: value } : spec))
+    );
   };
 
-
-
   const removeSpecification = (index: number) => {
-    setSpecifications(prev => prev.filter((_, i) => i !== index));
+    setSpecifications((prev) => prev.filter((_, i) => i !== index));
   };
 
   const addTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags(prev => [...prev, newTag.trim()]);
-      setNewTag('');
+      setTags((prev) => [...prev, newTag.trim()]);
+      setNewTag("");
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    setTags(prev => prev.filter(tag => tag !== tagToRemove));
+    setTags((prev) => prev.filter((tag) => tag !== tagToRemove));
   };
 
   const addBenefit = () => {
     if (newBenefit.trim() && !benefits.includes(newBenefit.trim())) {
       setBenefits([...benefits, newBenefit.trim()]);
-      setNewBenefit('');
+      setNewBenefit("");
     }
   };
 
   const removeBenefit = (benefitToRemove: string) => {
-    setBenefits(benefits.filter(benefit => benefit !== benefitToRemove));
+    setBenefits(benefits.filter((benefit) => benefit !== benefitToRemove));
   };
 
   // Ingredient management functions
   const addIngredient = () => {
-    setIngredients(prev => [...prev, { name: "", description: "", imageFile: null, imageUrl: "" }]);
+    setIngredients((prev) => [
+      ...prev,
+      { name: "", description: "", imageFile: null, imageUrl: "" },
+    ]);
   };
 
-  const updateIngredient = (index: number, field: keyof Ingredient, value: any) => {
-    setIngredients(prev => prev.map((ing, i) => i === index ? { ...ing, [field]: value } : ing));
+  const updateIngredient = (
+    index: number,
+    field: keyof Ingredient,
+    value: any
+  ) => {
+    setIngredients((prev) =>
+      prev.map((ing, i) => (i === index ? { ...ing, [field]: value } : ing))
+    );
   };
 
   const handleIngredientImageChange = (index: number, file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
+    // Validate file type
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+    if (!allowedTypes.includes(file.type)) {
       toast({
-        title: "Error",
-        description: "Ingredient image must be less than 10MB",
-        variant: "destructive"
+        title: "Invalid File Type",
+        description:
+          "Please select a valid image file (JPG, PNG, GIF, or WebP)",
+        variant: "destructive",
       });
       return;
     }
-    const previewUrl = URL.createObjectURL(file);
-    updateIngredient(index, "imageFile", file);
-    updateIngredient(index, "imageUrl", previewUrl);
-  };
 
-  const removeIngredient = (index: number) => {
-    setIngredients(prev => prev.filter((_, i) => i !== index));
-  };
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Ingredient image must be less than 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  // Helper functions for new fields
-  const addListItem = (listSetter: React.Dispatch<React.SetStateAction<string[]>>, value: string) => {
-    if (value.trim()) {
-      listSetter(prev => [...prev, value.trim()]);
+    try {
+      const previewUrl = URL.createObjectURL(file);
+      updateIngredient(index, "imageFile", file);
+      updateIngredient(index, "imageUrl", previewUrl);
+
+      toast({
+        title: "Success",
+        description: "Ingredient image uploaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Upload Error",
+        description: "Failed to process ingredient image. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Ingredient image upload error:", error);
     }
   };
 
-  const removeListItem = (listSetter: React.Dispatch<React.SetStateAction<string[]>>, value: string) => {
-    listSetter(prev => prev.filter(item => item !== value));
+  const removeIngredient = (index: number) => {
+    setIngredients((prev) => {
+      const ingredient = prev[index];
+      // Clean up the blob URL if it exists
+      if (ingredient.imageUrl && ingredient.imageUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(ingredient.imageUrl);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  // Helper functions for new fields
+  const addListItem = (
+    listSetter: React.Dispatch<React.SetStateAction<string[]>>,
+    value: string
+  ) => {
+    if (value.trim()) {
+      // Check if this is for howToUse and validate length
+      if (listSetter === setHowToUse && value.trim().length > 300) {
+        toast({
+          title: "Validation Error",
+          description: "How to use step cannot exceed 300 characters",
+          variant: "destructive",
+        });
+        return;
+      }
+      listSetter((prev) => [...prev, value.trim()]);
+    }
+  };
+
+  const removeListItem = (
+    listSetter: React.Dispatch<React.SetStateAction<string[]>>,
+    value: string
+  ) => {
+    listSetter((prev) => prev.filter((item) => item !== value));
   };
 
   // --- Related Products Functions ---
@@ -349,11 +492,20 @@ const UploadProduct = () => {
     }
     setIsSearching(true);
     try {
-      const response = await Axios.get(`${SummaryApi.searchProducts.url}?search=${relatedProductSearch}&limit=5`);
+      const response = await Axios.get(
+        `${SummaryApi.searchProducts.url}?search=${relatedProductSearch}&limit=5`
+      );
       if (response.data.success) {
         // Filter out the current product and already added related products
-        const currentAndAddedIds = new Set([editProductId, ...relatedProducts.map(p => p._id)]);
-        setRelatedProductSearchResults(response.data.data.products.filter((p: any) => !currentAndAddedIds.has(p._id)));
+        const currentAndAddedIds = new Set([
+          editProductId,
+          ...relatedProducts.map((p) => p._id),
+        ]);
+        setRelatedProductSearchResults(
+          response.data.data.products.filter(
+            (p: any) => !currentAndAddedIds.has(p._id)
+          )
+        );
       }
     } catch (error) {
       console.error("Failed to search for products:", error);
@@ -363,30 +515,35 @@ const UploadProduct = () => {
   };
 
   const addRelatedProduct = (product: any) => {
-    setRelatedProducts(prev => [...prev, product]);
-    setRelatedProductSearchResults(prev => prev.filter(p => p._id !== product._id));
+    setRelatedProducts((prev) => [...prev, product]);
+    setRelatedProductSearchResults((prev) =>
+      prev.filter((p) => p._id !== product._id)
+    );
   };
 
   const removeRelatedProduct = (productId: string) => {
-    setRelatedProducts(prev => prev.filter(p => p._id !== productId));
+    setRelatedProducts((prev) => prev.filter((p) => p._id !== productId));
   };
-
 
   // Variant management functions
   const addVariant = () => {
     const newVariant: ProductVariant = {
-      volume: '',
+      volume: "",
       price: 0,
       originalPrice: 0,
       stock: 0,
-      sku: '',
+      sku: "",
       lowStockThreshold: 5,
       isActive: true,
     };
     setVariants([...variants, newVariant]);
   };
 
-  const updateVariant = (index: number, field: keyof ProductVariant, value: any) => {
+  const updateVariant = (
+    index: number,
+    field: keyof ProductVariant,
+    value: any
+  ) => {
     const updatedVariants = [...variants];
     updatedVariants[index] = { ...updatedVariants[index], [field]: value };
     setVariants(updatedVariants);
@@ -408,7 +565,7 @@ const UploadProduct = () => {
       return false;
     }
 
-    const skus = variants.map(v => v.sku).filter(sku => sku.trim() !== '');
+    const skus = variants.map((v) => v.sku).filter((sku) => sku.trim() !== "");
     const uniqueSkus = new Set(skus);
 
     if (skus.length !== uniqueSkus.size) {
@@ -455,7 +612,13 @@ const UploadProduct = () => {
     e.preventDefault();
 
     // Basic form validation
-    if (!formData.name || !formData.description || !formData.category || !formData.brand || !formData.sku) {
+    if (
+      !formData.name ||
+      !formData.description ||
+      !formData.category ||
+      !formData.brand ||
+      !formData.sku
+    ) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -468,7 +631,8 @@ const UploadProduct = () => {
     if (!useVariants && (!formData.price || parseFloat(formData.price) <= 0)) {
       toast({
         title: "Error",
-        description: "Price is required and must be greater than 0 for single products.",
+        description:
+          "Price is required and must be greater than 0 for single products.",
         variant: "destructive",
       });
       return;
@@ -483,7 +647,8 @@ const UploadProduct = () => {
     if (useVariants && variants.length === 0) {
       toast({
         title: "Error",
-        description: "Please add at least one variant or disable the variant option.",
+        description:
+          "Please add at least one variant or disable the variant option.",
         variant: "destructive",
       });
       return;
@@ -506,21 +671,21 @@ const UploadProduct = () => {
       const isUsingVariants = useVariants && variants.length > 0;
 
       // Add basic product data
-      formDataToSend.append('name', formData.name);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('shortDescription', formData.shortDescription);
-      formDataToSend.append('category', formData.category);
-      formDataToSend.append('brand', formData.brand);
-      formDataToSend.append('sku', formData.sku);
-      formDataToSend.append('isActive', formData.isActive.toString());
-      formDataToSend.append('isFeatured', formData.isFeatured.toString());
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("shortDescription", formData.shortDescription);
+      formDataToSend.append("category", formData.category);
+      formDataToSend.append("brand", formData.brand);
+      formDataToSend.append("sku", formData.sku);
+      formDataToSend.append("isActive", formData.isActive.toString());
+      formDataToSend.append("isFeatured", formData.isFeatured.toString());
 
       // Handle price, original price, and volume based on variant usage
       if (isUsingVariants) {
         // When using variants, set base price to 0, but still send volume if needed
-        formDataToSend.append('price', '0');
-        formDataToSend.append('volume', formData.volume || '');
-        if (formData.originalPrice) formDataToSend.append('originalPrice', '0');
+        formDataToSend.append("price", "0");
+        formDataToSend.append("volume", formData.volume || "");
+        if (formData.originalPrice) formDataToSend.append("originalPrice", "0");
       } else {
         // When not using variants, ensure price is valid and send volume
         const price = parseFloat(formData.price) || 0;
@@ -533,30 +698,51 @@ const UploadProduct = () => {
           setLoading(false);
           return;
         }
-        formDataToSend.append('price', formData.price);
-        formDataToSend.append('volume', formData.volume || '');
-        if (formData.originalPrice) formDataToSend.append('originalPrice', formData.originalPrice);
+        formDataToSend.append("price", formData.price);
+        formDataToSend.append("volume", formData.volume || "");
+        if (formData.originalPrice)
+          formDataToSend.append("originalPrice", formData.originalPrice);
       }
-
 
       // Add specifications (excluding suitableFor and ingredients as they are separate fields)
       const specsObject = specifications.reduce((acc, spec) => {
         if (spec.key.trim() && spec.value.trim()) {
-          // Filter out any specifications that might be named 'suitableFor' or 'ingredients'
-          if (spec.key.toLowerCase() !== 'suitablefor' && spec.key.toLowerCase() !== 'ingredients') {
+          if (
+            spec.key.toLowerCase() !== "suitablefor" &&
+            spec.key.toLowerCase() !== "ingredients" &&
+            spec.key.toLowerCase() !== "skintype" &&
+            spec.key.toLowerCase() !== "hairtype"
+          ) {
             acc[spec.key] = spec.value;
           }
         }
         return acc;
       }, {} as Record<string, any>);
-      formDataToSend.append('specifications', JSON.stringify(specsObject));
+
+      // Add skinType to specifications object
+      if (
+        formData.specifications.skinType &&
+        formData.specifications.skinType.length > 0
+      ) {
+        specsObject.skinType = formData.specifications.skinType;
+      }
+
+      // Add hairType to specifications object
+      if (
+        formData.specifications.hairType &&
+        formData.specifications.hairType.length > 0
+      ) {
+        specsObject.hairType = formData.specifications.hairType;
+      }
+
+      formDataToSend.append("specifications", JSON.stringify(specsObject));
 
       // Add ingredients as JSON without images
-      const ingredientsData = ingredients.map(ing => ({
+      const ingredientsData = ingredients.map((ing) => ({
         name: ing.name,
-        description: ing.description
+        description: ing.description,
       }));
-      formDataToSend.append('ingredients', JSON.stringify(ingredientsData));
+      formDataToSend.append("ingredients", JSON.stringify(ingredientsData));
 
       // Add ingredient images separately
       ingredients.forEach((ing, index) => {
@@ -566,31 +752,35 @@ const UploadProduct = () => {
       });
 
       // Add tags
-      formDataToSend.append('tags', JSON.stringify(tags));
+      formDataToSend.append("tags", JSON.stringify(tags));
 
       // Add benefits
-      formDataToSend.append('benefits', JSON.stringify(benefits));
+      formDataToSend.append("benefits", JSON.stringify(benefits));
 
       // Add How to Use
-      formDataToSend.append('howToUse', JSON.stringify(howToUse));
+      formDataToSend.append("howToUse", JSON.stringify(howToUse));
 
       // Add related products
-      formDataToSend.append('relatedProducts', JSON.stringify(relatedProducts.map(p => p._id)));
+      formDataToSend.append(
+        "relatedProducts",
+        JSON.stringify(relatedProducts.map((p) => p._id))
+      );
 
       // Handle variants - be very explicit about the data structure
       if (isUsingVariants) {
-        formDataToSend.append('variants', JSON.stringify(variants));
-        formDataToSend.append('hasVariants', 'true');
-        formDataToSend.append('productType', 'variant');
+        formDataToSend.append("variants", JSON.stringify(variants));
+        formDataToSend.append("hasVariants", "true");
+        formDataToSend.append("productType", "variant");
       } else {
-        formDataToSend.append('variants', JSON.stringify([]));
-        formDataToSend.append('hasVariants', 'false');
-        formDataToSend.append('productType', 'single');
+        formDataToSend.append("variants", JSON.stringify([]));
+        formDataToSend.append("hasVariants", "false");
+        formDataToSend.append("productType", "single");
         // Ensure we have a valid single product structure
         if (!formData.price || parseFloat(formData.price) <= 0) {
           toast({
             title: "Error",
-            description: "Price is required and must be greater than 0 for single products.",
+            description:
+              "Price is required and must be greater than 0 for single products.",
             variant: "destructive",
           });
           setLoading(false);
@@ -599,18 +789,20 @@ const UploadProduct = () => {
       }
 
       // Debug: Log what we're sending
-      console.log('Form data being sent:', {
+      console.log("Form data being sent:", {
         useVariants,
         variantsCount: variants.length,
         isUsingVariants,
         price: formData.price,
-        hasVariants: isUsingVariants ? 'true' : 'false'
+        hasVariants: isUsingVariants ? "true" : "false",
       });
 
       // Add images (only new ones for editing)
-      const newImages = imageFiles.filter(img => !img.id.startsWith('existing-'));
-      newImages.forEach(img => {
-        formDataToSend.append('images', img.file);
+      const newImages = imageFiles.filter(
+        (img) => !img.id.startsWith("existing-")
+      );
+      newImages.forEach((img) => {
+        formDataToSend.append("images", img.file);
       });
 
       let response;
@@ -620,7 +812,7 @@ const UploadProduct = () => {
           url: `${SummaryApi.updateProduct.url}/${editProductId}`,
           data: formDataToSend,
           headers: {
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
           },
         });
       } else {
@@ -629,7 +821,7 @@ const UploadProduct = () => {
           url: SummaryApi.createProduct.url,
           data: formDataToSend,
           headers: {
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
           },
         });
       }
@@ -637,12 +829,14 @@ const UploadProduct = () => {
       if (response.data.success) {
         toast({
           title: "Success",
-          description: isEditing ? "Product updated successfully" : "Product created successfully",
+          description: isEditing
+            ? "Product updated successfully"
+            : "Product created successfully",
         });
-        navigate('/admin/product');
+        navigate("/admin/product");
       }
     } catch (error: any) {
-      console.error('Error saving product:', error);
+      console.error("Error saving product:", error);
       toast({
         title: "Error",
         description: error.response?.data?.message || "Failed to save product",
@@ -695,7 +889,9 @@ const UploadProduct = () => {
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     placeholder="Enter product name"
                     required
                   />
@@ -705,7 +901,9 @@ const UploadProduct = () => {
                   <Input
                     id="brand"
                     value={formData.brand}
-                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, brand: e.target.value })
+                    }
                     placeholder="Enter brand name"
                     required
                   />
@@ -717,7 +915,12 @@ const UploadProduct = () => {
                 <Input
                   id="shortDescription"
                   value={formData.shortDescription}
-                  onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      shortDescription: e.target.value,
+                    })
+                  }
                   placeholder="Brief description for product listings"
                 />
               </div>
@@ -727,7 +930,9 @@ const UploadProduct = () => {
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Detailed product description"
                   rows={4}
                   required
@@ -737,14 +942,21 @@ const UploadProduct = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="category">Category *</Label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, category: value })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (
                         <SelectItem key={category._id} value={category._id}>
-                          {category.parentCategory ? `${category.parentCategory.name} > ${category.name}` : category.name}
+                          {category.parentCategory
+                            ? `${category.parentCategory.name} > ${category.name}`
+                            : category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -755,7 +967,9 @@ const UploadProduct = () => {
                   <Input
                     id="sku"
                     value={formData.sku}
-                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, sku: e.target.value })
+                    }
                     placeholder="Enter SKU"
                     required
                   />
@@ -765,7 +979,9 @@ const UploadProduct = () => {
                   <Input
                     id="volume"
                     value={formData.volume}
-                    onChange={(e) => setFormData({ ...formData, volume: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, volume: e.target.value })
+                    }
                     placeholder="e.g., 100ml, 250ml, 1L"
                   />
                 </div>
@@ -789,13 +1005,17 @@ const UploadProduct = () => {
                 <div className="space-y-2">
                   <Label htmlFor="price">Price (₹) *</Label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">₹</span>
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+                      ₹
+                    </span>
                     <Input
                       id="price"
                       type="number"
                       step="0.01"
                       value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, price: e.target.value })
+                      }
                       placeholder="1,499.00"
                       className="pl-7"
                       required
@@ -803,15 +1023,24 @@ const UploadProduct = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="originalPrice">Original Price (₹) (Optional)</Label>
+                  <Label htmlFor="originalPrice">
+                    Original Price (₹) (Optional)
+                  </Label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">₹</span>
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+                      ₹
+                    </span>
                     <Input
                       id="originalPrice"
                       type="number"
                       step="0.01"
                       value={formData.originalPrice}
-                      onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          originalPrice: e.target.value,
+                        })
+                      }
                       placeholder="1,999.00"
                       className="pl-7"
                     />
@@ -845,8 +1074,10 @@ const UploadProduct = () => {
               {useVariants && variants.length === 0 && (
                 <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm text-yellow-800">
-                    <strong>Action Required:</strong> You've enabled variants but haven't added any yet.
-                    Click "Add Variant" below to create your first variant, or disable the variant option above.
+                    <strong>Action Required:</strong> You've enabled variants
+                    but haven't added any yet. Click "Add Variant" below to
+                    create your first variant, or disable the variant option
+                    above.
                   </p>
                 </div>
               )}
@@ -854,12 +1085,19 @@ const UploadProduct = () => {
               {useVariants && (
                 <div className="space-y-4">
                   <div className="text-sm text-muted-foreground">
-                    When variants are enabled, the base price and volume fields above will be ignored.
-                    <strong className="text-red-600"> You must add at least one variant below.</strong>
+                    When variants are enabled, the base price and volume fields
+                    above will be ignored.
+                    <strong className="text-red-600">
+                      {" "}
+                      You must add at least one variant below.
+                    </strong>
                   </div>
 
                   {variants.map((variant, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-4">
+                    <div
+                      key={index}
+                      className="border rounded-lg p-4 space-y-4"
+                    >
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium">Variant {index + 1}</h4>
                         <Button
@@ -878,7 +1116,9 @@ const UploadProduct = () => {
                           <Input
                             placeholder="e.g., 100ml, 200ml"
                             value={variant.volume}
-                            onChange={(e) => updateVariant(index, 'volume', e.target.value)}
+                            onChange={(e) =>
+                              updateVariant(index, "volume", e.target.value)
+                            }
                           />
                         </div>
 
@@ -889,7 +1129,13 @@ const UploadProduct = () => {
                             step="0.01"
                             placeholder="0.00"
                             value={variant.price}
-                            onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
+                            onChange={(e) =>
+                              updateVariant(
+                                index,
+                                "price",
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
                           />
                         </div>
 
@@ -899,8 +1145,14 @@ const UploadProduct = () => {
                             type="number"
                             step="0.01"
                             placeholder="0.00"
-                            value={variant.originalPrice || ''}
-                            onChange={(e) => updateVariant(index, 'originalPrice', parseFloat(e.target.value) || 0)}
+                            value={variant.originalPrice || ""}
+                            onChange={(e) =>
+                              updateVariant(
+                                index,
+                                "originalPrice",
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
                           />
                         </div>
 
@@ -910,7 +1162,13 @@ const UploadProduct = () => {
                             type="number"
                             placeholder="0"
                             value={variant.stock}
-                            onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value) || 0)}
+                            onChange={(e) =>
+                              updateVariant(
+                                index,
+                                "stock",
+                                parseInt(e.target.value) || 0
+                              )
+                            }
                           />
                         </div>
 
@@ -919,7 +1177,9 @@ const UploadProduct = () => {
                           <Input
                             placeholder="Unique SKU"
                             value={variant.sku}
-                            onChange={(e) => updateVariant(index, 'sku', e.target.value)}
+                            onChange={(e) =>
+                              updateVariant(index, "sku", e.target.value)
+                            }
                           />
                         </div>
 
@@ -929,7 +1189,13 @@ const UploadProduct = () => {
                             type="number"
                             placeholder="5"
                             value={variant.lowStockThreshold}
-                            onChange={(e) => updateVariant(index, 'lowStockThreshold', parseInt(e.target.value) || 5)}
+                            onChange={(e) =>
+                              updateVariant(
+                                index,
+                                "lowStockThreshold",
+                                parseInt(e.target.value) || 5
+                              )
+                            }
                           />
                         </div>
                       </div>
@@ -938,9 +1204,13 @@ const UploadProduct = () => {
                         <Switch
                           id={`variant-active-${index}`}
                           checked={variant.isActive}
-                          onCheckedChange={(checked) => updateVariant(index, 'isActive', checked)}
+                          onCheckedChange={(checked) =>
+                            updateVariant(index, "isActive", checked)
+                          }
                         />
-                        <Label htmlFor={`variant-active-${index}`}>Active</Label>
+                        <Label htmlFor={`variant-active-${index}`}>
+                          Active
+                        </Label>
                       </div>
                     </div>
                   ))}
@@ -989,7 +1259,10 @@ const UploadProduct = () => {
                 ))}
 
                 <div className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center">
-                  <Label htmlFor="images" className="cursor-pointer flex flex-col items-center gap-2 text-muted-foreground hover:text-foreground">
+                  <Label
+                    htmlFor="images"
+                    className="cursor-pointer flex flex-col items-center gap-2 text-muted-foreground hover:text-foreground"
+                  >
                     <Upload className="h-8 w-8" />
                     <span className="text-sm">Upload Images</span>
                   </Label>
@@ -1011,21 +1284,132 @@ const UploadProduct = () => {
             <CardHeader>
               <CardTitle>Specifications</CardTitle>
               <CardDescription>
-                Add product specifications and features (Note: "suitableFor" and "ingredients" are handled separately)
+                Add product specifications and features
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Skin Type</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    "Normal",
+                    "Dry",
+                    "Oily",
+                    "Combination",
+                    "Sensitive",
+                    "All Types",
+                  ].map((type) => (
+                    <div key={type} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`skin-${type}`}
+                        checked={
+                          formData.specifications?.skinType?.includes(type) ||
+                          false
+                        }
+                        onCheckedChange={(checked) => {
+                          const currentSkinTypes =
+                            formData.specifications?.skinType || [];
+                          if (checked) {
+                            setFormData({
+                              ...formData,
+                              specifications: {
+                                ...formData.specifications,
+                                skinType: [...currentSkinTypes, type],
+                              },
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              specifications: {
+                                ...formData.specifications,
+                                skinType: currentSkinTypes.filter(
+                                  (t) => t !== type
+                                ),
+                              },
+                            });
+                          }
+                        }}
+                      />
+                      <Label
+                        htmlFor={`skin-${type}`}
+                        className="text-sm font-normal"
+                      >
+                        {type}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Hair Type */}
+              <div className="space-y-2">
+                <Label>Hair Type</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    "Normal",
+                    "Dry",
+                    "Oily",
+                    "Damaged",
+                    "Color-Treated",
+                    "All Types",
+                  ].map((type) => (
+                    <div key={type} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`hair-${type}`}
+                        checked={
+                          formData.specifications?.hairType?.includes(type) ||
+                          false
+                        }
+                        onCheckedChange={(checked) => {
+                          const currentHairTypes =
+                            formData.specifications?.hairType || [];
+                          if (checked) {
+                            setFormData({
+                              ...formData,
+                              specifications: {
+                                ...formData.specifications,
+                                hairType: [...currentHairTypes, type],
+                              },
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              specifications: {
+                                ...formData.specifications,
+                                hairType: currentHairTypes.filter(
+                                  (t) => t !== type
+                                ),
+                              },
+                            });
+                          }
+                        }}
+                      />
+                      <Label
+                        htmlFor={`hair-${type}`}
+                        className="text-sm font-normal"
+                      >
+                        {type}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Separator />
               {specifications.map((spec, index) => (
                 <div key={index} className="flex gap-2">
                   <Input
                     placeholder="Specification name"
                     value={spec.key}
-                    onChange={(e) => updateSpecification(index, 'key', e.target.value)}
+                    onChange={(e) =>
+                      updateSpecification(index, "key", e.target.value)
+                    }
                   />
                   <Input
                     placeholder="Specification value"
                     value={spec.value}
-                    onChange={(e) => updateSpecification(index, 'value', e.target.value)}
+                    onChange={(e) =>
+                      updateSpecification(index, "value", e.target.value)
+                    }
                   />
                   <Button
                     type="button"
@@ -1037,7 +1421,11 @@ const UploadProduct = () => {
                   </Button>
                 </div>
               ))}
-              <Button type="button" variant="outline" onClick={addSpecification}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addSpecification}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Specification
               </Button>
@@ -1058,7 +1446,11 @@ const UploadProduct = () => {
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
                     {tag}
                     <Button
                       type="button"
@@ -1077,7 +1469,9 @@ const UploadProduct = () => {
                   placeholder="Add a tag"
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                  onKeyPress={(e) =>
+                    e.key === "Enter" && (e.preventDefault(), addTag())
+                  }
                 />
                 <Button type="button" variant="outline" onClick={addTag}>
                   Add
@@ -1100,7 +1494,11 @@ const UploadProduct = () => {
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {benefits.map((benefit) => (
-                  <Badge key={benefit} variant="secondary" className="flex items-center gap-1">
+                  <Badge
+                    key={benefit}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
                     {benefit}
                     <Button
                       type="button"
@@ -1119,7 +1517,9 @@ const UploadProduct = () => {
                   placeholder="Add a benefit"
                   value={newBenefit}
                   onChange={(e) => setNewBenefit(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addBenefit())}
+                  onKeyPress={(e) =>
+                    e.key === "Enter" && (e.preventDefault(), addBenefit())
+                  }
                 />
                 <Button type="button" variant="outline" onClick={addBenefit}>
                   Add
@@ -1146,7 +1546,9 @@ const UploadProduct = () => {
                     <Input
                       placeholder="Ingredient name"
                       value={ing.name}
-                      onChange={e => updateIngredient(index, "name", e.target.value)}
+                      onChange={(e) =>
+                        updateIngredient(index, "name", e.target.value)
+                      }
                     />
                     <Button
                       type="button"
@@ -1160,19 +1562,55 @@ const UploadProduct = () => {
                   <Textarea
                     placeholder="Ingredient description"
                     value={ing.description}
-                    onChange={e => updateIngredient(index, "description", e.target.value)}
+                    onChange={(e) =>
+                      updateIngredient(index, "description", e.target.value)
+                    }
                   />
                   <div>
                     {ing.imageUrl && (
-                      <img src={ing.imageUrl} alt="Ingredient preview" className="h-24 object-cover mb-2" />
+                      <div className="relative">
+                        <img
+                          src={ing.imageUrl}
+                          alt="Ingredient preview"
+                          className="h-24 object-cover mb-2 rounded"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-0 right-0 h-6 w-6"
+                          onClick={() => {
+                            if (
+                              ing.imageUrl &&
+                              ing.imageUrl.startsWith("blob:")
+                            ) {
+                              URL.revokeObjectURL(ing.imageUrl);
+                            }
+                            updateIngredient(index, "imageFile", null);
+                            updateIngredient(index, "imageUrl", "");
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
                     )}
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={e => {
-                        if (e.target.files?.[0]) handleIngredientImageChange(index, e.target.files[0]);
-                      }}
-                    />
+                    <div className="space-y-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            handleIngredientImageChange(
+                              index,
+                              e.target.files[0]
+                            );
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Supported formats: JPG, PNG, GIF. Max size: 10MB
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1190,13 +1628,18 @@ const UploadProduct = () => {
                 Suitable For
               </CardTitle>
               <CardDescription>
-                Add skin types, concerns, or demographics this product is suitable for
+                Add skin types, concerns, or demographics this product is
+                suitable for
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {suitableFor.map((item) => (
-                  <Badge key={item} variant="secondary" className="flex items-center gap-1">
+                  <Badge
+                    key={item}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
                     {item}
                     <Button
                       type="button"
@@ -1215,9 +1658,21 @@ const UploadProduct = () => {
                   placeholder="Add suitable for"
                   value={newSuitableFor}
                   onChange={(e) => setNewSuitableFor(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addListItem(setSuitableFor, newSuitableFor), setNewSuitableFor(''))}
+                  onKeyPress={(e) =>
+                    e.key === "Enter" &&
+                    (e.preventDefault(),
+                    addListItem(setSuitableFor, newSuitableFor),
+                    setNewSuitableFor(""))
+                  }
                 />
-                <Button type="button" variant="outline" onClick={() => { addListItem(setSuitableFor, newSuitableFor); setNewSuitableFor(''); }}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    addListItem(setSuitableFor, newSuitableFor);
+                    setNewSuitableFor("");
+                  }}
+                >
                   Add
                 </Button>
               </div>
@@ -1236,10 +1691,23 @@ const UploadProduct = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-2">
                 {howToUse.map((step, index) => (
-                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                    Step {index + 1}: {step}
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 p-2 border rounded-md"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">
+                          Step {index + 1}:
+                        </span>
+                        <span className="text-sm">{step}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {step.length}/300 characters
+                      </div>
+                    </div>
                     <Button
                       type="button"
                       variant="ghost"
@@ -1249,19 +1717,39 @@ const UploadProduct = () => {
                     >
                       <X className="h-3 w-3" />
                     </Button>
-                  </Badge>
+                  </div>
                 ))}
               </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add a how-to-use step"
-                  value={newHowToUse}
-                  onChange={(e) => setNewHowToUse(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addListItem(setHowToUse, newHowToUse), setNewHowToUse(''))}
-                />
-                <Button type="button" variant="outline" onClick={() => { addListItem(setHowToUse, newHowToUse); setNewHowToUse(''); }}>
-                  Add
-                </Button>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Add a how-to-use step"
+                    value={newHowToUse}
+                    onChange={(e) => setNewHowToUse(e.target.value)}
+                    onKeyPress={(e) =>
+                      e.key === "Enter" &&
+                      (e.preventDefault(),
+                      addListItem(setHowToUse, newHowToUse),
+                      setNewHowToUse(""))
+                    }
+                    maxLength={300}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      addListItem(setHowToUse, newHowToUse);
+                      setNewHowToUse("");
+                    }}
+                    disabled={!newHowToUse.trim() || newHowToUse.length > 300}
+                  >
+                    Add
+                  </Button>
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Maximum 300 characters per step</span>
+                  <span>{newHowToUse.length}/300</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -1274,7 +1762,8 @@ const UploadProduct = () => {
                 Related Products
               </CardTitle>
               <CardDescription>
-                Manually select products to show in the "You May Also Like" section.
+                Manually select products to show in the "You May Also Like"
+                section.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1285,26 +1774,53 @@ const UploadProduct = () => {
                     placeholder="Search by name, brand, or tag..."
                     value={relatedProductSearch}
                     onChange={(e) => setRelatedProductSearch(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleRelatedProductSearch())}
+                    onKeyPress={(e) =>
+                      e.key === "Enter" &&
+                      (e.preventDefault(), handleRelatedProductSearch())
+                    }
                   />
-                  <Button type="button" onClick={handleRelatedProductSearch} disabled={isSearching}>
-                    {isSearching ? 'Searching...' : <Search className="h-4 w-4" />}
+                  <Button
+                    type="button"
+                    onClick={handleRelatedProductSearch}
+                    disabled={isSearching}
+                  >
+                    {isSearching ? (
+                      "Searching..."
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>
 
               {relatedProductSearchResults.length > 0 && (
                 <div className="border rounded-md max-h-60 overflow-y-auto">
-                  {relatedProductSearchResults.map(product => (
-                    <div key={product._id} className="flex items-center justify-between p-2 border-b">
+                  {relatedProductSearchResults.map((product) => (
+                    <div
+                      key={product._id}
+                      className="flex items-center justify-between p-2 border-b"
+                    >
                       <div className="flex items-center gap-2">
-                        <img src={product.images[0]?.url} alt={product.name} className="w-10 h-10 object-cover rounded" />
+                        <img
+                          src={product.images[0]?.url}
+                          alt={product.name}
+                          className="w-10 h-10 object-cover rounded"
+                        />
                         <div>
                           <p className="font-medium">{product.name}</p>
-                          <p className="text-sm text-muted-foreground">{product.brand}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {product.brand}
+                          </p>
                         </div>
                       </div>
-                      <Button type="button" size="sm" variant="outline" onClick={() => addRelatedProduct(product)}>Add</Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => addRelatedProduct(product)}
+                      >
+                        Add
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -1316,21 +1832,40 @@ const UploadProduct = () => {
                 <Label>Current Related Products</Label>
                 {relatedProducts.length > 0 ? (
                   <div className="space-y-2">
-                    {relatedProducts.map(product => (
-                      <div key={product._id} className="flex items-center justify-between p-2 border rounded-md">
+                    {relatedProducts.map((product) => (
+                      <div
+                        key={product._id}
+                        className="flex items-center justify-between p-2 border rounded-md"
+                      >
                         <div className="flex items-center gap-2">
-                          <img src={product.images[0]?.url} alt={product.name} className="w-10 h-10 object-cover rounded" />
+                          <img
+                            src={product.images[0]?.url}
+                            alt={product.name}
+                            className="w-10 h-10 object-cover rounded"
+                          />
                           <div>
                             <p className="font-medium">{product.name}</p>
-                            <p className="text-sm text-muted-foreground">{product.sku}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {product.sku}
+                            </p>
                           </div>
                         </div>
-                        <Button type="button" size="sm" variant="destructive" onClick={() => removeRelatedProduct(product._id)}>Remove</Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => removeRelatedProduct(product._id)}
+                        >
+                          Remove
+                        </Button>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No related products selected. The section will automatically show products from the same category.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No related products selected. The section will automatically
+                    show products from the same category.
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -1355,7 +1890,9 @@ const UploadProduct = () => {
                 <Switch
                   id="isActive"
                   checked={formData.isActive}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, isActive: checked })
+                  }
                 />
               </div>
               <Separator />
@@ -1369,7 +1906,9 @@ const UploadProduct = () => {
                 <Switch
                   id="isFeatured"
                   checked={formData.isFeatured}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isFeatured: checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, isFeatured: checked })
+                  }
                 />
               </div>
             </CardContent>

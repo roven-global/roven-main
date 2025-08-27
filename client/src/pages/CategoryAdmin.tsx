@@ -324,8 +324,8 @@ const CategoryPage = () => {
         </div>
         <div className="flex items-center space-x-2">
           <Button onClick={handleAddCategory} className="bg-gradient-luxury">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Category
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Add Category</span>
           </Button>
         </div>
       </div>
@@ -349,8 +349,8 @@ const CategoryPage = () => {
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="sm">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete Selected
+                      <Trash2 className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Delete Selected</span>
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -375,8 +375,8 @@ const CategoryPage = () => {
               </div>
             )}
           </div>
-          <div className="flex gap-4 items-center pt-4">
-            <div className="flex-1 relative">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center pt-4">
+            <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search categories..."
@@ -403,9 +403,10 @@ const CategoryPage = () => {
               <div className="text-muted-foreground">Loading categories...</div>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
                   <TableHead className="w-[60px]">
                     <Checkbox
                       checked={
@@ -435,6 +436,7 @@ const CategoryPage = () => {
                 )}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

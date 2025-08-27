@@ -316,20 +316,57 @@ const Cart = () => {
                     <Button
                       asChild
                       size="lg"
-                      className="bg-orange-500 hover:bg-orange-600 text-white rounded-md px-8"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md px-8"
                     >
                       <Link to="/shop">Continue Shopping</Link>
                     </Button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
+                    {/* Right Column - Price Summary */}
+                    <div className="space-y-4 lg:space-y-6 lg:col-span-1">
+                      {/* Welcome Gift Reward */}
+                      <div className="bg-white rounded-lg border shadow-sm">
+                        <div className="p-4 border-b">
+                          <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
+                            <Gift className="w-5 h-5 text-primary" />
+                            Welcome Gift
+                          </h3>
+                        </div>
+                        <div className="p-4">
+                          <WelcomeGiftReward />
+                        </div>
+                      </div>
+
+                      {/* Removed local warning logic; rely on backend validation results */}
+                      <PriceSummary
+                        isQuoteLoading={isQuoteLoading}
+                        subtotal={subtotal}
+                        couponDiscount={couponDiscount}
+                        welcomeGiftDiscount={welcomeGiftDiscount}
+                        shippingCost={shippingCost}
+                        finalTotal={finalTotal}
+                        totalSavings={totalSavings}
+                        isAuthenticated={isAuthenticated}
+                        lifetimeSavings={lifetimeSavings}
+                        lifetimeSavingsLoading={lifetimeSavingsLoading}
+                      >
+                        <Button
+                          onClick={handleCheckout}
+                          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-md py-3 font-medium"
+                          disabled={displayCartItems.length === 0}
+                        >
+                          Proceed to Checkout
+                        </Button>
+                      </PriceSummary>
+                    </div>
                     {/* Left Column */}
-                    <div className="lg:col-span-2 space-y-4 lg:space-y-6 order-2 lg:order-1">
+                    <div className="lg:col-span-2 space-y-4 lg:space-y-6">
                       {/* Coupon Input Section */}
                       <div className="bg-white rounded-lg border shadow-sm">
                         <div className="p-4 border-b">
                           <div className="flex items-center gap-3">
-                            <Tag className="w-5 h-5 text-blue-600" />
+                            <Tag className="w-5 h-5 text-primary" />
                             <span className="font-semibold text-deep-forest">
                               Apply Coupon Code
                             </span>
@@ -352,7 +389,7 @@ const Cart = () => {
                             <Button
                               onClick={() => handleApplyCoupon()}
                               disabled={couponLoading || !couponCode.trim()}
-                              className="bg-blue-500 hover:bg-blue-600 text-white"
+                              className="bg-primary hover:bg-primary/90 text-primary-foreground"
                             >
                               {couponLoading ? "Applying..." : "Apply"}
                             </Button>
@@ -360,23 +397,23 @@ const Cart = () => {
 
                           {/* Coupon Error */}
                           {couponError && (
-                            <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
+                            <div className="text-destructive-foreground text-sm bg-destructive/10 p-2 rounded">
                               {couponError}
                             </div>
                           )}
 
                           {/* Applied Coupon Display */}
                           {orderQuote?.appliedCoupon && (
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <div className="bg-sage/10 border border-sage/20 rounded-lg p-3">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                  <Tag className="w-4 h-4 text-green-600" />
+                                  <Tag className="w-4 h-4 text-sage" />
                                   <div>
-                                    <p className="text-sm font-medium text-green-700">
+                                    <p className="text-sm font-medium text-sage">
                                       Coupon Applied:{" "}
                                       {orderQuote.appliedCoupon.code}
                                     </p>
-                                    <p className="text-xs text-green-600">
+                                    <p className="text-xs text-forest">
                                       {orderQuote.appliedCoupon.name} -{" "}
                                       {formatRupees(
                                         orderQuote.discounts.coupon
@@ -389,7 +426,7 @@ const Cart = () => {
                                   variant="ghost"
                                   size="sm"
                                   onClick={handleRemoveCoupon}
-                                  className="text-red-600 hover:text-red-700 h-auto p-1 text-xs"
+                                  className="text-destructive hover:text-destructive/90 h-auto p-1 text-xs"
                                 >
                                   Remove
                                 </Button>
@@ -404,7 +441,7 @@ const Cart = () => {
                         <div className="bg-white rounded-lg border shadow-sm">
                           <div className="p-4 border-b">
                             <div className="flex items-center gap-3">
-                              <Tag className="w-5 h-5 text-green-600" />
+                              <Tag className="w-5 h-5 text-sage" />
                               <span className="font-semibold text-deep-forest">
                                 Available offers for you (
                                 {availableCoupons.length})
@@ -420,7 +457,7 @@ const Cart = () => {
                               {/* Scroll Left Button */}
                               <button
                                 onClick={scrollLeft}
-                                className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-full p-2 shadow-md hover:bg-gray-50 transition-colors"
+                                className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-background border rounded-full p-2 shadow-md hover:bg-muted transition-colors"
                                 style={{ marginLeft: "-8px" }}
                               >
                                 <ChevronLeft className="w-4 h-4 text-forest" />
@@ -429,7 +466,7 @@ const Cart = () => {
                               {/* Scroll Right Button */}
                               <button
                                 onClick={scrollRight}
-                                className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-full p-2 shadow-md hover:bg-gray-50 transition-colors"
+                                className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-background border rounded-full p-2 shadow-md hover:bg-muted transition-colors"
                                 style={{ marginRight: "-8px" }}
                               >
                                 <ChevronRight className="w-4 h-4 text-forest" />
@@ -468,7 +505,7 @@ const Cart = () => {
                                             </p>
                                           )}
                                           <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                                            <span className="text-xs bg-sage/10 text-sage px-2 py-1 rounded">
                                               {coupon.type === "percentage"
                                                 ? `${coupon.value}% OFF`
                                                 : `${formatRupees(
@@ -482,7 +519,7 @@ const Cart = () => {
                                               )}
                                             </span>
                                           </div>
-                                          <p className="text-xs text-green-600">
+                                          <p className="text-xs text-forest">
                                             Valid till{" "}
                                             {new Date(
                                               coupon.validTo
@@ -492,7 +529,7 @@ const Cart = () => {
                                         <div className="flex items-center gap-2 w-20 justify-end">
                                           {isApplied ? (
                                             <div className="flex items-center gap-2">
-                                              <span className="text-xs text-green-600 font-medium">
+                                              <span className="text-xs text-sage font-medium">
                                                 Applied
                                               </span>
                                               <Button
@@ -504,7 +541,7 @@ const Cart = () => {
                                                   )
                                                 }
                                                 disabled={isRemoving}
-                                                className="text-xs text-red-600 hover:text-red-700 font-medium h-auto p-1"
+                                                className="text-xs text-destructive hover:text-destructive/90 font-medium h-auto p-1"
                                               >
                                                 {isRemoving
                                                   ? "Removing..."
@@ -519,7 +556,7 @@ const Cart = () => {
                                                 handleApplyCoupon(coupon.code)
                                               }
                                               disabled={couponLoading}
-                                              className="text-xs text-orange-600 hover:text-orange-700 font-medium h-auto p-1"
+                                              className="text-xs text-primary hover:text-primary/90 font-medium h-auto p-1"
                                             >
                                               {couponLoading
                                                 ? "Applying..."
@@ -545,7 +582,7 @@ const Cart = () => {
                               <ShoppingBag className="w-5 h-5" />
                               Cart details
                             </span>
-                            <div className="text-sm text-forest hidden sm:block">
+                            <div className="text-sm text-forest hidden lg:block">
                               <span className="font-medium">Cart Summary:</span>
                               <span className="ml-2">
                                 Items - {totalUniqueItems}
@@ -560,7 +597,7 @@ const Cart = () => {
                           </div>
                         </div>
                         {/* Mobile Cart Summary */}
-                        <div className="p-3 bg-sage/10 border-b sm:hidden">
+                        <div className="p-3 bg-sage/10 border-b lg:hidden">
                           <div className="text-sm text-forest text-center">
                             <span className="font-medium">Cart Summary:</span>
                             <span className="ml-2">
@@ -621,7 +658,7 @@ const Cart = () => {
                                       disabled={
                                         removingId === (item._id || item.id)
                                       }
-                                      className="h-8 w-8 p-0 text-warm-taupe hover:text-red-600 hover:bg-red-50 ml-2"
+                                      className="h-8 w-8 p-0 text-warm-taupe hover:text-destructive hover:bg-destructive/10 ml-2"
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
@@ -691,44 +728,6 @@ const Cart = () => {
                           ))}
                         </div>
                       </div>
-                    </div>
-
-                    {/* Right Column - Price Summary */}
-                    <div className="space-y-4 lg:space-y-6 order-1 lg:order-2">
-                      {/* Welcome Gift Reward */}
-                      <div className="bg-white rounded-lg border shadow-sm">
-                        <div className="p-4 border-b">
-                          <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
-                            <Gift className="w-5 h-5 text-orange-600" />
-                            Welcome Gift
-                          </h3>
-                        </div>
-                        <div className="p-4">
-                          <WelcomeGiftReward />
-                        </div>
-                      </div>
-
-                      {/* Removed local warning logic; rely on backend validation results */}
-                      <PriceSummary
-                        isQuoteLoading={isQuoteLoading}
-                        subtotal={subtotal}
-                        couponDiscount={couponDiscount}
-                        welcomeGiftDiscount={welcomeGiftDiscount}
-                        shippingCost={shippingCost}
-                        finalTotal={finalTotal}
-                        totalSavings={totalSavings}
-                        isAuthenticated={isAuthenticated}
-                        lifetimeSavings={lifetimeSavings}
-                        lifetimeSavingsLoading={lifetimeSavingsLoading}
-                      >
-                        <Button
-                          onClick={handleCheckout}
-                          className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-md py-3 font-medium"
-                          disabled={displayCartItems.length === 0}
-                        >
-                          Proceed to Checkout
-                        </Button>
-                      </PriceSummary>
                     </div>
                   </div>
                 )}

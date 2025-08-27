@@ -67,7 +67,7 @@ const PriceSummary: React.FC<PriceSummaryProps> = ({
             {couponDiscount > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-forest">Coupon Discount</span>
-                <span className="text-green-600 font-bold">
+                <span className="text-sage font-bold">
                   -{formatRupees(couponDiscount)}
                 </span>
               </div>
@@ -75,7 +75,7 @@ const PriceSummary: React.FC<PriceSummaryProps> = ({
             {welcomeGiftDiscount > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-forest">Welcome Gift</span>
-                <span className="text-green-600 font-bold">
+                <span className="text-sage font-bold">
                   -{formatRupees(welcomeGiftDiscount)}
                 </span>
               </div>
@@ -84,7 +84,7 @@ const PriceSummary: React.FC<PriceSummaryProps> = ({
               <span className="text-forest">Shipping</span>
               <div className="text-right">
                 {shippingCost === 0 && subtotal > 0 ? (
-                  <span className="text-green-600 font-bold">Free</span>
+                  <span className="text-sage font-bold">Free</span>
                 ) : (
                   <span className="text-deep-forest font-bold">
                     {formatRupees(shippingCost)}
@@ -104,30 +104,30 @@ const PriceSummary: React.FC<PriceSummaryProps> = ({
       </div>
       <div className="p-4 border-t">
         {totalSavings > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center gap-2">
-            <span className="text-blue-600">✓</span>
-            <p className="text-sm text-blue-700 font-medium">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-4 flex items-center gap-2">
+            <span className="text-primary">✓</span>
+            <p className="text-sm text-primary font-medium">
               You are saving {formatRupees(totalSavings)} on this order
             </p>
           </div>
         )}
 
         {isAuthenticated && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 flex items-center gap-2">
-            <span className="text-green-600">🏆</span>
+          <div className="bg-sage/10 border border-sage/20 rounded-lg p-3 mb-4 flex items-center gap-2">
+            <span className="text-sage">🏆</span>
             <div className="flex-1">
-              <p className="text-sm text-green-700 font-medium">
+              <p className="text-sm text-sage font-medium">
                 Your lifetime savings with Roven Beauty
               </p>
               {lifetimeSavingsLoading ? (
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-600"></div>
-                  <span className="text-xs text-green-600">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-sage"></div>
+                  <span className="text-xs text-sage">
                     Calculating...
                   </span>
                 </div>
               ) : (
-                <p className="text-lg font-bold text-green-800 mt-1">
+                <p className="text-lg font-bold text-deep-forest mt-1">
                   {formatRupees(lifetimeSavings ?? 0)}
                 </p>
               )}

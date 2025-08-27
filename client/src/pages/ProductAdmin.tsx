@@ -239,8 +239,8 @@ const ProductAdmin = () => {
             onClick={() => navigate("/admin/product/upload")}
             className="bg-gradient-luxury"
           >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Product
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Add Product</span>
           </Button>
         </div>
       </div>
@@ -262,8 +262,8 @@ const ProductAdmin = () => {
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive" size="sm">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Selected
+                                <Trash2 className="h-4 w-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Delete Selected</span>
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -288,8 +288,8 @@ const ProductAdmin = () => {
             )}
           </div>
           
-          <div className="flex flex-wrap gap-4 items-center pt-4">
-            <form onSubmit={handleSearch} className="flex-1 relative min-w-[200px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center pt-4">
+            <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search products..."
@@ -351,9 +351,10 @@ const ProductAdmin = () => {
             </div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
                     <TableHead className="w-[40px]">
                        <Checkbox
                             checked={
@@ -467,6 +468,7 @@ const ProductAdmin = () => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
 
               {pagination.totalPages > 1 && (
                 <div className="flex justify-center mt-6">

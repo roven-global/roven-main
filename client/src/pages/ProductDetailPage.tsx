@@ -341,7 +341,7 @@ const ProductDetailPage = () => {
               Shop
             </Link>
             <ChevronRight className="h-4 w-4 mx-2 flex-shrink-0 text-warm-taupe" />
-            <span className="text-deep-forest font-medium flex-shrink-0 truncate max-w-[200px] sm:max-w-none">
+            <span className="text-deep-forest font-medium flex-shrink-0">
               {product.name}
             </span>
           </div>
@@ -486,7 +486,7 @@ const ProductDetailPage = () => {
 
               {/* Quantity and Add to Cart */}
               <div className="space-y-4">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-wrap">
                   {/* Quantity Selector */}
                   <div className="flex items-center border border-warm-taupe rounded-lg overflow-hidden bg-white">
                     <Button
@@ -638,9 +638,20 @@ const ProductDetailPage = () => {
                                     .replace(/^./, (str) => str.toUpperCase())}
                                 </dt>
                                 <dd className="w-2/3 text-forest text-sm">
-                                  {Array.isArray(value)
-                                    ? value.join(", ")
-                                    : value}
+                                  {Array.isArray(value) ? (
+                                    <div className="flex flex-wrap gap-1">
+                                      {value.map((item, index) => (
+                                        <span
+                                          key={index}
+                                          className="inline-block bg-sage/10 text-sage px-2 py-1 rounded-full text-xs font-medium"
+                                        >
+                                          {item}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    value
+                                  )}
                                 </dd>
                               </div>
                             )

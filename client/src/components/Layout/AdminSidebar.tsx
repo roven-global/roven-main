@@ -53,7 +53,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
   return (
     <nav
       className={cn(
-        `hidden h-full flex-col bg-gray-100 dark:bg-gray-800 md:flex`,
+        `hidden h-full flex-col bg-muted md:flex`,
         className
       )}
     >

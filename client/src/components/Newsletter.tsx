@@ -48,7 +48,7 @@ const Newsletter = () => {
           </p>
 
           {status === "success" ? (
-            <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg">
+            <div className="text-center p-4 bg-sage/10 text-sage rounded-lg">
               <p className="font-semibold">{message}</p>
             </div>
           ) : (
@@ -78,7 +78,7 @@ const Newsletter = () => {
           )}
 
           {status === "error" && message && (
-            <p className="text-sm text-red-600 mt-4">{message}</p>
+            <p className="text-sm text-destructive mt-4">{message}</p>
           )}
           
           {status !== "success" && (
