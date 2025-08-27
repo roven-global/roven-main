@@ -210,7 +210,7 @@ const ProductCard = ({
       <Link to={`/product/${slug}`} className="flex flex-col h-full">
         {/* Large Product Image */}
         <div className="relative overflow-hidden bg-warm-cream">
-          <div className="aspect-square w-full">
+          <div className="aspect-[4/5] w-full">
             <img
               src={image}
               alt={name}
@@ -221,7 +221,7 @@ const ProductCard = ({
           {/* Discount Badge - Top Left */}
           {discount > 0 && (
             <div className="absolute top-3 left-3">
-              <Badge className="bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full font-semibold shadow-sm border-0">
+              <Badge className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold shadow-sm border-0">
                 {discount}% OFF
               </Badge>
             </div>
@@ -254,7 +254,7 @@ const ProductCard = ({
         </div>
 
         {/* Compact Content Layout */}
-        <CardContent className="p-3 flex flex-col flex-grow bg-white">
+        <CardContent className="p-4 flex flex-col flex-grow bg-white">
           {/* Category */}
           <div className="mb-2">
             <span className="text-xs font-medium text-forest uppercase tracking-wide">
@@ -263,7 +263,7 @@ const ProductCard = ({
           </div>
 
           {/* Product Title */}
-          <h3 className="font-sans font-bold text-base text-deep-forest mb-2 line-clamp-2 leading-tight flex-grow">
+          <h3 className="font-sans font-bold text-lg text-deep-forest mb-2 line-clamp-2 leading-tight flex-grow">
             {name}
           </h3>
 
@@ -298,7 +298,7 @@ const ProductCard = ({
               {variants && variants.length > 1 && (
                 <span className="text-xs text-forest/80 font-medium">From</span>
               )}
-              <span className="font-sans font-bold text-lg text-deep-forest">
+              <span className="font-sans font-bold text-xl text-deep-forest">
                 {formatRupees(getDisplayPrice())}
               </span>
               {getDisplayOriginalPrice() && (

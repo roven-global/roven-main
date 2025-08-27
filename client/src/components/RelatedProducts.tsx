@@ -40,10 +40,10 @@ const RelatedProducts: React.FC<RelatedProductsProps> = ({
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Skeleton className="w-full h-64 bg-warm-taupe/20" />
-          <Skeleton className="w-full h-64 bg-warm-taupe/20" />
-          <Skeleton className="w-full h-64 bg-warm-taupe/20" />
-          <Skeleton className="w-full h-64 bg-warm-taupe/20" />
+          <Skeleton className="w-full h-64 bg-gray-200" />
+          <Skeleton className="w-full h-64 bg-gray-200" />
+          <Skeleton className="w-full h-64 bg-gray-200" />
+          <Skeleton className="w-full h-64 bg-gray-200" />
         </div>
       </div>
     );
