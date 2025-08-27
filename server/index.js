@@ -73,7 +73,6 @@ app.use(
 const allowedOrigins = [
   FRONTEND_URL,
   "http://localhost:5173",
-  "http://localhost:4173",
   "http://localhost:3000",
   "http://localhost:5000",
 ];
@@ -197,7 +196,11 @@ app.use("/api/reviews", reviewRouter);
 app.use("/api/newsletter", newsletterRouter);
 
 // --- SERVE FRONTEND ---
-app.use(express.static(path.join(__dirname, "..", "client", "dist")));
+app.use(
+  express.static(path.join(__dirname, "..", "client", "dist"), {
+    maxAge: "1y",
+  })
+);
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
 });
