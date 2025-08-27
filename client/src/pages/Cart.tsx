@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -48,9 +47,6 @@ const Cart = () => {
   } = useCart();
   const { guestCart, removeFromGuestCart, updateGuestCartQuantity } =
     useGuest();
-  const [couponCode, setCouponCode] = useState("");
-  const [couponLoading, setCouponLoading] = useState(false);
-  const [couponError, setCouponError] = useState("");
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
   const [scrollContainerRef, setScrollContainerRef] =
@@ -162,43 +158,25 @@ const Cart = () => {
     }
   };
 
-  const handleApplyCoupon = async (code?: string) => {
-    const couponToApply = code || couponCode.trim();
-    if (!couponToApply) {
-      setCouponError("Please enter a coupon code");
+  const handleApplyCoupon = async (code: string) => {
+    if (!code) {
       return;
     }
 
-    setCouponLoading(true);
-    setCouponError("");
-
     try {
-      const displayCartItems = isAuthenticated ? cartItems : guestCart;
-      const subtotal = isAuthenticated
-        ? cartItems.reduce(
-            (acc, item) =>
-              acc +
-              (item.variant?.price || item.productId?.price || 0) *
-                item.quantity,
-            0
-          )
-        : guestCart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-
-      await applyCoupon(couponToApply);
-      setCouponCode("");
+      await applyCoupon(code);
     } catch (error: any) {
       console.error("Error applying coupon:", error);
-      const errorMessage =
-        error.response?.data?.message || "Invalid coupon code";
-      setCouponError(errorMessage);
-    } finally {
-      setCouponLoading(false);
+      toast({
+        title: "Error applying coupon",
+        description: error.response?.data?.message || "Invalid coupon code",
+        variant: "destructive",
+      });
     }
   };
 
   const handleRemoveCoupon = () => {
     removeCoupon();
-    setCouponError("");
   };
 
   const handleRemoveIndividualCoupon = async (couponCode: string) => {
@@ -270,7 +248,7 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-warm-cream">
       <Navigation />
 
       {/* Show loading spinner while authentication is being checked */}
@@ -362,96 +340,52 @@ const Cart = () => {
                     </div>
                     {/* Left Column */}
                     <div className="lg:col-span-2 space-y-4 lg:space-y-6">
-                      {/* Coupon Input Section */}
-                      <div className="bg-white rounded-lg border shadow-sm">
-                        <div className="p-4 border-b">
-                          <div className="flex items-center gap-3">
-                            <Tag className="w-5 h-5 text-primary" />
-                            <span className="font-semibold text-deep-forest">
-                              Apply Coupon Code
-                            </span>
-                          </div>
-                          <p className="text-sm text-forest mt-1">
-                            Enter your coupon code to get additional discounts
-                          </p>
-                        </div>
-                        <div className="p-4 space-y-4">
-                          {/* Coupon Input */}
-                          <div className="flex gap-2">
-                            <Input
-                              type="text"
-                              placeholder="Enter coupon code"
-                              value={couponCode}
-                              onChange={(e) => setCouponCode(e.target.value)}
-                              className="flex-1"
-                              disabled={couponLoading}
-                            />
-                            <Button
-                              onClick={() => handleApplyCoupon()}
-                              disabled={couponLoading || !couponCode.trim()}
-                              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                            >
-                              {couponLoading ? "Applying..." : "Apply"}
-                            </Button>
-                          </div>
-
-                          {/* Coupon Error */}
-                          {couponError && (
-                            <div className="text-destructive-foreground text-sm bg-destructive/10 p-2 rounded">
-                              {couponError}
-                            </div>
-                          )}
-
-                          {/* Applied Coupon Display */}
-                          {orderQuote?.appliedCoupon && (
-                            <div className="bg-sage/10 border border-sage/20 rounded-lg p-3">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Tag className="w-4 h-4 text-sage" />
-                                  <div>
-                                    <p className="text-sm font-medium text-sage">
-                                      Coupon Applied:{" "}
-                                      {orderQuote.appliedCoupon.code}
-                                    </p>
-                                    <p className="text-xs text-forest">
-                                      {orderQuote.appliedCoupon.name} -{" "}
-                                      {formatRupees(
-                                        orderQuote.discounts.coupon
-                                      )}{" "}
-                                      off
-                                    </p>
-                                  </div>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={handleRemoveCoupon}
-                                  className="text-destructive hover:text-destructive/90 h-auto p-1 text-xs"
-                                >
-                                  Remove
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Available Offers Section */}
+                      {/* Unified Coupon Section */}
                       {availableCoupons.length > 0 && (
                         <div className="bg-white rounded-lg border shadow-sm">
                           <div className="p-4 border-b">
                             <div className="flex items-center gap-3">
-                              <Tag className="w-5 h-5 text-sage" />
+                              <Tag className="w-5 h-5 text-primary" />
                               <span className="font-semibold text-deep-forest">
-                                Available offers for you (
-                                {availableCoupons.length})
+                                Available Coupons ({availableCoupons.length})
                               </span>
                             </div>
                             <p className="text-sm text-forest mt-1">
-                              All coupons are applicable on this order
+                              Select a coupon to apply to your order
                             </p>
                           </div>
                           <div className="p-4 space-y-4">
+                            {/* Applied Coupon Display */}
+                            {orderQuote?.appliedCoupon && (
+                              <div className="bg-sage/10 border border-sage/20 rounded-lg p-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Tag className="w-4 h-4 text-sage" />
+                                    <div>
+                                      <p className="text-sm font-medium text-sage">
+                                        Coupon Applied:{" "}
+                                        {orderQuote.appliedCoupon.code}
+                                      </p>
+                                      <p className="text-xs text-forest">
+                                        {orderQuote.appliedCoupon.name} -{" "}
+                                        {formatRupees(
+                                          orderQuote.discounts.coupon
+                                        )}{" "}
+                                        off
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleRemoveCoupon}
+                                    className="text-destructive hover:text-destructive/90 h-auto p-1 text-xs"
+                                  >
+                                    Remove
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
                             {/* Coupons Horizontal Scroll */}
                             <div className="relative">
                               {/* Scroll Left Button */}
@@ -532,21 +466,6 @@ const Cart = () => {
                                               <span className="text-xs text-sage font-medium">
                                                 Applied
                                               </span>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() =>
-                                                  handleRemoveIndividualCoupon(
-                                                    coupon.code
-                                                  )
-                                                }
-                                                disabled={isRemoving}
-                                                className="text-xs text-destructive hover:text-destructive/90 font-medium h-auto p-1"
-                                              >
-                                                {isRemoving
-                                                  ? "Removing..."
-                                                  : "Remove"}
-                                              </Button>
                                             </div>
                                           ) : (
                                             <Button
@@ -555,12 +474,9 @@ const Cart = () => {
                                               onClick={() =>
                                                 handleApplyCoupon(coupon.code)
                                               }
-                                              disabled={couponLoading}
                                               className="text-xs text-primary hover:text-primary/90 font-medium h-auto p-1"
                                             >
-                                              {couponLoading
-                                                ? "Applying..."
-                                                : "Use"}
+                                              Use
                                             </Button>
                                           )}
                                         </div>

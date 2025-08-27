@@ -7,7 +7,7 @@ const Order = require("../models/orderModel");
 // @route   POST /api/reviews
 // @access  Private
 const createReview = asyncHandler(async (req, res) => {
-  const { productId, rating, title, comment } = req.body;
+  const { productId, rating, review } = req.body;
   const userId = req.user._id;
 
   // 1. Check if the user has already reviewed this product
@@ -22,19 +22,18 @@ const createReview = asyncHandler(async (req, res) => {
   }
 
   // 2. Create and save the new review
-  const review = await Review.create({
+  const newReview = await Review.create({
     product: productId,
     user: userId,
     rating,
-    title,
-    comment,
+    review,
   });
 
-  if (review) {
+  if (newReview) {
     res.status(201).json({
       success: true,
       message: "Review submitted successfully.",
-      data: review,
+      data: newReview,
     });
   } else {
     res.status(400);
@@ -96,7 +95,78 @@ const getReviewsForProduct = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Update a review
+// @route   PUT /api/reviews/:reviewId
+// @access  Private
+const updateReview = asyncHandler(async (req, res) => {
+  const { reviewId } = req.params;
+  const { rating, review } = req.body;
+  const userId = req.user._id;
+
+  // Find the review and check if it belongs to the user
+  const existingReview = await Review.findById(reviewId);
+
+  if (!existingReview) {
+    res.status(404);
+    throw new Error("Review not found.");
+  }
+
+  if (existingReview.user.toString() !== userId.toString()) {
+    res.status(403);
+    throw new Error("You can only update your own reviews.");
+  }
+
+  // Update the review
+  const updatedReview = await Review.findByIdAndUpdate(
+    reviewId,
+    { rating, review },
+    { new: true, runValidators: true }
+  );
+
+  if (updatedReview) {
+    res.json({
+      success: true,
+      message: "Review updated successfully.",
+      data: updatedReview,
+    });
+  } else {
+    res.status(400);
+    throw new Error("Failed to update review.");
+  }
+});
+
+// @desc    Delete a review
+// @route   DELETE /api/reviews/:reviewId
+// @access  Private
+const deleteReview = asyncHandler(async (req, res) => {
+  const { reviewId } = req.params;
+  const userId = req.user._id;
+
+  // Find the review and check if it belongs to the user
+  const existingReview = await Review.findById(reviewId);
+
+  if (!existingReview) {
+    res.status(404);
+    throw new Error("Review not found.");
+  }
+
+  if (existingReview.user.toString() !== userId.toString()) {
+    res.status(403);
+    throw new Error("You can only delete your own reviews.");
+  }
+
+  // Delete the review
+  await Review.findByIdAndDelete(reviewId);
+
+  res.json({
+    success: true,
+    message: "Review deleted successfully.",
+  });
+});
+
 module.exports = {
   createReview,
   getReviewsForProduct,
+  updateReview,
+  deleteReview,
 };

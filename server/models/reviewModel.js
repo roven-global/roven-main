@@ -20,17 +20,11 @@ const reviewSchema = new mongoose.Schema(
       min: 1,
       max: 5,
     },
-    title: {
+    review: {
       type: String,
       trim: true,
-      required: [true, "A review must have a title."],
-      maxlength: [100, "Review title cannot exceed 100 characters."],
-    },
-    comment: {
-      type: String,
-      trim: true,
-      required: [true, "A review must have a comment."],
-      maxlength: [1500, "Review comment cannot exceed 1500 characters."],
+      required: [true, "A review must have a review text."],
+      maxlength: [1500, "Review text cannot exceed 1500 characters."],
     },
   },
   {
@@ -85,11 +79,10 @@ reviewSchema.post("save", function () {
 // Post-remove hook to recalculate ratings after a review is deleted
 // findOneAndDelete/findByIdAndDelete triggers the 'findOneAndDelete' middleware
 reviewSchema.post(/^findOneAnd/, async function (doc) {
-    if (doc) {
-        await doc.constructor.calculateAverageRatings(doc.product);
-    }
+  if (doc) {
+    await doc.constructor.calculateAverageRatings(doc.product);
+  }
 });
-
 
 const Review = mongoose.model("Review", reviewSchema);
 

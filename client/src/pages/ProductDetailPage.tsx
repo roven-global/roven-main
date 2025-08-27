@@ -44,8 +44,7 @@ interface Review {
     avatar?: { url: string };
   };
   rating: number;
-  title: string;
-  comment: string;
+  review: string;
   createdAt: string;
 }
 
@@ -141,9 +140,9 @@ const ProductDetailPage = () => {
           throw new Error("Product not found.");
         }
 
-        // Fetch all reviews
+        // Fetch initial batch of reviews (first 10)
         const reviewsResponse = await Axios.get(
-          `${SummaryApi.getReviews.url}/${slug}?limit=100` // Fetch a large number to get all
+          `${SummaryApi.getReviews.url}/${slug}?page=1&limit=10`
         );
         if (reviewsResponse.data.success) {
           setAllReviews(reviewsResponse.data.data.reviews);

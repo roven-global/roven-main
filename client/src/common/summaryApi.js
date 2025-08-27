@@ -1,5 +1,4 @@
-const rawBaseURL =
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const rawBaseURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 export const baseURL = rawBaseURL.replace(/\/$/, "");
 
 const SummaryApi = {
@@ -369,6 +368,14 @@ const SummaryApi = {
   createReview: {
     url: "/api/reviews",
     method: "post",
+  },
+  updateReview: {
+    url: "/api/reviews",
+    method: "put",
+  },
+  deleteReview: {
+    url: "/api/reviews",
+    method: "delete",
   },
   // Admin Settings
   getAdminSetting: {
