@@ -301,45 +301,8 @@ const Cart = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
-                    {/* Right Column - Price Summary */}
-                    <div className="space-y-4 lg:space-y-6 lg:col-span-1">
-                      {/* Welcome Gift Reward */}
-                      <div className="bg-white rounded-lg border shadow-sm">
-                        <div className="p-4 border-b">
-                          <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
-                            <Gift className="w-5 h-5 text-primary" />
-                            Welcome Gift
-                          </h3>
-                        </div>
-                        <div className="p-4">
-                          <WelcomeGiftReward />
-                        </div>
-                      </div>
-
-                      {/* Removed local warning logic; rely on backend validation results */}
-                      <PriceSummary
-                        isQuoteLoading={isQuoteLoading}
-                        subtotal={subtotal}
-                        couponDiscount={couponDiscount}
-                        welcomeGiftDiscount={welcomeGiftDiscount}
-                        shippingCost={shippingCost}
-                        finalTotal={finalTotal}
-                        totalSavings={totalSavings}
-                        isAuthenticated={isAuthenticated}
-                        lifetimeSavings={lifetimeSavings}
-                        lifetimeSavingsLoading={lifetimeSavingsLoading}
-                      >
-                        <Button
-                          onClick={handleCheckout}
-                          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-md py-3 font-medium"
-                          disabled={displayCartItems.length === 0}
-                        >
-                          Proceed to Checkout
-                        </Button>
-                      </PriceSummary>
-                    </div>
-                    {/* Left Column */}
-                    <div className="lg:col-span-2 space-y-4 lg:space-y-6">
+                    {/* Cart Details Section - First on mobile, second on desktop */}
+                    <div className="lg:col-span-2 space-y-4 lg:space-y-6 order-1 lg:order-1">
                       {/* Unified Coupon Section */}
                       {availableCoupons.length > 0 && (
                         <div className="bg-white rounded-lg border shadow-sm">
@@ -644,6 +607,44 @@ const Cart = () => {
                           ))}
                         </div>
                       </div>
+                    </div>
+
+                    {/* Right Column - Price Summary - Second on mobile, first on desktop */}
+                    <div className="space-y-4 lg:space-y-6 lg:col-span-1 order-2 lg:order-2">
+                      {/* Welcome Gift Reward */}
+                      <div className="bg-white rounded-lg border shadow-sm">
+                        <div className="p-4 border-b">
+                          <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
+                            <Gift className="w-5 h-5 text-primary" />
+                            Welcome Gift
+                          </h3>
+                        </div>
+                        <div className="p-4">
+                          <WelcomeGiftReward />
+                        </div>
+                      </div>
+
+                      {/* Removed local warning logic; rely on backend validation results */}
+                      <PriceSummary
+                        isQuoteLoading={isQuoteLoading}
+                        subtotal={subtotal}
+                        couponDiscount={couponDiscount}
+                        welcomeGiftDiscount={welcomeGiftDiscount}
+                        shippingCost={shippingCost}
+                        finalTotal={finalTotal}
+                        totalSavings={totalSavings}
+                        isAuthenticated={isAuthenticated}
+                        lifetimeSavings={lifetimeSavings}
+                        lifetimeSavingsLoading={lifetimeSavingsLoading}
+                      >
+                        <Button
+                          onClick={handleCheckout}
+                          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-md py-3 font-medium"
+                          disabled={displayCartItems.length === 0}
+                        >
+                          Proceed to Checkout
+                        </Button>
+                      </PriceSummary>
                     </div>
                   </div>
                 )}

@@ -107,7 +107,7 @@ const Wishlist = () => {
         <section className="py-16">
           <div className="container mx-auto px-4">
             {displayLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
                 {Array.from({ length: 4 }).map((_, index) => (
                   <div key={index} className="space-y-4">
                     <Skeleton className="h-72 w-full bg-sage/20 rounded-lg" />
@@ -121,7 +121,7 @@ const Wishlist = () => {
                 {displayError}
               </div>
             ) : displayWishlist.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
                 {displayWishlist.map((product) => (
                   <div key={product._id} className="relative group">
                     <ProductCard

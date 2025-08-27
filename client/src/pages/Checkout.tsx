@@ -208,24 +208,34 @@ const Checkout = () => {
   const handleStateChange = (stateName: string) => {
     setFormData({ ...formData, state: stateName, city: "" });
     setAvailableCities([...getCitiesByState(stateName)]);
-     if (errors.state) {
+    if (errors.state) {
       setErrors({ ...errors, state: "", city: "" });
     }
   };
 
   const validateFormData = () => {
     const newErrors: Record<string, string> = {};
-    
-    if (!formData.firstName.trim() || formData.firstName.length < 2) newErrors.firstName = "First name must be at least 2 characters.";
-    if (!/^[a-zA-Z\s]+$/.test(formData.firstName)) newErrors.firstName = "First name can only contain letters.";
-    if (!formData.lastName.trim() || formData.lastName.length < 2) newErrors.lastName = "Last name must be at least 2 characters.";
-    if (!/^[a-zA-Z\s]+$/.test(formData.lastName)) newErrors.lastName = "Last name can only contain letters.";
-    if (!/^[0-9]{10}$/.test(formData.phone)) newErrors.phone = "Phone number must be exactly 10 digits.";
-    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.email)) newErrors.email = "Please enter a valid email address.";
-    if (formData.address.trim().length < 10) newErrors.address = "Address must be at least 10 characters long.";
+
+    if (!formData.firstName.trim() || formData.firstName.length < 2)
+      newErrors.firstName = "First name must be at least 2 characters.";
+    if (!/^[a-zA-Z\s]+$/.test(formData.firstName))
+      newErrors.firstName = "First name can only contain letters.";
+    if (!formData.lastName.trim() || formData.lastName.length < 2)
+      newErrors.lastName = "Last name must be at least 2 characters.";
+    if (!/^[a-zA-Z\s]+$/.test(formData.lastName))
+      newErrors.lastName = "Last name can only contain letters.";
+    if (!/^[0-9]{10}$/.test(formData.phone))
+      newErrors.phone = "Phone number must be exactly 10 digits.";
+    if (
+      !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.email)
+    )
+      newErrors.email = "Please enter a valid email address.";
+    if (formData.address.trim().length < 10)
+      newErrors.address = "Address must be at least 10 characters long.";
     if (!formData.state) newErrors.state = "Please select a state.";
     if (!formData.city) newErrors.city = "Please select a city.";
-    if (!/^[0-9]{6}$/.test(formData.pincode)) newErrors.pincode = "Pincode must be exactly 6 digits.";
+    if (!/^[0-9]{6}$/.test(formData.pincode))
+      newErrors.pincode = "Pincode must be exactly 6 digits.";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -264,20 +274,21 @@ const Checkout = () => {
         setErrors({}); // Clear errors
       }
     } catch (error: any) {
-        if (error.response?.data?.errors) {
-            setErrors(error.response.data.errors);
-            toast({
-                title: "Validation failed",
-                description: "Please check the form for errors.",
-                variant: "destructive",
-            });
-        } else {
-            toast({
-                title: "Failed to save address",
-                description: error.response?.data?.message || "An unknown error occurred.",
-                variant: "destructive",
-            });
-        }
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+        toast({
+          title: "Validation failed",
+          description: "Please check the form for errors.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Failed to save address",
+          description:
+            error.response?.data?.message || "An unknown error occurred.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setAddressLoading(false);
     }
@@ -300,15 +311,21 @@ const Checkout = () => {
     } else {
       // Guest user: validate and use form data
       if (!validateFormData()) {
-          toast({ title: "Please fill out the address form correctly.", variant: "destructive" });
-          return;
+        toast({
+          title: "Please fill out the address form correctly.",
+          variant: "destructive",
+        });
+        return;
       }
       shippingAddress = formData;
     }
 
     if (!shippingAddress) {
-        toast({ title: "Could not determine shipping address.", variant: "destructive" });
-        return;
+      toast({
+        title: "Could not determine shipping address.",
+        variant: "destructive",
+      });
+      return;
     }
 
     setLoading(true);
@@ -330,7 +347,7 @@ const Checkout = () => {
       if (orderResponse.data.success) {
         isAuthenticated ? clearCart() : clearGuestData(); // Keep this for immediate UI update
         if ((orderQuote?.discounts?.welcomeGift ?? 0) > 0) {
-            clearUserReward();
+          clearUserReward();
         }
         navigate(`/payment?orderId=${orderResponse.data.data._id}`);
       }
@@ -447,8 +464,18 @@ const Checkout = () => {
 
   const isGuestFormValid = () => {
     if (isAuthenticated) return false;
-    const { firstName, lastName, phone, email, address, city, state, pincode } = formData;
-    return !!(firstName && lastName && phone && email && address && city && state && pincode);
+    const { firstName, lastName, phone, email, address, city, state, pincode } =
+      formData;
+    return !!(
+      firstName &&
+      lastName &&
+      phone &&
+      email &&
+      address &&
+      city &&
+      state &&
+      pincode
+    );
   };
 
   return (
@@ -474,55 +501,8 @@ const Checkout = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Right Column - Price Summary */}
-              <div className="space-y-6 lg:col-span-1">
-                <div className="bg-white rounded-lg border shadow-sm">
-                  <div className="p-4 border-b">
-                    <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
-                      <Gift className="w-5 h-5 text-primary" />
-                      Welcome Gift
-                    </h3>
-                  </div>
-                  <div className="p-4">
-                    <WelcomeGiftReward />
-                  </div>
-                </div>
-                <PriceSummary
-                  isQuoteLoading={isQuoteLoading}
-                  subtotal={subtotal}
-                  couponDiscount={discountAmount}
-                  welcomeGiftDiscount={welcomeGiftDiscount}
-                  shippingCost={shippingCost}
-                  finalTotal={finalTotal}
-                  totalSavings={totalSavings}
-                  isAuthenticated={isAuthenticated}
-                  lifetimeSavings={lifetimeSavings}
-                  lifetimeSavingsLoading={lifetimeSavingsLoading}
-                >
-                  <Button
-                    onClick={handleProceedToPayment}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-md py-3 font-medium"
-                    disabled={
-                      loading ||
-                      (isAuthenticated
-                        ? !selectedAddressId
-                        : !isGuestFormValid())
-                    }
-                  >
-                    {loading ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Processing...
-                      </div>
-                    ) : (
-                      "Proceed to Payment"
-                    )}
-                  </Button>
-                </PriceSummary>
-              </div>
-              
-              {/* Left Column */}
-              <div className="lg:col-span-2 space-y-6">
+              {/* Shipping Address Section - First on mobile, second on desktop */}
+              <div className="lg:col-span-2 space-y-6 order-1 lg:order-1">
                 {/* Shipping Address Section */}
                 <div className="bg-white rounded-lg border shadow-sm">
                   <div className="p-4 border-b">
@@ -648,7 +628,11 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
-                              {errors.firstName && <p className="text-destructive text-xs mt-1">{errors.firstName}</p>}
+                              {errors.firstName && (
+                                <p className="text-destructive text-xs mt-1">
+                                  {errors.firstName}
+                                </p>
+                              )}
                             </div>
                             <div>
                               <Label
@@ -665,7 +649,11 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
-                              {errors.lastName && <p className="text-destructive text-xs mt-1">{errors.lastName}</p>}
+                              {errors.lastName && (
+                                <p className="text-destructive text-xs mt-1">
+                                  {errors.lastName}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -684,7 +672,11 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
-                              {errors.phone && <p className="text-destructive text-xs mt-1">{errors.phone}</p>}
+                              {errors.phone && (
+                                <p className="text-destructive text-xs mt-1">
+                                  {errors.phone}
+                                </p>
+                              )}
                             </div>
                             <div>
                               <Label
@@ -702,7 +694,11 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
-                              {errors.email && <p className="text-destructive text-xs mt-1">{errors.email}</p>}
+                              {errors.email && (
+                                <p className="text-destructive text-xs mt-1">
+                                  {errors.email}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <div>
@@ -720,7 +716,11 @@ const Checkout = () => {
                               required
                               className="mt-1"
                             />
-                            {errors.address && <p className="text-destructive text-xs mt-1">{errors.address}</p>}
+                            {errors.address && (
+                              <p className="text-destructive text-xs mt-1">
+                                {errors.address}
+                              </p>
+                            )}
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
@@ -748,7 +748,11 @@ const Checkout = () => {
                                   ))}
                                 </SelectContent>
                               </Select>
-                              {errors.state && <p className="text-destructive text-xs mt-1">{errors.state}</p>}
+                              {errors.state && (
+                                <p className="text-destructive text-xs mt-1">
+                                  {errors.state}
+                                </p>
+                              )}
                             </div>
                             <div>
                               <Label
@@ -774,7 +778,11 @@ const Checkout = () => {
                                   ))}
                                 </SelectContent>
                               </Select>
-                              {errors.city && <p className="text-destructive text-xs mt-1">{errors.city}</p>}
+                              {errors.city && (
+                                <p className="text-destructive text-xs mt-1">
+                                  {errors.city}
+                                </p>
+                              )}
                             </div>
                             <div>
                               <Label
@@ -791,7 +799,11 @@ const Checkout = () => {
                                 required
                                 className="mt-1"
                               />
-                              {errors.pincode && <p className="text-destructive text-xs mt-1">{errors.pincode}</p>}
+                              {errors.pincode && (
+                                <p className="text-destructive text-xs mt-1">
+                                  {errors.pincode}
+                                </p>
+                              )}
                             </div>
                           </div>
                           {isAuthenticated && (
@@ -826,7 +838,9 @@ const Checkout = () => {
                                   ) : (
                                     <Save className="w-4 h-4" />
                                   )}
-                                  <span className="hidden sm:inline ml-2">Save Address</span>
+                                  <span className="hidden sm:inline ml-2">
+                                    Save Address
+                                  </span>
                                 </Button>
                                 <Button
                                   type="button"
@@ -843,6 +857,53 @@ const Checkout = () => {
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* Right Column - Price Summary - Second on mobile, first on desktop */}
+              <div className="space-y-6 lg:col-span-1 order-2 lg:order-2">
+                <div className="bg-white rounded-lg border shadow-sm">
+                  <div className="p-4 border-b">
+                    <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
+                      <Gift className="w-5 h-5 text-primary" />
+                      Welcome Gift
+                    </h3>
+                  </div>
+                  <div className="p-4">
+                    <WelcomeGiftReward />
+                  </div>
+                </div>
+                <PriceSummary
+                  isQuoteLoading={isQuoteLoading}
+                  subtotal={subtotal}
+                  couponDiscount={discountAmount}
+                  welcomeGiftDiscount={welcomeGiftDiscount}
+                  shippingCost={shippingCost}
+                  finalTotal={finalTotal}
+                  totalSavings={totalSavings}
+                  isAuthenticated={isAuthenticated}
+                  lifetimeSavings={lifetimeSavings}
+                  lifetimeSavingsLoading={lifetimeSavingsLoading}
+                >
+                  <Button
+                    onClick={handleProceedToPayment}
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-md py-3 font-medium"
+                    disabled={
+                      loading ||
+                      (isAuthenticated
+                        ? !selectedAddressId
+                        : !isGuestFormValid())
+                    }
+                  >
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Processing...
+                      </div>
+                    ) : (
+                      "Proceed to Payment"
+                    )}
+                  </Button>
+                </PriceSummary>
               </div>
             </div>
           </div>

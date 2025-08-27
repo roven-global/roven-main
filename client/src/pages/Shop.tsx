@@ -461,32 +461,53 @@ const Shop = () => {
                 </div>
 
                 <div className="flex items-center gap-4 w-full sm:w-auto">
+                  {/* Mobile Filter Button - More Prominent */}
                   <Sheet>
                     <SheetTrigger asChild>
                       <Button
                         variant="outline"
-                        className="w-full sm:w-auto border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage lg:hidden"
+                        className="w-full sm:w-auto border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage lg:hidden bg-white shadow-sm"
+                        size="lg"
                       >
-                        <Filter className="mr-2 h-4 w-4" /> Filters
+                        <Filter className="mr-2 h-5 w-5" />
+                        <span className="hidden xs:inline">Filters</span>
+                        <span className="xs:hidden">Filter</span>
+                        {Object.values({
+                          category: activeCategory !== "all",
+                          skinTypes: activeSkinTypes.length > 0,
+                          hairTypes: activeHairTypes.length > 0,
+                          price:
+                            activePriceRange ||
+                            activeCustomMin ||
+                            activeCustomMax,
+                        }).some(Boolean) && (
+                          <span className="ml-2 bg-sage text-white text-xs rounded-full px-2 py-1">
+                            Active
+                          </span>
+                        )}
                       </Button>
                     </SheetTrigger>
                     <SheetContent
                       side="left"
-                      className="w-[300px] bg-white border-warm-taupe"
+                      className="w-[320px] sm:w-[380px] bg-white border-warm-taupe overflow-y-auto"
                     >
-                      <SheetHeader>
-                        <SheetTitle className="text-deep-forest">
+                      <SheetHeader className="sticky top-0 bg-white z-10 pb-4 border-b border-warm-taupe/20">
+                        <SheetTitle className="text-deep-forest text-xl">
                           Filter Products
                         </SheetTitle>
+                        <p className="text-sm text-forest">
+                          Refine your search to find exactly what you need
+                        </p>
                       </SheetHeader>
-                      <div className="p-4 overflow-y-auto">
+                      <div className="py-4">
                         <FilterContent />
                       </div>
                     </SheetContent>
                   </Sheet>
 
+                  {/* Sort Dropdown */}
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-full sm:w-[180px] border-warm-taupe text-forest">
+                    <SelectTrigger className="w-full sm:w-[180px] border-warm-taupe text-forest bg-white shadow-sm">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-warm-taupe">
@@ -526,7 +547,7 @@ const Shop = () => {
               </div>
 
               {loading ? (
-                <div className="grid gap-4 sm:gap-6 grid-cols-2 sm:grid-cols-3">
+                <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <div key={i} className="space-y-2">
                       <Skeleton className="h-64 w-full bg-warm-taupe/20" />
@@ -547,7 +568,7 @@ const Shop = () => {
                   </p>
                 </div>
               ) : (
-                <div className="grid gap-4 sm:gap-6 grid-cols-2 sm:grid-cols-3">
+                <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {displayedProducts.map((product) => {
                     const thirtyDaysAgo = new Date();
                     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
