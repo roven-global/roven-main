@@ -492,7 +492,7 @@ const Checkout = () => {
             <ArrowRight className="w-4 h-4" />
             <span>Address</span>
             <ArrowRight className="w-4 h-4" />
-            <span className="text-warm-taupe">Payment</span>
+            <span className="text-forest opacity-75">Payment</span>
           </div>
         </div>
       </div>
@@ -565,7 +565,7 @@ const Checkout = () => {
                                     e.stopPropagation();
                                     handleDeleteAddress(addr._id);
                                   }}
-                                  className="h-8 w-8 text-warm-taupe hover:text-destructive hover:bg-destructive/10"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>

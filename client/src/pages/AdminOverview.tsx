@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, ShoppingCart, Users, Layers, Tag, MapPin, CheckCircle, AlertTriangle, XCircle, Clock } from 'lucide-react';
+import { Users, Layers, Tag, MapPin, CheckCircle, AlertTriangle, XCircle, Clock } from 'lucide-react';
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -71,6 +72,18 @@ const AdminOverview = () => {
     fetchStats();
   }, [timeRange]);
 
+  const cardLinks: { [key: string]: string } = {
+    "Total Sales": "/admin/orders",
+    "Pending Orders": "/admin/orders",
+    "Accepted Orders": "/admin/orders",
+    "Rejected Orders": "/admin/orders",
+    "Completed Orders": "/admin/orders",
+    "Total Customers": "/admin/customers",
+    "Total Categories": "/admin/category",
+    "Total Subcategories": "/admin/category",
+    "Total Brands": "/admin/product",
+  };
+
   const summaryCards = [
     { title: "Total Sales", value: stats?.totalSales.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }), icon: FaRupeeSign, color: "bg-gold-accent/20 text-gold-accent border-gold-accent/30" },
     { title: "Pending Orders", value: stats?.pendingOrders, icon: Clock, color: "bg-soft-bronze/20 text-soft-bronze border-soft-bronze/30" },
@@ -116,22 +129,30 @@ const AdminOverview = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-            {summaryCards.map((card, index) => (
-              <Card
-                key={index}
-                className="bg-white border-warm-taupe hover:shadow-luxury transition-all duration-300 hover:scale-105"
-              >
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-forest">{card.title}</CardTitle>
-                  <div className={`p-2 rounded-full border ${card.color}`}>
-                    <card.icon className="h-4 w-4" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-deep-forest">{card.value}</div>
-                </CardContent>
-              </Card>
-            ))}
+            {summaryCards.map((card, index) => {
+              const link = cardLinks[card.title];
+              const cardComponent = (
+                <Card
+                  key={index}
+                  className={`bg-white border-warm-taupe hover:shadow-luxury transition-all duration-300 hover:scale-105 ${link ? 'cursor-pointer' : ''}`}
+                >
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-forest">{card.title}</CardTitle>
+                    <div className={`p-2 rounded-full border ${card.color}`}>
+                      <card.icon className="h-4 w-4" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-deep-forest">{card.value}</div>
+                  </CardContent>
+                </Card>
+              );
+
+              if (link) {
+                return <Link to={link} key={index}>{cardComponent}</Link>;
+              }
+              return cardComponent;
+            })}
           </div>
         )}
       </div>

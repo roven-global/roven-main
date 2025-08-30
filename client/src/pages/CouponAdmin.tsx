@@ -3,12 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -20,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -29,18 +26,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus,
   Search,
   Edit,
   Trash2,
-  Calendar,
-  Percent,
-  DollarSign,
-  Users,
-  Clock,
   CheckCircle,
   XCircle,
   BarChart3,
@@ -49,69 +39,10 @@ import { toast } from "@/hooks/use-toast";
 import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
 import { formatRupees } from "@/lib/currency";
-import { z } from "zod";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { MultiSelect } from "@/components/ui/MultiSelect";
+import { CouponForm } from "@/components/CouponForm";
+import type { CouponFormValues, Coupon } from "@/components/CouponForm";
 
-const couponSchema = z
-  .object({
-    code: z
-      .string()
-      .min(1, "Coupon code is required")
-      .max(20, "Code cannot exceed 20 characters")
-      .regex(/^[A-Z0-9]+$/, "Code must be uppercase letters and numbers"),
-    name: z
-      .string()
-      .min(1, "Coupon name is required")
-      .max(100, "Name cannot exceed 100 characters"),
-    description: z
-      .string()
-      .max(500, "Description cannot exceed 500 characters")
-      .optional(),
-    type: z.enum(["percentage", "fixed"]),
-    value: z.number().min(0, "Value must be positive"),
-    maxDiscount: z.preprocess(
-      (val) =>
-        String(val).trim() === "" || isNaN(Number(val)) ? null : Number(val),
-      z.number().min(0).optional().nullable()
-    ),
-    minOrderAmount: z.number().min(0),
-    maxOrderAmount: z.preprocess(
-      (val) =>
-        String(val).trim() === "" || isNaN(Number(val)) ? null : Number(val),
-      z.number().min(0).optional().nullable()
-    ),
-    usageLimit: z.number().int().min(1, "Usage limit must be at least 1"),
-    perUserLimit: z.number().int().min(1, "Per user limit must be at least 1"),
-    validFrom: z.string().min(1, "Valid from date is required"),
-    validTo: z.string().min(1, "Valid to date is required"),
-    firstTimeUserOnly: z.boolean(),
-    applicableCategories: z.array(z.string()).optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.type === "percentage") {
-        return data.value > 0 && data.value <= 100;
-      }
-      return true;
-    },
-    {
-      message: "Percentage value must be between 1 and 100",
-      path: ["value"],
-    }
-  )
-  .refine((data) => new Date(data.validTo) > new Date(data.validFrom), {
-    message: "End date must be after start date",
-    path: ["validTo"],
-  });
-
-type CouponFormValues = z.infer<typeof couponSchema>;
-
-interface Coupon extends CouponFormValues {
-  _id: string;
-  usedCount: number;
-  isActive: boolean;
+interface CouponAdmin extends Coupon {
   createdAt: string;
   createdBy: {
     name: string;
@@ -120,7 +51,7 @@ interface Coupon extends CouponFormValues {
 }
 
 const CouponAdmin = () => {
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [coupons, setCoupons] = useState<CouponAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -129,11 +60,10 @@ const CouponAdmin = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
-  const [products, setProducts] = useState<{ _id: string; name: string }[]>([]);
   const [categories, setCategories] = useState<{ _id: string; name: string }[]>(
     []
   );
-  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [analytics, setAnalytics] = useState<any>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
@@ -152,57 +82,21 @@ const CouponAdmin = () => {
   };
 
   useEffect(() => {
-    const fetchProductsAndCategories = async () => {
+    const fetchCategories = async () => {
       try {
-        const [productsRes, categoriesRes] = await Promise.all([
-          Axios.get(SummaryApi.getAllProducts.url),
-          Axios.get(SummaryApi.getAllCategories.url),
-        ]);
-        if (productsRes.data.success) {
-          setProducts(productsRes.data.data.products);
-        }
-        if (categoriesRes.data.success) {
-          setCategories(categoriesRes.data.data);
+        const res = await Axios.get(SummaryApi.getAllCategories.url);
+        if (res.data.success) {
+          setCategories(res.data.data);
         }
       } catch (error) {
         toast({
-          title: "Error fetching products/categories",
+          title: "Error fetching categories",
           variant: "destructive",
         });
       }
     };
-    fetchProductsAndCategories();
+    fetchCategories();
   }, []);
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    control,
-    setError,
-    watch,
-    formState: { errors },
-  } = useForm<CouponFormValues>({
-    resolver: zodResolver(couponSchema),
-    defaultValues: {
-      code: "",
-      name: "",
-      description: "",
-      type: "percentage",
-      value: 10,
-      maxDiscount: undefined,
-      minOrderAmount: 0,
-      maxOrderAmount: undefined,
-      usageLimit: 100,
-      perUserLimit: 1,
-      validFrom: "",
-      validTo: "",
-      firstTimeUserOnly: false,
-      applicableCategories: [],
-    },
-  });
-
-  const discountType = watch("type");
 
   const fetchCoupons = async () => {
     try {
@@ -242,29 +136,18 @@ const CouponAdmin = () => {
 
   const onSubmit = async (data: CouponFormValues) => {
     try {
-      if (editingCoupon) {
-        const url = SummaryApi.updateCoupon.url.replace(
-          ":id",
-          editingCoupon._id
-        );
-        const response = await Axios.put(url, data);
-        if (response.data.success) {
-          toast({ title: "Coupon updated successfully" });
-        }
-      } else {
-        const response = await Axios.post(SummaryApi.createCoupon.url, data);
-        if (response.data.success) {
-          toast({ title: "Coupon created successfully" });
-        }
+      const response = editingCoupon
+        ? await Axios.put(SummaryApi.updateCoupon.url.replace(":id", editingCoupon._id), data)
+        : await Axios.post(SummaryApi.createCoupon.url, data);
+
+      if (response.data.success) {
+        toast({ title: `Coupon ${editingCoupon ? 'updated' : 'created'} successfully!` });
+        fetchCoupons();
+        setIsDialogOpen(false);
+        setEditingCoupon(null);
       }
-      setIsDialogOpen(false);
-      fetchCoupons();
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "An unexpected error occurred.";
-      if (typeof errorMessage === "string" && errorMessage.includes("code")) {
-        setError("code", { type: "manual", message: errorMessage });
-      }
+      const errorMessage = error.response?.data?.message || "An unexpected error occurred.";
       toast({
         title: "Error saving coupon",
         description: errorMessage,
@@ -309,32 +192,11 @@ const CouponAdmin = () => {
 
   const openEditDialog = (coupon: Coupon) => {
     setEditingCoupon(coupon);
-    reset({
-      ...coupon,
-      validFrom: new Date(coupon.validFrom).toISOString().split("T")[0],
-      validTo: new Date(coupon.validTo).toISOString().split("T")[0],
-    });
     setIsDialogOpen(true);
   };
 
   const openCreateDialog = () => {
     setEditingCoupon(null);
-    reset({
-      code: "",
-      name: "",
-      description: "",
-      type: "percentage",
-      value: 10,
-      maxDiscount: undefined,
-      minOrderAmount: 0,
-      maxOrderAmount: undefined,
-      usageLimit: 100,
-      perUserLimit: 1,
-      validFrom: "",
-      validTo: "",
-      firstTimeUserOnly: false,
-      applicableCategories: [],
-    });
     setIsDialogOpen(true);
   };
 
@@ -377,16 +239,58 @@ const CouponAdmin = () => {
           Coupon Management
         </h2>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setShowAnalytics(!showAnalytics);
-              if (!analytics) fetchAnalytics();
-            }}
-          >
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Analytics
-          </Button>
+          <Dialog open={isAnalyticsOpen} onOpenChange={setIsAnalyticsOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!analytics) fetchAnalytics();
+                }}
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Analytics
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Coupon Analytics</DialogTitle>
+              </DialogHeader>
+              {analyticsLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sage"></div>
+                </div>
+              ) : analytics ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <h4 className="text-2xl font-bold">{analytics.totalCoupons}</h4>
+                      <p className="text-sm text-gray-600">Total Coupons</p>
+                    </div>
+                    <div>
+                      <h4 className="text-2xl font-bold">{analytics.activeCoupons}</h4>
+                      <p className="text-sm text-gray-600">Active Coupons</p>
+                    </div>
+                    <div>
+                      <h4 className="text-2xl font-bold">{formatRupees(analytics.totalDiscountGiven)}</h4>
+                      <p className="text-sm text-gray-600">Total Discount Given</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2 pt-4">
+                    <h3 className="font-medium">Most Used Coupons</h3>
+                    {analytics.mostUsedCoupons.map((coupon: any) => (
+                      <div key={coupon.couponId} className="flex justify-between items-center bg-gray-50 p-2 rounded">
+                        <span className="font-medium">{coupon.name} ({coupon.code})</span>
+                        <span className="text-sm text-gray-600">{coupon.totalUsage} uses</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-center text-gray-500 py-12">Could not load analytics data.</p>
+              )}
+            </DialogContent>
+          </Dialog>
+
           <Button
             onClick={openCreateDialog}
             className="bg-sage hover:bg-forest text-white"
@@ -396,67 +300,6 @@ const CouponAdmin = () => {
           </Button>
         </div>
       </div>
-
-      {/* Analytics Section */}
-      {showAnalytics && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Coupon Analytics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {analyticsLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sage"></div>
-              </div>
-            ) : analytics ? (
-              <>
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="text-center p-4 border rounded-lg">
-                    <h4 className="text-2xl font-bold">
-                      {analytics.totalCoupons}
-                    </h4>
-                    <p className="text-sm text-gray-600">Total Coupons</p>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <h4 className="text-2xl font-bold">
-                      {analytics.activeCoupons}
-                    </h4>
-                    <p className="text-sm text-gray-600">Active Coupons</p>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <h4 className="text-2xl font-bold">
-                      {formatRupees(analytics.totalDiscountGiven)}
-                    </h4>
-                    <p className="text-sm text-gray-600">Total Discount Given</p>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Most Used Coupons</h4>
-                  <div className="space-y-2">
-                    {analytics.mostUsedCoupons.map((coupon: any) => (
-                      <div
-                        key={coupon.couponId}
-                        className="flex justify-between items-center bg-gray-50 p-2 rounded"
-                      >
-                        <span className="font-medium">
-                          {coupon.name} ({coupon.code})
-                        </span>
-                        <span className="text-sm text-gray-600">
-                          {coupon.totalUsage} uses
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <p className="text-center text-gray-500 py-12">
-                Could not load analytics data.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Filters */}
       <Card>
@@ -608,229 +451,12 @@ const CouponAdmin = () => {
                 : "Add a new promotional coupon to your system."}
             </DialogDescription>
           </DialogHeader>
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="grid grid-cols-2 gap-4 py-4"
-          >
-            <div>
-              <Label htmlFor="code">Coupon Code</Label>
-              <Input
-                id="code"
-                {...register("code")}
-                placeholder="e.g., WELCOME10"
-              />
-              {errors.code && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.code.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="name">Coupon Name</Label>
-              <Input
-                id="name"
-                {...register("name")}
-                placeholder="e.g., Welcome Discount"
-              />
-              {errors.name && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.name.message}
-                </p>
-              )}
-            </div>
-            <div className="col-span-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                {...register("description")}
-                placeholder="Describe the coupon offer..."
-              />
-              {errors.description && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.description.message}
-                </p>
-              )}
-            </div>
-
-            <Separator className="col-span-2" />
-            <h4 className="col-span-2 font-medium text-sm text-gray-700">
-              Restrictions
-            </h4>
-
-            <div className="col-span-2">
-              <Label>Applicable Categories</Label>
-              <Controller
-                name="applicableCategories"
-                control={control}
-                render={({ field }) => (
-                  <MultiSelect
-                    options={categories.map((c) => ({
-                      value: c._id,
-                      label: c.name,
-                    }))}
-                    selected={field.value || []}
-                    onChange={field.onChange}
-                    placeholder="All categories"
-                  />
-                )}
-              />
-            </div>
-
-            <Separator className="col-span-2" />
-
-            <div>
-              <Label>Discount Type</Label>
-              <Controller
-                name="type"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="percentage">Percentage</SelectItem>
-                      <SelectItem value="fixed">Fixed Amount</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.type && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.type.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="value">Discount Value</Label>
-              <Input
-                id="value"
-                type="number"
-                {...register("value", { valueAsNumber: true })}
-              />
-              {errors.value && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.value.message}
-                </p>
-              )}
-            </div>
-            {discountType === "percentage" && (
-              <div>
-                <Label htmlFor="maxDiscount">Max Discount (₹)</Label>
-                <Input
-                  id="maxDiscount"
-                  type="number"
-                  {...register("maxDiscount", { valueAsNumber: true })}
-                  placeholder="Optional"
-                />
-                {errors.maxDiscount && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.maxDiscount.message}
-                  </p>
-                )}
-              </div>
-            )}
-            <div>
-              <Label htmlFor="minOrderAmount">Min Order Amount (₹)</Label>
-              <Input
-                id="minOrderAmount"
-                type="number"
-                {...register("minOrderAmount", { valueAsNumber: true })}
-              />
-              {errors.minOrderAmount && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.minOrderAmount.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="maxOrderAmount">Max Order Amount (₹)</Label>
-              <Input
-                id="maxOrderAmount"
-                type="number"
-                {...register("maxOrderAmount", { valueAsNumber: true })}
-                placeholder="Optional"
-              />
-              {errors.maxOrderAmount && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.maxOrderAmount.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="usageLimit">Total Usage Limit</Label>
-              <Input
-                id="usageLimit"
-                type="number"
-                {...register("usageLimit", { valueAsNumber: true })}
-              />
-              {errors.usageLimit && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.usageLimit.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="perUserLimit">Per User Limit</Label>
-              <Input
-                id="perUserLimit"
-                type="number"
-                {...register("perUserLimit", { valueAsNumber: true })}
-              />
-              {errors.perUserLimit && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.perUserLimit.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="validFrom">Valid From</Label>
-              <Input id="validFrom" type="date" {...register("validFrom")} />
-              {errors.validFrom && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.validFrom.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="validTo">Valid To</Label>
-              <Input id="validTo" type="date" {...register("validTo")} />
-              {errors.validTo && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.validTo.message}
-                </p>
-              )}
-            </div>
-            <div className="col-span-2">
-              <div className="flex items-center space-x-2">
-                <Controller
-                  name="firstTimeUserOnly"
-                  control={control}
-                  render={({ field }) => (
-                    <Checkbox
-                      id="firstTimeUserOnly"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                />
-                <Label htmlFor="firstTimeUserOnly">First-time users only</Label>
-              </div>
-              {errors.firstTimeUserOnly && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.firstTimeUserOnly.message}
-                </p>
-              )}
-            </div>
-            <DialogFooter className="col-span-2">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" className="bg-sage hover:bg-forest">
-                {editingCoupon ? "Update Coupon" : "Create Coupon"}
-              </Button>
-            </DialogFooter>
-          </form>
+          <CouponForm
+            onSubmit={onSubmit}
+            onCancel={() => setIsDialogOpen(false)}
+            editingCoupon={editingCoupon}
+            categories={categories}
+          />
         </DialogContent>
       </Dialog>
     </div>

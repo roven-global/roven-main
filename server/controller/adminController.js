@@ -32,8 +32,12 @@ const getOverviewStats = asyncHandler(async (req, res) => {
   const rejectedOrders = await OrderModel.countDocuments({ ...dateFilter, paymentStatus: "rejected" });
   const completedOrders = await OrderModel.countDocuments({ ...dateFilter, paymentStatus: "completed" });
 
-  // Total Customers (not time-sensitive)
-  const totalCustomers = await UserModel.countDocuments({ role: "USER" });
+  // Total Customers (users who have placed at least one order)
+  const customerIds = await OrderModel.distinct("user");
+  const totalCustomers = await UserModel.countDocuments({
+    _id: { $in: customerIds },
+    role: "USER",
+  });
 
   // Collection Counts
   const totalCategories = await CategoryModel.countDocuments({ parentCategory: null });
@@ -56,10 +60,6 @@ const getOverviewStats = asyncHandler(async (req, res) => {
     },
   });
 });
-
-module.exports = {
-  getOverviewStats,
-};
 
 const getCustomers = asyncHandler(async (req, res) => {
   const {

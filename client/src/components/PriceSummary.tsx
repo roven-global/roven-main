@@ -104,19 +104,19 @@ const PriceSummary: React.FC<PriceSummaryProps> = ({
       </div>
       <div className="p-4 border-t">
         {totalSavings > 0 && (
-          <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-4 flex items-center gap-2">
-            <span className="text-primary">✓</span>
-            <p className="text-sm text-primary font-medium">
+          <div className="bg-primary/10 border border-primary/70 rounded-lg p-3 mb-4 flex items-center gap-2">
+            <span className="text-primary-10">✓</span>
+            <p className="text-sm text-primary-5 font-medium">
               You are saving {formatRupees(totalSavings)} on this order
             </p>
           </div>
         )}
 
         {isAuthenticated && (
-          <div className="bg-sage/10 border border-sage/20 rounded-lg p-3 mb-4 flex items-center gap-2">
+          <div className="bg-sage/10 border border-sage/60 rounded-lg p-3 mb-4 flex items-center gap-2">
             <span className="text-sage">🏆</span>
             <div className="flex-1">
-              <p className="text-sm text-sage font-medium">
+              <p className="text-sm text-sage-20 font-medium">
                 Your lifetime savings with Roven Beauty
               </p>
               {lifetimeSavingsLoading ? (

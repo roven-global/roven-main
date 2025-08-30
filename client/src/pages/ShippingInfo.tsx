@@ -7,8 +7,7 @@ const ShippingInfo = () => {
       <p className="mb-4 text-muted-foreground">We strive to deliver your order as quickly and safely as possible. Here are our shipping policies:</p>
       <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
         <li>Standard shipping within India: 3-7 business days.</li>
-        <li>Express shipping: 1-3 business days (extra charges apply).</li>
-        <li>Free shipping on orders over ₹999.</li>
+        <li>We are pleased to offer free standard shipping on all orders.</li>
         <li>All orders are processed within 1-2 business days.</li>
         <li>Tracking information will be sent via email once your order ships.</li>
       </ul>

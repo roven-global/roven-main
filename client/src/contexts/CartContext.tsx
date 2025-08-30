@@ -123,19 +123,17 @@ const calculateLocalQuote = (
   }
 
   let welcomeGiftDiscount = 0;
-  let freeShippingByReward = false;
   const shouldApplyWelcomeGift =
     userReward && subtotal >= userReward.minOrderAmount;
 
   if (shouldApplyWelcomeGift) {
-    if (userReward.giftId?.rewardType === "free_shipping") {
-      freeShippingByReward = true;
-    } else if (userReward.giftId?.rewardType === "discount") {
+    if (userReward.giftId?.rewardType === "discount") {
       welcomeGiftDiscount = userReward.giftId.value || 0;
     }
+    // free_shipping reward is now redundant as shipping is always free.
   }
 
-  const shippingCost = freeShippingByReward || subtotal > 499 ? 0 : 40;
+  const shippingCost = 0; // All shipping is free
   const totalDiscount = couponDiscount + welcomeGiftDiscount;
   const finalTotal = Math.max(0, subtotal + shippingCost - totalDiscount);
 

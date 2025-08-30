@@ -61,7 +61,6 @@ const calculateOrderTotals = async (cartItems, user, couponCode, applyWelcomeGif
     
     let welcomeGiftDiscount = 0;
     let appliedWelcomeGiftId = null;
-    let freeShipping = false;
     if (applyWelcomeGift && user?.rewardClaimed && !user?.rewardUsed) {
         const userReward = await UserReward.findOne({ userId: user._id, isUsed: false }).populate('giftId');
         if (userReward?.giftId) {
@@ -69,15 +68,14 @@ const calculateOrderTotals = async (cartItems, user, couponCode, applyWelcomeGif
             const validation = gift.canBeApplied(subtotal, orderItems);
             if (validation.canApply) {
                 welcomeGiftDiscount = validation.discount || 0;
-                if (gift.rewardType === 'free_shipping') freeShipping = true;
                 appliedWelcomeGiftId = userReward._id;
             }
         }
     }
     
-    const shippingCost = freeShipping ? 0 : (subtotal > 499 ? 0 : 40);
+    const shippingCost = 0; // All shipping is free
     const totalDiscount = couponDiscount + welcomeGiftDiscount;
-    const finalTotal = Math.max(0, subtotal + shippingCost - totalDiscount);
+    const finalTotal = Math.max(0, subtotal - totalDiscount);
 
     return {
         items: orderItems,
@@ -416,7 +414,6 @@ const getLifetimeSavings = asyncHandler(async (req, res) => {
         let totalSavings = 0;
         let totalCouponSavings = 0;
         let totalWelcomeGiftSavings = 0;
-        let totalShippingSavings = 0;
 
         orders.forEach(order => {
             // Add coupon discounts
@@ -425,15 +422,9 @@ const getLifetimeSavings = asyncHandler(async (req, res) => {
             // Add welcome gift discounts
             totalWelcomeGiftSavings += order.welcomeGiftDiscount || 0;
 
-            // Calculate shipping savings (original shipping cost - actual charged shipping)
-            // If subtotal > 499, shipping was free, so savings = 40
-            // If subtotal <= 499, shipping was charged, so savings = 0
-            const originalShippingCost = 40;
-            const shippingSavings = order.subtotal > 499 ? originalShippingCost : 0;
-            totalShippingSavings += shippingSavings;
         });
 
-        totalSavings = totalCouponSavings + totalWelcomeGiftSavings + totalShippingSavings;
+        totalSavings = totalCouponSavings + totalWelcomeGiftSavings;
 
         return res.json({
             success: true,
@@ -442,8 +433,7 @@ const getLifetimeSavings = asyncHandler(async (req, res) => {
                 totalSavings,
                 breakdown: {
                     couponSavings: totalCouponSavings,
-                    welcomeGiftSavings: totalWelcomeGiftSavings,
-                    shippingSavings: totalShippingSavings
+                    welcomeGiftSavings: totalWelcomeGiftSavings
                 },
                 totalOrders: orders.length
             }

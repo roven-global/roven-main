@@ -1,8 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom"
-import { BarChart, Boxes, PanelsTopLeft, Tag, Gift, Users, Mail } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
+import { Home, BarChart, Boxes, PanelsTopLeft, Tag, Gift, Users, Mail, ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface AdminSidebarProps extends React.HTMLAttributes<HTMLElement> {
@@ -15,8 +13,13 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
 
   const sidebarNavItems = [
     {
+      title: "Visit Site",
+      href: "/",
+      icon: <ExternalLink size={20} />
+    },
+    {
       title: "Overview",
-      href: "/admin/overview",
+      href: "/admin",
       icon: <BarChart size={20} />
     },
     {
@@ -58,8 +61,9 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
       )}
     >
       <div className="flex h-16 items-center border-b px-4 lg:h-[60px] lg:px-6">
-        <Link to="/admin/overview" className="flex items-center gap-2 font-semibold">
-          <span className="">Dashboard</span>
+        <Link to="/admin" className="flex items-center gap-2 font-semibold">
+          <Home className="h-6 w-6" />
+          <span className="">Chic Boutique</span>
         </Link>
       </div>
       <div className="flex-1">
@@ -71,7 +75,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
                 {
-                  "bg-muted text-primary": location.pathname === item.href
+                  "bg-muted text-sage": location.pathname === item.href
                 }
               )}
             >
@@ -80,13 +84,6 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
             </Link>
           ))}
         </nav>
-      </div>
-      <div className="mt-auto p-4">
-        <Link to="/">
-          <Button size="sm" className="w-full">
-            Home
-          </Button>
-        </Link>
       </div>
     </nav>
   )

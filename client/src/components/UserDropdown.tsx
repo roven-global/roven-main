@@ -63,7 +63,7 @@ const UserDropdown = () => {
                 <DropdownMenuLabel>Admin Panel</DropdownMenuLabel>
                 {/* Link to the new Admin Overview page */}
                 <DropdownMenuItem asChild>
-                  <Link to="/admin/overview" className="flex items-center cursor-pointer">
+                  <Link to="/admin" className="flex items-center cursor-pointer">
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     <span>Overview</span>
                   </Link>

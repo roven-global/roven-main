@@ -9,112 +9,117 @@ const { validateCartItems } = require("../utils/cartValidator");
  * @route POST /api/coupon/validate
  */
 const validateCoupon = asyncHandler(async (req, res) => {
-    const { code, orderAmount, cartItems } = req.body;
+  const { code, orderAmount, cartItems } = req.body;
 
-    if (!code) {
-        return res.status(400).json({
-            success: false,
-            message: "Coupon code is required",
-        });
-    }
-
-    if (!Array.isArray(cartItems)) {
-        return res.status(400).json({
-            success: false,
-            message: "Valid cart items are required",
-        });
-    }
-
-    // Validate and recompute cart on server
-    const cartValidation = await validateCartItems(cartItems);
-    if (!cartValidation.isValid) {
-        return res.status(400).json({
-            success: false,
-            message: cartValidation.message || "Invalid cart",
-        });
-    }
-
-    const actualCartTotal = cartValidation.totalCartValue;
-
-    // Optional: verify submitted order amount matches server calc (tolerance 1)
-    if (orderAmount && Math.abs(actualCartTotal - orderAmount) > 1) {
-        return res.status(400).json({
-            success: false,
-            message: "Cart total mismatch. Please refresh and try again.",
-        });
-    }
-
-    // Find the coupon
-    const coupon = await CouponModel.findOne({
-        code: String(code).toUpperCase(),
-        isActive: true,
+  if (!code) {
+    return res.status(400).json({
+      success: false,
+      message: "Coupon code is required",
     });
+  }
 
-    if (!coupon) {
-        return res.status(404).json({
-            success: false,
-            message: "Invalid coupon code",
-        });
-    }
-
-    // Check if coupon is valid
-    if (!coupon.isValid) {
-        return res.status(400).json({
-            success: false,
-            message: "Coupon is not valid or has expired",
-        });
-    }
-
-    // Get user's order count for first-time user check
-    let userOrderCount = 0;
-    if (req.user) {
-        userOrderCount = await OrderModel.countDocuments({ user: req.user._id });
-    }
-
-    // Check if coupon can be applied using server total
-    const canBeApplied = coupon.canBeApplied(actualCartTotal, req.user?._id, userOrderCount, cartValidation.validatedItems);
-    if (!canBeApplied.valid) {
-        return res.status(400).json({
-            success: false,
-            message: canBeApplied.message,
-        });
-    }
-
-    // Check if user has already used this coupon
-    if (req.user) {
-        const canUserUse = await CouponUsageModel.canUserUseCoupon(
-            coupon._id,
-            req.user._id,
-            coupon.perUserLimit
-        );
-        if (!canUserUse) {
-            return res.status(400).json({
-                success: false,
-                message: `You have already used this coupon ${coupon.perUserLimit} time(s)`,
-            });
-        }
-    }
-
-    // Calculate discount based on server total
-    const discountAmount = coupon.calculateDiscount(actualCartTotal);
-
-    return res.json({
-        success: true,
-        message: "Coupon is valid",
-        data: {
-            coupon: {
-                _id: coupon._id,
-                code: coupon.code,
-                name: coupon.name,
-                description: coupon.description,
-                type: coupon.type,
-                value: coupon.value,
-                maxDiscount: coupon.maxDiscount,
-            },
-            discountAmount,
-            finalAmount: Math.max(0, actualCartTotal - discountAmount),
-        },
+  if (!Array.isArray(cartItems)) {
+    return res.status(400).json({
+      success: false,
+      message: "Valid cart items are required",
     });
+  }
+
+  // Validate and recompute cart on server
+  const cartValidation = await validateCartItems(cartItems);
+  if (!cartValidation.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: cartValidation.message || "Invalid cart",
+    });
+  }
+
+  const actualCartTotal = cartValidation.totalCartValue;
+
+  // Optional: verify submitted order amount matches server calc (tolerance 1)
+  if (orderAmount && Math.abs(actualCartTotal - orderAmount) > 1) {
+    return res.status(400).json({
+      success: false,
+      message: "Cart total mismatch. Please refresh and try again.",
+    });
+  }
+
+  // Find the coupon
+  const coupon = await CouponModel.findOne({
+    code: String(code).toUpperCase(),
+    isActive: true,
+  });
+
+  if (!coupon) {
+    return res.status(404).json({
+      success: false,
+      message: "Invalid coupon code",
+    });
+  }
+
+  // Check if coupon is valid
+  if (!coupon.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: "Coupon is not valid or has expired",
+    });
+  }
+
+  // Get user's order count for first-time user check
+  let userOrderCount = 0;
+  if (req.user) {
+    userOrderCount = await OrderModel.countDocuments({ user: req.user._id });
+  }
+
+  // Check if coupon can be applied using server total
+  const canBeApplied = coupon.canBeApplied(
+    actualCartTotal,
+    req.user?._id,
+    userOrderCount,
+    cartValidation.validatedItems
+  );
+  if (!canBeApplied.valid) {
+    return res.status(400).json({
+      success: false,
+      message: canBeApplied.message,
+    });
+  }
+
+  // Check if user has already used this coupon
+  if (req.user) {
+    const canUserUse = await CouponUsageModel.canUserUseCoupon(
+      coupon._id,
+      req.user._id,
+      coupon.perUserLimit
+    );
+    if (!canUserUse) {
+      return res.status(400).json({
+        success: false,
+        message: `You have already used this coupon ${coupon.perUserLimit} time(s)`,
+      });
+    }
+  }
+
+  // Calculate discount based on server total
+  const discountAmount = coupon.calculateDiscount(actualCartTotal);
+
+  return res.json({
+    success: true,
+    message: "Coupon is valid",
+    data: {
+      coupon: {
+        _id: coupon._id,
+        code: coupon.code,
+        name: coupon.name,
+        description: coupon.description,
+        type: coupon.type,
+        value: coupon.value,
+        maxDiscount: coupon.maxDiscount,
+      },
+      discountAmount,
+      finalAmount: Math.max(0, actualCartTotal - discountAmount),
+    },
+  });
 });
 
 /**
@@ -122,19 +127,21 @@ const validateCoupon = asyncHandler(async (req, res) => {
  * @route GET /api/coupon/active
  */
 const getActiveCoupons = asyncHandler(async (req, res) => {
-    const currentDate = new Date();
+  const currentDate = new Date();
 
-    const coupons = await CouponModel.find({
-        isActive: true,
-        validFrom: { $lte: currentDate },
-        validTo: { $gte: currentDate },
-        $expr: { $lt: ["$usedCount", "$usageLimit"] }
-    }).select('code name description type value maxDiscount minOrderAmount validTo firstTimeUserOnly');
+  const coupons = await CouponModel.find({
+    isActive: true,
+    validFrom: { $lte: currentDate },
+    validTo: { $gte: currentDate },
+    $expr: { $lt: ["$usedCount", "$usageLimit"] },
+  }).select(
+    "code name description type value maxDiscount minOrderAmount validTo firstTimeUserOnly"
+  );
 
-    return res.json({
-        success: true,
-        data: coupons,
-    });
+  return res.json({
+    success: true,
+    data: coupons,
+  });
 });
 
 /**
@@ -142,45 +149,45 @@ const getActiveCoupons = asyncHandler(async (req, res) => {
  * @route GET /api/coupon/all
  */
 const getAllCoupons = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, search = "", status = "" } = req.query;
+  const { page = 1, limit = 10, search = "", status = "" } = req.query;
 
-    const query = {};
+  const query = {};
 
-    if (search) {
-        query.$or = [
-            { code: { $regex: search, $options: "i" } },
-            { name: { $regex: search, $options: "i" } },
-        ];
-    }
+  if (search) {
+    query.$or = [
+      { code: { $regex: search, $options: "i" } },
+      { name: { $regex: search, $options: "i" } },
+    ];
+  }
 
-    if (status === "active") {
-        query.isActive = true;
-    } else if (status === "inactive") {
-        query.isActive = false;
-    }
+  if (status === "active") {
+    query.isActive = true;
+  } else if (status === "inactive") {
+    query.isActive = false;
+  }
 
-    const skip = (page - 1) * limit;
+  const skip = (page - 1) * limit;
 
-    const coupons = await CouponModel.find(query)
-        .populate("createdBy", "name email")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(parseInt(limit));
+  const coupons = await CouponModel.find(query)
+    .populate("createdBy", "name email")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));
 
-    const total = await CouponModel.countDocuments(query);
+  const total = await CouponModel.countDocuments(query);
 
-    return res.json({
-        success: true,
-        data: {
-            coupons,
-            pagination: {
-                currentPage: parseInt(page),
-                totalPages: Math.ceil(total / limit),
-                totalItems: total,
-                itemsPerPage: parseInt(limit),
-            },
-        },
-    });
+  return res.json({
+    success: true,
+    data: {
+      coupons,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+        itemsPerPage: parseInt(limit),
+      },
+    },
+  });
 });
 
 /**
@@ -188,26 +195,26 @@ const getAllCoupons = asyncHandler(async (req, res) => {
  * @route GET /api/coupon/:id
  */
 const getCouponById = asyncHandler(async (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    const coupon = await CouponModel.findById(id)
-        .populate("createdBy", "name email")
-        .populate("applicableCategories", "name")
-        .populate("applicableProducts", "name")
-        .populate("excludedCategories", "name")
-        .populate("excludedProducts", "name");
+  const coupon = await CouponModel.findById(id)
+    .populate("createdBy", "name email")
+    .populate("applicableCategories", "name")
+    .populate("applicableProducts", "name")
+    .populate("excludedCategories", "name")
+    .populate("excludedProducts", "name");
 
-    if (!coupon) {
-        return res.status(404).json({
-            success: false,
-            message: "Coupon not found",
-        });
-    }
-
-    return res.json({
-        success: true,
-        data: coupon,
+  if (!coupon) {
+    return res.status(404).json({
+      success: false,
+      message: "Coupon not found",
     });
+  }
+
+  return res.json({
+    success: true,
+    data: coupon,
+  });
 });
 
 /**
@@ -215,56 +222,55 @@ const getCouponById = asyncHandler(async (req, res) => {
  * @route POST /api/coupon/create
  */
 const createCoupon = asyncHandler(async (req, res) => {
-    const {
-        code,
-        name,
-        description,
-        type,
-        value,
-        maxDiscount,
-        minOrderAmount,
-        maxOrderAmount,
-        usageLimit,
-        perUserLimit = 1,
-        validFrom,
-        validTo,
-        applicableCategories = [],
-        applicableProducts = [],
-        excludedCategories = [],
-        excludedProducts = [],
-        firstTimeUserOnly = false,
-    } = req.body;
+  const {
+    code,
+    name,
+    description,
+    type,
+    value,
+    maxDiscount,
+    minOrderAmount,
+    maxOrderAmount,
+    usageLimit,
+    perUserLimit = 1,
+    validFrom,
+    validTo,
+    applicableCategories = [],
+    applicableProducts = [],
+    excludedCategories = [],
+    excludedProducts = [],
+    firstTimeUserOnly = false,
+  } = req.body;
 
+  const couponData = {
+    code: code.toUpperCase(),
+    name,
+    description,
+    type,
+    value,
+    maxDiscount,
+    minOrderAmount,
+    maxOrderAmount,
+    usageLimit,
+    perUserLimit,
+    validFrom: new Date(validFrom),
+    validTo: new Date(validTo),
+    applicableCategories,
+    applicableProducts,
+    excludedCategories,
+    excludedProducts,
+    firstTimeUserOnly,
+    createdBy: req.user._id,
+  };
 
-    const couponData = {
-        code: code.toUpperCase(),
-        name,
-        description,
-        type,
-        value,
-        maxDiscount,
-        minOrderAmount,
-        maxOrderAmount,
-        usageLimit,
-        perUserLimit,
-        validFrom: new Date(validFrom),
-        validTo: new Date(validTo),
-        applicableCategories,
-        applicableProducts,
-        excludedCategories,
-        excludedProducts,
-        firstTimeUserOnly,
-        createdBy: req.user._id,
-    };
+  const newCoupon = new CouponModel(couponData);
+  await newCoupon.save();
 
-    const newCoupon = new CouponModel(couponData);
-    await newCoupon.save();
-
-    return res.status(201).json({
-        success: true,
-        message: "Coupon created successfully",
-        data: newCoupon,
-    });
+  return res.status(201).json({
+    success: true,
+    message: "Coupon created successfully",
+    data: newCoupon,
+  });
 });
 
 /**
@@ -272,52 +278,66 @@ const createCoupon = asyncHandler(async (req, res) => {
  * @route PUT /api/coupon/:id
  */
 const updateCoupon = asyncHandler(async (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    const coupon = await CouponModel.findById(id);
-    if (!coupon) {
-        return res.status(404).json({ success: false, message: "Coupon not found" });
+  const coupon = await CouponModel.findById(id);
+  if (!coupon) {
+    return res
+      .status(404)
+      .json({ success: false, message: "Coupon not found" });
+  }
+
+  // Whitelist of fields that can be updated
+  const allowedUpdates = [
+    "name",
+    "description",
+    "type",
+    "value",
+    "maxDiscount",
+    "minOrderAmount",
+    "maxOrderAmount",
+    "usageLimit",
+    "perUserLimit",
+    "validFrom",
+    "validTo",
+    "firstTimeUserOnly",
+    "applicableCategories",
+    "applicableProducts",
+    "excludedCategories",
+    "excludedProducts",
+  ];
+
+  const updateData = {};
+
+  // Only copy allowed fields from req.body to updateData
+  allowedUpdates.forEach((key) => {
+    if (req.body[key] !== undefined) {
+      updateData[key] = req.body[key];
     }
+  });
 
-    // Whitelist of fields that can be updated
-    const allowedUpdates = [
-        'name', 'description', 'type', 'value', 'maxDiscount', 
-        'minOrderAmount', 'maxOrderAmount', 'usageLimit', 'perUserLimit',
-        'validFrom', 'validTo', 'firstTimeUserOnly', 'applicableCategories',
-        'applicableProducts', 'excludedCategories', 'excludedProducts'
-    ];
+  // Handle specific transformations for the allowed fields
+  if (updateData.code) {
+    updateData.code = updateData.code.toUpperCase();
+  }
+  if (updateData.validFrom) {
+    updateData.validFrom = new Date(updateData.validFrom);
+  }
+  if (updateData.validTo) {
+    updateData.validTo = new Date(updateData.validTo);
+  }
 
-    const updateData = {};
-    
-    // Only copy allowed fields from req.body to updateData
-    allowedUpdates.forEach(key => {
-        if (req.body[key] !== undefined) {
-            updateData[key] = req.body[key];
-        }
-    });
+  const updatedCoupon = await CouponModel.findByIdAndUpdate(
+    id,
+    { $set: updateData },
+    { new: true, runValidators: true }
+  );
 
-    // Handle specific transformations for the allowed fields
-    if (updateData.code) {
-        updateData.code = updateData.code.toUpperCase();
-    }
-    if (updateData.validFrom) {
-        updateData.validFrom = new Date(updateData.validFrom);
-    }
-    if (updateData.validTo) {
-        updateData.validTo = new Date(updateData.validTo);
-    }
-
-    const updatedCoupon = await CouponModel.findByIdAndUpdate(
-        id,
-        { $set: updateData },
-        { new: true, runValidators: true }
-    );
-
-    return res.json({
-        success: true,
-        message: "Coupon updated successfully",
-        data: updatedCoupon,
-    });
+  return res.json({
+    success: true,
+    message: "Coupon updated successfully",
+    data: updatedCoupon,
+  });
 });
 
 /**
@@ -325,31 +345,32 @@ const updateCoupon = asyncHandler(async (req, res) => {
  * @route DELETE /api/coupon/:id
  */
 const deleteCoupon = asyncHandler(async (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    const coupon = await CouponModel.findById(id);
-    if (!coupon) {
-        return res.status(404).json({
-            success: false,
-            message: "Coupon not found",
-        });
-    }
-
-    // Check if coupon has been used
-    const usageCount = await CouponUsageModel.countDocuments({ coupon: id });
-    if (usageCount > 0) {
-        return res.status(400).json({
-            success: false,
-            message: "Cannot delete coupon that has been used. Deactivate it instead.",
-        });
-    }
-
-    await CouponModel.findByIdAndDelete(id);
-
-    return res.json({
-        success: true,
-        message: "Coupon deleted successfully",
+  const coupon = await CouponModel.findById(id);
+  if (!coupon) {
+    return res.status(404).json({
+      success: false,
+      message: "Coupon not found",
     });
+  }
+
+  // Check if coupon has been used
+  const usageCount = await CouponUsageModel.countDocuments({ coupon: id });
+  if (usageCount > 0) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Cannot delete coupon that has been used. Deactivate it instead.",
+    });
+  }
+
+  await CouponModel.findByIdAndDelete(id);
+
+  return res.json({
+    success: true,
+    message: "Coupon deleted successfully",
+  });
 });
 
 /**
@@ -357,24 +378,26 @@ const deleteCoupon = asyncHandler(async (req, res) => {
  * @route PATCH /api/coupon/:id/toggle
  */
 const toggleCouponStatus = asyncHandler(async (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    const coupon = await CouponModel.findById(id);
-    if (!coupon) {
-        return res.status(404).json({
-            success: false,
-            message: "Coupon not found",
-        });
-    }
-
-    coupon.isActive = !coupon.isActive;
-    await coupon.save();
-
-    return res.json({
-        success: true,
-        message: `Coupon ${coupon.isActive ? "activated" : "deactivated"} successfully`,
-        data: coupon,
+  const coupon = await CouponModel.findById(id);
+  if (!coupon) {
+    return res.status(404).json({
+      success: false,
+      message: "Coupon not found",
     });
+  }
+
+  coupon.isActive = !coupon.isActive;
+  await coupon.save();
+
+  return res.json({
+    success: true,
+    message: `Coupon ${
+      coupon.isActive ? "activated" : "deactivated"
+    } successfully`,
+    data: coupon,
+  });
 });
 
 /**
@@ -382,41 +405,41 @@ const toggleCouponStatus = asyncHandler(async (req, res) => {
  * @route POST /api/coupon/remove
  */
 const removeCoupon = asyncHandler(async (req, res) => {
-    const { couponCode } = req.body;
+  const { couponCode } = req.body;
 
-    if (!couponCode) {
-        return res.status(400).json({
-            success: false,
-            message: "Coupon code is required",
-        });
-    }
-
-    // Find the coupon
-    const coupon = await CouponModel.findOne({
-        code: couponCode.toUpperCase(),
-        isActive: true
+  if (!couponCode) {
+    return res.status(400).json({
+      success: false,
+      message: "Coupon code is required",
     });
+  }
 
-    if (!coupon) {
-        return res.status(404).json({
-            success: false,
-            message: "Coupon not found",
-        });
-    }
+  // Find the coupon
+  const coupon = await CouponModel.findOne({
+    code: couponCode.toUpperCase(),
+    isActive: true,
+  });
 
-    // For now, we'll just return success since the frontend will handle the state
-    // In a real implementation, you might want to track applied coupons in the database
-    return res.json({
-        success: true,
-        message: "Coupon removed successfully",
-        data: {
-            coupon: {
-                _id: coupon._id,
-                code: coupon.code,
-                name: coupon.name,
-            },
-        },
+  if (!coupon) {
+    return res.status(404).json({
+      success: false,
+      message: "Coupon not found",
     });
+  }
+
+  // For now, we'll just return success since the frontend will handle the state
+  // In a real implementation, you might want to track applied coupons in the database
+  return res.json({
+    success: true,
+    message: "Coupon removed successfully",
+    data: {
+      coupon: {
+        _id: coupon._id,
+        code: coupon.code,
+        name: coupon.name,
+      },
+    },
+  });
 });
 
 /**
@@ -424,113 +447,113 @@ const removeCoupon = asyncHandler(async (req, res) => {
  * @route GET /api/coupon/:id/usage
  */
 const getCouponUsage = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { page = 1, limit = 10 } = req.query;
+  const { id } = req.params;
+  const { page = 1, limit = 10 } = req.query;
 
-    const coupon = await CouponModel.findById(id);
-    if (!coupon) {
-        return res.status(404).json({
-            success: false,
-            message: "Coupon not found",
-        });
-    }
-
-    const skip = (page - 1) * limit;
-
-    const usage = await CouponUsageModel.find({ coupon: id })
-        .populate("user", "name email")
-        .populate("order", "orderNumber total")
-        .sort({ usedAt: -1 })
-        .skip(skip)
-        .limit(parseInt(limit));
-
-    const totalUsage = await CouponUsageModel.countDocuments({ coupon: id });
-
-    // Calculate total discount given
-    const totalDiscount = await CouponUsageModel.aggregate([
-        { $match: { coupon: coupon._id } },
-        { $group: { _id: null, total: { $sum: "$discountAmount" } } }
-    ]);
-
-    return res.json({
-        success: true,
-        data: {
-            coupon,
-            usage,
-            statistics: {
-                totalUsage,
-                totalDiscount: totalDiscount[0]?.total || 0,
-                remainingUsage: coupon.remainingUsage,
-            },
-            pagination: {
-                currentPage: parseInt(page),
-                totalPages: Math.ceil(totalUsage / limit),
-                totalItems: totalUsage,
-                itemsPerPage: parseInt(limit),
-            },
-        },
+  const coupon = await CouponModel.findById(id);
+  if (!coupon) {
+    return res.status(404).json({
+      success: false,
+      message: "Coupon not found",
     });
+  }
+
+  const skip = (page - 1) * limit;
+
+  const usage = await CouponUsageModel.find({ coupon: id })
+    .populate("user", "name email")
+    .populate("order", "orderNumber total")
+    .sort({ usedAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  const totalUsage = await CouponUsageModel.countDocuments({ coupon: id });
+
+  // Calculate total discount given
+  const totalDiscount = await CouponUsageModel.aggregate([
+    { $match: { coupon: coupon._id } },
+    { $group: { _id: null, total: { $sum: "$discountAmount" } } },
+  ]);
+
+  return res.json({
+    success: true,
+    data: {
+      coupon,
+      usage,
+      statistics: {
+        totalUsage,
+        totalDiscount: totalDiscount[0]?.total || 0,
+        remainingUsage: coupon.remainingUsage,
+      },
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalUsage / limit),
+        totalItems: totalUsage,
+        itemsPerPage: parseInt(limit),
+      },
+    },
+  });
 });
 
 const getCouponAnalytics = asyncHandler(async (req, res) => {
-    const totalCoupons = await CouponModel.countDocuments();
-    const activeCoupons = await CouponModel.countDocuments({ isActive: true });
+  const totalCoupons = await CouponModel.countDocuments();
+  const activeCoupons = await CouponModel.countDocuments({ isActive: true });
 
-    const usageData = await CouponUsageModel.aggregate([
-        {
-            $group: {
-                _id: "$coupon",
-                totalUsage: { $sum: 1 },
-                totalDiscount: { $sum: "$discountAmount" },
-            },
-        },
-        {
-            $lookup: {
-                from: "coupons",
-                localField: "_id",
-                foreignField: "_id",
-                as: "couponInfo",
-            },
-        },
-        { $unwind: "$couponInfo" },
-        {
-            $project: {
-                _id: 0,
-                couponId: "$_id",
-                code: "$couponInfo.code",
-                name: "$couponInfo.name",
-                totalUsage: "$totalUsage",
-                totalDiscount: "$totalDiscount",
-            }
-        },
-        { $sort: { totalUsage: -1 } },
-        { $limit: 5 }
-    ]);
+  const usageData = await CouponUsageModel.aggregate([
+    {
+      $group: {
+        _id: "$coupon",
+        totalUsage: { $sum: 1 },
+        totalDiscount: { $sum: "$discountAmount" },
+      },
+    },
+    {
+      $lookup: {
+        from: "coupons",
+        localField: "_id",
+        foreignField: "_id",
+        as: "couponInfo",
+      },
+    },
+    { $unwind: "$couponInfo" },
+    {
+      $project: {
+        _id: 0,
+        couponId: "$_id",
+        code: "$couponInfo.code",
+        name: "$couponInfo.name",
+        totalUsage: "$totalUsage",
+        totalDiscount: "$totalDiscount",
+      },
+    },
+    { $sort: { totalUsage: -1 } },
+    { $limit: 5 },
+  ]);
 
-    const totalDiscountGiven = await CouponUsageModel.aggregate([
-        { $group: { _id: null, total: { $sum: "$discountAmount" } } }
-    ]);
+  const totalDiscountGiven = await CouponUsageModel.aggregate([
+    { $group: { _id: null, total: { $sum: "$discountAmount" } } },
+  ]);
 
-    const analytics = {
-        totalCoupons,
-        activeCoupons,
-        totalDiscountGiven: totalDiscountGiven[0]?.total || 0,
-        mostUsedCoupons: usageData,
-    };
+  const analytics = {
+    totalCoupons,
+    activeCoupons,
+    totalDiscountGiven: totalDiscountGiven[0]?.total || 0,
+    mostUsedCoupons: usageData,
+  };
 
-    res.json({ success: true, data: analytics });
+  res.json({ success: true, data: analytics });
 });
 
 module.exports = {
-    getCouponAnalytics,
-    validateCoupon,
-    getActiveCoupons,
-    getAllCoupons,
-    getCouponById,
-    createCoupon,
-    updateCoupon,
-    deleteCoupon,
-    toggleCouponStatus,
-    getCouponUsage,
-    removeCoupon,
+  getCouponAnalytics,
+  validateCoupon,
+  getActiveCoupons,
+  getAllCoupons,
+  getCouponById,
+  createCoupon,
+  updateCoupon,
+  deleteCoupon,
+  toggleCouponStatus,
+  getCouponUsage,
+  removeCoupon,
 };

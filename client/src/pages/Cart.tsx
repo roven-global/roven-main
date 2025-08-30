@@ -156,9 +156,9 @@ const Cart = () => {
               <div className="flex items-center justify-center gap-2 text-sm text-forest">
                 <span>Cart</span>
                 <ArrowRight className="w-4 h-4" />
-                <span className="text-warm-taupe">Address</span>
+                <span className="text-forest opacity-75">Address</span>
                 <ArrowRight className="w-4 h-4" />
-                <span className="text-warm-taupe">Payment</span>
+                <span className="text-forest opacity-75">Payment</span>
               </div>
             </div>
           </div>
@@ -206,13 +206,13 @@ const Cart = () => {
                               <div className="bg-sage/10 border border-sage/20 rounded-lg p-3">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <Tag className="w-4 h-4 text-sage" />
+                                    <Tag className="w-4 h-4 text-sage-20" />
                                     <div>
                                       <p className="text-sm font-medium text-sage">
                                         Coupon Applied:{" "}
                                         {orderQuote.appliedCoupon.code}
                                       </p>
-                                      <p className="text-xs text-forest">
+                                      <p className="text-sm text-forest">
                                         {orderQuote.appliedCoupon.name} -{" "}
                                         {formatRupees(
                                           orderQuote.discounts.coupon
@@ -282,14 +282,14 @@ const Cart = () => {
                                             </p>
                                           )}
                                           <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-xs bg-sage/10 text-sage px-2 py-1 rounded">
+                                            <span className="text-xs bg-sage/10 text-sage-10 px-2 py-1 rounded">
                                               {coupon.type === "percentage"
                                                 ? `${coupon.value}% OFF`
                                                 : `${formatRupees(
                                                     coupon.value
                                                   )} OFF`}
                                             </span>
-                                            <span className="text-xs text-warm-taupe">
+                                            <span className="text-xs text-muted-foreground">
                                               Min:{" "}
                                               {formatRupees(
                                                 coupon.minOrderAmount
@@ -317,7 +317,7 @@ const Cart = () => {
                                               onClick={() =>
                                                 handleApplyCoupon(coupon.code)
                                               }
-                                              className="text-xs text-primary hover:text-primary/90 font-medium h-auto p-1"
+                                              className="text-xs text-primary hover:text-primary/90 hover:bg-primary/10 font-medium h-auto p-1 rounded"
                                             >
                                               Use
                                             </Button>
@@ -415,7 +415,7 @@ const Cart = () => {
                                       disabled={
                                         removingId === (item._id || item.id)
                                       }
-                                      className="h-8 w-8 p-0 text-warm-taupe hover:text-destructive hover:bg-destructive/10 ml-2"
+                                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 ml-2"
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
