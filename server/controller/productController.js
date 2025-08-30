@@ -760,6 +760,8 @@ const updateProduct = asyncHandler(async (req, res) => {
       });
     }
     updateFields.relatedProducts = parsedRelatedProducts;
+  } else {
+    updateFields.relatedProducts = product.relatedProducts;
   }
 
   if (req.files && req.files.images && req.files.images.length > 0) {

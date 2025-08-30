@@ -273,22 +273,33 @@ const createCoupon = asyncHandler(async (req, res) => {
  */
 const updateCoupon = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const updateData = req.body;
 
     const coupon = await CouponModel.findById(id);
     if (!coupon) {
-        return res.status(404).json({
-            success: false,
-            message: "Coupon not found",
-        });
+        return res.status(404).json({ success: false, message: "Coupon not found" });
     }
 
-    // If code is being updated, ensure it's uppercased
+    // Whitelist of fields that can be updated
+    const allowedUpdates = [
+        'name', 'description', 'type', 'value', 'maxDiscount', 
+        'minOrderAmount', 'maxOrderAmount', 'usageLimit', 'perUserLimit',
+        'validFrom', 'validTo', 'firstTimeUserOnly', 'applicableCategories',
+        'applicableProducts', 'excludedCategories', 'excludedProducts'
+    ];
+
+    const updateData = {};
+    
+    // Only copy allowed fields from req.body to updateData
+    allowedUpdates.forEach(key => {
+        if (req.body[key] !== undefined) {
+            updateData[key] = req.body[key];
+        }
+    });
+
+    // Handle specific transformations for the allowed fields
     if (updateData.code) {
         updateData.code = updateData.code.toUpperCase();
     }
-
-    // Convert date strings to Date objects
     if (updateData.validFrom) {
         updateData.validFrom = new Date(updateData.validFrom);
     }
@@ -298,7 +309,7 @@ const updateCoupon = asyncHandler(async (req, res) => {
 
     const updatedCoupon = await CouponModel.findByIdAndUpdate(
         id,
-        updateData,
+        { $set: updateData },
         { new: true, runValidators: true }
     );
 

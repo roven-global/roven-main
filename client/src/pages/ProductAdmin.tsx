@@ -13,7 +13,7 @@ import { Search, Filter, Edit, Trash2, Plus, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
-import { formatRupees } from '@/lib/currency'; // Import the new currency formatter
+import { formatRupees } from '@/lib/currency'; 
 
 interface Product {
   _id: string;

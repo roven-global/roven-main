@@ -361,8 +361,98 @@ const ProductDetailPage = () => {
               {/* ... (Accordion sections) ... */}
             </div>
           </div>
-          <div className="mt-12 pt-12 border-t border-warm-taupe/20">
-            <CustomerReviews ref={reviewsRef} productId={product._id} productName={product.name} initialReviews={reviewsData?.reviews || []} isLoading={isReviewsLoading} />
+        </div>
+      </div>
+      {/* Product Details Tabs */}
+      <div className="bg-white border-t border-warm-taupe/20">
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-4xl mx-auto">
+            <Accordion
+              type="multiple"
+              defaultValue={["item-2"]}
+              className="w-full space-y-4"
+            >
+              {/* Hero Ingredients */}
+              {product.ingredients && product.ingredients.length > 0 && (
+                <AccordionItem
+                  value="item-2"
+                  className="border border-warm-taupe/20 rounded-xl overflow-hidden"
+                >
+                  <AccordionTrigger className="text-xl font-sans font-bold text-deep-forest px-6 py-4 hover:no-underline bg-sage/5">
+                    Hero Ingredients
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 py-6 bg-white">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {product.ingredients.map((ingredient: any, i: number) => (
+                        <div key={i} className="text-center space-y-3">
+                          {ingredient.image && (
+                            <div className="w-24 h-24 mx-auto rounded-full overflow-hidden bg-warm-cream-light">
+                              <img
+                                src={ingredient.image.url}
+                                alt={ingredient.name || `Ingredient ${i + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          {ingredient.name && (
+                            <h4 className="font-semibold text-deep-forest">
+                              {ingredient.name}
+                            </h4>
+                          )}
+                          {ingredient.description && (
+                            <p className="text-sm text-forest leading-relaxed">
+                              {ingredient.description}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+            </Accordion>
+
+            {/* Customer Reviews Section */}
+            <div className="mt-12">
+              <div className="text-center">
+                <h2 className="font-sans text-xl font-bold text-deep-forest mb-2">
+                  — READ THE REVIEWS —
+                </h2>
+                <button
+                  onClick={() => {
+                    const reviewsSection =
+                      document.getElementById("customer-reviews");
+                    if (reviewsSection) {
+                      reviewsSection.scrollIntoView({ behavior: "smooth" });
+                    }
+                  }}
+                  className="text-forest hover:text-sage text-sm cursor-pointer hover:underline transition-colors"
+                >
+                  See All
+                </button>
+              </div>
+              <div className="text-center mt-8 mb-8">
+                <Button
+                  variant="outline"
+                  className="border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage"
+                  onClick={() => reviewsRef.current?.toggleForm()}
+                >
+                  Write a Review
+                </Button>
+              </div>
+              <div
+                id="customer-reviews"
+                className="mt-12 pt-12 border-t border-warm-taupe/20"
+              >
+                <CustomerReviews
+                  ref={reviewsRef}
+                  productId={product._id}
+                  productName={product.name}
+                  initialReviews={reviewsData?.reviews || []}
+                  isLoading={isReviewsLoading}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

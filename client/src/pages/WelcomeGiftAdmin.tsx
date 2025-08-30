@@ -13,11 +13,8 @@ import {
   Plus,
   Edit,
   Trash2,
-  Eye,
   BarChart3,
-  GripVertical,
   Save,
-  X,
   Percent,
   Truck,
   Gift,
@@ -27,8 +24,7 @@ import {
   Heart,
   Shield,
   Zap,
-  Award,
-  ChevronsUpDown
+  Award
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Axios from '@/utils/Axios';
@@ -36,9 +32,6 @@ import SummaryApi from '@/common/summaryApi';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Checkbox } from "@/components/ui/checkbox"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { MultiSelect } from '@/components/ui/MultiSelect';
 
 
@@ -175,8 +168,8 @@ const WelcomeGiftAdmin = () => {
           Axios.get(SummaryApi.getAllProducts.url),
           Axios.get(SummaryApi.getAllCategories.url)
         ]);
-        if (productsResponse.data.success && Array.isArray(productsResponse.data.data)) {
-          setProducts(productsResponse.data.data);
+        if (productsResponse.data.success && Array.isArray(productsResponse.data.data.products)) {
+          setProducts(productsResponse.data.data.products);
         } else {
           setProducts([]); // Ensure products is always an array
         }

@@ -14,8 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { useDebounce } from "@/hooks/use-debounce";
+
 import {
   Sheet,
   SheetContent,
@@ -23,7 +22,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
+
 import {
   Accordion,
   AccordionContent,

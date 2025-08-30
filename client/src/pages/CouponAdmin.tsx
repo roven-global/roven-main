@@ -21,6 +21,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -80,9 +88,6 @@ const couponSchema = z
     validTo: z.string().min(1, "Valid to date is required"),
     firstTimeUserOnly: z.boolean(),
     applicableCategories: z.array(z.string()).optional(),
-    applicableProducts: z.array(z.string()).optional(),
-    excludedCategories: z.array(z.string()).optional(),
-    excludedProducts: z.array(z.string()).optional(),
   })
   .refine(
     (data) => {
@@ -130,8 +135,10 @@ const CouponAdmin = () => {
   );
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [analytics, setAnalytics] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   const fetchAnalytics = async () => {
+    setAnalyticsLoading(true);
     try {
       const response = await Axios.get(SummaryApi.getCouponAnalytics.url);
       if (response.data.success) {
@@ -139,6 +146,8 @@ const CouponAdmin = () => {
       }
     } catch (error) {
       toast({ title: "Error fetching analytics", variant: "destructive" });
+    } finally {
+      setAnalyticsLoading(false);
     }
   };
 
@@ -171,6 +180,7 @@ const CouponAdmin = () => {
     reset,
     control,
     setError,
+    watch,
     formState: { errors },
   } = useForm<CouponFormValues>({
     resolver: zodResolver(couponSchema),
@@ -189,11 +199,10 @@ const CouponAdmin = () => {
       validTo: "",
       firstTimeUserOnly: false,
       applicableCategories: [],
-      applicableProducts: [],
-      excludedCategories: [],
-      excludedProducts: [],
     },
   });
+
+  const discountType = watch("type");
 
   const fetchCoupons = async () => {
     try {
@@ -325,9 +334,6 @@ const CouponAdmin = () => {
       validTo: "",
       firstTimeUserOnly: false,
       applicableCategories: [],
-      applicableProducts: [],
-      excludedCategories: [],
-      excludedProducts: [],
     });
     setIsDialogOpen(true);
   };
@@ -392,48 +398,62 @@ const CouponAdmin = () => {
       </div>
 
       {/* Analytics Section */}
-      {showAnalytics && analytics && (
+      {showAnalytics && (
         <Card>
           <CardHeader>
             <CardTitle>Coupon Analytics</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="text-center p-4 border rounded-lg">
-                <h4 className="text-2xl font-bold">{analytics.totalCoupons}</h4>
-                <p className="text-sm text-gray-600">Total Coupons</p>
+            {analyticsLoading ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sage"></div>
               </div>
-              <div className="text-center p-4 border rounded-lg">
-                <h4 className="text-2xl font-bold">
-                  {analytics.activeCoupons}
-                </h4>
-                <p className="text-sm text-gray-600">Active Coupons</p>
-              </div>
-              <div className="text-center p-4 border rounded-lg">
-                <h4 className="text-2xl font-bold">
-                  {formatRupees(analytics.totalDiscountGiven)}
-                </h4>
-                <p className="text-sm text-gray-600">Total Discount Given</p>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Most Used Coupons</h4>
-              <div className="space-y-2">
-                {analytics.mostUsedCoupons.map((coupon: any) => (
-                  <div
-                    key={coupon.couponId}
-                    className="flex justify-between items-center bg-gray-50 p-2 rounded"
-                  >
-                    <span className="font-medium">
-                      {coupon.name} ({coupon.code})
-                    </span>
-                    <span className="text-sm text-gray-600">
-                      {coupon.totalUsage} uses
-                    </span>
+            ) : analytics ? (
+              <>
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="text-center p-4 border rounded-lg">
+                    <h4 className="text-2xl font-bold">
+                      {analytics.totalCoupons}
+                    </h4>
+                    <p className="text-sm text-gray-600">Total Coupons</p>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <h4 className="text-2xl font-bold">
+                      {analytics.activeCoupons}
+                    </h4>
+                    <p className="text-sm text-gray-600">Active Coupons</p>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <h4 className="text-2xl font-bold">
+                      {formatRupees(analytics.totalDiscountGiven)}
+                    </h4>
+                    <p className="text-sm text-gray-600">Total Discount Given</p>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Most Used Coupons</h4>
+                  <div className="space-y-2">
+                    {analytics.mostUsedCoupons.map((coupon: any) => (
+                      <div
+                        key={coupon.couponId}
+                        className="flex justify-between items-center bg-gray-50 p-2 rounded"
+                      >
+                        <span className="font-medium">
+                          {coupon.name} ({coupon.code})
+                        </span>
+                        <span className="text-sm text-gray-600">
+                          {coupon.totalUsage} uses
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="text-center text-gray-500 py-12">
+                Could not load analytics data.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
@@ -471,7 +491,7 @@ const CouponAdmin = () => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sage"></div>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div>
           {coupons.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
@@ -481,93 +501,71 @@ const CouponAdmin = () => {
               </CardContent>
             </Card>
           ) : (
-            coupons.map((coupon) => (
-              <Card
-                key={coupon._id}
-                className="hover:shadow-md transition-shadow"
-              >
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-lg text-deep-forest">
-                          {coupon.name}
-                        </h3>
-                        {getStatusBadge(coupon)}
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-forest mb-3">
-                        <span className="font-mono bg-gray-100 px-2 py-1 rounded">
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Coupon</TableHead>
+                    <TableHead>Discount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Usage</TableHead>
+                    <TableHead>Validity</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {coupons.map((coupon) => (
+                    <TableRow key={coupon._id}>
+                      <TableCell>
+                        <div className="font-medium">{coupon.name}</div>
+                        <div className="text-sm text-gray-500 font-mono bg-gray-100 px-1 rounded w-min">
                           {coupon.code}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          {coupon.type === "percentage" ? (
-                            <Percent className="w-4 h-4" />
-                          ) : (
-                            <DollarSign className="w-4 h-4" />
-                          )}
-                          {getDiscountDisplay(coupon)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          Min: {formatRupees(coupon.minOrderAmount)}
-                        </span>
-                      </div>
-                      {coupon.description && (
-                        <p className="text-sm text-forest mb-3">
-                          {coupon.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-4 text-xs text-gray-600">
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          {coupon.usedCount}/{coupon.usageLimit} used
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {new Date(
-                            coupon.validFrom
-                          ).toLocaleDateString()} -{" "}
-                          {new Date(coupon.validTo).toLocaleDateString()}
-                        </span>
-                        {coupon.firstTimeUserOnly && (
-                          <Badge variant="outline" className="text-xs">
-                            First-time only
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleToggleStatus(coupon._id)}
-                      >
-                        {coupon.isActive ? (
-                          <XCircle className="w-4 h-4" />
-                        ) : (
-                          <CheckCircle className="w-4 h-4" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditDialog(coupon)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteCoupon(coupon._id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                        </div>
+                      </TableCell>
+                      <TableCell>{getDiscountDisplay(coupon)}</TableCell>
+                      <TableCell>{getStatusBadge(coupon)}</TableCell>
+                      <TableCell>
+                        {coupon.usedCount}/{coupon.usageLimit}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(coupon.validFrom).toLocaleDateString()} -{" "}
+                        {new Date(coupon.validTo).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleStatus(coupon._id)}
+                          >
+                            {coupon.isActive ? (
+                              <XCircle className="w-4 h-4" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEditDialog(coupon)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteCoupon(coupon._id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
           )}
         </div>
       )}
@@ -678,25 +676,6 @@ const CouponAdmin = () => {
               />
             </div>
 
-            <div className="col-span-2">
-              <Label>Applicable Products</Label>
-              <Controller
-                name="applicableProducts"
-                control={control}
-                render={({ field }) => (
-                  <MultiSelect
-                    options={products.map((p) => ({
-                      value: p._id,
-                      label: p.name,
-                    }))}
-                    selected={field.value || []}
-                    onChange={field.onChange}
-                    placeholder="All products"
-                  />
-                )}
-              />
-            </div>
-
             <Separator className="col-span-2" />
 
             <div>
@@ -735,20 +714,22 @@ const CouponAdmin = () => {
                 </p>
               )}
             </div>
-            <div>
-              <Label htmlFor="maxDiscount">Max Discount (₹)</Label>
-              <Input
-                id="maxDiscount"
-                type="number"
-                {...register("maxDiscount", { valueAsNumber: true })}
-                placeholder="Optional"
-              />
-              {errors.maxDiscount && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.maxDiscount.message}
-                </p>
-              )}
-            </div>
+            {discountType === "percentage" && (
+              <div>
+                <Label htmlFor="maxDiscount">Max Discount (₹)</Label>
+                <Input
+                  id="maxDiscount"
+                  type="number"
+                  {...register("maxDiscount", { valueAsNumber: true })}
+                  placeholder="Optional"
+                />
+                {errors.maxDiscount && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.maxDiscount.message}
+                  </p>
+                )}
+              </div>
+            )}
             <div>
               <Label htmlFor="minOrderAmount">Min Order Amount (₹)</Label>
               <Input

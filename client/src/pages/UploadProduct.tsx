@@ -155,25 +155,7 @@ const UploadProduct = () => {
     },
   });
 
-  useEffect(() => {
-    fetchCategories();
-    if (isEditing && editProductId) {
-      fetchProduct(editProductId);
-    }
-  }, [isEditing, editProductId]);
-
-  // Cleanup ingredient image URLs on unmount
-  useEffect(() => {
-    return () => {
-      ingredients.forEach((ing) => {
-        if (ing.imageUrl && ing.imageUrl.startsWith("blob:")) {
-          URL.revokeObjectURL(ing.imageUrl);
-        }
-      });
-    };
-  }, [ingredients]);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await Axios({
         method: SummaryApi.getAllCategories.method,
@@ -185,9 +167,9 @@ const UploadProduct = () => {
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
-  };
+  }, []);
 
-  const fetchProduct = async (productId: string) => {
+  const fetchProduct = useCallback(async (productId: string) => {
     try {
       setLoading(true);
       const response = await Axios({
@@ -289,7 +271,28 @@ const UploadProduct = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  useEffect(() => {
+    if (isEditing && editProductId) {
+      fetchProduct(editProductId);
+    }
+  }, [isEditing, editProductId, fetchProduct]);
+
+  // Cleanup ingredient image URLs on unmount
+  useEffect(() => {
+    return () => {
+      ingredients.forEach((ing) => {
+        if (ing.imageUrl && ing.imageUrl.startsWith("blob:")) {
+          URL.revokeObjectURL(ing.imageUrl);
+        }
+      });
+    };
+  }, [ingredients]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -737,10 +740,11 @@ const UploadProduct = () => {
 
       formDataToSend.append("specifications", JSON.stringify(specsObject));
 
-      // Add ingredients as JSON without images
+      // Add ingredients as JSON, including existing image URLs
       const ingredientsData = ingredients.map((ing) => ({
         name: ing.name,
         description: ing.description,
+        image: ing.imageFile ? undefined : ing.imageUrl,
       }));
       formDataToSend.append("ingredients", JSON.stringify(ingredientsData));
 
@@ -759,6 +763,9 @@ const UploadProduct = () => {
 
       // Add How to Use
       formDataToSend.append("howToUse", JSON.stringify(howToUse));
+
+      // Add Suitable For
+      formDataToSend.append("suitableFor", JSON.stringify(suitableFor));
 
       // Add related products
       formDataToSend.append(
