@@ -14,6 +14,7 @@ import { AdminLayout } from "./components/Layout";
 import AdminRoute from "./AdminRoute";
 import RewardPopup from "@/components/RewardPopup";
 import { useRewardPopup } from "@/hooks/useRewardPopup";
+import FullPageLoader from "./components/ui/FullPageLoader";
 
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -73,7 +74,7 @@ const AppContent = () => {
   return (
     <>
       <BrowserRouter future={{ v7_relativeSplatPath: true }}>
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<FullPageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/shop" element={<Shop />} />

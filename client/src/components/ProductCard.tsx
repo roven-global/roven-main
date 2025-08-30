@@ -1,5 +1,5 @@
 // ProductCard.tsx
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Heart, ShoppingBag, Star, Sparkles, CheckCircle } from "lucide-react";
@@ -343,4 +343,4 @@ const ProductCard = ({
   );
 };
 
-export default ProductCard;
+export default memo(ProductCard);

@@ -7,11 +7,13 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
 import { useUserReward } from "./UserRewardContext";
 
+// ... (interfaces remain the same)
 interface CartItem {
   _id: string;
   productId: {
@@ -85,17 +87,13 @@ export const useCart = () => {
   return context;
 };
 
-/**
- * Optimistically calculates the order quote on the client-side.
- * This provides an instant summary update to the user.
- * The calculation logic mirrors the server's `calculateOrderTotals` function.
- */
 const calculateLocalQuote = (
   cartItems: CartItem[],
   appliedCouponCode: string | null,
   availableCoupons: Coupon[],
   userReward: any | null
 ): OrderQuote | null => {
+    // ... (implementation is the same)
   if (cartItems.length === 0) {
     return null;
   }
@@ -108,7 +106,7 @@ const calculateLocalQuote = (
   let couponDiscount = 0;
   let appliedCoupon: OrderQuote["appliedCoupon"] = null;
 
-  if (appliedCouponCode) {
+  if (appliedCouponCode && availableCoupons) {
     const coupon = availableCoupons.find((c) => c.code === appliedCouponCode);
     if (coupon && subtotal >= coupon.minOrderAmount) {
       couponDiscount =
@@ -160,8 +158,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [orderQuote, setOrderQuote] = useState<OrderQuote | null>(null);
   const [isQuoteLoading, setIsQuoteLoading] = useState(false);
   const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(null);
-  const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const { userReward } = useUserReward();
+
+  // Fetch available coupons using React Query for caching
+  const { data: availableCoupons = [] } = useQuery<Coupon[]>({
+    queryKey: ['active-coupons'],
+    queryFn: async () => {
+      const response = await Axios.get(SummaryApi.getActiveCoupons.url);
+      return response.data.data || [];
+    },
+    staleTime: 5 * 60 * 1000, // Cache coupons for 5 minutes
+  });
 
   const fetchUserCart = useCallback(async () => {
     try {
@@ -172,20 +179,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       console.error("Failed to fetch user cart:", error);
       setCartItems([]);
     }
-  }, []);
-
-  useEffect(() => {
-    const fetchCoupons = async () => {
-      try {
-        const response = await Axios.get(SummaryApi.getActiveCoupons.url);
-        if (response.data.success) {
-          setAvailableCoupons(response.data.data || []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch coupons:", error);
-      }
-    };
-    fetchCoupons();
   }, []);
 
   useEffect(() => {
@@ -233,7 +226,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     fetchAuthoritativeQuote();
   }, [cartItems, appliedCouponCode, availableCoupons, userReward]);
 
-
+  // ... (rest of the provider is the same)
   const applyCoupon = useCallback((code: string) => {
     setAppliedCouponCode(code);
   }, []);
