@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Accordion,
@@ -94,11 +95,10 @@ const ProductDetailPage = () => {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
     null
   );
-  const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
   const { isAuthenticated, user, updateUser } = useAuth();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, cartItems, updateQuantity, removeFromCart } = useCart();
   const reviewsRef = useRef<CustomerReviewsHandles>(null);
   const [allReviews, setAllReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -108,6 +108,18 @@ const ProductDetailPage = () => {
     addToGuestCart,
     isInGuestWishlist,
   } = useGuest();
+
+  const quantityInCart = useMemo(() => {
+    if (!product) return 0;
+    const itemInCart = cartItems.find((item) => {
+      const isProductMatch = item.productId._id === product._id;
+      if (product.variants && product.variants.length > 0) {
+        return isProductMatch && item.variant?.sku === selectedVariant?.sku;
+      }
+      return isProductMatch;
+    });
+    return itemInCart ? itemInCart.quantity : 0;
+  }, [cartItems, product, selectedVariant]);
 
   const isLiked = isAuthenticated
     ? user?.wishlist?.includes(product?._id)
@@ -200,60 +212,55 @@ const ProductDetailPage = () => {
   };
 
   const handleAddToCart = () => {
-    if (!product || isAdded) return;
+    if (!product) return;
 
     if (product.variants && product.variants.length > 0 && !selectedVariant) {
-      toast({
-        title: "Please select a size",
-        variant: "destructive",
-      });
+      toast({ title: "Please select a size", variant: "destructive" });
       return;
     }
 
-    const variantToAdd =
-      selectedVariant ||
-      (product.variants && product.variants.length === 1
-        ? product.variants[0]
-        : null);
-
+    const variantToAdd = selectedVariant || (product.variants && product.variants.length === 1 ? product.variants[0] : null);
     if (variantToAdd && variantToAdd.stock === 0) {
-      toast({
-        title: "Out of Stock",
-        variant: "destructive",
-      });
+      toast({ title: "Out of Stock", variant: "destructive" });
       return;
     }
 
     const cartItem = {
-      id: product._id,
-      name: variantToAdd
-        ? `${product.name} - ${variantToAdd.volume}`
-        : product.name,
-      price: variantToAdd ? variantToAdd.price : product.price,
-      image: product.images[0]?.url || "",
-      quantity,
-      variant: variantToAdd
-        ? { volume: variantToAdd.volume, sku: variantToAdd.sku }
-        : undefined,
+      productId: product._id,
+      name: product.name,
+      quantity: 1, // Always add 1 on the first click
+      variant: variantToAdd ? { volume: variantToAdd.volume, sku: variantToAdd.sku } : undefined,
     };
 
     if (!isAuthenticated) {
-      addToGuestCart(cartItem);
+      addToGuestCart({ ...cartItem, id: product._id, price: currentPrice, image: product.images[0]?.url || "" });
     } else {
-      addToCart({
-        productId: cartItem.id,
-        name: cartItem.name,
-        quantity: cartItem.quantity,
-        variant: cartItem.variant,
-      });
+      addToCart(cartItem);
     }
 
-    toast({
-      title: "Added to Cart!",
-      description: cartItem.name,
+    toast({ title: "Added to Cart!", description: product.name });
+  };
+
+  const handleQuantityChange = (change: number) => {
+    if (!product) return;
+
+    const itemInCart = cartItems.find((item) => {
+      const isProductMatch = item.productId._id === product._id;
+      if (product.variants && product.variants.length > 0) {
+        return isProductMatch && item.variant?.sku === selectedVariant?.sku;
+      }
+      return isProductMatch;
     });
-    setIsAdded(true);
-    setTimeout(() => setIsAdded(false), 2000);
+
+    if (!itemInCart) return;
+
+    const newQuantity = itemInCart.quantity + change;
+
+    if (newQuantity > 0) {
+      updateQuantity(itemInCart._id, newQuantity);
+    } else {
+      removeFromCart(itemInCart._id);
+    }
   };
 
   if (loading) {
@@ -487,78 +494,39 @@ const ProductDetailPage = () => {
 
               {/* Quantity and Add to Cart */}
               <div className="space-y-4">
-                <div className="flex items-center gap-4 flex-wrap">
-                  {/* Quantity Selector */}
-                  <div className="flex items-center border border-warm-taupe rounded-lg overflow-hidden bg-white">
+                {quantityInCart === 0 ? (
+                  <Button
+                    size="lg"
+                    className="w-full bg-forest hover:bg-deep-forest text-white font-semibold rounded-lg transition-all py-3"
+                    onClick={handleAddToCart}
+                    disabled={selectedVariant?.stock === 0}
+                  >
+                    <ShoppingBag className="mr-2 h-5 w-5" />
+                    {selectedVariant?.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                  </Button>
+                ) : (
+                  <div className="flex items-center justify-center border border-warm-taupe rounded-lg overflow-hidden bg-white w-full">
                     <Button
                       variant="ghost"
-                      size="sm"
-                      className="px-3 py-2 hover:bg-sage/20 hover:text-sage transition-colors text-forest"
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      size="lg"
+                      className="px-6 py-3 hover:bg-sage/20 hover:text-sage transition-colors text-forest"
+                      onClick={() => handleQuantityChange(-1)}
                     >
-                      <Minus className="h-4 w-4" />
+                      <Minus className="h-5 w-5" />
                     </Button>
-                    <span className="px-4 py-2 font-semibold text-forest min-w-[3rem] text-center">
-                      {quantity}
+                    <span className="px-6 py-3 font-semibold text-forest text-lg">
+                      {quantityInCart}
                     </span>
                     <Button
                       variant="ghost"
-                      size="sm"
-                      className="px-3 py-2 hover:bg-sage/20 hover:text-sage transition-colors text-forest"
-                      onClick={() =>
-                        setQuantity(
-                          Math.min(selectedVariant?.stock ?? 10, quantity + 1)
-                        )
-                      }
+                      size="lg"
+                      className="px-6 py-3 hover:bg-sage/20 hover:text-sage transition-colors text-forest"
+                      onClick={() => handleQuantityChange(1)}
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-5 w-5" />
                     </Button>
                   </div>
-
-                  {/* Wishlist Button */}
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className={cn(
-                      "rounded-lg h-10 w-10 transition-colors border-warm-taupe",
-                      isLiked
-                        ? "bg-gold-accent/20 text-gold-accent border-gold-accent/30"
-                        : "hover:bg-sage/20 hover:text-sage text-forest"
-                    )}
-                    onClick={handleLikeClick}
-                  >
-                    <Heart
-                      className={cn(
-                        "h-5 w-5",
-                        isLiked
-                          ? "fill-gold-accent text-gold-accent"
-                          : "text-forest"
-                      )}
-                    />
-                  </Button>
-                </div>
-
-                {/* Add to Cart Button */}
-                <Button
-                  size="lg"
-                  className="w-full bg-forest hover:bg-deep-forest text-white font-semibold rounded-lg transition-all py-3"
-                  onClick={handleAddToCart}
-                  disabled={selectedVariant?.stock === 0 || isAdded}
-                >
-                  {isAdded ? (
-                    <>
-                      <CheckCircle className="mr-2 h-5 w-5" />
-                      Added to Cart
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingBag className="mr-2 h-5 w-5" />
-                      {selectedVariant?.stock === 0
-                        ? "Out of Stock"
-                        : "Add to Cart"}
-                    </>
-                  )}
-                </Button>
+                )}
               </div>
 
               {/* What Makes It Good */}

@@ -179,7 +179,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       try {
         const response = await Axios.get(SummaryApi.getActiveCoupons.url);
         if (response.data.success) {
-          setAvailableCoupons(response.data.data);
+          setAvailableCoupons(response.data.data || []);
         }
       } catch (error) {
         console.error("Failed to fetch coupons:", error);
