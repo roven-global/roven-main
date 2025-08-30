@@ -164,9 +164,115 @@ const deleteReview = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get all reviews (admin)
+// @route   GET /api/reviews/admin/all
+// @access  Private/Admin
+const getAllReviews = asyncHandler(async (req, res) => {
+  const {
+    page = 1,
+    limit = 10,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+    search = "",
+  } = req.query;
+
+  const pageNum = parseInt(page, 10);
+  const limitNum = parseInt(limit, 10);
+  const skip = (pageNum - 1) * limitNum;
+
+  const sort = {};
+  sort[sortBy] = sortOrder === "desc" ? -1 : 1;
+
+  let query = {};
+  if (search) {
+    query = { review: { $regex: search, $options: "i" } };
+  }
+
+  const reviews = await Review.find(query)
+    .populate("user", "name email")
+    .populate("product", "name")
+    .sort(sort)
+    .skip(skip)
+    .limit(limitNum);
+
+  const totalReviews = await Review.countDocuments(query);
+  const totalPages = Math.ceil(totalReviews / limitNum);
+
+  res.json({
+    success: true,
+    message: "Reviews retrieved successfully.",
+    data: {
+      reviews,
+      pagination: {
+        currentPage: pageNum,
+        totalPages,
+        totalReviews,
+        hasNext: pageNum < totalPages,
+        hasPrev: pageNum > 1,
+      },
+    },
+  });
+});
+
+// @desc    Update a review (admin)
+// @route   PUT /api/reviews/admin/:reviewId
+// @access  Private/Admin
+const adminUpdateReview = asyncHandler(async (req, res) => {
+  const { reviewId } = req.params;
+  const { rating, review } = req.body;
+
+  const existingReview = await Review.findById(reviewId);
+
+  if (!existingReview) {
+    res.status(404);
+    throw new Error("Review not found.");
+  }
+
+  const updatedReview = await Review.findByIdAndUpdate(
+    reviewId,
+    { rating, review },
+    { new: true, runValidators: true }
+  );
+
+  if (updatedReview) {
+    res.json({
+      success: true,
+      message: "Review updated successfully by admin.",
+      data: updatedReview,
+    });
+  } else {
+    res.status(400);
+    throw new Error("Failed to update review.");
+  }
+});
+
+// @desc    Delete a review (admin)
+// @route   DELETE /api/reviews/admin/:reviewId
+// @access  Private/Admin
+const adminDeleteReview = asyncHandler(async (req, res) => {
+  const { reviewId } = req.params;
+
+  const review = await Review.findById(reviewId);
+
+  if (!review) {
+    res.status(404);
+    throw new Error("Review not found.");
+  }
+
+  await Review.findByIdAndDelete(reviewId);
+
+  res.json({
+    success: true,
+    message: "Review deleted successfully by admin.",
+  });
+});
+
 module.exports = {
   createReview,
   getReviewsForProduct,
   updateReview,
   deleteReview,
+  getAllReviews,
+  adminUpdateReview,
+  adminDeleteReview,
 };

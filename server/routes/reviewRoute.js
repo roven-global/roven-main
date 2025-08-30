@@ -4,10 +4,28 @@ const {
   getReviewsForProduct,
   updateReview,
   deleteReview,
+  getAllReviews,
+  adminUpdateReview,
+  adminDeleteReview,
 } = require("../controller/reviewController");
 const auth = require("../middleware/auth");
+const adminOnly = require("../middleware/adminOnly");
 const router = express.Router();
 
+// =================================================================
+// @desc    Admin Routes
+// =================================================================
+router
+  .route("/admin/all")
+  .get(auth, adminOnly, getAllReviews);
+router
+  .route("/admin/:reviewId")
+  .put(auth, adminOnly, adminUpdateReview)
+  .delete(auth, adminOnly, adminDeleteReview);
+
+// =================================================================
+// @desc    User and Public Routes
+// =================================================================
 // @route   POST /api/reviews
 // @desc    Create a new review
 // @access  Private

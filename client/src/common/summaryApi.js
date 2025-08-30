@@ -377,6 +377,19 @@ const SummaryApi = {
     url: "/api/reviews",
     method: "delete",
   },
+  // Admin Review endpoints
+  getAllReviews: {
+    url: "/api/reviews/admin/all",
+    method: "get",
+  },
+  adminUpdateReview: {
+    url: "/api/reviews/admin",
+    method: "put",
+  },
+  adminDeleteReview: {
+    url: "/api/reviews/admin",
+    method: "delete",
+  },
   // Admin Settings
   getAdminSetting: {
     url: "/api/admin/settings/:key",
