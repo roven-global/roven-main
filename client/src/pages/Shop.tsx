@@ -86,6 +86,16 @@ const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Pagination State
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalProducts: 0,
+    hasNext: false,
+    hasPrev: false,
+  });
+  const [loadingMore, setLoadingMore] = useState(false);
+
   // Pending filter states
   const [pendingCategory, setPendingCategory] = useState("all");
   const [pendingSkinTypes, setPendingSkinTypes] = useState<string[]>([]);
@@ -101,168 +111,119 @@ const Shop = () => {
   const [activePriceRange, setActivePriceRange] = useState<string>("");
   const [activeCustomMin, setActiveCustomMin] = useState<string>("");
   const [activeCustomMax, setActiveCustomMax] = useState<string>("");
-
   const [sortBy, setSortBy] = useState("createdAt-desc");
-
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [maxPrice, setMaxPrice] = useState(1000);
   const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
 
   const perPage = 9;
 
   // Fetching Logic
-  const fetchAllCategoryProducts = useCallback(async () => {
-    setLoading(true);
+  const fetchProducts = useCallback(async (page: number, loadMore = false) => {
+    if (loadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
-    try {
-      // Fetch all categories (no parent filter to get all, including subcategories)
-      const categoriesRes = await Axios.get(SummaryApi.getAllCategories.url);
-      if (
-        !categoriesRes.data.success ||
-        !Array.isArray(categoriesRes.data.data)
-      ) {
-        throw new Error("Failed to fetch categories");
-      }
-      setCategories(categoriesRes.data.data);
 
-      // Fetch all products in one call (set limit=0 to get all)
-      const productsRes = await Axios.get(
-        `${SummaryApi.getAllProducts.url}?limit=0`
+    try {
+      const params = new URLSearchParams();
+      params.append("page", String(page));
+      params.append("limit", String(perPage));
+
+      if (activeCategory !== "all") {
+        params.append("category", activeCategory);
+      }
+      if (activeSkinTypes.length > 0 && !activeSkinTypes.includes("All")) {
+        params.append("skinType", activeSkinTypes.join(","));
+      }
+      if (activeHairTypes.length > 0 && !activeHairTypes.includes("All")) {
+        params.append("hairType", activeHairTypes.join(","));
+      }
+      if (activePriceRange) {
+        const [min, max] = activePriceRange.split("-");
+        params.append("minPrice", min);
+        params.append("maxPrice", max);
+      } else {
+        if (activeCustomMin) params.append("minPrice", activeCustomMin);
+        if (activeCustomMax) params.append("maxPrice", activeCustomMax);
+      }
+      if (sortBy) {
+        const [sortField, sortOrder] = sortBy.split("-");
+        params.append("sortBy", sortField);
+        params.append("sortOrder", sortOrder);
+      }
+
+      const response = await Axios.get(
+        `${SummaryApi.getAllProducts.url}?${params.toString()}`
       );
-      if (
-        !productsRes.data.success ||
-        !Array.isArray(productsRes.data.data.products)
-      ) {
+
+      if (response.data.success) {
+        const { products: newProducts, pagination: newPagination } =
+          response.data.data;
+        setProducts(
+          loadMore ? [...products, ...newProducts] : newProducts
+        );
+        setPagination(newPagination);
+      } else {
         throw new Error("Failed to fetch products");
       }
-      setProducts(productsRes.data.data.products);
     } catch (err) {
-      console.error("Error fetching data:", err);
+      console.error("Error fetching products:", err);
       setError("Could not load products. Please try again later.");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchAllCategoryProducts();
-  }, [fetchAllCategoryProducts]);
-
-  // Dynamically set maxPrice after fetching products
-  useEffect(() => {
-    if (products.length > 0) {
-      const mp =
-        Math.ceil(Math.max(...products.map((p) => p.price)) / 10) * 10 || 1000;
-      setMaxPrice(mp);
-    }
-  }, [products]);
-
-  // Compute filtered and sorted products
-  const computedProducts = useMemo(() => {
-    let filtered = products;
-
-    // Filter by category
-    if (activeCategory !== "all") {
-      filtered = filtered.filter((p) => p.category._id === activeCategory);
-    }
-
-    // Filter by price
-    if (activePriceRange) {
-      const [min, max] = activePriceRange.split("-").map(Number);
-      filtered = filtered.filter((p) => p.price >= min && p.price <= max);
-    } else if (activeCustomMin || activeCustomMax) {
-      const min = activeCustomMin ? Number(activeCustomMin) : 0;
-      const max = activeCustomMax ? Number(activeCustomMax) : Infinity;
-      filtered = filtered.filter((p) => p.price >= min && p.price <= max);
-    }
-
-    // Filter by skin type
-    if (activeSkinTypes.length > 0 && !activeSkinTypes.includes("All")) {
-      const skinTypesToFilter = new Set(activeSkinTypes);
-      filtered = filtered.filter((p) => {
-        if (!p.specifications?.skinType) return false;
-
-        // Handle both array and string skinType for backward compatibility
-        const productSkinTypes = Array.isArray(p.specifications.skinType)
-          ? p.specifications.skinType
-          : [p.specifications.skinType];
-
-        // Check if any of the product's skin types match the filter
-        return productSkinTypes.some((skinType) =>
-          skinTypesToFilter.has(skinType)
-        );
-      });
-    }
-
-    // Filter by hair type
-    if (activeHairTypes.length > 0 && !activeHairTypes.includes("All")) {
-      const hairTypesToFilter = new Set(activeHairTypes);
-      filtered = filtered.filter((p) => {
-        if (!p.specifications?.hairType) return false;
-
-        // Handle both array and string hairType for backward compatibility
-        const productHairTypes = Array.isArray(p.specifications.hairType)
-          ? p.specifications.hairType
-          : [p.specifications.hairType];
-
-        // Check if any of the product's hair types match the filter
-        return productHairTypes.some((hairType) =>
-          hairTypesToFilter.has(hairType)
-        );
-      });
-    }
-
-    // Sort
-    return [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case "price-asc":
-          return a.price - b.price;
-        case "price-desc":
-          return b.price - a.price;
-        case "createdAt-desc":
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        case "rating-desc":
-          return b.ratings.average - a.ratings.average;
-        case "featured-desc":
-          return (
-            b.ratings.numOfReviews - a.ratings.numOfReviews ||
-            b.ratings.average - a.ratings.average
-          );
-        default:
-          return 0;
-      }
-    });
   }, [
-    products,
     activeCategory,
-    sortBy,
+    activeSkinTypes,
+    activeHairTypes,
     activePriceRange,
     activeCustomMin,
     activeCustomMax,
-    activeSkinTypes,
-    activeHairTypes,
+    sortBy,
+    products,
   ]);
 
-  // Paginate
-  const displayedProducts = computedProducts.slice(0, currentPage * perPage);
-  const totalFiltered = computedProducts.length;
-  const hasMore = currentPage * perPage < totalFiltered;
+  // Fetch categories once on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const categoriesRes = await Axios.get(SummaryApi.getAllCategories.url);
+        if (
+          categoriesRes.data.success &&
+          Array.isArray(categoriesRes.data.data)
+        ) {
+          setCategories(categoriesRes.data.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
+  // Fetch products when filters or page change
+  useEffect(() => {
+    fetchProducts(pagination.currentPage);
+  }, [
+    activeCategory,
+    activeSkinTypes,
+    activeHairTypes,
+    activePriceRange,
+    activeCustomMin,
+    activeCustomMax,
+    sortBy,
+  ]);
+  
   const handleLoadMore = () => {
-    if (hasMore && !loadingMore) {
-      setLoadingMore(true);
-      setTimeout(() => {
-        setCurrentPage((prev) => prev + 1);
-        setLoadingMore(false);
-      }, 300);
+    if (pagination.hasNext && !loadingMore) {
+      fetchProducts(pagination.currentPage + 1, true);
     }
   };
 
   const handleApplyFilters = () => {
+    setPagination(p => ({ ...p, currentPage: 1 }));
     setActiveCategory(pendingCategory);
     setActiveSkinTypes(pendingSkinTypes);
     setActiveHairTypes(pendingHairTypes);
@@ -272,6 +233,7 @@ const Shop = () => {
   };
 
   const handleClearFilters = () => {
+    setPagination(p => ({ ...p, currentPage: 1 }));
     setPendingCategory("all");
     setPendingSkinTypes([]);
     setPendingHairTypes([]);
@@ -455,7 +417,7 @@ const Shop = () => {
                           ?.name || "Products"}
                   </h2>
                   <p className="text-forest mt-1">
-                    Showing {displayedProducts.length} of {totalFiltered}{" "}
+                    Showing {products.length} of {pagination.totalProducts}{" "}
                     products
                   </p>
                 </div>
@@ -558,7 +520,7 @@ const Shop = () => {
                 </div>
               ) : error ? (
                 <div className="text-center text-red-500 py-10">{error}</div>
-              ) : computedProducts.length === 0 ? (
+              ) : products.length === 0 ? (
                 <div className="text-center text-forest py-20 rounded-lg bg-gradient-to-br from-sage/10 via-white to-sage/10 border border-warm-taupe">
                   <h3 className="text-2xl font-semibold mb-2 text-deep-forest">
                     No Products Found
@@ -569,7 +531,7 @@ const Shop = () => {
                 </div>
               ) : (
                 <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  {displayedProducts.map((product) => {
+                  {products.map((product) => {
                     const thirtyDaysAgo = new Date();
                     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                     const isNew = new Date(product.createdAt) > thirtyDaysAgo;
@@ -602,7 +564,7 @@ const Shop = () => {
                 </div>
               )}
 
-              {hasMore && (
+              {pagination.hasNext && (
                 <div className="text-center mt-12">
                   <Button
                     variant="outline"

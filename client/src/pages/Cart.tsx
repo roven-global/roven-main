@@ -9,13 +9,7 @@ import {
   ArrowRight,
   ShoppingBag,
   Gift,
-  ShieldCheck,
-  Truck,
-  X,
   Tag,
-  Calendar,
-  Percent,
-  DollarSign,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";

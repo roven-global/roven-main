@@ -7,9 +7,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSearch } from "@/contexts/SearchContext";
 import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
-import UserDropdown from "@/components/UserDropdown"; // ✅ Import the fixed dropdown
+import UserDropdown from "@/components/UserDropdown";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuest } from "@/contexts/GuestContext";
+import { useCart } from "@/contexts/CartContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,25 +33,12 @@ const Navigation = () => {
   const [navItems, setNavItems] = useState<NavItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [cartCount, setCartCount] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const { isAuthenticated } = useAuth();
   const { guestCartCount } = useGuest();
   const { openSearch } = useSearch();
-
-  const fetchCartCount = useCallback(async () => {
-    if (isAuthenticated) {
-      try {
-        const response = await Axios.get(SummaryApi.getCart.url);
-        if (response.data.success) {
-          setCartCount(response.data.data?.length || 0);
-        }
-      } catch (error) {
-        console.error("Failed to fetch cart count:", error);
-      }
-    }
-  }, [isAuthenticated]);
+  const { cartCount } = useCart();
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -86,18 +74,7 @@ const Navigation = () => {
     };
 
     fetchCategories();
-    fetchCartCount();
-  }, [isAuthenticated, fetchCartCount]);
-
-  // Listen for cart updates
-  useEffect(() => {
-    const handleCartUpdate = () => {
-      fetchCartCount();
-    };
-
-    window.addEventListener("cartUpdate", handleCartUpdate);
-    return () => window.removeEventListener("cartUpdate", handleCartUpdate);
-  }, [isAuthenticated, fetchCartCount]);
+  }, []);
 
   // Handle scroll events for navbar hide/show
   useEffect(() => {
