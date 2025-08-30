@@ -16,7 +16,13 @@ import SummaryApi from "@/common/summaryApi";
 import { toast } from "@/hooks/use-toast";
 
 const Profile = () => {
-  const { user, logout, updateUser } = useAuth();
+  const {
+    user,
+    logout,
+    updateUser,
+    isAuthenticated,
+    loading: authLoading,
+  } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -31,17 +37,19 @@ const Profile = () => {
   });
 
   useEffect(() => {
-    if (!user) {
+    if (!authLoading && !isAuthenticated) {
       navigate("/login");
       return;
     }
-    setFormData({
-      name: user.name || "",
-      email: user.email || "",
-      mobile: user.mobile || "",
-      phone: user.phone || "",
-    });
-  }, [user, navigate]);
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        email: user.email || "",
+        mobile: user.mobile || "",
+        phone: user.phone || "",
+      });
+    }
+  }, [user, isAuthenticated, authLoading, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

@@ -7,6 +7,7 @@ import Axios from "@/utils/Axios";
 import SummaryApi from "../common/summaryApi";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ResetPassword = () => {
   const location = useLocation();
@@ -20,6 +21,14 @@ const ResetPassword = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const { isAuthenticated, loading: authLoading } = useAuth();
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,8 +49,8 @@ const ResetPassword = () => {
         url: SummaryApi.reset_password.url,
         data: { email, newPassword: password, confirmPassword },
       });
-      setSuccess("Password reset successful! Redirecting to login...");
-      setTimeout(() => navigate("/login"), 1500);
+      setSuccess("Password reset successful! Redirecting to home...");
+      setTimeout(() => navigate("/"), 1500);
     } catch (err: any) {
       setError(
         err.response?.data?.message ||

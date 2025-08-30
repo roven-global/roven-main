@@ -1,25 +1,34 @@
-import React, { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Sparkles, Shield, Heart, Star, Mail } from 'lucide-react';
-import Axios from '@/utils/Axios';
-import SummaryApi from '../common/summaryApi';
-import { useNavigate, Link } from 'react-router-dom';
-import Navigation from '@/components/Navigation';
-import Footer from '@/components/Footer';
+import React, { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Sparkles, Shield, Heart, Star, Mail } from "lucide-react";
+import Axios from "@/utils/Axios";
+import SummaryApi from "../common/summaryApi";
+import { useNavigate, Link } from "react-router-dom";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ForgotPassword = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     if (!email) {
-      setError('Email is required');
+      setError("Email is required");
       return;
     }
     setLoading(true);
@@ -30,10 +39,11 @@ const ForgotPassword = () => {
         data: { email },
       });
       // Redirect to OTP verification page with email
-      navigate('/otp-verification', { state: { email } });
+      navigate("/otp-verification", { state: { email } });
     } catch (err: any) {
       setError(
-        err.response?.data?.message || 'Failed to send reset email. Please try again.'
+        err.response?.data?.message ||
+          "Failed to send reset email. Please try again."
       );
     } finally {
       setLoading(false);
@@ -66,14 +76,16 @@ const ForgotPassword = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
             {/* Forgot Password Form */}
             <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8 h-[450px] flex flex-col">
-              <h2 className="font-sans text-3xl font-bold text-deep-forest mb-6 text-center">RESET PASSWORD</h2>
+              <h2 className="font-sans text-3xl font-bold text-deep-forest mb-6 text-center">
+                RESET PASSWORD
+              </h2>
 
               <div className="mb-6">
                 <p className="text-forest text-sm leading-relaxed">
-                  Enter your email address and we'll send you a link to reset your password.
+                  Enter your email address and we'll send you a link to reset
+                  your password.
                 </p>
               </div>
 
@@ -86,7 +98,10 @@ const ForgotPassword = () => {
               <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
                 <div className="flex-1 space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-deep-forest mb-2" htmlFor="email">
+                    <label
+                      className="block text-sm font-semibold text-deep-forest mb-2"
+                      htmlFor="email"
+                    >
                       Email Address <span className="text-red-500">*</span>
                     </label>
                     <Input
@@ -94,7 +109,7 @@ const ForgotPassword = () => {
                       name="email"
                       type="email"
                       value={email}
-                      onChange={e => setEmail(e.target.value)}
+                      onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email address"
                       autoComplete="email"
                       required
@@ -114,7 +129,7 @@ const ForgotPassword = () => {
                       Sending reset link...
                     </div>
                   ) : (
-                    'SEND RESET LINK'
+                    "SEND RESET LINK"
                   )}
                 </Button>
               </form>
@@ -122,21 +137,27 @@ const ForgotPassword = () => {
 
             {/* Information Section */}
             <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8 h-[450px] flex flex-col">
-              <h2 className="font-sans text-3xl font-bold text-deep-forest mb-6 text-center">NEED HELP?</h2>
+              <h2 className="font-sans text-3xl font-bold text-deep-forest mb-6 text-center">
+                NEED HELP?
+              </h2>
 
               <div className="text-center flex-1 flex flex-col justify-center">
                 <p className="text-forest text-sm mb-6 leading-relaxed">
-                  Don't worry! It happens to the best of us. Enter your email address and we'll send you a secure link to reset your password. The link will expire in 10 minutes for your security.
+                  Don't worry! It happens to the best of us. Enter your email
+                  address and we'll send you a secure link to reset your
+                  password. The link will expire in 10 minutes for your
+                  security.
                 </p>
 
                 <div className="text-xs text-warm-taupe mb-6">
-                  Make sure to check your spam folder if you don't receive the email within a few minutes.
+                  Make sure to check your spam folder if you don't receive the
+                  email within a few minutes.
                 </div>
               </div>
 
               <div className="text-center">
                 <p className="text-forest text-sm">
-                  Remember your password?{' '}
+                  Remember your password?{" "}
                   <Link
                     to="/login"
                     className="text-deep-forest hover:text-sage font-semibold transition-colors duration-200"

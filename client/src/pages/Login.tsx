@@ -62,10 +62,23 @@ const Login = () => {
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerStep, setRegisterStep] = useState(1); // 1: name/email/mobile, 2: password
   const navigate = useNavigate();
-  const { loginUser, error: authError, clearError } = useAuth();
+  const {
+    loginUser,
+    error: authError,
+    clearError,
+    isAuthenticated,
+    loading,
+  } = useAuth();
   // Capture redirect intent from navigation state
   const redirectTo =
     (history.state && history.state.usr && history.state.usr.redirectTo) || "/";
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (!loading && isAuthenticated) {
+      navigate(redirectTo || "/");
+    }
+  }, [isAuthenticated, loading, navigate, redirectTo]);
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),

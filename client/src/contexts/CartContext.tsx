@@ -161,15 +161,59 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     await fetchUserCart();
   }, [fetchUserCart]);
 
-  const removeFromCart = useCallback(async (cartItemId: string) => {
-    await Axios.delete(SummaryApi.deleteFromCart.url.replace(":cartItemId", cartItemId));
-    await fetchUserCart();
-  }, [fetchUserCart]);
+  const removeFromCart = useCallback(
+    async (cartItemId: string) => {
+      const originalCartItems = [...cartItems];
+      const updatedCartItems = cartItems.filter(
+        (item) => item._id !== cartItemId
+      );
+      setCartItems(updatedCartItems);
 
-  const updateQuantity = useCallback(async (cartItemId: string, quantity: number) => {
-    await Axios.put(SummaryApi.updateCart.url.replace(":cartItemId", cartItemId), { quantity });
-    await fetchUserCart();
-  }, [fetchUserCart]);
+      try {
+        await Axios.delete(
+          SummaryApi.deleteFromCart.url.replace(":cartItemId", cartItemId)
+        );
+      } catch (error) {
+        setCartItems(originalCartItems);
+        toast({
+          title: "Error removing item",
+          description: "Failed to remove item from cart. Please try again.",
+          variant: "destructive",
+        });
+      }
+    },
+    [cartItems]
+  );
+
+  const updateQuantity = useCallback(
+    async (cartItemId: string, quantity: number) => {
+      const originalCartItems = [...cartItems];
+      const itemIndex = cartItems.findIndex((item) => item._id === cartItemId);
+      if (itemIndex === -1) return;
+
+      const updatedCartItems = [...cartItems];
+      updatedCartItems[itemIndex] = {
+        ...updatedCartItems[itemIndex],
+        quantity: quantity,
+      };
+      setCartItems(updatedCartItems);
+
+      try {
+        await Axios.put(
+          SummaryApi.updateCart.url.replace(":cartItemId", cartItemId),
+          { quantity }
+        );
+      } catch (error) {
+        setCartItems(originalCartItems);
+        toast({
+          title: "Error updating quantity",
+          description: "Failed to update item quantity. Please try again.",
+          variant: "destructive",
+        });
+      }
+    },
+    [cartItems]
+  );
 
   const cartCount = useMemo(() => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
