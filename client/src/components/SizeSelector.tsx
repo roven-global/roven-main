@@ -49,11 +49,6 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
     <div className={cn("space-y-4", className)}>
       <div className="flex items-center justify-between">
         <h4 className="text-lg font-semibold text-gray-900">Select Size</h4>
-        {selectedVariant && (
-          <span className="text-sm text-gray-500">
-            {selectedVariant.stock} units available
-          </span>
-        )}
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">

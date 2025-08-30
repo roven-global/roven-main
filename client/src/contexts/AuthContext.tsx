@@ -170,6 +170,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await Axios.post(SummaryApi.login.url, credentials);
       if (response.data.success) {
         localStorage.setItem("accesstoken", response.data.data.accessToken);
+        localStorage.setItem("refreshToken", response.data.data.refreshToken);
         localStorage.setItem("isLoggedIn", "true");
         // Explicitly trigger migrations after successful login
         await checkAuthStatus(true);

@@ -473,7 +473,9 @@ const ProductDetailPage = () => {
                   ) : selectedVariant.stock > 0 ? (
                     <>
                       <CheckCircle className="h-4 w-4 text-sage" />
-                      <span className="text-forest">In Stock</span>
+                      <span className="text-forest">
+                        {selectedVariant.stock} units available
+                      </span>
                     </>
                   ) : (
                     <span className="text-red-500 font-semibold">
