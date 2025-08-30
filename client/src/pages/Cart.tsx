@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Minus,
   Plus,
@@ -24,7 +22,6 @@ import Footer from "@/components/Footer";
 import WelcomeGiftReward from "@/components/WelcomeGiftReward";
 import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
-import { useRewardPopup } from "@/hooks/useRewardPopup";
 import PriceSummary from "@/components/PriceSummary";
 
 const Cart = () => {
@@ -38,18 +35,17 @@ const Cart = () => {
     removeCoupon,
     orderQuote,
     isQuoteLoading,
+    availableCoupons,
   } = useCart();
   const { guestCart, removeFromGuestCart, updateGuestCartQuantity } =
     useGuest();
   const [removingId, setRemovingId] = useState<string | null>(null);
-  const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
   const [scrollContainerRef, setScrollContainerRef] =
     useState<HTMLDivElement | null>(null);
   const [removingCouponId, setRemovingCouponId] = useState<string | null>(null);
   const [lifetimeSavings, setLifetimeSavings] = useState<number>(0);
   const [lifetimeSavingsLoading, setLifetimeSavingsLoading] = useState(false);
 
-  // Fetch lifetime savings
   useEffect(() => {
     const fetchLifetimeSavings = async () => {
       if (!isAuthenticated) return;
@@ -69,131 +65,45 @@ const Cart = () => {
     fetchLifetimeSavings();
   }, [isAuthenticated]);
 
-  // Listen to cart changes to ensure price summary updates
-  useEffect(() => {
-    // This effect is minimal now; the context handles most logic.
-    // It's kept to ensure re-renders on cart/guestCart changes if needed.
-  }, [cartItems, guestCart]);
-
-  // Fetch available coupons
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    const fetchAvailableCoupons = async () => {
-      try {
-        const response = await Axios.get(SummaryApi.getActiveCoupons.url);
-        if (response.data.success) {
-          setAvailableCoupons(response.data.data);
-        }
-      } catch (error) {
-        console.error("Error fetching available coupons:", error);
-      }
-    };
-
-    // Debounce the API call to prevent rapid successive requests
-    timeoutId = setTimeout(() => {
-      fetchAvailableCoupons();
-    }, 300);
-
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, []);
-
-  const handleUpdateQuantity = async (
+  const handleUpdateQuantity = (
     cartItemId: string,
     newQuantity: number,
     variant?: { volume: string; sku: string }
   ) => {
     if (newQuantity < 1) return;
 
-    try {
-      if (isAuthenticated) {
-        await updateQuantity(cartItemId, newQuantity);
-      } else {
-        updateGuestCartQuantity(cartItemId, newQuantity, variant);
-      }
-
-      // Force a re-render to update price summary
-      // The useEffect listening to cart changes should handle this automatically
-    } catch (error) {
-      console.error("Cart: Error updating quantity:", error);
-      toast({
-        title: "Error updating quantity",
-        description: "Failed to update item quantity. Please try again.",
-        variant: "destructive",
-      });
+    if (isAuthenticated) {
+      updateQuantity(cartItemId, newQuantity);
+    } else {
+      updateGuestCartQuantity(cartItemId, newQuantity, variant);
     }
   };
 
-  const handleRemoveItem = async (
+  const handleRemoveItem = (
     cartItemId: string,
     variant?: { volume: string; sku: string }
   ) => {
     setRemovingId(cartItemId);
-    try {
-      if (isAuthenticated) {
-        await removeFromCart(cartItemId);
-      } else {
-        removeFromGuestCart(cartItemId, variant);
-      }
-      toast({
-        title: "Item removed from cart",
-      });
-    } catch (error) {
-      toast({
-        title: "Error removing item",
-        variant: "destructive",
-      });
-    } finally {
-      setRemovingId(null);
+    if (isAuthenticated) {
+      removeFromCart(cartItemId);
+    } else {
+      removeFromGuestCart(cartItemId, variant);
     }
+    toast({
+      title: "Item removed from cart",
+    });
+    setRemovingId(null);
   };
 
-  const handleApplyCoupon = async (code: string) => {
+  const handleApplyCoupon = (code: string) => {
     if (!code) {
       return;
     }
-
-    try {
-      await applyCoupon(code);
-    } catch (error: any) {
-      console.error("Error applying coupon:", error);
-      toast({
-        title: "Error applying coupon",
-        description: error.response?.data?.message || "Invalid coupon code",
-        variant: "destructive",
-      });
-    }
+    applyCoupon(code);
   };
 
   const handleRemoveCoupon = () => {
     removeCoupon();
-  };
-
-  const handleRemoveIndividualCoupon = async (couponCode: string) => {
-    setRemovingCouponId(couponCode);
-    try {
-      // Remove the coupon from the applied coupons list
-      removeCoupon();
-
-      toast({
-        title: "Coupon removed successfully",
-        description: "The coupon has been removed from your order",
-      });
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Error removing coupon";
-      toast({
-        title: "Error removing coupon",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setRemovingCouponId(null);
-    }
   };
 
   const scrollLeft = () => {
@@ -209,14 +119,12 @@ const Cart = () => {
   };
 
   const displayCartItems = isAuthenticated ? cartItems : guestCart;
-
   const totalUniqueItems = displayCartItems.length;
   const totalQuantity = displayCartItems.reduce(
     (acc, item) => acc + item.quantity,
     0
   );
 
-  // Use authoritative quote from context. Fallback to 0 for guest users or when quote is null.
   const subtotal = orderQuote?.subtotal ?? 0;
   const shippingCost = orderQuote?.shippingCost ?? 0;
   const couponDiscount = orderQuote?.discounts?.coupon ?? 0;
@@ -226,14 +134,11 @@ const Cart = () => {
     (orderQuote?.discounts?.total ?? 0) +
     (orderQuote?.shippingCost === 0 && subtotal > 0 ? 40 : 0);
 
-  // Handle checkout navigation
   const handleCheckout = () => {
-    // Allow both authenticated and guest users to proceed to checkout
     navigate("/checkout");
   };
 
-  if (isQuoteLoading || authLoading) {
-    // Check both loading states
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-warm-cream">
         <div className="animate-spin rounded-full h-24 w-24 border-b-2 border-sage"></div>
@@ -244,21 +149,8 @@ const Cart = () => {
   return (
     <div className="min-h-screen bg-warm-cream">
       <Navigation />
-
-      {/* Show loading spinner while authentication is being checked */}
-      {authLoading && (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-            <p className="text-forest">Checking authentication...</p>
-          </div>
-        </div>
-      )}
-
-      {/* Show main content only when authentication check is complete */}
       {!authLoading && (
         <>
-          {/* Breadcrumb Navigation */}
           <div className="bg-white border-b">
             <div className="container mx-auto px-4 py-3">
               <div className="flex items-center justify-center gap-2 text-sm text-forest">
@@ -295,9 +187,7 @@ const Cart = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
-                    {/* Cart Details Section - First on mobile, second on desktop */}
                     <div className="lg:col-span-2 space-y-4 lg:space-y-6 order-1 lg:order-1">
-                      {/* Unified Coupon Section */}
                       {availableCoupons.length > 0 && (
                         <div className="bg-white rounded-lg border shadow-sm">
                           <div className="p-4 border-b">
@@ -312,7 +202,6 @@ const Cart = () => {
                             </p>
                           </div>
                           <div className="p-4 space-y-4">
-                            {/* Applied Coupon Display */}
                             {orderQuote?.appliedCoupon && (
                               <div className="bg-sage/10 border border-sage/20 rounded-lg p-3">
                                 <div className="flex items-center justify-between">
@@ -343,9 +232,7 @@ const Cart = () => {
                                 </div>
                               </div>
                             )}
-                            {/* Coupons Horizontal Scroll */}
                             <div className="relative">
-                              {/* Scroll Left Button */}
                               <button
                                 onClick={scrollLeft}
                                 className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-background border rounded-full p-2 shadow-md hover:bg-muted transition-colors"
@@ -354,7 +241,6 @@ const Cart = () => {
                                 <ChevronLeft className="w-4 h-4 text-forest" />
                               </button>
 
-                              {/* Scroll Right Button */}
                               <button
                                 onClick={scrollRight}
                                 className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-background border rounded-full p-2 shadow-md hover:bg-muted transition-colors"
@@ -447,7 +333,6 @@ const Cart = () => {
                         </div>
                       )}
 
-                      {/* Cart Details Section */}
                       <div className="bg-white rounded-lg border shadow-sm">
                         <div className="p-4 border-b">
                           <div className="flex items-center justify-between">
@@ -469,12 +354,11 @@ const Cart = () => {
                             </div>
                           </div>
                         </div>
-                        {/* Mobile Cart Summary */}
                         <div className="p-3 bg-sage/10 border-b lg:hidden">
                           <div className="text-sm text-forest text-center">
                             <span className="font-medium">Cart Summary:</span>
                             <span className="ml-2">
-                              Items - {totalUniqueItems}
+                                Items - {totalUniqueItems}
                             </span>
                             <span className="mx-2">|</span>
                             <span>Quantity - {totalQuantity}</span>
@@ -603,9 +487,7 @@ const Cart = () => {
                       </div>
                     </div>
 
-                    {/* Right Column - Price Summary - Second on mobile, first on desktop */}
                     <div className="space-y-4 lg:space-y-6 lg:col-span-1 order-2 lg:order-2">
-                      {/* Welcome Gift Reward */}
                       <div className="bg-white rounded-lg border shadow-sm">
                         <div className="p-4 border-b">
                           <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
@@ -618,7 +500,6 @@ const Cart = () => {
                         </div>
                       </div>
 
-                      {/* Removed local warning logic; rely on backend validation results */}
                       <PriceSummary
                         isQuoteLoading={isQuoteLoading}
                         subtotal={subtotal}
