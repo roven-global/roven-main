@@ -235,7 +235,7 @@ const CouponAdmin = () => {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="font-sans text-3xl font-bold tracking-tight text-deep-forest">
+        <h2 className="font-sans text-3xl font-bold tracking-tight text-foreground">
           Coupon Management
         </h2>
         <div className="flex items-center gap-2">
@@ -257,7 +257,7 @@ const CouponAdmin = () => {
               </DialogHeader>
               {analyticsLoading ? (
                 <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sage"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
               ) : analytics ? (
                 <div className="space-y-4">
@@ -293,7 +293,7 @@ const CouponAdmin = () => {
 
           <Button
             onClick={openCreateDialog}
-            className="bg-sage hover:bg-forest text-white"
+            className="bg-primary hover:bg-muted-brown text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Coupon
@@ -331,7 +331,7 @@ const CouponAdmin = () => {
       {/* Coupons List */}
       {loading ? (
         <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sage"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       ) : (
         <div>
@@ -423,7 +423,7 @@ const CouponAdmin = () => {
           >
             Previous
           </Button>
-          <span className="text-sm text-forest">
+          <span className="text-sm text-muted-brown">
             Page {currentPage} of {totalPages} ({totalItems} total)
           </span>
           <Button

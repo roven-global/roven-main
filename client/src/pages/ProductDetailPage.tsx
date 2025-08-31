@@ -259,19 +259,19 @@ const ProductDetailPage = () => {
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div className="space-y-4">
-                <Skeleton className="w-full h-96 rounded-lg bg-warm-taupe/20" />
+                <Skeleton className="w-full h-96 rounded-lg bg-border/20" />
                 <div className="flex gap-2">
                   {[...Array(4)].map((_, i) => (
-                    <Skeleton key={i} className="w-20 h-20 rounded-lg bg-warm-taupe/20" />
+                    <Skeleton key={i} className="w-20 h-20 rounded-lg bg-border/20" />
                   ))}
                 </div>
               </div>
               <div className="space-y-6">
-                <Skeleton className="h-8 w-3/4 bg-warm-taupe/20" />
-                <Skeleton className="h-6 w-1/2 bg-warm-taupe/20" />
-                <Skeleton className="h-12 w-1/3 bg-warm-taupe/20" />
-                <Skeleton className="h-20 w-full bg-warm-taupe/20" />
-                <Skeleton className="h-12 w-full bg-warm-taupe/20" />
+                <Skeleton className="h-8 w-3/4 bg-border/20" />
+                <Skeleton className="h-6 w-1/2 bg-border/20" />
+                <Skeleton className="h-12 w-1/3 bg-border/20" />
+                <Skeleton className="h-20 w-full bg-border/20" />
+                <Skeleton className="h-12 w-full bg-border/20" />
               </div>
             </div>
           </div>
@@ -291,7 +291,7 @@ const ProductDetailPage = () => {
             Could not load the product. Please try again later.
           </h2>
           <Link to="/shop">
-            <Button variant="outline" className="mt-4 border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage">
+            <Button variant="outline" className="mt-4 border-border text-muted-brown hover:bg-primary/20 hover:text-primary">
               Go back to Shop
             </Button>
           </Link>
@@ -312,22 +312,22 @@ const ProductDetailPage = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Breadcrumb */}
-          <div className="flex items-center text-sm text-forest mb-8 overflow-x-auto whitespace-nowrap">
-            <Link to="/" className="hover:text-sage transition-colors flex-shrink-0">Home</Link>
-            <ChevronRight className="h-4 w-4 mx-2 flex-shrink-0 text-warm-taupe" />
-            <Link to="/shop" className="hover:text-sage transition-colors flex-shrink-0">Shop</Link>
-            <ChevronRight className="h-4 w-4 mx-2 flex-shrink-0 text-warm-taupe" />
-            <span className="text-deep-forest font-medium flex-shrink-0">{product.name}</span>
+          <div className="flex items-center text-sm text-muted-brown mb-8 overflow-x-auto whitespace-nowrap">
+            <Link to="/" className="hover:text-primary transition-colors flex-shrink-0">Home</Link>
+            <ChevronRight className="h-4 w-4 mx-2 flex-shrink-0 text-border" />
+            <Link to="/shop" className="hover:text-primary transition-colors flex-shrink-0">Shop</Link>
+            <ChevronRight className="h-4 w-4 mx-2 flex-shrink-0 text-border" />
+            <span className="text-foreground font-medium flex-shrink-0">{product.name}</span>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* ... (Image section) ... */}
             <div className="space-y-4">
-              <div className="w-full aspect-square rounded-xl overflow-hidden bg-warm-cream-light border border-warm-taupe/20">
+              <div className="w-full aspect-square rounded-xl overflow-hidden bg-warm-cream-light border border-border/20">
                 <InnerImageZoom src={selectedImage} zoomSrc={selectedImage} zoomType="hover" zoomPreload={true} className="w-full h-full" imgAttributes={{ alt: product.name, className: "w-full h-full object-cover" }} />
               </div>
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {product.images.map((image, index) => (
-                  <button key={image.public_id} onClick={() => setSelectedImage(image.url)} className={cn("w-20 h-20 flex-shrink-0 rounded-lg border-2 overflow-hidden cursor-pointer transition-all", selectedImage === image.url ? "border-sage" : "border-warm-taupe/30 hover:border-sage")}>
+                  <button key={image.public_id} onClick={() => setSelectedImage(image.url)} className={cn("w-20 h-20 flex-shrink-0 rounded-lg border-2 overflow-hidden cursor-pointer transition-all", selectedImage === image.url ? "border-primary" : "border-border/30 hover:border-primary")}>
                     <img src={image.url} alt={`${product.name} view ${index + 1}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
@@ -336,27 +336,27 @@ const ProductDetailPage = () => {
             {/* ... (Product Info section) ... */}
             <div className="space-y-6">
               <div>
-                <h1 className="font-sans text-3xl lg:text-4xl font-bold text-deep-forest leading-tight">{product.name}</h1>
-                {product.shortDescription && (<p className="text-forest mt-2 text-lg">{product.shortDescription}</p>)}
+                <h1 className="font-sans text-3xl lg:text-4xl font-bold text-foreground leading-tight">{product.name}</h1>
+                {product.shortDescription && (<p className="text-muted-brown mt-2 text-lg">{product.shortDescription}</p>)}
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (<Star key={i} className={cn("h-4 w-4", i < Math.floor(product.ratings.average) ? "text-gold-accent fill-gold-accent" : "text-warm-taupe")} />))}
+                  {[...Array(5)].map((_, i) => (<Star key={i} className={cn("h-4 w-4", i < Math.floor(product.ratings.average) ? "text-accent fill-accent" : "text-border")} />))}
                 </div>
-                <span className="font-semibold text-deep-forest">{product.ratings.average.toFixed(1)}</span>
-                <span className="text-sm text-forest">{product.ratings.numOfReviews} reviews</span>
+                <span className="font-semibold text-foreground">{product.ratings.average.toFixed(1)}</span>
+                <span className="text-sm text-muted-brown">{product.ratings.numOfReviews} reviews</span>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <span className="font-sans text-3xl font-bold text-deep-forest">{formatRupees(currentPrice)}</span>
-                  {originalPrice && (<span className="text-lg text-warm-taupe line-through">{formatRupees(originalPrice)}</span>)}
+                  <span className="font-sans text-3xl font-bold text-foreground">{formatRupees(currentPrice)}</span>
+                  {originalPrice && (<span className="text-lg text-border line-through">{formatRupees(originalPrice)}</span>)}
                 </div>
-                {discount > 0 && (<span className="bg-sage/10 text-sage px-2 py-1 rounded-full text-sm font-semibold inline-block">{discount}% OFF</span>)}
+                {discount > 0 && (<span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-sm font-semibold inline-block">{discount}% OFF</span>)}
               </div>
               {product.variants && product.variants.length > 0 && (<div><SizeSelector variants={product.variants} selectedVariant={selectedVariant} onVariantChange={(variant) => { const fullVariant = product.variants?.find((v) => v.volume === variant.volume && v.sku === variant.sku); setSelectedVariant(fullVariant || null); }} /></div>)}
-              {selectedVariant && (<div className="text-sm flex items-center gap-2">{selectedVariant.stock > 0 && selectedVariant.stock <= selectedVariant.lowStockThreshold ? (<><AlertTriangle className="h-4 w-4 text-gold-accent" /><span className="text-gold-accent font-semibold">Only {selectedVariant.stock} left in stock!</span></>) : selectedVariant.stock > 0 ? (<><CheckCircle className="h-4 w-4 text-sage" /><span className="text-forest">{selectedVariant.stock} units available</span></>) : (<span className="text-red-500 font-semibold">Out of Stock</span>)}</div>)}
+              {selectedVariant && (<div className="text-sm flex items-center gap-2">{selectedVariant.stock > 0 && selectedVariant.stock <= selectedVariant.lowStockThreshold ? (<><AlertTriangle className="h-4 w-4 text-accent" /><span className="text-accent font-semibold">Only {selectedVariant.stock} left in stock!</span></>) : selectedVariant.stock > 0 ? (<><CheckCircle className="h-4 w-4 text-primary" /><span className="text-muted-brown">{selectedVariant.stock} units available</span></>) : (<span className="text-red-500 font-semibold">Out of Stock</span>)}</div>)}
               <div className="space-y-4">
-                {quantityInCart === 0 ? (<Button size="lg" className="w-full bg-forest hover:bg-deep-forest text-white font-semibold rounded-lg transition-all py-3" onClick={handleAddToCart} disabled={selectedVariant?.stock === 0}><ShoppingBag className="mr-2 h-5 w-5" />{selectedVariant?.stock === 0 ? "Out of Stock" : "Add to Cart"}</Button>) : (<div className="flex items-center justify-center border border-warm-taupe rounded-lg overflow-hidden bg-white w-full"><Button variant="ghost" size="lg" className="px-6 py-3 hover:bg-sage/20 hover:text-sage transition-colors text-forest" onClick={() => handleQuantityChange(-1)}><Minus className="h-5 w-5" /></Button><span className="px-6 py-3 font-semibold text-forest text-lg">{quantityInCart}</span><Button variant="ghost" size="lg" className="px-6 py-3 hover:bg-sage/20 hover:text-sage transition-colors text-forest" onClick={() => handleQuantityChange(1)}><Plus className="h-5 w-5" /></Button></div>)}
+                {quantityInCart === 0 ? (<Button size="lg" className="w-full bg-muted-brown hover:bg-foreground text-white font-semibold rounded-lg transition-all py-3" onClick={handleAddToCart} disabled={selectedVariant?.stock === 0}><ShoppingBag className="mr-2 h-5 w-5" />{selectedVariant?.stock === 0 ? "Out of Stock" : "Add to Cart"}</Button>) : (<div className="flex items-center justify-center border border-border rounded-lg overflow-hidden bg-white w-full"><Button variant="ghost" size="lg" className="px-6 py-3 hover:bg-primary/20 hover:text-primary transition-colors text-muted-brown" onClick={() => handleQuantityChange(-1)}><Minus className="h-5 w-5" /></Button><span className="px-6 py-3 font-semibold text-muted-brown text-lg">{quantityInCart}</span><Button variant="ghost" size="lg" className="px-6 py-3 hover:bg-primary/20 hover:text-primary transition-colors text-muted-brown" onClick={() => handleQuantityChange(1)}><Plus className="h-5 w-5" /></Button></div>)}
               </div>
               {/* ... (Accordion sections) ... */}
             </div>
@@ -364,7 +364,7 @@ const ProductDetailPage = () => {
         </div>
       </div>
       {/* Product Details Tabs */}
-      <div className="bg-white border-t border-warm-taupe/20">
+      <div className="bg-white border-t border-border/20">
         <div className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto">
             <Accordion
@@ -376,9 +376,9 @@ const ProductDetailPage = () => {
               {product.ingredients && product.ingredients.length > 0 && (
                 <AccordionItem
                   value="item-2"
-                  className="border border-warm-taupe/20 rounded-xl overflow-hidden"
+                  className="border border-border/20 rounded-xl overflow-hidden"
                 >
-                  <AccordionTrigger className="text-xl font-sans font-bold text-deep-forest px-6 py-4 hover:no-underline bg-sage/5">
+                  <AccordionTrigger className="text-xl font-sans font-bold text-foreground px-6 py-4 hover:no-underline bg-primary/5">
                     Hero Ingredients
                   </AccordionTrigger>
                   <AccordionContent className="px-6 py-6 bg-white">
@@ -395,12 +395,12 @@ const ProductDetailPage = () => {
                             </div>
                           )}
                           {ingredient.name && (
-                            <h4 className="font-semibold text-deep-forest">
+                            <h4 className="font-semibold text-foreground">
                               {ingredient.name}
                             </h4>
                           )}
                           {ingredient.description && (
-                            <p className="text-sm text-forest leading-relaxed">
+                            <p className="text-sm text-muted-brown leading-relaxed">
                               {ingredient.description}
                             </p>
                           )}
@@ -415,7 +415,7 @@ const ProductDetailPage = () => {
             {/* Customer Reviews Section */}
             <div className="mt-12">
               <div className="text-center">
-                <h2 className="font-sans text-xl font-bold text-deep-forest mb-2">
+                <h2 className="font-sans text-xl font-bold text-foreground mb-2">
                   — READ THE REVIEWS —
                 </h2>
                 <button
@@ -426,7 +426,7 @@ const ProductDetailPage = () => {
                       reviewsSection.scrollIntoView({ behavior: "smooth" });
                     }
                   }}
-                  className="text-forest hover:text-sage text-sm cursor-pointer hover:underline transition-colors"
+                  className="text-muted-brown hover:text-primary text-sm cursor-pointer hover:underline transition-colors"
                 >
                   See All
                 </button>
@@ -434,7 +434,7 @@ const ProductDetailPage = () => {
               <div className="text-center mt-8 mb-8">
                 <Button
                   variant="outline"
-                  className="border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage"
+                  className="border-border text-muted-brown hover:bg-primary/20 hover:text-primary"
                   onClick={() => reviewsRef.current?.toggleForm()}
                 >
                   Write a Review
@@ -442,7 +442,7 @@ const ProductDetailPage = () => {
               </div>
               <div
                 id="customer-reviews"
-                className="mt-12 pt-12 border-t border-warm-taupe/20"
+                className="mt-12 pt-12 border-t border-border/20"
               >
                 <CustomerReviews
                   ref={reviewsRef}
@@ -456,7 +456,7 @@ const ProductDetailPage = () => {
           </div>
         </div>
       </div>
-      {product && (<div className="bg-background"><div className="container mx-auto px-4 py-12"><div className="max-w-6xl mx-auto"><h2 className="font-sans text-xl font-bold text-deep-forest mb-2 text-center">— You May Also Like —</h2><RelatedProducts currentProductId={product._id} /></div></div></div>)}
+      {product && (<div className="bg-background"><div className="container mx-auto px-4 py-12"><div className="max-w-6xl mx-auto"><h2 className="font-sans text-xl font-bold text-foreground mb-2 text-center">— You May Also Like —</h2><RelatedProducts currentProductId={product._id} /></div></div></div>)}
       <Footer />
     </div>
   );

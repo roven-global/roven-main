@@ -64,11 +64,11 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
               onKeyDown={(e) => handleKeyDown(e, variant)}
               disabled={isDisabled}
               className={cn(
-                "relative group p-4 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-sage focus:ring-offset-2",
-                "hover:shadow-md hover:border-sage/50",
+                "relative group p-4 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                "hover:shadow-md hover:border-primary/50",
                 isSelected
-                  ? "border-sage bg-sage/5 shadow-md"
-                  : "border-gray-200 bg-white hover:border-sage/30",
+                  ? "border-primary bg-primary/5 shadow-md"
+                  : "border-gray-200 bg-white hover:border-primary/30",
                 isDisabled &&
                   "opacity-50 cursor-not-allowed hover:shadow-none hover:border-gray-200"
               )}
@@ -84,7 +84,7 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
             >
               {/* Selection Indicator */}
               {isSelected && (
-                <div className="absolute -top-1 -right-1 w-6 h-6 bg-sage rounded-full flex items-center justify-center">
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
                   <svg
                     className="w-4 h-4 text-white"
                     fill="currentColor"
@@ -155,7 +155,7 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
           </label>
           <select
             id="size-select"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sage focus:border-sage"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
             defaultValue={selectedVariant?.sku || ""}
             onChange={(e) => {
               const variant = variants.find((v) => v.sku === e.target.value);

@@ -226,14 +226,14 @@ const Login = () => {
       {/* Navigation */}
       <Navigation />
       {/* Header Banner */}
-      <div className="relative bg-gradient-to-br from-sage/10 via-forest/10 to-deep-forest/10 py-24">
+      <div className="relative bg-gradient-to-br from-primary/10 via-muted-brown/10 to-foreground/10 py-24">
         <div className="absolute inset-0">
           <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-10 right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-white/5 rounded-full blur-3xl"></div>
         </div>
         <div className="relative z-10 container mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-deep-forest mb-4">
+          <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-4">
             My Account
           </h1>
         </div>
@@ -245,8 +245,8 @@ const Login = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Login Section */}
             {activeTab === "login" && (
-              <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-4 sm:p-6 lg:p-8 min-h-[450px] flex flex-col">
-                <h2 className="text-2xl sm:text-3xl font-bold text-deep-forest mb-4 sm:mb-6 text-center">
+              <div className="bg-white rounded-2xl shadow-lg border border-border/50 p-4 sm:p-6 lg:p-8 min-h-[450px] flex flex-col">
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6 text-center">
                   LOGIN
                 </h2>
                 {loginError && (
@@ -268,7 +268,7 @@ const Login = () => {
                         name="emailOrMobile"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-semibold text-deep-forest">
+                            <FormLabel className="text-sm font-semibold text-foreground">
                               Email or mobile number{" "}
                               <span className="text-red-500">*</span>
                             </FormLabel>
@@ -276,7 +276,7 @@ const Login = () => {
                               <Input
                                 placeholder="Enter your email or mobile number"
                                 {...field}
-                                className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200"
+                                className="h-11 border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg transition-all duration-200"
                               />
                             </FormControl>
                             <FormMessage />
@@ -289,7 +289,7 @@ const Login = () => {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-semibold text-deep-forest">
+                            <FormLabel className="text-sm font-semibold text-foreground">
                               Password <span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
@@ -298,14 +298,14 @@ const Login = () => {
                                   type={showPassword ? "text" : "password"}
                                   placeholder="Enter your password"
                                   {...field}
-                                  className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200 pr-12"
+                                  className="h-11 border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg transition-all duration-200 pr-12"
                                 />
                                 <button
                                   type="button"
                                   onClick={() =>
                                     setShowPassword((prev) => !prev)
                                   }
-                                  className="absolute right-4 top-1/2 -translate-y-1/2 text-warm-taupe hover:text-soft-bronze transition-colors duration-200"
+                                  className="absolute right-4 top-1/2 -translate-y-1/2 text-border hover:text-muted-brown transition-colors duration-200"
                                   tabIndex={-1}
                                 >
                                   {showPassword ? (
@@ -332,14 +332,14 @@ const Login = () => {
                           />
                           <label
                             htmlFor="remember"
-                            className="text-sm text-forest"
+                            className="text-sm text-muted-brown"
                           >
                             Remember me
                           </label>
                         </div>
                         <Link
                           to="/forgot-password"
-                          className="text-forest hover:text-deep-forest text-sm font-medium transition-colors duration-200"
+                          className="text-muted-brown hover:text-foreground text-sm font-medium transition-colors duration-200"
                         >
                           Lost your password?
                         </Link>
@@ -347,7 +347,7 @@ const Login = () => {
                     </div>
                     <Button
                       type="submit"
-                      className="w-full h-11 bg-sage hover:bg-forest text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 mt-auto"
+                      className="w-full h-11 bg-primary hover:bg-muted-brown text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 mt-auto"
                       disabled={loginLoading}
                     >
                       {loginLoading ? (
@@ -366,8 +366,8 @@ const Login = () => {
 
             {/* Register Section */}
             {activeTab === "register" && (
-              <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8 h-[450px] flex flex-col">
-                <h2 className="text-3xl font-bold text-deep-forest mb-6 text-center">
+              <div className="bg-white rounded-2xl shadow-lg border border-border/50 p-8 h-[450px] flex flex-col">
+                <h2 className="text-3xl font-bold text-foreground mb-6 text-center">
                   REGISTER
                 </h2>
                 {registerError && (
@@ -391,7 +391,7 @@ const Login = () => {
                             name="name"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-semibold text-deep-forest">
+                                <FormLabel className="text-sm font-semibold text-foreground">
                                   Full Name{" "}
                                   <span className="text-red-500">*</span>
                                 </FormLabel>
@@ -399,7 +399,7 @@ const Login = () => {
                                   <Input
                                     placeholder="Enter your full name"
                                     {...field}
-                                    className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200"
+                                    className="h-11 border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg transition-all duration-200"
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -412,7 +412,7 @@ const Login = () => {
                             name="emailOrMobile"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-semibold text-deep-forest">
+                                <FormLabel className="text-sm font-semibold text-foreground">
                                   Email or mobile number{" "}
                                   <span className="text-red-500">*</span>
                                 </FormLabel>
@@ -420,7 +420,7 @@ const Login = () => {
                                   <Input
                                     placeholder="Enter your email or mobile number"
                                     {...field}
-                                    className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-sage/20 rounded-lg transition-all duration-200"
+                                    className="h-11 border-2 border-border focus:border-primary focus:ring-primary/20 rounded-lg transition-all duration-200"
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -437,7 +437,7 @@ const Login = () => {
                             name="password"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-semibold text-deep-forest">
+                                <FormLabel className="text-sm font-semibold text-foreground">
                                   Password{" "}
                                   <span className="text-red-500">*</span>
                                 </FormLabel>
@@ -447,14 +447,14 @@ const Login = () => {
                                       type={showPassword ? "text" : "password"}
                                       placeholder="Create a strong password"
                                       {...field}
-                                      className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200 pr-12"
+                                      className="h-11 border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg transition-all duration-200 pr-12"
                                     />
                                     <button
                                       type="button"
                                       onClick={() =>
                                         setShowPassword((prev) => !prev)
                                       }
-                                      className="absolute right-4 top-1/2 -translate-y-1/2 text-warm-taupe hover:text-soft-bronze transition-colors duration-200"
+                                      className="absolute right-4 top-1/2 -translate-y-1/2 text-border hover:text-muted-brown transition-colors duration-200"
                                       tabIndex={-1}
                                     >
                                       {showPassword ? (
@@ -475,7 +475,7 @@ const Login = () => {
                             name="confirmPassword"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-semibold text-deep-forest">
+                                <FormLabel className="text-sm font-semibold text-foreground">
                                   Confirm Password{" "}
                                   <span className="text-red-500">*</span>
                                 </FormLabel>
@@ -489,14 +489,14 @@ const Login = () => {
                                       }
                                       placeholder="Confirm your password"
                                       {...field}
-                                      className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200 pr-12"
+                                      className="h-11 border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg transition-all duration-200 pr-12"
                                     />
                                     <button
                                       type="button"
                                       onClick={() =>
                                         setShowConfirmPassword((prev) => !prev)
                                       }
-                                      className="absolute right-4 top-1/2 -translate-y-1/2 text-warm-taupe hover:text-soft-bronze transition-colors duration-200"
+                                      className="absolute right-4 top-1/2 -translate-y-1/2 text-border hover:text-muted-brown transition-colors duration-200"
                                       tabIndex={-1}
                                     >
                                       {showConfirmPassword ? (
@@ -514,7 +514,7 @@ const Login = () => {
                         </>
                       )}
                     </div>
-                    <div className="text-xs text-warm-taupe mt-4">
+                    <div className="text-xs text-border mt-4">
                       Your personal data will be used to support your experience
                       throughout this website, to manage access to your account,
                       and for other purposes described in our privacy policy.
@@ -524,7 +524,7 @@ const Login = () => {
                         <Button
                           type="button"
                           onClick={handlePreviousStep}
-                          className="w-full h-11 bg-sage/20 hover:bg-sage/30 text-deep-forest font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                          className="w-full h-11 bg-primary/20 hover:bg-primary/30 text-foreground font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
                         >
                           Previous
                         </Button>
@@ -533,7 +533,7 @@ const Login = () => {
                         <Button
                           type="button"
                           onClick={handleNextStep}
-                          className="w-full h-11 bg-sage hover:bg-forest text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                          className="w-full h-11 bg-primary hover:bg-muted-brown text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
                         >
                           Next
                         </Button>
@@ -541,7 +541,7 @@ const Login = () => {
                       {registerStep === 2 && (
                         <Button
                           type="submit"
-                          className="w-full h-11 bg-sage hover:bg-forest text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                          className="w-full h-11 bg-primary hover:bg-muted-brown text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
                           disabled={registerLoading}
                         >
                           {registerLoading ? (
@@ -561,12 +561,12 @@ const Login = () => {
             )}
 
             {/* Toggle Section */}
-            <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8 h-[450px] flex flex-col">
-              <h2 className="text-3xl font-bold text-deep-forest mb-6 text-center">
+            <div className="bg-white rounded-2xl shadow-lg border border-border/50 p-8 h-[450px] flex flex-col">
+              <h2 className="text-3xl font-bold text-foreground mb-6 text-center">
                 {activeTab === "login" ? "REGISTER" : "LOGIN"}
               </h2>
               <div className="text-center flex-1 flex flex-col justify-center">
-                <p className="text-forest text-sm mb-6 leading-relaxed">
+                <p className="text-muted-brown text-sm mb-6 leading-relaxed">
                   {activeTab === "login"
                     ? "Registering for this site allows you to access your order status and history. Just fill in the fields below, and we'll get a new account set up for you in no time. We will only ask you for information necessary to make the purchase process faster and easier."
                     : "Already have an account? Sign in to access your order history and manage your account."}
@@ -578,8 +578,8 @@ const Login = () => {
                 }
                 className={`w-full h-11 font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ${
                   activeTab === "login"
-                    ? "bg-sage hover:bg-forest text-white"
-                    : "bg-forest hover:bg-deep-forest text-white"
+                    ? "bg-primary hover:bg-muted-brown text-white"
+                    : "bg-muted-brown hover:bg-foreground text-white"
                 }`}
               >
                 {activeTab === "login" ? "REGISTER" : "LOGIN"}

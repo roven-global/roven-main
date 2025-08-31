@@ -254,11 +254,11 @@ const CustomerReviews = forwardRef<
           className={`h-5 w-5 cursor-pointer ${
             readOnly
               ? star <= value
-                ? "text-gold-accent fill-gold-accent"
-                : "text-warm-taupe/50"
+                ? "text-accent fill-accent"
+                : "text-border/50"
               : star <= (hoverRating || rating || value)
-              ? "text-gold-accent fill-gold-accent"
-              : "text-warm-taupe/50"
+              ? "text-accent fill-accent"
+              : "text-border/50"
           }`}
           onClick={() => {
             if (!readOnly) {
@@ -287,9 +287,9 @@ const CustomerReviews = forwardRef<
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold text-deep-forest">Customer Reviews</h3>
+        <h3 className="text-xl font-bold text-foreground">Customer Reviews</h3>
         {totalReviews > 0 && (
-          <span className="text-sm text-forest">
+          <span className="text-sm text-muted-brown">
             {totalReviews} review{totalReviews !== 1 ? "s" : ""}
           </span>
         )}
@@ -299,10 +299,10 @@ const CustomerReviews = forwardRef<
       {showForm && !userReview && (
         <form
           onSubmit={handleReviewSubmit}
-          className="mb-8 p-6 border border-sage/20 rounded-xl bg-white space-y-6 shadow-sm"
+          className="mb-8 p-6 border border-primary/20 rounded-xl bg-white space-y-6 shadow-sm"
         >
           <div className="flex justify-between items-center">
-            <h4 className="font-semibold text-deep-forest">
+            <h4 className="font-semibold text-foreground">
               Write your review for {productName}
             </h4>
             <Button
@@ -310,13 +310,13 @@ const CustomerReviews = forwardRef<
               variant="ghost"
               size="sm"
               onClick={() => setShowForm(false)}
-              className="text-forest hover:text-sage"
+              className="text-muted-brown hover:text-primary"
             >
               Cancel
             </Button>
           </div>
           <div>
-            <label className="block text-sm font-medium text-forest mb-2">
+            <label className="block text-sm font-medium text-muted-brown mb-2">
               Rating
             </label>
             <StarRating />
@@ -325,7 +325,7 @@ const CustomerReviews = forwardRef<
           <div>
             <label
               htmlFor="review-text"
-              className="block text-sm font-medium text-forest mb-2"
+              className="block text-sm font-medium text-muted-brown mb-2"
             >
               Review
             </label>
@@ -341,7 +341,7 @@ const CustomerReviews = forwardRef<
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-sage hover:bg-sage/90 text-white"
+            className="bg-primary hover:bg-primary/90 text-white"
           >
             {isSubmitting ? "Submitting..." : "Submit Review"}
           </Button>
@@ -359,13 +359,13 @@ const CustomerReviews = forwardRef<
           {reviews.map((review) => (
             <div
               key={review._id}
-              className="border border-sage/20 rounded-lg p-4 bg-white"
+              className="border border-primary/20 rounded-lg p-4 bg-white"
             >
               {editingReviewId === review._id ? (
                 // Edit mode
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h4 className="font-semibold text-deep-forest">
+                    <h4 className="font-semibold text-foreground">
                       Edit Your Review
                     </h4>
                     <div className="flex gap-2">
@@ -373,7 +373,7 @@ const CustomerReviews = forwardRef<
                         size="sm"
                         variant="ghost"
                         onClick={cancelEditing}
-                        className="text-forest hover:text-sage"
+                        className="text-muted-brown hover:text-primary"
                       >
                         <X className="h-4 w-4 mr-1" />
                         Cancel
@@ -382,7 +382,7 @@ const CustomerReviews = forwardRef<
                         size="sm"
                         onClick={saveEditedReview}
                         disabled={isEditing}
-                        className="bg-sage hover:bg-sage/90 text-white"
+                        className="bg-primary hover:bg-primary/90 text-white"
                       >
                         <Check className="h-4 w-4 mr-1" />
                         {isEditing ? "Saving..." : "Save"}
@@ -390,7 +390,7 @@ const CustomerReviews = forwardRef<
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-forest mb-2">
+                    <label className="block text-sm font-medium text-muted-brown mb-2">
                       Rating
                     </label>
                     <StarRating
@@ -399,7 +399,7 @@ const CustomerReviews = forwardRef<
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-forest mb-2">
+                    <label className="block text-sm font-medium text-muted-brown mb-2">
                       Review
                     </label>
                     <Textarea
@@ -430,20 +430,20 @@ const CustomerReviews = forwardRef<
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <p className="font-semibold text-deep-forest text-sm">
+                          <p className="font-semibold text-foreground text-sm">
                             {review.user?.name || "Anonymous User"}
                             {review.user._id === user?._id && (
-                              <span className="text-xs text-sage bg-sage/10 px-2 py-1 rounded-full ml-2">
+                              <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded-full ml-2">
                                 You
                               </span>
                             )}
                           </p>
                           <StarRating readOnly value={review.rating} />
                         </div>
-                        <p className="text-sm text-forest leading-relaxed">
+                        <p className="text-sm text-muted-brown leading-relaxed">
                           {review.review}
                         </p>
-                        <p className="text-xs text-warm-taupe mt-2">
+                        <p className="text-xs text-border mt-2">
                           {new Date(review.createdAt).toLocaleDateString(
                             "en-US",
                             {
@@ -463,7 +463,7 @@ const CustomerReviews = forwardRef<
                           size="sm"
                           variant="ghost"
                           onClick={() => startEditing(review)}
-                          className="text-forest hover:text-sage h-8 px-2"
+                          className="text-muted-brown hover:text-primary h-8 px-2"
                         >
                           <Edit3 className="h-4 w-4 mr-1" />
                         </Button>
@@ -496,11 +496,11 @@ const CustomerReviews = forwardRef<
                 variant="outline"
                 onClick={loadMoreReviews}
                 disabled={loadingMore}
-                className="border-sage text-sage hover:bg-sage/10 hover:text-sage"
+                className="border-primary text-primary hover:bg-primary/10 hover:text-primary"
               >
                 {loadingMore ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-sage mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
                     Loading...
                   </>
                 ) : (
@@ -512,8 +512,8 @@ const CustomerReviews = forwardRef<
         </div>
       ) : (
         <div className="text-center py-8">
-          <p className="text-forest text-lg">No reviews yet.</p>
-          <p className="text-warm-taupe text-sm mt-1">
+          <p className="text-muted-brown text-lg">No reviews yet.</p>
+          <p className="text-border text-sm mt-1">
             Be the first to review this product!
           </p>
         </div>

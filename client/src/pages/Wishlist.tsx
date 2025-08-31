@@ -96,9 +96,9 @@ const Wishlist = () => {
     <div className="min-h-screen flex flex-col bg-white">
       <Navigation />
       <main className="flex-grow">
-        <section className="py-8 sm:py-12 bg-white border-b border-warm-taupe/50">
+        <section className="py-8 sm:py-12 bg-white border-b border-border/50">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="font-sans text-3xl sm:text-4xl md:text-5xl font-bold text-deep-forest">
+            <h1 className="font-sans text-3xl sm:text-4xl md:text-5xl font-bold text-foreground">
               My Wishlist
             </h1>
           </div>
@@ -110,9 +110,9 @@ const Wishlist = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
                 {Array.from({ length: 4 }).map((_, index) => (
                   <div key={index} className="space-y-4">
-                    <Skeleton className="h-72 w-full bg-sage/20 rounded-lg" />
-                    <Skeleton className="h-4 w-5/6 bg-sage/20 rounded-md" />
-                    <Skeleton className="h-4 w-1/2 bg-sage/20 rounded-md" />
+                    <Skeleton className="h-72 w-full bg-primary/20 rounded-lg" />
+                    <Skeleton className="h-4 w-5/6 bg-primary/20 rounded-md" />
+                    <Skeleton className="h-4 w-1/2 bg-primary/20 rounded-md" />
                   </div>
                 ))}
               </div>
@@ -164,18 +164,18 @@ const Wishlist = () => {
                 ))}
               </div>
             ) : (
-              <Card className="text-center py-20 bg-white shadow-md border-warm-taupe/50">
-                <Heart className="mx-auto h-16 w-16 text-sage/50 mb-4" />
-                <h3 className="text-2xl font-semibold mb-2 text-deep-forest font-sans">
+              <Card className="text-center py-20 bg-white shadow-md border-border/50">
+                <Heart className="mx-auto h-16 w-16 text-primary/50 mb-4" />
+                <h3 className="text-2xl font-semibold mb-2 text-foreground font-sans">
                   Your Wishlist is Empty
                 </h3>
-                <p className="mb-6 text-forest">
+                <p className="mb-6 text-muted-brown">
                   Looks like you haven't added anything yet.
                 </p>
                 <Button
                   asChild
                   size="lg"
-                  className="bg-sage text-white hover:bg-forest rounded-full"
+                  className="bg-primary text-white hover:bg-muted-brown rounded-full"
                 >
                   <Link to="/shop">Discover Products</Link>
                 </Button>

@@ -36,19 +36,19 @@ const Newsletter = () => {
   };
 
   return (
-    <section className="py-20 bg-gradient-to-br from-sage/25 via-forest/10 to-sage/15">
+    <section className="py-20 bg-gradient-to-br from-primary/25 via-muted-brown/10 to-primary/15">
       <div className="container mx-auto px-4 text-center">
         <div className="max-w-2xl mx-auto">
-          <h2 className="font-sans text-4xl md:text-5xl font-bold text-deep-forest mb-4">
+          <h2 className="font-sans text-4xl md:text-5xl font-bold text-foreground mb-4">
             Join The Roven Club
           </h2>
-          <p className="text-lg text-forest mb-8 text-balance">
+          <p className="text-lg text-muted-brown mb-8 text-balance">
             Subscribe to our newsletter for exclusive offers, beauty tips,
             and early access to new products.
           </p>
 
           {status === "success" ? (
-            <div className="text-center p-4 bg-sage/10 text-sage rounded-lg">
+            <div className="text-center p-4 bg-primary/10 text-primary rounded-lg">
               <p className="font-semibold">{message}</p>
             </div>
           ) : (
@@ -64,13 +64,13 @@ const Newsletter = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={status === "loading"}
                 required
-                className="h-12 flex-grow bg-white border-warm-taupe focus:ring-sage-light focus:border-sage-dark rounded-full"
+                className="h-12 flex-grow bg-white border-border focus:ring-primary-light focus:border-primary-dark rounded-full"
               />
               <Button
                 type="submit"
                 size="lg"
                 disabled={status === "loading"}
-                className="bg-sage text-deep-forest hover:bg-forest hover:text-white transition-all duration-300 rounded-full text-base font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                className="bg-primary text-foreground hover:bg-muted-brown hover:text-white transition-all duration-300 rounded-full text-base font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 {status === "loading" ? "Subscribing..." : "Subscribe"}
               </Button>
@@ -82,7 +82,7 @@ const Newsletter = () => {
           )}
           
           {status !== "success" && (
-            <p className="text-sm text-forest/70 mt-4">
+            <p className="text-sm text-muted-brown/70 mt-4">
               We respect your privacy. Unsubscribe at any time.
             </p>
           )}

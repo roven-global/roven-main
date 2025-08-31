@@ -6,90 +6,7 @@
 
 @layer base {
   :root {
-    /* NEW: Botanical Brand Colors (HSL Format) */
-    --background: 35 33% 97%;
-    /* Off-white, almost warm cream */
-    --foreground: 158 24% 12%;
-    /* Deep Forest */
-
-    --card: 0 0% 100%;
-    /* White */
-    --card-foreground: 158 24% 12%;
-    /* Deep Forest */
-
-    --popover: 0 0% 100%;
-    /* White */
-    --popover-foreground: 158 24% 12%;
-    /* Deep Forest */
-
-    /* Primary: Sage Green */
-    --primary: 158 13% 75%;
-    /* #B6C7C1 */
-    --primary-foreground: 158 24% 12%;
-    /* Deep Forest for text on primary */
-
-    /* Secondary: Forest Green */
-    --secondary: 157 11% 39%;
-    /* #5C6B62 */
-    --secondary-foreground: 35 33% 97%;
-    /* Off-white for text on secondary */
-
-    /* Muted: Soft Beige */
-    --muted: 36 27% 89%;
-    /* #E8E0D6 */
-    --muted-foreground: 157 11% 30%;
-    /* Forest Green for muted text */
-
-    /* Accent: Gold */
-    --accent: 35 44% 71%;
-    /* #D4B896 */
-    --accent-foreground: 158 24% 12%;
-    /* Deep Forest for text on accent */
-
-    --destructive: 0 72% 51%;
-    /* A standard red for errors */
-    --destructive-foreground: 0 0% 100%;
-    /* White */
-
-    --border: 35 27% 84%;
-    /* Warm Taupe */
-    --input: 36 27% 89%;
-    /* Soft Beige */
-    --ring: 158 13% 58%;
-    /* Sage Green */
-
     --radius: 0.5rem;
-  }
-
-  .dark {
-    /* Dark theme can be defined here if needed later */
-    --background: 158 24% 12%;
-    --foreground: 36 27% 89%;
-
-    --card: 157 11% 15%;
-    --card-foreground: 36 27% 89%;
-
-    --popover: 157 11% 15%;
-    --popover-foreground: 36 27% 89%;
-
-    --primary: 158 13% 58%;
-    --primary-foreground: 158 24% 12%;
-
-    --secondary: 157 11% 39%;
-    --secondary-foreground: 35 33% 97%;
-
-    --muted: 157 11% 25%;
-    --muted-foreground: 36 27% 75%;
-
-    --accent: 35 44% 71%;
-    --accent-foreground: 158 24% 12%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 157 11% 25%;
-    --input: 157 11% 30%;
-    --ring: 158 13% 58%;
   }
 }
 
@@ -110,7 +27,7 @@
   h4,
   h5,
   h6 {
-  @apply font-sans text-deep-forest;
+  @apply font-sans text-foreground;
   }
 }
 
@@ -121,7 +38,7 @@
   }
 
   .step-display {
-    @apply text-sm font-semibold text-sage;
+    @apply text-sm font-semibold text-primary;
   }
 
   /* Keyframe animations */

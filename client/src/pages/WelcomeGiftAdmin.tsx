@@ -281,7 +281,7 @@ const WelcomeGiftAdmin = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-sans text-2xl font-bold text-deep-forest">
+          <h1 className="font-sans text-2xl font-bold text-foreground">
             Welcome Gift Management
           </h1>
           <p className="text-gray-600">

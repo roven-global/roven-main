@@ -56,7 +56,7 @@ const ForgotPassword = () => {
       <Navigation />
 
       {/* Header Banner - Matching Login Page Design */}
-      <div className="relative bg-gradient-to-br from-sage/10 via-forest/10 to-deep-forest/10 py-24">
+      <div className="relative bg-gradient-to-br from-primary/10 via-muted-brown/10 to-foreground/10 py-24">
         {/* Background Pattern */}
         <div className="absolute inset-0">
           <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
@@ -66,7 +66,7 @@ const ForgotPassword = () => {
 
         {/* Content */}
         <div className="relative z-10 container mx-auto px-4 text-center">
-          <h1 className="font-sans text-5xl md:text-6xl font-bold text-deep-forest mb-4">
+          <h1 className="font-sans text-5xl md:text-6xl font-bold text-foreground mb-4">
             Reset Password
           </h1>
         </div>
@@ -77,13 +77,13 @@ const ForgotPassword = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Forgot Password Form */}
-            <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8 h-[450px] flex flex-col">
-              <h2 className="font-sans text-3xl font-bold text-deep-forest mb-6 text-center">
+            <div className="bg-white rounded-2xl shadow-lg border border-border/50 p-8 h-[450px] flex flex-col">
+              <h2 className="font-sans text-3xl font-bold text-foreground mb-6 text-center">
                 RESET PASSWORD
               </h2>
 
               <div className="mb-6">
-                <p className="text-forest text-sm leading-relaxed">
+                <p className="text-muted-brown text-sm leading-relaxed">
                   Enter your email address and we'll send you a link to reset
                   your password.
                 </p>
@@ -99,7 +99,7 @@ const ForgotPassword = () => {
                 <div className="flex-1 space-y-4">
                   <div>
                     <label
-                      className="block text-sm font-semibold text-deep-forest mb-2"
+                      className="block text-sm font-semibold text-foreground mb-2"
                       htmlFor="email"
                     >
                       Email Address <span className="text-red-500">*</span>
@@ -113,14 +113,14 @@ const ForgotPassword = () => {
                       placeholder="Enter your email address"
                       autoComplete="email"
                       required
-                      className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200"
+                      className="h-11 border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg transition-all duration-200"
                     />
                   </div>
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full h-11 bg-sage hover:bg-forest text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 mt-auto"
+                  className="w-full h-11 bg-primary hover:bg-muted-brown text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 mt-auto"
                   disabled={loading}
                 >
                   {loading ? (
@@ -136,31 +136,31 @@ const ForgotPassword = () => {
             </div>
 
             {/* Information Section */}
-            <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8 h-[450px] flex flex-col">
-              <h2 className="font-sans text-3xl font-bold text-deep-forest mb-6 text-center">
+            <div className="bg-white rounded-2xl shadow-lg border border-border/50 p-8 h-[450px] flex flex-col">
+              <h2 className="font-sans text-3xl font-bold text-foreground mb-6 text-center">
                 NEED HELP?
               </h2>
 
               <div className="text-center flex-1 flex flex-col justify-center">
-                <p className="text-forest text-sm mb-6 leading-relaxed">
+                <p className="text-muted-brown text-sm mb-6 leading-relaxed">
                   Don't worry! It happens to the best of us. Enter your email
                   address and we'll send you a secure link to reset your
                   password. The link will expire in 10 minutes for your
                   security.
                 </p>
 
-                <div className="text-xs text-warm-taupe mb-6">
+                <div className="text-xs text-border mb-6">
                   Make sure to check your spam folder if you don't receive the
                   email within a few minutes.
                 </div>
               </div>
 
               <div className="text-center">
-                <p className="text-forest text-sm">
+                <p className="text-muted-brown text-sm">
                   Remember your password?{" "}
                   <Link
                     to="/login"
-                    className="text-deep-forest hover:text-sage font-semibold transition-colors duration-200"
+                    className="text-foreground hover:text-primary font-semibold transition-colors duration-200"
                   >
                     Sign in here
                   </Link>

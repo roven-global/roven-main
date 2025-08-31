@@ -63,13 +63,13 @@ const FeaturedProducts = () => {
   }, []);
 
   return (
-    <section id="featured-products" className="py-20 bg-gradient-to-br from-sage/5 via-white to-sage/5">
+    <section id="featured-products" className="py-20 bg-gradient-to-br from-primary/5 via-white to-primary/5">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="font-sans text-4xl md:text-5xl font-bold text-deep-forest mb-4">
+          <h2 className="font-sans text-4xl md:text-5xl font-bold text-foreground mb-4">
             Featured Products
           </h2>
-          <p className="text-forest text-lg max-w-2xl mx-auto text-balance">
+          <p className="text-muted-brown text-lg max-w-2xl mx-auto text-balance">
             Discover our handpicked selection of premium beauty products,
             crafted with the finest ingredients for exceptional results.
           </p>
@@ -114,7 +114,7 @@ const FeaturedProducts = () => {
 
         <div className="text-center">
           <Link to="/shop">
-            <Button size="lg" variant="outline" className="border-2 border-warm-taupe text-forest bg-transparent hover:bg-warm-taupe/20 hover:border-warm-taupe transition-all duration-300 rounded-full px-8 py-6 text-base font-semibold">
+            <Button size="lg" variant="outline" className="border-2 border-border text-muted-brown bg-transparent hover:bg-border/20 hover:border-border transition-all duration-300 rounded-full px-8 py-6 text-base font-semibold">
               View All Products
             </Button>
           </Link>

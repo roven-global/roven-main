@@ -3,7 +3,7 @@ import React from "react";
 const ShippingInfo = () => {
   return (
     <div className="max-w-2xl mx-auto py-12 px-4">
-      <h1 className="font-sans text-3xl font-bold mb-4 text-deep-forest">Shipping Information</h1>
+      <h1 className="font-sans text-3xl font-bold mb-4 text-foreground">Shipping Information</h1>
       <p className="mb-4 text-muted-foreground">We strive to deliver your order as quickly and safely as possible. Here are our shipping policies:</p>
       <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
         <li>Standard shipping within India: 3-7 business days.</li>
