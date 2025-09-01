@@ -43,6 +43,10 @@ export default {
           hover: "#e22b0f",
           foreground: "#E6EAE3",
         },
+        footer: {
+          DEFAULT: "#fcefeb",
+          foreground: "#1D352D",
+        },
         accent: {
           DEFAULT: "#47b79e", // Vibrant Teal
           hover: "#699878",
