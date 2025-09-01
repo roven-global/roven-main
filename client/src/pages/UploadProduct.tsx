@@ -1931,7 +1931,7 @@ const UploadProduct = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="bg-gradient-luxury"
+              className="bg-primary hover:bg-muted-brown text-white"
             >
               {loading ? (
                 "Saving..."

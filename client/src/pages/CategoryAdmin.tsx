@@ -42,6 +42,7 @@ import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
 import UploadCategory from "./UploadCategory";
 import { useNavigate } from "react-router-dom";
+import PageHeader from "@/components/ui/PageHeader";
 
 interface Category {
   _id: string;
@@ -313,22 +314,12 @@ const CategoryPage = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between space-y-2">
-        <div>
-          <h2 className="font-sans text-3xl font-bold tracking-tight text-foreground">
-            Category Management
-          </h2>
-          <p className="text-muted-foreground">
-            Manage your product categories.
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button onClick={handleAddCategory} className="bg-gradient-luxury">
-            <Plus className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Add Category</span>
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Category Management"
+        description="Manage your product categories."
+        buttonText="Add Category"
+        onButtonClick={handleAddCategory}
+      />
       <Card>
         <CardHeader>
           <div className="flex justify-between items-start">

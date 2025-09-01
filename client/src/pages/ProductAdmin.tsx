@@ -14,6 +14,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Axios from '@/utils/Axios';
 import SummaryApi from '@/common/summaryApi';
 import { formatRupees } from '@/lib/currency'; 
+import PageHeader from '@/components/ui/PageHeader';
 
 interface Product {
   _id: string;
@@ -225,25 +226,12 @@ const ProductAdmin = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between space-y-2">
-        <div>
-          <h2 className="font-sans text-3xl font-bold tracking-tight text-foreground">
-            Product Management
-          </h2>
-          <p className="text-muted-foreground">
-            Manage your product catalog.
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            onClick={() => navigate("/admin/product/upload")}
-            className="bg-gradient-luxury"
-          >
-            <Plus className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Add Product</span>
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Product Management"
+        description="Manage your product catalog."
+        buttonText="Add Product"
+        onButtonClick={() => navigate("/admin/product/upload")}
+      />
       <Card>
         <CardHeader>
           <div className="flex justify-between items-start">
