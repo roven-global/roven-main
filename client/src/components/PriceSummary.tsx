@@ -34,7 +34,7 @@ const PriceSummary: React.FC<PriceSummaryProps> = ({
   return (
     <div className="bg-white rounded-lg border shadow-sm sticky top-4">
       <div className="p-4 border-b">
-        <span className="font-semibold text-deep-forest flex items-center gap-2">
+        <span className="font-semibold text-foreground flex items-center gap-2">
           <ShieldCheck className="w-5 h-5" />
           Price Summary
         </span>
@@ -59,34 +59,34 @@ const PriceSummary: React.FC<PriceSummaryProps> = ({
         ) : (
           <>
             <div className="flex justify-between text-sm">
-              <span className="text-forest">Order Total</span>
-              <span className="text-deep-forest font-bold">
+              <span className="text-muted-brown">Order Total</span>
+              <span className="text-foreground font-bold">
                 {formatRupees(subtotal)}
               </span>
             </div>
             {couponDiscount > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-forest">Coupon Discount</span>
-                <span className="text-sage font-bold">
+                <span className="text-muted-brown">Coupon Discount</span>
+                <span className="text-primary font-bold">
                   -{formatRupees(couponDiscount)}
                 </span>
               </div>
             )}
             {welcomeGiftDiscount > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-forest">Welcome Gift</span>
-                <span className="text-sage font-bold">
+                <span className="text-muted-brown">Welcome Gift</span>
+                <span className="text-primary font-bold">
                   -{formatRupees(welcomeGiftDiscount)}
                 </span>
               </div>
             )}
             <div className="flex justify-between text-sm">
-              <span className="text-forest">Shipping</span>
+              <span className="text-muted-brown">Shipping</span>
               <div className="text-right">
                 {shippingCost === 0 && subtotal > 0 ? (
-                  <span className="text-sage font-bold">Free</span>
+                  <span className="text-primary font-bold">Free</span>
                 ) : (
-                  <span className="text-deep-forest font-bold">
+                  <span className="text-foreground font-bold">
                     {formatRupees(shippingCost)}
                   </span>
                 )}
@@ -94,8 +94,8 @@ const PriceSummary: React.FC<PriceSummaryProps> = ({
             </div>
             <Separator />
             <div className="flex justify-between font-bold text-lg">
-              <span className="text-deep-forest">To Pay</span>
-              <span className="text-deep-forest">
+              <span className="text-foreground">To Pay</span>
+              <span className="text-foreground">
                 {formatRupees(finalTotal)}
               </span>
             </div>
@@ -113,21 +113,21 @@ const PriceSummary: React.FC<PriceSummaryProps> = ({
         )}
 
         {isAuthenticated && (
-          <div className="bg-sage/10 border border-sage/60 rounded-lg p-3 mb-4 flex items-center gap-2">
-            <span className="text-sage">🏆</span>
+          <div className="bg-primary/10 border border-primary/60 rounded-lg p-3 mb-4 flex items-center gap-2">
+            <span className="text-primary">🏆</span>
             <div className="flex-1">
-              <p className="text-sm text-sage-20 font-medium">
+              <p className="text-sm text-primary-20 font-medium">
                 Your lifetime savings with Roven Beauty
               </p>
               {lifetimeSavingsLoading ? (
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-sage"></div>
-                  <span className="text-xs text-sage">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                  <span className="text-xs text-primary">
                     Calculating...
                   </span>
                 </div>
               ) : (
-                <p className="text-lg font-bold text-deep-forest mt-1">
+                <p className="text-lg font-bold text-foreground mt-1">
                   {formatRupees(lifetimeSavings ?? 0)}
                 </p>
               )}

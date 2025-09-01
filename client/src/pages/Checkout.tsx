@@ -457,7 +457,7 @@ const Checkout = () => {
   if (cartLoading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-24 w-24 border-b-2 border-sage"></div>
+        <div className="animate-spin rounded-full h-24 w-24 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -485,14 +485,14 @@ const Checkout = () => {
       {/* Breadcrumb Navigation */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-center gap-2 text-sm text-forest">
-            <Link to="/cart" className="hover:text-deep-forest">
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-brown">
+            <Link to="/cart" className="hover:text-foreground">
               Cart
             </Link>
             <ArrowRight className="w-4 h-4" />
             <span>Address</span>
             <ArrowRight className="w-4 h-4" />
-            <span className="text-forest opacity-75">Payment</span>
+            <span className="text-muted-brown opacity-75">Payment</span>
           </div>
         </div>
       </div>
@@ -507,7 +507,7 @@ const Checkout = () => {
                 <div className="bg-white rounded-lg border shadow-sm">
                   <div className="p-4 border-b">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-deep-forest flex items-center gap-2">
+                      <span className="font-semibold text-foreground flex items-center gap-2">
                         <Truck className="w-5 h-5" />
                         Shipping Address
                       </span>
@@ -531,14 +531,14 @@ const Checkout = () => {
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <p className="font-semibold text-deep-forest">
+                                <p className="font-semibold text-foreground">
                                   {addr.firstName} {addr.lastName}
                                 </p>
-                                <p className="text-forest text-sm">
+                                <p className="text-muted-brown text-sm">
                                   {addr.address}, {addr.city}, {addr.state} -{" "}
                                   {addr.pincode}
                                 </p>
-                                <p className="text-forest text-sm">
+                                <p className="text-muted-brown text-sm">
                                   {addr.phone}
                                 </p>
                               </div>
@@ -584,7 +584,7 @@ const Checkout = () => {
                         }
                       >
                         {savedAddresses.length === 0 && (
-                          <p className="text-forest mb-4">
+                          <p className="text-muted-brown mb-4">
                             No saved addresses found.
                           </p>
                         )}
@@ -600,7 +600,7 @@ const Checkout = () => {
                     {/* New Address Form */}
                     {showNewAddressForm && (
                       <div className="border border-border rounded-lg p-4 bg-muted/20">
-                        <h3 className="font-semibold text-deep-forest mb-4">
+                        <h3 className="font-semibold text-foreground mb-4">
                           {isAuthenticated
                             ? "Add New Address"
                             : "Enter Shipping Address"}
@@ -616,7 +616,7 @@ const Checkout = () => {
                             <div>
                               <Label
                                 htmlFor="firstName"
-                                className="text-sm font-medium text-deep-forest"
+                                className="text-sm font-medium text-foreground"
                               >
                                 First Name
                               </Label>
@@ -637,7 +637,7 @@ const Checkout = () => {
                             <div>
                               <Label
                                 htmlFor="lastName"
-                                className="text-sm font-medium text-deep-forest"
+                                className="text-sm font-medium text-foreground"
                               >
                                 Last Name
                               </Label>
@@ -660,7 +660,7 @@ const Checkout = () => {
                             <div>
                               <Label
                                 htmlFor="phone"
-                                className="text-sm font-medium text-deep-forest"
+                                className="text-sm font-medium text-foreground"
                               >
                                 Phone
                               </Label>
@@ -681,7 +681,7 @@ const Checkout = () => {
                             <div>
                               <Label
                                 htmlFor="email"
-                                className="text-sm font-medium text-deep-forest"
+                                className="text-sm font-medium text-foreground"
                               >
                                 Email
                               </Label>
@@ -704,7 +704,7 @@ const Checkout = () => {
                           <div>
                             <Label
                               htmlFor="address"
-                              className="text-sm font-medium text-deep-forest"
+                              className="text-sm font-medium text-foreground"
                             >
                               Address
                             </Label>
@@ -726,7 +726,7 @@ const Checkout = () => {
                             <div>
                               <Label
                                 htmlFor="state"
-                                className="text-sm font-medium text-deep-forest"
+                                className="text-sm font-medium text-foreground"
                               >
                                 State
                               </Label>
@@ -757,7 +757,7 @@ const Checkout = () => {
                             <div>
                               <Label
                                 htmlFor="city"
-                                className="text-sm font-medium text-deep-forest"
+                                className="text-sm font-medium text-foreground"
                               >
                                 City
                               </Label>
@@ -787,7 +787,7 @@ const Checkout = () => {
                             <div>
                               <Label
                                 htmlFor="pincode"
-                                className="text-sm font-medium text-deep-forest"
+                                className="text-sm font-medium text-foreground"
                               >
                                 Pincode
                               </Label>
@@ -822,7 +822,7 @@ const Checkout = () => {
                                 />
                                 <Label
                                   htmlFor="saveForFuture"
-                                  className="text-sm text-deep-forest"
+                                  className="text-sm text-foreground"
                                 >
                                   Save this address for future orders
                                 </Label>
@@ -863,7 +863,7 @@ const Checkout = () => {
               <div className="space-y-6 lg:col-span-1 order-2 lg:order-2">
                 <div className="bg-white rounded-lg border shadow-sm">
                   <div className="p-4 border-b">
-                    <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                       <Gift className="w-5 h-5 text-primary" />
                       Welcome Gift
                     </h3>

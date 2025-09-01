@@ -49,13 +49,13 @@ const Categories = () => {
   }, []);
 
   return (
-    <section id="categories" className="py-20 bg-gradient-to-br from-sage/10 via-forest/5 to-sage/10">
+    <section id="categories" className="py-20 bg-gradient-to-br from-primary/10 via-muted-brown/5 to-primary/10">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="font-sans text-4xl md:text-5xl font-bold text-deep-forest mb-4">
+          <h2 className="font-sans text-4xl md:text-5xl font-bold text-foreground mb-4">
             Shop by Category
           </h2>
-          <p className="text-forest text-lg max-w-2xl mx-auto text-balance">
+          <p className="text-muted-brown text-lg max-w-2xl mx-auto text-balance">
             Explore our curated collections, each designed to elevate your unique beauty journey.
           </p>
         </div>
@@ -64,8 +64,8 @@ const Categories = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="space-y-3">
-                <Skeleton className="h-96 w-full bg-sage/20 rounded-lg" />
-                <Skeleton className="h-6 w-3/4 bg-sage/20 rounded-md" />
+                <Skeleton className="h-96 w-full bg-primary/20 rounded-lg" />
+                <Skeleton className="h-6 w-3/4 bg-primary/20 rounded-md" />
               </div>
             ))}
           </div>
@@ -75,20 +75,20 @@ const Categories = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {categories.map((category) => (
               <Link key={category._id} to={`/category/${category.slug}`} className="block group">
-                <Card className="overflow-hidden rounded-lg shadow-elegant hover:shadow-luxury transition-all duration-300 border-sage/30 bg-white/80 backdrop-blur-sm">
+                <Card className="overflow-hidden rounded-lg shadow-elegant hover:shadow-luxury transition-all duration-300 border-primary/30 bg-white/80 backdrop-blur-sm">
                   <div className="relative h-96">
                     <img
                       src={category.image.url}
                       alt={category.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-deep-forest/60 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
                   </div>
-                  <div className="p-6 bg-gradient-to-br from-white via-sage/5 to-white">
-                    <h3 className="font-sans text-2xl font-bold text-deep-forest mb-1">
+                  <div className="p-6 bg-gradient-to-br from-white via-primary/5 to-white">
+                    <h3 className="font-sans text-2xl font-bold text-foreground mb-1">
                       {category.name}
                     </h3>
-                    <p className="text-forest group-hover:text-gold-accent transition-colors duration-300">
+                    <p className="text-muted-brown group-hover:text-accent transition-colors duration-300">
                       Explore Collection &rarr;
                     </p>
                   </div>

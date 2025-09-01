@@ -161,14 +161,14 @@ const OtpVerification = () => {
     <div className="min-h-screen bg-warm-cream">
       <Navigation />
       <div className="container mx-auto flex items-center justify-center py-24">
-        <div className="bg-white rounded-2xl shadow-lg border border-warm-taupe p-8 w-full max-w-md">
+        <div className="bg-white rounded-2xl shadow-lg border border-border p-8 w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="font-sans text-3xl font-bold text-deep-forest">
+            <h1 className="font-sans text-3xl font-bold text-foreground">
               Check Your Email
             </h1>
-            <p className="text-forest mt-2">
+            <p className="text-muted-brown mt-2">
               We've sent a 6-digit code to{" "}
-              <span className="font-semibold text-sage">{email}</span>.
+              <span className="font-semibold text-primary">{email}</span>.
             </p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -184,7 +184,7 @@ const OtpVerification = () => {
                   onChange={(e) => handleChange(e, idx)}
                   onKeyDown={(e) => handleKeyDown(e, idx)}
                   onPaste={handlePaste}
-                  className="w-12 h-12 text-2xl text-center rounded-lg border-2 border-warm-taupe bg-white text-deep-forest focus:ring-2 focus:ring-sage focus:border-sage"
+                  className="w-12 h-12 text-2xl text-center rounded-lg border-2 border-border bg-white text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
                   disabled={loading}
                   autoFocus={idx === 0}
                 />
@@ -193,18 +193,18 @@ const OtpVerification = () => {
             <Button
               type="submit"
               size="lg"
-              className="w-full bg-sage text-white hover:bg-forest rounded-full"
+              className="w-full bg-primary text-white hover:bg-muted-brown rounded-full"
               disabled={loading}
             >
               {loading ? "Verifying..." : "Verify Code"}
             </Button>
           </form>
-          <p className="text-center text-sm text-forest mt-6">
+          <p className="text-center text-sm text-muted-brown mt-6">
             Didn't receive a code?{" "}
             <button
               type="button"
               onClick={handleResend}
-              className="font-semibold text-sage hover:underline bg-transparent border-none cursor-pointer"
+              className="font-semibold text-primary hover:underline bg-transparent border-none cursor-pointer"
               disabled={resending}
             >
               {resending ? "Sending..." : "Resend"}

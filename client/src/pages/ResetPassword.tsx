@@ -66,7 +66,7 @@ const ResetPassword = () => {
       <Navigation />
 
       {/* Header Banner - Matching Login Page Design */}
-      <div className="relative bg-gradient-to-br from-sage/10 via-forest/10 to-deep-forest/10 py-24">
+      <div className="relative bg-gradient-to-br from-primary/10 via-muted-brown/10 to-foreground/10 py-24">
         {/* Background Pattern */}
         <div className="absolute inset-0">
           <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
@@ -76,7 +76,7 @@ const ResetPassword = () => {
 
         {/* Content */}
         <div className="relative z-10 container mx-auto px-4 text-center">
-          <h1 className="font-sans text-5xl md:text-6xl font-bold text-deep-forest mb-4">
+          <h1 className="font-sans text-5xl md:text-6xl font-bold text-foreground mb-4">
             Reset Password
           </h1>
         </div>
@@ -87,24 +87,24 @@ const ResetPassword = () => {
         <div className="max-w-md mx-auto">
           <form
             onSubmit={handleSubmit}
-            className="bg-white rounded-2xl shadow-lg border border-warm-taupe/50 p-8"
+            className="bg-white rounded-2xl shadow-lg border border-border/50 p-8"
           >
-            <h2 className="font-sans text-3xl font-bold text-deep-forest mb-6 text-center">
+            <h2 className="font-sans text-3xl font-bold text-foreground mb-6 text-center">
               Reset Password
             </h2>
-            <p className="text-forest text-center mb-6">
+            <p className="text-muted-brown text-center mb-6">
               Reset password for{" "}
-              <span className="font-semibold text-deep-forest">{email}</span>
+              <span className="font-semibold text-foreground">{email}</span>
             </p>
             {error && (
               <p className="text-red-600 text-center mb-4 text-sm">{error}</p>
             )}
             {success && (
-              <p className="text-sage text-center mb-4 text-sm">{success}</p>
+              <p className="text-primary text-center mb-4 text-sm">{success}</p>
             )}
             <div className="mb-5 relative">
               <label
-                className="block text-deep-forest mb-1 font-medium"
+                className="block text-foreground mb-1 font-medium"
                 htmlFor="password"
               >
                 New Password
@@ -118,12 +118,12 @@ const ResetPassword = () => {
                 placeholder="Enter new password"
                 autoComplete="new-password"
                 required
-                className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200 pr-10"
+                className="h-11 border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg transition-all duration-200 pr-10"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-3 top-9 text-warm-taupe hover:text-soft-bronze transition-colors duration-200"
+                className="absolute right-3 top-9 text-border hover:text-muted-brown transition-colors duration-200"
                 tabIndex={-1}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
@@ -132,7 +132,7 @@ const ResetPassword = () => {
             </div>
             <div className="mb-6 relative">
               <label
-                className="block text-deep-forest mb-1 font-medium"
+                className="block text-foreground mb-1 font-medium"
                 htmlFor="confirmPassword"
               >
                 Confirm Password
@@ -146,12 +146,12 @@ const ResetPassword = () => {
                 placeholder="Confirm new password"
                 autoComplete="new-password"
                 required
-                className="h-11 border-2 border-warm-taupe focus:border-sage focus:ring-2 focus:ring-sage/20 rounded-lg transition-all duration-200 pr-10"
+                className="h-11 border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg transition-all duration-200 pr-10"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirm((prev) => !prev)}
-                className="absolute right-3 top-9 text-warm-taupe hover:text-soft-bronze transition-colors duration-200"
+                className="absolute right-3 top-9 text-border hover:text-muted-brown transition-colors duration-200"
                 tabIndex={-1}
                 aria-label={showConfirm ? "Hide password" : "Show password"}
               >
@@ -160,7 +160,7 @@ const ResetPassword = () => {
             </div>
             <Button
               type="submit"
-              className="w-full h-11 bg-sage hover:bg-forest text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+              className="w-full h-11 bg-primary hover:bg-muted-brown text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
               disabled={loading}
             >
               {loading ? (

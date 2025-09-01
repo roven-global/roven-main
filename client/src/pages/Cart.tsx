@@ -141,7 +141,7 @@ const Cart = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-warm-cream">
-        <div className="animate-spin rounded-full h-24 w-24 border-b-2 border-sage"></div>
+        <div className="animate-spin rounded-full h-24 w-24 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -153,12 +153,12 @@ const Cart = () => {
         <>
           <div className="bg-white border-b">
             <div className="container mx-auto px-4 py-3">
-              <div className="flex items-center justify-center gap-2 text-sm text-forest">
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-brown">
                 <span>Cart</span>
                 <ArrowRight className="w-4 h-4" />
-                <span className="text-forest opacity-75">Address</span>
+                <span className="text-muted-brown opacity-75">Address</span>
                 <ArrowRight className="w-4 h-4" />
-                <span className="text-forest opacity-75">Payment</span>
+                <span className="text-muted-brown opacity-75">Payment</span>
               </div>
             </div>
           </div>
@@ -168,13 +168,13 @@ const Cart = () => {
               <div className="max-w-7xl mx-auto">
                 {displayCartItems.length === 0 ? (
                   <div className="text-center py-32 bg-white rounded-lg shadow-sm max-w-lg mx-auto">
-                    <div className="bg-sage/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-8">
-                      <ShoppingBag className="h-12 w-12 text-warm-taupe" />
+                    <div className="bg-primary/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-8">
+                      <ShoppingBag className="h-12 w-12 text-border" />
                     </div>
-                    <h2 className="text-2xl font-semibold text-deep-forest mb-4">
+                    <h2 className="text-2xl font-semibold text-foreground mb-4">
                       Your cart is empty
                     </h2>
-                    <p className="text-forest mb-8">
+                    <p className="text-muted-brown mb-8">
                       Looks like you haven't added anything to your cart yet.
                     </p>
                     <Button
@@ -193,26 +193,26 @@ const Cart = () => {
                           <div className="p-4 border-b">
                             <div className="flex items-center gap-3">
                               <Tag className="w-5 h-5 text-primary" />
-                              <span className="font-semibold text-deep-forest">
+                              <span className="font-semibold text-foreground">
                                 Available Coupons ({availableCoupons.length})
                               </span>
                             </div>
-                            <p className="text-sm text-forest mt-1">
+                            <p className="text-sm text-muted-brown mt-1">
                               Select a coupon to apply to your order
                             </p>
                           </div>
                           <div className="p-4 space-y-4">
                             {orderQuote?.appliedCoupon && (
-                              <div className="bg-sage/10 border border-sage/20 rounded-lg p-3">
+                              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <Tag className="w-4 h-4 text-sage-20" />
+                                    <Tag className="w-4 h-4 text-primary-20" />
                                     <div>
-                                      <p className="text-sm font-medium text-sage">
+                                      <p className="text-sm font-medium text-primary">
                                         Coupon Applied:{" "}
                                         {orderQuote.appliedCoupon.code}
                                       </p>
-                                      <p className="text-sm text-forest">
+                                      <p className="text-sm text-muted-brown">
                                         {orderQuote.appliedCoupon.name} -{" "}
                                         {formatRupees(
                                           orderQuote.discounts.coupon
@@ -238,7 +238,7 @@ const Cart = () => {
                                 className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-background border rounded-full p-2 shadow-md hover:bg-muted transition-colors"
                                 style={{ marginLeft: "-8px" }}
                               >
-                                <ChevronLeft className="w-4 h-4 text-forest" />
+                                <ChevronLeft className="w-4 h-4 text-muted-brown" />
                               </button>
 
                               <button
@@ -246,7 +246,7 @@ const Cart = () => {
                                 className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-background border rounded-full p-2 shadow-md hover:bg-muted transition-colors"
                                 style={{ marginRight: "-8px" }}
                               >
-                                <ChevronRight className="w-4 h-4 text-forest" />
+                                <ChevronRight className="w-4 h-4 text-muted-brown" />
                               </button>
 
                               <div
@@ -273,16 +273,16 @@ const Cart = () => {
                                     >
                                       <div className="flex items-start justify-between mb-2">
                                         <div className="flex-1">
-                                          <h3 className="text-sm font-semibold text-deep-forest mb-1">
+                                          <h3 className="text-sm font-semibold text-foreground mb-1">
                                             {coupon.name}
                                           </h3>
                                           {coupon.description && (
-                                            <p className="text-xs text-forest mb-1">
+                                            <p className="text-xs text-muted-brown mb-1">
                                               {coupon.description}
                                             </p>
                                           )}
                                           <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-xs bg-sage/10 text-sage-10 px-2 py-1 rounded">
+                                            <span className="text-xs bg-primary/10 text-primary-10 px-2 py-1 rounded">
                                               {coupon.type === "percentage"
                                                 ? `${coupon.value}% OFF`
                                                 : `${formatRupees(
@@ -296,7 +296,7 @@ const Cart = () => {
                                               )}
                                             </span>
                                           </div>
-                                          <p className="text-xs text-forest">
+                                          <p className="text-xs text-muted-brown">
                                             Valid till{" "}
                                             {new Date(
                                               coupon.validTo
@@ -306,7 +306,7 @@ const Cart = () => {
                                         <div className="flex items-center gap-2 w-20 justify-end">
                                           {isApplied ? (
                                             <div className="flex items-center gap-2">
-                                              <span className="text-xs text-sage font-medium">
+                                              <span className="text-xs text-primary font-medium">
                                                 Applied
                                               </span>
                                             </div>
@@ -336,11 +336,11 @@ const Cart = () => {
                       <div className="bg-white rounded-lg border shadow-sm">
                         <div className="p-4 border-b">
                           <div className="flex items-center justify-between">
-                            <span className="font-semibold text-deep-forest flex items-center gap-2">
+                            <span className="font-semibold text-foreground flex items-center gap-2">
                               <ShoppingBag className="w-5 h-5" />
                               Cart details
                             </span>
-                            <div className="text-sm text-forest hidden lg:block">
+                            <div className="text-sm text-muted-brown hidden lg:block">
                               <span className="font-medium">Cart Summary:</span>
                               <span className="ml-2">
                                 Items - {totalUniqueItems}
@@ -354,8 +354,8 @@ const Cart = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="p-3 bg-sage/10 border-b lg:hidden">
-                          <div className="text-sm text-forest text-center">
+                        <div className="p-3 bg-primary/10 border-b lg:hidden">
+                          <div className="text-sm text-muted-brown text-center">
                             <span className="font-medium">Cart Summary:</span>
                             <span className="ml-2">
                                 Items - {totalUniqueItems}
@@ -398,7 +398,7 @@ const Cart = () => {
                                 />
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-start justify-between mb-1">
-                                    <h3 className="font-medium text-deep-forest text-sm line-clamp-2 flex-1">
+                                    <h3 className="font-medium text-foreground text-sm line-clamp-2 flex-1">
                                       {isAuthenticated
                                         ? item.productId?.name
                                         : item.name}
@@ -421,11 +421,11 @@ const Cart = () => {
                                     </Button>
                                   </div>
                                   {item.variant && (
-                                    <p className="text-xs text-forest mb-2">
+                                    <p className="text-xs text-muted-brown mb-2">
                                       {item.variant.volume}
                                     </p>
                                   )}
-                                  <p className="text-sm font-bold text-deep-forest mb-2">
+                                  <p className="text-sm font-bold text-foreground mb-2">
                                     {formatRupees(
                                       isAuthenticated
                                         ? item.variant?.price ||
@@ -469,7 +469,7 @@ const Cart = () => {
                                       </Button>
                                     </div>
                                     <div className="text-right">
-                                      <p className="font-bold text-deep-forest text-sm">
+                                      <p className="font-bold text-foreground text-sm">
                                         {formatRupees(
                                           (isAuthenticated
                                             ? item.variant?.price ||
@@ -490,7 +490,7 @@ const Cart = () => {
                     <div className="space-y-4 lg:space-y-6 lg:col-span-1 order-2 lg:order-2">
                       <div className="bg-white rounded-lg border shadow-sm">
                         <div className="p-4 border-b">
-                          <h3 className="text-lg font-semibold text-deep-forest flex items-center gap-2">
+                          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                             <Gift className="w-5 h-5 text-primary" />
                             Welcome Gift
                           </h3>

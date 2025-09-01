@@ -100,7 +100,7 @@ const Navigation = () => {
   return (
     <nav
       className={cn(
-        "sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-warm-taupe/50 transition-all duration-300 ease-in-out",
+        "sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-border/50 transition-all duration-300 ease-in-out",
         isVisible ? "translate-y-0 shadow-sm" : "-translate-y-full"
       )}
     >
@@ -109,7 +109,7 @@ const Navigation = () => {
           {/* Logo */}
           <Link
             to="/"
-            className="font-sans text-3xl font-bold text-deep-forest"
+            className="font-sans text-3xl font-bold text-foreground"
           >
             Roven
           </Link>
@@ -131,8 +131,8 @@ const Navigation = () => {
                     to={item.href}
                     className={({ isActive }) =>
                       cn(
-                        "font-medium text-forest transition-colors hover:text-sage relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-0.5 after:bg-sage after:transition-all after:duration-300",
-                        isActive ? "text-sage after:w-full" : ""
+                        "font-medium text-muted-brown transition-colors hover:text-primary relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all after:duration-300",
+                        isActive ? "text-primary after:w-full" : ""
                       )
                     }
                   >
@@ -143,7 +143,7 @@ const Navigation = () => {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="font-medium text-forest transition-colors hover:text-sage hover:bg-transparent flex items-center gap-1 p-0"
+                      className="font-medium text-muted-brown transition-colors hover:text-primary hover:bg-transparent flex items-center gap-1 p-0"
                       aria-label="Product categories"
                     >
                       Categories
@@ -152,13 +152,13 @@ const Navigation = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="start"
-                    className="w-48 bg-white border-warm-taupe shadow-lg rounded-lg mt-2"
+                    className="w-48 bg-white border-border shadow-lg rounded-lg mt-2"
                   >
                     {categories.map((category) => (
                       <DropdownMenuItem key={category._id} asChild>
                         <Link
                           to={`/category/${category.slug}`}
-                          className="cursor-pointer text-forest hover:bg-warm-cream"
+                          className="cursor-pointer text-muted-brown hover:bg-warm-cream"
                         >
                           {category.name}
                         </Link>
@@ -179,7 +179,7 @@ const Navigation = () => {
               onClick={openSearch}
               aria-label="Search"
             >
-              <Search className="h-5 w-5 text-forest" />
+              <Search className="h-5 w-5 text-muted-brown" />
             </Button>
 
             {isAuthenticated ? (
@@ -193,7 +193,7 @@ const Navigation = () => {
                   aria-label="Login"
                 >
                   <svg
-                    className="h-6 w-6 text-forest"
+                    className="h-6 w-6 text-muted-brown"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -216,7 +216,7 @@ const Navigation = () => {
                 className="rounded-full hover:bg-warm-cream relative"
                 aria-label="Wishlist"
               >
-                <Heart className="h-5 w-5 text-forest" />
+                <Heart className="h-5 w-5 text-muted-brown" />
               </Button>
             </Link>
 
@@ -227,9 +227,9 @@ const Navigation = () => {
                 className="rounded-full hover:bg-warm-cream relative"
                 aria-label="Cart"
               >
-                <ShoppingBag className="h-5 w-5 text-forest" />
+                <ShoppingBag className="h-5 w-5 text-muted-brown" />
                 {(isAuthenticated ? cartCount : guestCartCount) > 0 && (
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-sage ring-2 ring-white" />
+                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-primary ring-2 ring-white" />
                 )}
               </Button>
             </Link>
@@ -240,9 +240,9 @@ const Navigation = () => {
               aria-label="Toggle menu"
             >
               {isMenuOpen ? (
-                <X className="h-6 w-6 text-forest" />
+                <X className="h-6 w-6 text-muted-brown" />
               ) : (
-                <Menu className="h-6 w-6 text-forest" />
+                <Menu className="h-6 w-6 text-muted-brown" />
               )}
             </button>
           </div>
@@ -252,7 +252,7 @@ const Navigation = () => {
       {/* Mobile Menu Panel */}
       <div
         className={cn(
-          "md:hidden absolute inset-x-0 top-full bg-white border-t border-warm-taupe/50 transition-all duration-300 ease-in-out z-40 shadow-lg",
+          "md:hidden absolute inset-x-0 top-full bg-white border-t border-border/50 transition-all duration-300 ease-in-out z-40 shadow-lg",
           isMenuOpen
             ? "visible opacity-100 transform translate-y-0"
             : "invisible opacity-0 transform -translate-y-4"
@@ -264,7 +264,7 @@ const Navigation = () => {
             <Link
               key={item.href}
               to={item.href}
-              className="block px-4 py-3 rounded-lg text-base font-medium text-forest hover:bg-warm-cream transition-colors duration-200 active:bg-sage/20"
+              className="block px-4 py-3 rounded-lg text-base font-medium text-muted-brown hover:bg-warm-cream transition-colors duration-200 active:bg-primary/20"
               onClick={() => setIsMenuOpen(false)}
             >
               {item.name}
@@ -272,8 +272,8 @@ const Navigation = () => {
           ))}
 
           {/* Categories Section */}
-          <div className="border-t border-warm-taupe/50 pt-4 mt-4">
-            <h3 className="px-4 text-xs font-semibold text-warm-taupe uppercase tracking-wider mb-3">
+          <div className="border-t border-border/50 pt-4 mt-4">
+            <h3 className="px-4 text-xs font-semibold text-border uppercase tracking-wider mb-3">
               Categories
             </h3>
             <div className="space-y-1">
@@ -281,7 +281,7 @@ const Navigation = () => {
                 <Link
                   key={category._id}
                   to={`/category/${category.slug}`}
-                  className="block px-4 py-3 rounded-lg text-base font-medium text-forest hover:bg-warm-cream transition-colors duration-200 active:bg-sage/20"
+                  className="block px-4 py-3 rounded-lg text-base font-medium text-muted-brown hover:bg-warm-cream transition-colors duration-200 active:bg-primary/20"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {category.name}
@@ -291,8 +291,8 @@ const Navigation = () => {
           </div>
 
           {/* Mobile Menu Footer */}
-          <div className="border-t border-warm-taupe/50 pt-4 mt-4 px-4">
-            <div className="text-xs text-warm-taupe text-center">
+          <div className="border-t border-border/50 pt-4 mt-4 px-4">
+            <div className="text-xs text-border text-center">
               <p>Roven Global Beauty</p>
               <p className="mt-1">Premium Beauty Products</p>
             </div>

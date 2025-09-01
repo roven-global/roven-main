@@ -206,7 +206,7 @@ const ProductCard = ({
   const discount = calculateDiscount();
 
   return (
-    <Card className="group relative w-full h-full flex flex-col bg-white border border-warm-taupe/20 hover:border-sage/30 rounded-xl shadow-sm hover:shadow-elegant transition-all duration-300 overflow-hidden touch-manipulation">
+    <Card className="group relative w-full h-full flex flex-col bg-white border border-border/20 hover:border-primary/30 rounded-xl shadow-sm hover:shadow-elegant transition-all duration-300 overflow-hidden touch-manipulation">
       <Link to={`/product/${slug}`} className="flex flex-col h-full">
         {/* Large Product Image */}
         <div className="relative overflow-hidden bg-warm-cream">
@@ -230,7 +230,7 @@ const ProductCard = ({
           {/* NEW Badge - Top Left (if no discount) */}
           {isNew && !discount && (
             <div className="absolute top-3 left-3">
-              <Badge className="bg-sage text-white text-xs px-2 py-1 rounded-full font-semibold shadow-sm border-0">
+              <Badge className="bg-primary text-white text-xs px-2 py-1 rounded-full font-semibold shadow-sm border-0">
                 <Sparkles className="w-3 h-3 mr-1" />
                 NEW
               </Badge>
@@ -248,7 +248,7 @@ const ProductCard = ({
             <Heart
               className={cn(
                 "h-4 w-4 transition-all duration-300",
-                isLiked ? "fill-sage text-sage-dark" : "text-deep-forest"
+                isLiked ? "fill-primary text-primary-dark" : "text-foreground"
               )}
             />
           </Button>
@@ -258,13 +258,13 @@ const ProductCard = ({
         <CardContent className="p-4 flex flex-col flex-grow bg-white">
           {/* Category */}
           <div className="mb-2">
-            <span className="text-xs font-medium text-forest uppercase tracking-wide">
+            <span className="text-xs font-medium text-muted-brown uppercase tracking-wide">
               {category}
             </span>
           </div>
 
           {/* Product Title */}
-          <h3 className="font-sans font-bold text-lg text-deep-forest mb-2 line-clamp-2 leading-tight flex-grow">
+          <h3 className="font-sans font-bold text-lg text-foreground mb-2 line-clamp-2 leading-tight flex-grow">
             {name}
           </h3>
 
@@ -276,18 +276,18 @@ const ProductCard = ({
                   key={i}
                   className={`w-3 h-3 ${
                     i < Math.floor(rating)
-                      ? "fill-gold-accent text-gold-accent"
-                      : "text-warm-taupe/50"
+                      ? "fill-accent text-accent"
+                      : "text-border/50"
                   }`}
                 />
               ))}
-              <span className="text-xs font-medium text-forest ml-1">
+              <span className="text-xs font-medium text-muted-brown ml-1">
                 {rating.toFixed(1)}
               </span>
-              <span className="text-xs text-forest">({reviews})</span>
+              <span className="text-xs text-muted-brown">({reviews})</span>
             </div>
             {getDisplayVolume() && (
-              <span className="text-xs text-forest font-medium">
+              <span className="text-xs text-muted-brown font-medium">
                 {getDisplayVolume()}
               </span>
             )}
@@ -297,13 +297,13 @@ const ProductCard = ({
           <div className="mb-4">
             <div className="flex items-baseline gap-2">
               {variants && variants.length > 1 && (
-                <span className="text-xs text-forest font-medium">From</span>
+                <span className="text-xs text-muted-brown font-medium">From</span>
               )}
-              <span className="font-sans font-bold text-xl text-deep-forest">
+              <span className="font-sans font-bold text-xl text-foreground">
                 {formatRupees(getDisplayPrice())}
               </span>
               {getDisplayOriginalPrice() && (
-                <span className="text-sm text-warm-taupe line-through">
+                <span className="text-sm text-border line-through">
                   {formatRupees(getDisplayOriginalPrice())}
                 </span>
               )}
@@ -315,7 +315,7 @@ const ProductCard = ({
             <div className="mt-auto">
               <Button
                 variant="default"
-                className="w-full bg-forest hover:bg-deep-forest text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                className="w-full bg-muted-brown hover:bg-foreground text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                 onClick={handleAddToCart}
                 disabled={getTotalStock() === 0 || isAdded}
               >

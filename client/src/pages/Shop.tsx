@@ -387,12 +387,12 @@ const Shop = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <section className="relative bg-gradient-to-br from-sage/10 via-forest/10 to-deep-forest/10 py-20">
+      <section className="relative bg-gradient-to-br from-primary/10 via-muted-brown/10 to-foreground/10 py-20">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="font-sans text-5xl md:text-6xl font-bold text-deep-forest mb-6">
+          <h1 className="font-sans text-5xl md:text-6xl font-bold text-foreground mb-6">
             Shop Our Collection
           </h1>
-          <p className="text-xl text-forest leading-relaxed">
+          <p className="text-xl text-muted-brown leading-relaxed">
             Discover luxury beauty products crafted with the finest ingredients.
           </p>
         </div>
@@ -409,13 +409,13 @@ const Shop = () => {
             <main className="col-span-1 lg:col-span-3">
               <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
                 <div>
-                  <h2 className="text-3xl font-sans font-bold text-deep-forest">
+                  <h2 className="text-3xl font-sans font-bold text-foreground">
                     {activeCategory === "all"
                       ? "All Products"
                       : categories.find((c) => c._id === activeCategory)
                           ?.name || "Products"}
                   </h2>
-                  <p className="text-forest mt-1">
+                  <p className="text-muted-brown mt-1">
                     Showing {products.length} of {pagination.totalProducts}{" "}
                     products
                   </p>
@@ -427,7 +427,7 @@ const Shop = () => {
                     <SheetTrigger asChild>
                       <Button
                         variant="outline"
-                        className="w-full sm:w-auto border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage lg:hidden bg-white shadow-sm"
+                        className="w-full sm:w-auto border-border text-muted-brown hover:bg-primary/20 hover:text-primary lg:hidden bg-white shadow-sm"
                         size="lg"
                       >
                         <Filter className="mr-2 h-5 w-5" />
@@ -442,7 +442,7 @@ const Shop = () => {
                             activeCustomMin ||
                             activeCustomMax,
                         }).some(Boolean) && (
-                          <span className="ml-2 bg-sage text-white text-xs rounded-full px-2 py-1">
+                          <span className="ml-2 bg-primary text-white text-xs rounded-full px-2 py-1">
                             Active
                           </span>
                         )}
@@ -450,13 +450,13 @@ const Shop = () => {
                     </SheetTrigger>
                     <SheetContent
                       side="left"
-                      className="w-[320px] sm:w-[380px] bg-white border-warm-taupe overflow-y-auto"
+                      className="w-[320px] sm:w-[380px] bg-white border-border overflow-y-auto"
                     >
-                      <SheetHeader className="sticky top-0 bg-white z-10 pb-4 border-b border-warm-taupe/20">
-                        <SheetTitle className="text-deep-forest text-xl">
+                      <SheetHeader className="sticky top-0 bg-white z-10 pb-4 border-b border-border/20">
+                        <SheetTitle className="text-foreground text-xl">
                           Filter Products
                         </SheetTitle>
-                        <p className="text-sm text-forest">
+                        <p className="text-sm text-muted-brown">
                           Refine your search to find exactly what you need
                         </p>
                       </SheetHeader>
@@ -468,37 +468,37 @@ const Shop = () => {
 
                   {/* Sort Dropdown */}
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-full sm:w-[180px] border-warm-taupe text-forest bg-white shadow-sm">
+                    <SelectTrigger className="w-full sm:w-[180px] border-border text-muted-brown bg-white shadow-sm">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border-warm-taupe">
+                    <SelectContent className="bg-white border-border">
                       <SelectItem
                         value="featured-desc"
-                        className="text-forest hover:bg-sage/20"
+                        className="text-muted-brown hover:bg-primary/20"
                       >
                         Featured
                       </SelectItem>
                       <SelectItem
                         value="price-asc"
-                        className="text-forest hover:bg-sage/20"
+                        className="text-muted-brown hover:bg-primary/20"
                       >
                         Price: Low to High
                       </SelectItem>
                       <SelectItem
                         value="price-desc"
-                        className="text-forest hover:bg-sage/20"
+                        className="text-muted-brown hover:bg-primary/20"
                       >
                         Price: High to Low
                       </SelectItem>
                       <SelectItem
                         value="createdAt-desc"
-                        className="text-forest hover:bg-sage/20"
+                        className="text-muted-brown hover:bg-primary/20"
                       >
                         Newest
                       </SelectItem>
                       <SelectItem
                         value="rating-desc"
-                        className="text-forest hover:bg-sage/20"
+                        className="text-muted-brown hover:bg-primary/20"
                       >
                         Rating
                       </SelectItem>
@@ -511,17 +511,17 @@ const Shop = () => {
                 <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <div key={i} className="space-y-2">
-                      <Skeleton className="h-64 w-full bg-warm-taupe/20" />
-                      <Skeleton className="h-4 w-2/3 bg-warm-taupe/20" />
-                      <Skeleton className="h-4 w-1/2 bg-warm-taupe/20" />
+                      <Skeleton className="h-64 w-full bg-border/20" />
+                      <Skeleton className="h-4 w-2/3 bg-border/20" />
+                      <Skeleton className="h-4 w-1/2 bg-border/20" />
                     </div>
                   ))}
                 </div>
               ) : error ? (
                 <div className="text-center text-red-500 py-10">{error}</div>
               ) : products.length === 0 ? (
-                <div className="text-center text-forest py-20 rounded-lg bg-gradient-to-br from-sage/10 via-white to-sage/10 border border-warm-taupe">
-                  <h3 className="text-2xl font-semibold mb-2 text-deep-forest">
+                <div className="text-center text-muted-brown py-20 rounded-lg bg-gradient-to-br from-primary/10 via-white to-primary/10 border border-border">
+                  <h3 className="text-2xl font-semibold mb-2 text-foreground">
                     No Products Found
                   </h3>
                   <p>
@@ -570,7 +570,7 @@ const Shop = () => {
                     size="lg"
                     onClick={handleLoadMore}
                     disabled={loadingMore}
-                    className="border-warm-taupe text-forest hover:bg-sage/20 hover:text-sage"
+                    className="border-border text-muted-brown hover:bg-primary/20 hover:text-primary"
                   >
                     {loadingMore ? (
                       <>

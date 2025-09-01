@@ -22,91 +22,54 @@ export default {
 				'sans': ['Inter', 'sans-serif'],
 			},
 			colors: {
-				border: 'hsl(var(--border))',
-				input: 'hsl(var(--input))',
-				ring: 'hsl(var(--ring))',
-				background: 'hsl(var(--background))',
-				foreground: 'hsl(var(--foreground))',
+				border: "#a17a79",
+				input: "#fce5e2",
+				ring: "#329962",
+				background: "#fce5e2",
+				foreground: "#00422b",
 				primary: {
-					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))',
-					glow: 'hsl(var(--primary-glow))'
+					DEFAULT: "#329962",
+					foreground: "#fce5e2",
 				},
 				secondary: {
-					DEFAULT: 'hsl(var(--secondary))',
-					foreground: 'hsl(var(--secondary-foreground))'
+					DEFAULT: "#fe6e35",
+					foreground: "#00422b",
 				},
 				destructive: {
-					DEFAULT: 'hsl(var(--destructive))',
-					foreground: 'hsl(var(--destructive-foreground))'
+					DEFAULT: "#cd1d00",
+					foreground: "#fce5e2",
 				},
 				muted: {
-					DEFAULT: 'hsl(var(--muted))',
-					foreground: 'hsl(var(--muted-foreground))'
+					DEFAULT: "#93d6b0",
+					foreground: "#6d3727",
 				},
 				accent: {
-					DEFAULT: 'hsl(var(--accent))',
-					foreground: 'hsl(var(--accent-foreground))'
+					DEFAULT: "#fcbd77",
+					foreground: "#00422b",
 				},
 				popover: {
-					DEFAULT: 'hsl(var(--popover))',
-					foreground: 'hsl(var(--popover-foreground))'
+					DEFAULT: "#fce5e2",
+					foreground: "#00422b",
 				},
 				card: {
-					DEFAULT: 'hsl(var(--card))',
-					foreground: 'hsl(var(--card-foreground))'
+					DEFAULT: "#fce5e2",
+					foreground: "#00422b",
 				},
 				sidebar: {
-					DEFAULT: 'hsl(var(--sidebar-background))',
-					foreground: 'hsl(var(--sidebar-foreground))',
-					primary: 'hsl(var(--sidebar-primary))',
-					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-					accent: 'hsl(var(--sidebar-accent))',
-					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))'
+					DEFAULT: "#fce5e2",
+					foreground: "#00422b",
+					primary: "#329962",
+					"primary-foreground": "#fce5e2",
+					accent: "#fcbd77",
+					"accent-foreground": "#00422b",
+					border: "#a17a79",
+					ring: "#329962",
 				},
-				// Botanical Color Palette
-				sage: {
-					DEFAULT: '#8B9D94',
-					light: '#A3B1A8',
-					dark: '#6B7A72'
-				},
-				forest: {
-					DEFAULT: '#5C6B62',
-					light: '#7A8A80',
-					dark: '#4A5750'
-				},
-				'deep-forest': {
-					DEFAULT: '#2C3E37',
-					light: '#3D4F48',
-					dark: '#1B2D26'
-				},
-				'warm-cream': {
-					DEFAULT: '#F5F1EB',
-					light: '#FAF8F5',
-					dark: '#E8E0D6'
-				},
-				'soft-beige': {
-					DEFAULT: '#E8E0D6',
-					light: '#F0E9E0',
-					dark: '#D4C8BC'
-				},
-				'warm-taupe': {
-					DEFAULT: '#C8B5A0',
-					light: '#D4C3B0',
-					dark: '#B8A590'
-				},
-				'gold-accent': {
-					DEFAULT: '#D4B896',
-					light: '#E0C8A8',
-					dark: '#C8A884'
-				},
-				'soft-bronze': {
-					DEFAULT: '#A68B5B',
-					light: '#B89A6F',
-					dark: '#947A4F'
-				}
+				dark: "#00422b",
+				"muted-brown": "#6d3727",
+				"soft-green": "#93d6b0",
+				"muted-pink-brown": "#a17a79",
+				"alert-error": "#cd1d00",
 			},
 			backgroundImage: {
 				'gradient-primary': 'var(--gradient-primary)',
