@@ -1026,6 +1026,7 @@ const UploadProduct = () => {
                       placeholder="1,499.00"
                       className="pl-7"
                       required
+                        disabled={useVariants}
                     />
                   </div>
                 </div>
@@ -1050,6 +1051,7 @@ const UploadProduct = () => {
                       }
                       placeholder="1,999.00"
                       className="pl-7"
+                        disabled={useVariants}
                     />
                   </div>
                 </div>

@@ -535,10 +535,19 @@ const updateProduct = asyncHandler(async (req, res) => {
   if (brand) updateFields.brand = sanitizeString(brand);
   if (isActive !== undefined) updateFields.isActive = isActive === "true";
   if (isFeatured !== undefined) updateFields.isFeatured = isFeatured === "true";
-  if (howToUse !== undefined)
-    updateFields.howToUse = Array.isArray(howToUse)
-      ? sanitizeArray(howToUse)
-      : howToUse;
+  if (howToUse !== undefined) {
+    let parsedHowToUse = [];
+    if (typeof howToUse === "string") {
+      try {
+        parsedHowToUse = JSON.parse(howToUse);
+      } catch {
+        parsedHowToUse = howToUse.split(",").map(sanitizeString);
+      }
+    } else if (Array.isArray(howToUse)) {
+      parsedHowToUse = sanitizeArray(howToUse);
+    }
+    updateFields.howToUse = parsedHowToUse;
+  }
 
   if (category && category !== String(product.category)) {
     const categoryExists = await CategoryModel.findById(category);
