@@ -90,7 +90,7 @@ const Payment = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50">
+            <div className="min-h-screen bg-background">
                 <Navigation />
                 <div className="flex items-center justify-center py-48">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -103,10 +103,10 @@ const Payment = () => {
     if (!order) {
         // This case is mostly handled by the useEffect redirect, but it's a good fallback.
         return (
-            <div className="min-h-screen bg-gray-50">
+            <div className="min-h-screen bg-background">
                 <Navigation />
                 <div className="flex items-center justify-center py-48">
-                    <p className="text-red-500">Could not load order details.</p>
+                    <p className="text-destructive">Could not load order details.</p>
                 </div>
                 <Footer />
             </div>
@@ -114,7 +114,7 @@ const Payment = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-background">
             <Navigation />
 
             {/* Header Navigation */}
@@ -122,10 +122,10 @@ const Payment = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-center h-16">
                         <div className="flex items-center space-x-8">
-                            <Link to="/cart" className="text-sm text-gray-500 hover:text-primary">
+                            <Link to="/cart" className="text-sm text-muted-foreground hover:text-primary">
                                 Cart
                             </Link>
-                            <Link to="/checkout" className="text-sm text-gray-500 hover:text-primary">
+                            <Link to="/checkout" className="text-sm text-muted-foreground hover:text-primary">
                                 Address
                             </Link>
                             <span className="text-sm font-medium text-primary border-b-2 border-primary pb-1">
@@ -143,7 +143,7 @@ const Payment = () => {
                             <ArrowLeft className="h-5 w-5" />
                         </Link>
                     </Button>
-                    <h1 className="text-3xl font-bold text-gray-800 font-sans">Payment</h1>
+                    <h1 className="text-3xl font-bold text-foreground font-sans">Payment</h1>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -152,12 +152,12 @@ const Payment = () => {
                         {/* Payment Methods */}
                         <Card className="border-0 shadow-lg">
                             <CardHeader className="bg-gradient-to-r from-orange-50 to-pink-50 border-b">
-                                <CardTitle className="text-lg font-semibold text-gray-800">Payment Method</CardTitle>
+                                <CardTitle className="text-lg font-semibold text-foreground">Payment Method</CardTitle>
                             </CardHeader>
                             <CardContent className="p-6">
                                 <div className="space-y-4">
                                     {/* Credit/Debit Card */}
-                                    <div className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 transition-colors">
+                                    <div className="border border-border rounded-lg p-4 hover:border-primary transition-colors">
                                         <div className="flex items-center gap-3 mb-4">
                                             <input
                                                 type="radio"
@@ -166,58 +166,58 @@ const Payment = () => {
                                                 value="card"
                                                 checked={paymentMethod === 'card'}
                                                 onChange={(e) => setPaymentMethod(e.target.value)}
-                                                className="text-orange-500 focus:ring-orange-500"
+                                                className="text-primary focus:ring-primary"
                                             />
-                                            <CreditCard className="h-5 w-5 text-gray-600" />
-                                            <Label htmlFor="card" className="font-medium text-gray-800">Credit/Debit Card</Label>
+                                            <CreditCard className="h-5 w-5 text-muted-foreground" />
+                                            <Label htmlFor="card" className="font-medium text-foreground">Credit/Debit Card</Label>
                                         </div>
 
                                         {paymentMethod === 'card' && (
                                             <form onSubmit={handlePayment} className="space-y-4">
                                                 <div>
-                                                    <Label htmlFor="cardNumber" className="text-sm font-medium text-gray-700">Card Number</Label>
+                                                    <Label htmlFor="cardNumber" className="text-sm font-medium text-muted-foreground">Card Number</Label>
                                                     <Input
                                                         id="cardNumber"
                                                         placeholder="1234 5678 9012 3456"
                                                         value={cardData.cardNumber}
                                                         onChange={handleCardInputChange}
-                                                        className="border-gray-300 focus:border-orange-500"
+                                                        className="border-border focus:border-primary"
                                                         required
                                                     />
                                                 </div>
 
                                                 <div>
-                                                    <Label htmlFor="cardHolder" className="text-sm font-medium text-gray-700">Card Holder Name</Label>
+                                                    <Label htmlFor="cardHolder" className="text-sm font-medium text-muted-foreground">Card Holder Name</Label>
                                                     <Input
                                                         id="cardHolder"
                                                         placeholder="John Doe"
                                                         value={cardData.cardHolder}
                                                         onChange={handleCardInputChange}
-                                                        className="border-gray-300 focus:border-orange-500"
+                                                        className="border-border focus:border-primary"
                                                         required
                                                     />
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
-                                                        <Label htmlFor="expiry" className="text-sm font-medium text-gray-700">Expiry Date</Label>
+                                                        <Label htmlFor="expiry" className="text-sm font-medium text-muted-foreground">Expiry Date</Label>
                                                         <Input
                                                             id="expiry"
                                                             placeholder="MM/YY"
                                                             value={cardData.expiry}
                                                             onChange={handleCardInputChange}
-                                                            className="border-gray-300 focus:border-orange-500"
+                                                            className="border-border focus:border-primary"
                                                             required
                                                         />
                                                     </div>
                                                     <div>
-                                                        <Label htmlFor="cvv" className="text-sm font-medium text-gray-700">CVV</Label>
+                                                        <Label htmlFor="cvv" className="text-sm font-medium text-muted-foreground">CVV</Label>
                                                         <Input
                                                             id="cvv"
                                                             placeholder="123"
                                                             value={cardData.cvv}
                                                             onChange={handleCardInputChange}
-                                                            className="border-gray-300 focus:border-orange-500"
+                                                            className="border-border focus:border-primary"
                                                             required
                                                         />
                                                     </div>
@@ -227,7 +227,7 @@ const Payment = () => {
                                     </div>
 
                                     {/* UPI */}
-                                    <div className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 transition-colors">
+                                    <div className="border border-border rounded-lg p-4 hover:border-primary transition-colors">
                                         <div className="flex items-center gap-3">
                                             <input
                                                 type="radio"
@@ -236,17 +236,17 @@ const Payment = () => {
                                                 value="upi"
                                                 checked={paymentMethod === 'upi'}
                                                 onChange={(e) => setPaymentMethod(e.target.value)}
-                                                className="text-orange-500 focus:ring-orange-500"
+                                                className="text-primary focus:ring-primary"
                                             />
-                                            <div className="w-5 h-5 bg-purple-600 rounded flex items-center justify-center">
-                                                <span className="text-white text-xs font-bold">UPI</span>
+                                            <div className="w-5 h-5 bg-primary rounded flex items-center justify-center">
+                                                <span className="text-primary-foreground text-xs font-bold">UPI</span>
                                             </div>
-                                            <Label htmlFor="upi" className="font-medium text-gray-800">UPI</Label>
+                                            <Label htmlFor="upi" className="font-medium text-foreground">UPI</Label>
                                         </div>
                                     </div>
 
                                     {/* Net Banking */}
-                                    <div className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 transition-colors">
+                                    <div className="border border-border rounded-lg p-4 hover:border-primary transition-colors">
                                         <div className="flex items-center gap-3">
                                             <input
                                                 type="radio"
@@ -255,12 +255,12 @@ const Payment = () => {
                                                 value="netbanking"
                                                 checked={paymentMethod === 'netbanking'}
                                                 onChange={(e) => setPaymentMethod(e.target.value)}
-                                                className="text-orange-500 focus:ring-orange-500"
+                                                className="text-primary focus:ring-primary"
                                             />
-                                            <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center">
-                                                <span className="text-white text-xs font-bold">NB</span>
+                                            <div className="w-5 h-5 bg-primary rounded flex items-center justify-center">
+                                                <span className="text-primary-foreground text-xs font-bold">NB</span>
                                             </div>
-                                            <Label htmlFor="netbanking" className="font-medium text-gray-800">Net Banking</Label>
+                                            <Label htmlFor="netbanking" className="font-medium text-foreground">Net Banking</Label>
                                         </div>
                                     </div>
                                 </div>
@@ -269,35 +269,35 @@ const Payment = () => {
 
                         {/* Security Info */}
                         <Card className="border-0 shadow-lg">
-                            <CardHeader className="bg-gradient-to-r from-orange-50 to-pink-50 border-b">
-                                <CardTitle className="text-lg font-semibold text-gray-800">Security & Privacy</CardTitle>
+                            <CardHeader className="bg-gradient-subtle border-b">
+                                <CardTitle className="text-lg font-semibold text-foreground">Security & Privacy</CardTitle>
                             </CardHeader>
                             <CardContent className="p-6 space-y-4">
                                 <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mt-0.5">
-                                        <Lock className="h-4 w-4 text-white" />
+                                    <div className="w-6 h-6 bg-accent rounded-full flex items-center justify-center mt-0.5">
+                                        <Lock className="h-4 w-4 text-accent-foreground" />
                                     </div>
                                     <div>
-                                        <p className="font-medium text-gray-800">256-bit SSL Encryption</p>
-                                        <p className="text-sm text-gray-600">Your payment information is encrypted and secure</p>
+                                        <p className="font-medium text-foreground">256-bit SSL Encryption</p>
+                                        <p className="text-sm text-muted-foreground">Your payment information is encrypted and secure</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mt-0.5">
-                                        <Shield className="h-4 w-4 text-white" />
+                                    <div className="w-6 h-6 bg-accent rounded-full flex items-center justify-center mt-0.5">
+                                        <Shield className="h-4 w-4 text-accent-foreground" />
                                     </div>
                                     <div>
-                                        <p className="font-medium text-gray-800">PCI DSS Compliant</p>
-                                        <p className="text-sm text-gray-600">We follow industry security standards</p>
+                                        <p className="font-medium text-foreground">PCI DSS Compliant</p>
+                                        <p className="text-sm text-muted-foreground">We follow industry security standards</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mt-0.5">
-                                        <Check className="h-4 w-4 text-white" />
+                                    <div className="w-6 h-6 bg-accent rounded-full flex items-center justify-center mt-0.5">
+                                        <Check className="h-4 w-4 text-accent-foreground" />
                                     </div>
                                     <div>
-                                        <p className="font-medium text-gray-800">No Card Data Storage</p>
-                                        <p className="text-sm text-gray-600">We don't store your card details on our servers</p>
+                                        <p className="font-medium text-foreground">No Card Data Storage</p>
+                                        <p className="text-sm text-muted-foreground">We don't store your card details on our servers</p>
                                     </div>
                                 </div>
                             </CardContent>
@@ -307,27 +307,27 @@ const Payment = () => {
                     {/* Right Column - Order Summary */}
                     <div className="lg:col-span-1">
                         <Card className="sticky top-8 border-0 shadow-xl">
-                            <CardHeader className="bg-gradient-to-r from-orange-50 to-pink-50 border-b">
-                                <CardTitle className="text-lg font-semibold text-gray-800">Order Summary</CardTitle>
+                            <CardHeader className="bg-gradient-subtle border-b">
+                                <CardTitle className="text-lg font-semibold text-foreground">Order Summary</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4 p-6">
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-gray-700">Order Total</span>
-                                        <span className="font-semibold text-gray-800">{formatRupees(orderTotal)}</span>
+                                        <span className="text-muted-foreground">Order Total</span>
+                                        <span className="font-semibold text-foreground">{formatRupees(orderTotal)}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-gray-700">Shipping</span>
-                                        <span className="font-semibold text-gray-800">{shippingCost > 0 ? formatRupees(shippingCost) : 'Free'}</span>
+                                        <span className="text-muted-foreground">Shipping</span>
+                                        <span className="font-semibold text-foreground">{shippingCost > 0 ? formatRupees(shippingCost) : 'Free'}</span>
                                     </div>
                                     {totalDiscount > 0 && (
-                                        <div className="flex justify-between items-center text-green-600">
+                                        <div className="flex justify-between items-center text-accent">
                                             <span>Total Discount</span>
                                             <span>-{formatRupees(totalDiscount)}</span>
                                         </div>
                                     )}
                                     <div className="border-t border-gray-200 pt-3">
-                                        <div className="flex justify-between items-center text-lg font-bold text-gray-800">
+                                        <div className="flex justify-between items-center text-lg font-bold text-foreground">
                                             <span>To Pay</span>
                                             <span>{formatRupees(finalTotal)}</span>
                                         </div>
@@ -337,12 +337,12 @@ const Payment = () => {
                                 <Button
                                     onClick={handlePayment}
                                     size="lg"
-                                    className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                                    className="w-full bg-gradient-primary hover:brightness-110 text-primary-foreground font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                                 >
                                     Pay {formatRupees(finalTotal)}
                                 </Button>
 
-                                <p className="text-xs text-gray-500 text-center">
+                                <p className="text-xs text-muted-foreground text-center">
                                     By clicking "Pay", you agree to our Terms of Service and Privacy Policy
                                 </p>
                             </CardContent>

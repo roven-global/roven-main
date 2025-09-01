@@ -72,12 +72,12 @@ interface PaginationInfo {
 
 const getStatusColor = (status: Order['orderStatus'] | undefined) => {
   switch (status) {
-    case 'pending': return 'bg-yellow-500';
-    case 'processing': return 'bg-blue-500';
-    case 'shipped': return 'bg-indigo-500';
-    case 'delivered': return 'bg-green-500';
-    case 'cancelled': return 'bg-red-500';
-    default: return 'bg-gray-500';
+    case 'pending': return 'bg-accent/50 text-accent-foreground';
+    case 'processing': return 'bg-primary/50 text-primary-foreground';
+    case 'shipped': return 'bg-primary/60 text-primary-foreground';
+    case 'delivered': return 'bg-accent';
+    case 'cancelled': return 'bg-destructive';
+    default: return 'bg-muted';
   }
 };
 
@@ -105,7 +105,7 @@ const CustomerRow = ({ customer }: { customer: Customer }) => {
               : 'N/A'}
           </TableCell>
           <TableCell>
-            <Badge className={cn("text-white", getStatusColor(customer.lastOrderStatus))}>
+            <Badge className={cn(getStatusColor(customer.lastOrderStatus))}>
               {customer.lastOrderStatus || 'N/A'}
             </Badge>
           </TableCell>
@@ -113,7 +113,7 @@ const CustomerRow = ({ customer }: { customer: Customer }) => {
         <CollapsibleContent asChild>
           <TableRow>
             <TableCell colSpan={6} className="p-0">
-              <div className="p-4 bg-gray-50 dark:bg-gray-800/50">
+              <div className="p-4 bg-muted/20">
                 <h4 className="font-bold mb-2">Order History</h4>
                 {customer.orders.length > 0 ? (
                   <Table>
@@ -136,7 +136,7 @@ const CustomerRow = ({ customer }: { customer: Customer }) => {
                           </TableCell>
                           <TableCell>₹{order.total.toLocaleString()}</TableCell>
                           <TableCell>
-                            <Badge className={cn("text-white", getStatusColor(order.orderStatus))}>
+                            <Badge className={cn(getStatusColor(order.orderStatus))}>
                               {order.orderStatus}
                             </Badge>
                           </TableCell>
@@ -281,7 +281,7 @@ const AdminCustomers = () => {
         </div>
       </div>
 
-      {error && <p className="text-red-500">{error}</p>}
+      {error && <p className="text-destructive">{error}</p>}
 
       <div className="rounded-lg border">
         <Table>

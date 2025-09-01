@@ -264,36 +264,36 @@ const CouponAdmin = () => {
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
                       <h4 className="text-2xl font-bold">{analytics.totalCoupons}</h4>
-                      <p className="text-sm text-gray-600">Total Coupons</p>
+                      <p className="text-sm text-muted-foreground">Total Coupons</p>
                     </div>
                     <div>
                       <h4 className="text-2xl font-bold">{analytics.activeCoupons}</h4>
-                      <p className="text-sm text-gray-600">Active Coupons</p>
+                      <p className="text-sm text-muted-foreground">Active Coupons</p>
                     </div>
                     <div>
                       <h4 className="text-2xl font-bold">{formatRupees(analytics.totalDiscountGiven)}</h4>
-                      <p className="text-sm text-gray-600">Total Discount Given</p>
+                      <p className="text-sm text-muted-foreground">Total Discount Given</p>
                     </div>
                   </div>
                   <div className="space-y-2 pt-4">
                     <h3 className="font-medium">Most Used Coupons</h3>
                     {analytics.mostUsedCoupons.map((coupon: any) => (
-                      <div key={coupon.couponId} className="flex justify-between items-center bg-gray-50 p-2 rounded">
+                      <div key={coupon.couponId} className="flex justify-between items-center bg-muted/10 p-2 rounded">
                         <span className="font-medium">{coupon.name} ({coupon.code})</span>
-                        <span className="text-sm text-gray-600">{coupon.totalUsage} uses</span>
+                        <span className="text-sm text-muted-foreground">{coupon.totalUsage} uses</span>
                       </div>
                     ))}
                   </div>
                 </div>
               ) : (
-                <p className="text-center text-gray-500 py-12">Could not load analytics data.</p>
+                <p className="text-center text-muted-foreground py-12">Could not load analytics data.</p>
               )}
             </DialogContent>
           </Dialog>
 
           <Button
             onClick={openCreateDialog}
-            className="bg-primary hover:bg-muted-brown text-white"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Coupon
@@ -306,7 +306,7 @@ const CouponAdmin = () => {
         <CardContent className="pt-6">
           <div className="flex gap-4 items-center">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground/80 w-4 h-4" />
               <Input
                 placeholder="Search coupons..."
                 value={searchTerm}
@@ -338,7 +338,7 @@ const CouponAdmin = () => {
           {coupons.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
-                <p className="text-gray-500">
+                <p className="text-muted-foreground">
                   No coupons found. Create your first coupon to get started.
                 </p>
               </CardContent>
@@ -361,7 +361,7 @@ const CouponAdmin = () => {
                     <TableRow key={coupon._id}>
                       <TableCell>
                         <div className="font-medium">{coupon.name}</div>
-                        <div className="text-sm text-gray-500 font-mono bg-gray-100 px-1 rounded w-min">
+                        <div className="text-sm text-muted-foreground font-mono bg-muted/20 px-1 rounded w-min">
                           {coupon.code}
                         </div>
                       </TableCell>
@@ -398,7 +398,7 @@ const CouponAdmin = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDeleteCoupon(coupon._id)}
-                            className="text-red-600 hover:text-red-700"
+                            className="text-destructive hover:text-destructive/90"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>

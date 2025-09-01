@@ -21,28 +21,24 @@ const About = () => {
       title: "Sustainability",
       description:
         "Committed to eco-friendly practices and sustainable sourcing of all ingredients.",
-      color: "from-green-500 to-emerald-500",
     },
     {
       icon: <Heart className="h-8 w-8" />,
       title: "Quality",
       description:
         "Premium formulations with clinically-proven ingredients for exceptional results.",
-      color: "from-red-500 to-pink-500",
     },
     {
       icon: <Users className="h-8 w-8" />,
       title: "Inclusivity",
       description:
         "Beauty products designed for all skin tones, types, and individual preferences.",
-      color: "from-purple-500 to-indigo-500",
     },
     {
       icon: <Globe className="h-8 w-8" />,
       title: "Innovation",
       description:
         "Cutting-edge research and technology to create breakthrough beauty solutions.",
-      color: "from-blue-500 to-cyan-500",
     },
   ];
 
@@ -135,14 +131,14 @@ const About = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 size="lg"
-                className="px-8 py-6 bg-primary text-white hover:bg-muted-brown"
+                className="px-8 py-6 bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 Shop Our Story
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="px-8 py-6 border-border text-muted-brown hover:bg-primary/20"
+                className="px-8 py-6 border-border text-foreground hover:bg-accent hover:text-accent-foreground"
               >
                 Meet Our Team
               </Button>
@@ -389,14 +385,14 @@ const About = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
-              className="px-8 py-6 bg-primary text-white hover:bg-muted-brown"
+              className="px-8 py-6 bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Start Shopping
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="px-8 py-6 border-border text-muted-brown hover:bg-primary/20"
+              className="px-8 py-6 border-border text-foreground hover:bg-accent hover:text-accent-foreground"
             >
               Join Our Newsletter
             </Button>

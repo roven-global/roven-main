@@ -21,14 +21,14 @@ const DeliveryAreasAdmin = () => {
   }, []);
 
   return (
-    <div className="container mx-auto p-6 bg-warm-cream min-h-screen">
+    <div className="container mx-auto p-6 bg-background min-h-screen">
       <h1 className="font-sans text-3xl font-bold mb-6 text-foreground">Delivery Areas</h1>
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-muted-brown text-lg font-medium">Loading...</div>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-elegant border border-border overflow-hidden">
+        <div className="bg-card rounded-lg shadow-elegant border border-border overflow-hidden">
           <table className="min-w-full">
             <thead className="bg-primary/10">
               <tr>
@@ -40,7 +40,7 @@ const DeliveryAreasAdmin = () => {
             </thead>
             <tbody className="divide-y divide-border/30">
               {areas.map((area, idx) => (
-                <tr key={idx} className="hover:bg-warm-cream/50 transition-colors duration-200">
+                <tr key={idx} className="hover:bg-muted/20 transition-colors duration-200">
                   <td className="py-4 px-6 text-sm text-muted-brown font-medium">{area.city}</td>
                   <td className="py-4 px-6 text-sm text-muted-brown">{area.state}</td>
                   <td className="py-4 px-6 text-sm text-muted-brown">{area.pincode}</td>

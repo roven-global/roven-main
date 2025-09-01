@@ -93,7 +93,7 @@ const CategoryProductsPage = () => {
             {loading ? (
               <Skeleton className="h-12 w-1/3" />
             ) : (
-              <h1 className="font-sans text-4xl md:text-5xl font-bold text-gray-900">
+              <h1 className="font-sans text-4xl md:text-5xl font-bold text-foreground">
                 {categoryName || "Category"}
               </h1>
             )}

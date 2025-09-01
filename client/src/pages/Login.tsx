@@ -250,8 +250,8 @@ const Login = () => {
                   LOGIN
                 </h2>
                 {loginError && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-600 text-sm text-center">
+                  <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <p className="text-destructive text-sm text-center">
                       {loginError}
                     </p>
                   </div>
@@ -270,7 +270,7 @@ const Login = () => {
                           <FormItem>
                             <FormLabel className="text-sm font-semibold text-foreground">
                               Email or mobile number{" "}
-                              <span className="text-red-500">*</span>
+                              <span className="text-destructive">*</span>
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -290,7 +290,7 @@ const Login = () => {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-sm font-semibold text-foreground">
-                              Password <span className="text-red-500">*</span>
+                              Password <span className="text-destructive">*</span>
                             </FormLabel>
                             <FormControl>
                               <div className="relative">
@@ -347,12 +347,12 @@ const Login = () => {
                     </div>
                     <Button
                       type="submit"
-                      className="w-full h-11 bg-primary hover:bg-muted-brown text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 mt-auto"
+                      className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 mt-auto"
                       disabled={loginLoading}
                     >
                       {loginLoading ? (
                         <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground mr-2"></div>
                           LOG IN
                         </div>
                       ) : (
@@ -371,8 +371,8 @@ const Login = () => {
                   REGISTER
                 </h2>
                 {registerError && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-600 text-sm text-center">
+                  <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <p className="text-destructive text-sm text-center">
                       {registerError}
                     </p>
                   </div>
@@ -393,7 +393,7 @@ const Login = () => {
                               <FormItem>
                                 <FormLabel className="text-sm font-semibold text-foreground">
                                   Full Name{" "}
-                                  <span className="text-red-500">*</span>
+                                  <span className="text-destructive">*</span>
                                 </FormLabel>
                                 <FormControl>
                                   <Input
@@ -414,7 +414,7 @@ const Login = () => {
                               <FormItem>
                                 <FormLabel className="text-sm font-semibold text-foreground">
                                   Email or mobile number{" "}
-                                  <span className="text-red-500">*</span>
+                                  <span className="text-destructive">*</span>
                                 </FormLabel>
                                 <FormControl>
                                   <Input
@@ -439,7 +439,7 @@ const Login = () => {
                               <FormItem>
                                 <FormLabel className="text-sm font-semibold text-foreground">
                                   Password{" "}
-                                  <span className="text-red-500">*</span>
+                                  <span className="text-destructive">*</span>
                                 </FormLabel>
                                 <FormControl>
                                   <div className="relative">
@@ -477,7 +477,7 @@ const Login = () => {
                               <FormItem>
                                 <FormLabel className="text-sm font-semibold text-foreground">
                                   Confirm Password{" "}
-                                  <span className="text-red-500">*</span>
+                                  <span className="text-destructive">*</span>
                                 </FormLabel>
                                 <FormControl>
                                   <div className="relative">
@@ -533,7 +533,7 @@ const Login = () => {
                         <Button
                           type="button"
                           onClick={handleNextStep}
-                          className="w-full h-11 bg-primary hover:bg-muted-brown text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                          className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
                         >
                           Next
                         </Button>
@@ -541,12 +541,12 @@ const Login = () => {
                       {registerStep === 2 && (
                         <Button
                           type="submit"
-                          className="w-full h-11 bg-primary hover:bg-muted-brown text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                          className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
                           disabled={registerLoading}
                         >
                           {registerLoading ? (
                             <div className="flex items-center justify-center">
-                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground mr-2"></div>
                               Creating account...
                             </div>
                           ) : (
@@ -578,8 +578,8 @@ const Login = () => {
                 }
                 className={`w-full h-11 font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ${
                   activeTab === "login"
-                    ? "bg-primary hover:bg-muted-brown text-white"
-                    : "bg-muted-brown hover:bg-foreground text-white"
+                    ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                    : "bg-secondary hover:bg-secondary/90 text-secondary-foreground"
                 }`}
               >
                 {activeTab === "login" ? "REGISTER" : "LOGIN"}

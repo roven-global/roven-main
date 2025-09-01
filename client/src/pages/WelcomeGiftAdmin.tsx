@@ -284,7 +284,7 @@ const WelcomeGiftAdmin = () => {
           <h1 className="font-sans text-2xl font-bold text-foreground">
             Welcome Gift Management
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Manage welcome gift options for first-time visitors.
           </p>
         </div>
@@ -308,19 +308,19 @@ const WelcomeGiftAdmin = () => {
                       <div className="text-2xl font-bold">
                         {analytics.totalGifts}
                       </div>
-                      <div className="text-sm text-gray-600">Total Gifts</div>
+                      <div className="text-sm text-muted-foreground">Total Gifts</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold">
                         {analytics.activeGifts}
                       </div>
-                      <div className="text-sm text-gray-600">Active Gifts</div>
+                      <div className="text-sm text-muted-foreground">Active Gifts</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold">
                         {analytics.totalUsage}
                       </div>
-                      <div className="text-sm text-gray-600">Total Claims</div>
+                      <div className="text-sm text-muted-foreground">Total Claims</div>
                     </div>
                   </div>
                   <div className="space-y-2 pt-4">
@@ -328,11 +328,11 @@ const WelcomeGiftAdmin = () => {
                     {analytics.gifts.map((gift) => (
                       <div
                         key={gift.id}
-                        className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                        className="flex items-center justify-between p-2 bg-muted/10 rounded"
                       >
                         <span className="font-medium">{gift.title}</span>
                         <div className="flex items-center gap-4">
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm text-muted-foreground">
                             {gift.usageCount} claims
                           </span>
                           <Badge
@@ -402,7 +402,7 @@ const WelcomeGiftAdmin = () => {
             Save Limit
           </Button>
           {analytics && (
-            <div className="ml-auto text-sm text-gray-600">
+            <div className="ml-auto text-sm text-muted-foreground">
               <span className="font-bold">{analytics.activeGifts}</span> /{" "}
               {activeGiftLimit} active gifts
             </div>
@@ -438,11 +438,11 @@ const WelcomeGiftAdmin = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-gray-600">{gift.description}</p>
-              <div className="p-2 bg-gray-50 rounded text-sm font-mono">
+              <p className="text-sm text-muted-foreground">{gift.description}</p>
+              <div className="p-2 bg-white rounded text-sm font-mono">
                 {gift.reward}
               </div>
-              <div className="flex items-center justify-between text-sm text-gray-500">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>{gift.usageCount} claims</span>
                 {gift.lastUsed && (
                   <span>

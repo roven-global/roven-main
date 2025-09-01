@@ -256,7 +256,7 @@ export const CouponForm: React.FC<CouponFormProps> = ({ onSubmit, onCancel, edit
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" className="bg-primary hover:bg-muted-brown">
+        <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">
           {editingCoupon ? "Update Coupon" : "Create Coupon"}
         </Button>
       </div>

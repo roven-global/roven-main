@@ -10,7 +10,6 @@ import { Separator } from "@/components/ui/separator";
 import { User, Camera, Edit, Save, X, LogOut, Loader2 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import ClaimedRewardDisplay from "@/components/ClaimedRewardDisplay";
 import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
 import { toast } from "@/hooks/use-toast";
@@ -275,9 +274,6 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
-
-          {/* Claimed Reward Display */}
-          <ClaimedRewardDisplay />
 
           {/* Test Component - Remove in production */}
 

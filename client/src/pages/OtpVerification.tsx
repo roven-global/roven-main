@@ -158,7 +158,7 @@ const OtpVerification = () => {
   };
 
   return (
-    <div className="min-h-screen bg-warm-cream">
+    <div className="min-h-screen bg-background">
       <Navigation />
       <div className="container mx-auto flex items-center justify-center py-24">
         <div className="bg-white rounded-2xl shadow-lg border border-border p-8 w-full max-w-md">
@@ -184,7 +184,7 @@ const OtpVerification = () => {
                   onChange={(e) => handleChange(e, idx)}
                   onKeyDown={(e) => handleKeyDown(e, idx)}
                   onPaste={handlePaste}
-                  className="w-12 h-12 text-2xl text-center rounded-lg border-2 border-border bg-white text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
+                  className="w-12 h-12 text-2xl text-center rounded-lg border-2 border-border bg-input text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
                   disabled={loading}
                   autoFocus={idx === 0}
                 />
@@ -193,7 +193,7 @@ const OtpVerification = () => {
             <Button
               type="submit"
               size="lg"
-              className="w-full bg-primary text-white hover:bg-muted-brown rounded-full"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
               disabled={loading}
             >
               {loading ? "Verifying..." : "Verify Code"}

@@ -155,52 +155,52 @@ const iconOptions = [
 
 const colorOptions = [
   {
-    value: "text-green-600",
-    bgColor: "bg-green-50 hover:bg-green-100",
+    value: "text-accent",
+    bgColor: "bg-accent/10 hover:bg-accent/20",
     label: "Green",
-    swatch: "bg-green-500",
+    swatch: "bg-accent",
   },
   {
-    value: "text-blue-600",
-    bgColor: "bg-blue-50 hover:bg-blue-100",
+    value: "text-primary",
+    bgColor: "bg-primary/10 hover:bg-primary/20",
     label: "Blue",
-    swatch: "bg-blue-500",
+    swatch: "bg-primary",
   },
   {
-    value: "text-purple-600",
-    bgColor: "bg-purple-50 hover:bg-purple-100",
+    value: "text-primary",
+    bgColor: "bg-primary/10 hover:bg-primary/20",
     label: "Purple",
-    swatch: "bg-purple-500",
+    swatch: "bg-primary",
   },
   {
-    value: "text-yellow-600",
-    bgColor: "bg-yellow-50 hover:bg-yellow-100",
+    value: "text-accent",
+    bgColor: "bg-accent/10 hover:bg-accent/20",
     label: "Yellow",
-    swatch: "bg-yellow-500",
+    swatch: "bg-accent",
   },
   {
-    value: "text-red-600",
-    bgColor: "bg-red-50 hover:bg-red-100",
+    value: "text-destructive",
+    bgColor: "bg-destructive/10 hover:bg-destructive/20",
     label: "Red",
-    swatch: "bg-red-500",
+    swatch: "bg-destructive",
   },
   {
-    value: "text-indigo-600",
-    bgColor: "bg-indigo-50 hover:bg-indigo-100",
+    value: "text-primary",
+    bgColor: "bg-primary/10 hover:bg-primary/20",
     label: "Indigo",
-    swatch: "bg-indigo-500",
+    swatch: "bg-primary",
   },
   {
-    value: "text-pink-600",
-    bgColor: "bg-pink-50 hover:bg-pink-100",
+    value: "text-destructive",
+    bgColor: "bg-destructive/10 hover:bg-destructive/20",
     label: "Pink",
-    swatch: "bg-pink-500",
+    swatch: "bg-destructive",
   },
   {
-    value: "text-orange-600",
-    bgColor: "bg-orange-50 hover:bg-orange-100",
+    value: "text-destructive",
+    bgColor: "bg-destructive/10 hover:bg-destructive/20",
     label: "Orange",
-    swatch: "bg-orange-500",
+    swatch: "bg-destructive",
   },
 ];
 
@@ -299,7 +299,7 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
             <Label htmlFor="title">Title</Label>
             <Input id="title" {...register("title")} />
             {errors.title && (
-              <p className="text-red-500 text-xs mt-1">
+              <p className="text-destructive text-xs mt-1">
                 {errors.title.message}
               </p>
             )}
@@ -309,7 +309,7 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
             <Label htmlFor="description">Description</Label>
             <Textarea id="description" {...register("description")} />
             {errors.description && (
-              <p className="text-red-500 text-xs mt-1">
+              <p className="text-destructive text-xs mt-1">
                 {errors.description.message}
               </p>
             )}
@@ -397,7 +397,7 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
               placeholder="e.g., 'Get 10% OFF your first order!'"
             />
             {errors.reward && (
-              <p className="text-red-500 text-xs mt-1">
+              <p className="text-destructive text-xs mt-1">
                 {errors.reward.message}
               </p>
             )}
@@ -410,7 +410,7 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
               placeholder="e.g., WELCOME10"
             />
             {errors.couponCode && (
-              <p className="text-red-500 text-xs mt-1">
+              <p className="text-destructive text-xs mt-1">
                 {errors.couponCode.message}
               </p>
             )}
@@ -460,7 +460,7 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
                 {...register("rewardValue", { valueAsNumber: true })}
               />
               {errors.rewardValue && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-destructive text-xs mt-1">
                   {errors.rewardValue.message}
                 </p>
               )}
@@ -474,7 +474,7 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
                   {...register("maxDiscount", { valueAsNumber: true })}
                 />
                 {errors.maxDiscount && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-destructive text-xs mt-1">
                     {errors.maxDiscount.message}
                   </p>
                 )}
@@ -488,7 +488,7 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
                 {...register("minOrderAmount", { valueAsNumber: true })}
               />
               {errors.minOrderAmount && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-destructive text-xs mt-1">
                   {errors.minOrderAmount.message}
                 </p>
               )}
@@ -515,7 +515,7 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
                   {...register("buyQuantity", { valueAsNumber: true })}
                 />
                 {errors.buyQuantity && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-destructive text-xs mt-1">
                     {errors.buyQuantity.message}
                   </p>
                 )}
@@ -528,7 +528,7 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
                   {...register("getQuantity", { valueAsNumber: true })}
                 />
                 {errors.getQuantity && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-destructive text-xs mt-1">
                     {errors.getQuantity.message}
                   </p>
                 )}

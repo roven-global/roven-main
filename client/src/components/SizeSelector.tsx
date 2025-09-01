@@ -48,7 +48,7 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
   return (
     <div className={cn("space-y-4", className)}>
       <div className="flex items-center justify-between">
-        <h4 className="text-lg font-semibold text-gray-900">Select Size</h4>
+        <h4 className="text-lg font-semibold text-foreground">Select Size</h4>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -68,9 +68,9 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
                 "hover:shadow-md hover:border-primary/50",
                 isSelected
                   ? "border-primary bg-primary/5 shadow-md"
-                  : "border-gray-200 bg-white hover:border-primary/30",
+                  : "border-border bg-card hover:border-primary/30",
                 isDisabled &&
-                  "opacity-50 cursor-not-allowed hover:shadow-none hover:border-gray-200"
+                  "opacity-50 cursor-not-allowed hover:shadow-none hover:border-border"
               )}
               data-size={variant.volume}
               data-price={variant.price}
@@ -86,7 +86,7 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
               {isSelected && (
                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
                   <svg
-                    className="w-4 h-4 text-white"
+                    className="w-4 h-4 text-primary-foreground"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -101,19 +101,19 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
 
               {/* Size Label */}
               <div className="text-center">
-                <div className="font-semibold text-gray-900 text-lg mb-1">
+                <div className="font-semibold text-foreground text-lg mb-1">
                   {variant.volume}
                 </div>
 
                 {/* Price */}
                 <div className="space-y-1">
-                  <div className="font-bold text-gray-900">
+                  <div className="font-bold text-foreground">
                     {formatRupees(variant.price)}
                   </div>
 
                   {/* Unit Price */}
                   {unitPrice > 0 && (
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground">
                       ({formatRupees(unitPrice)} / 100ml)
                     </div>
                   )}
@@ -121,7 +121,7 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
                   {/* Original Price */}
                   {variant.originalPrice &&
                     variant.originalPrice > variant.price && (
-                      <div className="text-xs text-gray-400 line-through">
+                      <div className="text-xs text-muted-foreground/80 line-through">
                         {formatRupees(variant.originalPrice)}
                       </div>
                     )}
@@ -129,12 +129,12 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
 
                 {/* Stock Status */}
                 {variant.stock === 0 && (
-                  <div className="text-xs text-red-500 font-medium mt-1">
+                  <div className="text-xs text-destructive font-medium mt-1">
                     Out of Stock
                   </div>
                 )}
                 {variant.stock > 0 && variant.stock <= 5 && (
-                  <div className="text-xs text-orange-500 font-medium mt-1">
+                  <div className="text-xs text-destructive font-medium mt-1">
                     Only {variant.stock} left
                   </div>
                 )}
@@ -149,13 +149,13 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
         <div className="mt-4">
           <label
             htmlFor="size-select"
-            className="block text-sm font-medium text-gray-700 mb-2"
+            className="block text-sm font-medium text-muted-foreground mb-2"
           >
             Select Size
           </label>
           <select
             id="size-select"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
             defaultValue={selectedVariant?.sku || ""}
             onChange={(e) => {
               const variant = variants.find((v) => v.sku === e.target.value);

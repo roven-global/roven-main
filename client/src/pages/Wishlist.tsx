@@ -93,10 +93,10 @@ const Wishlist = () => {
   const displayError = isAuthenticated ? error : null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-">
       <Navigation />
       <main className="flex-grow">
-        <section className="py-8 sm:py-12 bg-white border-b border-border/50">
+        <section className="py-8 sm:py-12 bg-background border-b border-border/50">
           <div className="container mx-auto px-4 text-center">
             <h1 className="font-sans text-3xl sm:text-4xl md:text-5xl font-bold text-foreground">
               My Wishlist
@@ -164,7 +164,7 @@ const Wishlist = () => {
                 ))}
               </div>
             ) : (
-              <Card className="text-center py-20 bg-white shadow-md border-border/50">
+              <Card className="text-center py-20 bg-card shadow-md border-border/50">
                 <Heart className="mx-auto h-16 w-16 text-primary/50 mb-4" />
                 <h3 className="text-2xl font-semibold mb-2 text-foreground font-sans">
                   Your Wishlist is Empty
@@ -175,7 +175,7 @@ const Wishlist = () => {
                 <Button
                   asChild
                   size="lg"
-                  className="bg-primary text-white hover:bg-muted-brown rounded-full"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
                 >
                   <Link to="/shop">Discover Products</Link>
                 </Button>

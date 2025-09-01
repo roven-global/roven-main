@@ -315,7 +315,7 @@ const ProductCard = ({
             <div className="mt-auto">
               <Button
                 variant="default"
-                className="w-full bg-muted-brown hover:bg-foreground text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                 onClick={handleAddToCart}
                 disabled={getTotalStock() === 0 || isAdded}
               >

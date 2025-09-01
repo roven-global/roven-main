@@ -97,7 +97,7 @@ const ResetPassword = () => {
               <span className="font-semibold text-foreground">{email}</span>
             </p>
             {error && (
-              <p className="text-red-600 text-center mb-4 text-sm">{error}</p>
+              <p className="text-destructive text-center mb-4 text-sm">{error}</p>
             )}
             {success && (
               <p className="text-primary text-center mb-4 text-sm">{success}</p>
@@ -160,12 +160,12 @@ const ResetPassword = () => {
             </div>
             <Button
               type="submit"
-              className="w-full h-11 bg-primary hover:bg-muted-brown text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+              className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
               disabled={loading}
             >
               {loading ? (
                 <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground mr-2"></div>
                   Resetting...
                 </div>
               ) : (

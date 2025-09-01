@@ -22,18 +22,18 @@ export const WelcomeGiftReward: React.FC = () => {
 
   if (isApplied) {
     return (
-      <Card className="border-2 border-green-200 bg-green-50">
+      <Card className="border-2 border-accent/30 bg-accent/10">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-100">
-                <Check className="w-4 h-4 text-green-600" />
+              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-accent/20">
+                <Check className="w-4 h-4 text-accent" />
               </div>
               <div>
-                <h4 className="font-semibold text-green-800">
+                <h4 className="font-semibold text-accent">
                   {userReward.title}
                 </h4>
-                <p className="text-sm font-medium text-green-800">
+                <p className="text-sm font-medium text-accent">
                   -{formatRupees(orderQuote.discounts.welcomeGift)}
                 </p>
               </div>
@@ -47,12 +47,12 @@ export const WelcomeGiftReward: React.FC = () => {
   if (userReward && !conditionsMet) {
     const remainingAmount = userReward.minOrderAmount - subtotal;
     return (
-      <Card className="border-2 border-yellow-200 bg-yellow-50">
+      <Card className="border-2 border-yellow-500/30 bg-yellow-500/10">
         <CardContent className="p-4 flex items-center gap-3">
           <Info className="w-5 h-5 text-yellow-600" />
           <div>
-            <h4 className="font-semibold text-yellow-800">{userReward.title} Available</h4>
-            <p className="text-sm text-yellow-700">
+            <h4 className="font-semibold text-yellow-700">{userReward.title} Available</h4>
+            <p className="text-sm text-yellow-600">
               Add {formatRupees(remainingAmount)} more to your cart to apply this gift.
             </p>
           </div>

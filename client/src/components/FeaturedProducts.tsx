@@ -114,7 +114,7 @@ const FeaturedProducts = () => {
 
         <div className="text-center">
           <Link to="/shop">
-            <Button size="lg" variant="outline" className="border-2 border-border text-muted-brown bg-transparent hover:bg-border/20 hover:border-border transition-all duration-300 rounded-full px-8 py-6 text-base font-semibold">
+            <Button size="lg" variant="outline" className="border-2 border-border text-muted-foreground bg-transparent hover:bg-accent hover:text-accent-foreground transition-all duration-300 rounded-full px-8 py-6 text-base font-semibold">
               View All Products
             </Button>
           </Link>

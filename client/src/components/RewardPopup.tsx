@@ -84,8 +84,8 @@ export const RewardPopup: React.FC<RewardPopupProps> = ({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
         <div className="bg-white rounded-2xl p-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading rewards...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading rewards...</p>
           </div>
         </div>
       </div>
@@ -104,12 +104,12 @@ export const RewardPopup: React.FC<RewardPopupProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-foreground">
               {isClaimed
                 ? "🎉 Congratulations!"
                 : "🎁 Choose Your Welcome Gift!"}
             </h2>
-            <p className="text-gray-600 mt-1">
+            <p className="text-muted-foreground mt-1">
               {isClaimed
                 ? "Your reward has been claimed and applied to your account."
                 : "Select a mystery gift to reveal and claim your prize!"}
@@ -119,7 +119,7 @@ export const RewardPopup: React.FC<RewardPopupProps> = ({
             variant="ghost"
             size="icon"
             onClick={handleClose}
-            className="hover:bg-gray-100"
+            className="hover:bg-muted/20"
           >
             <X className="w-5 h-5" />
           </Button>
@@ -133,23 +133,23 @@ export const RewardPopup: React.FC<RewardPopupProps> = ({
                 {gifts.map((gift) => (
                   <Card
                     key={gift._id}
-                    className="cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-lg border-2 hover:border-blue-300 bg-gray-100"
+                    className="cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-lg border-2 hover:border-primary/50 bg-muted/20"
                     onClick={() => handleRewardClick(gift)}
                   >
                     <CardContent className="p-6 text-center flex flex-col items-center justify-center">
-                      <div className="mx-auto mb-3 w-12 h-12 rounded-full flex items-center justify-center bg-blue-100 text-blue-600">
+                      <div className="mx-auto mb-3 w-12 h-12 rounded-full flex items-center justify-center bg-primary/20 text-primary">
                         <Gift className="w-6 h-6" />
                       </div>
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className="font-semibold text-foreground">
                         Mystery Gift
                       </h3>
-                      <p className="text-sm text-gray-600">Click to Claim</p>
+                      <p className="text-sm text-muted-foreground">Click to Claim</p>
                     </CardContent>
                   </Card>
                 ))}
               </div>
               <div className="text-center">
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-muted-foreground/80">
                   Press ESC or click outside to close
                 </p>
               </div>
@@ -157,20 +157,20 @@ export const RewardPopup: React.FC<RewardPopupProps> = ({
           ) : (
             <div className="text-center py-8">
               <div className="mb-6">
-                <div className="mx-auto mb-4 w-20 h-20 rounded-full flex items-center justify-center bg-green-100 text-green-600">
+                <div className="mx-auto mb-4 w-20 h-20 rounded-full flex items-center justify-center bg-accent/20 text-accent">
                   <Award className="w-10 h-10" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                <h3 className="text-xl font-bold text-foreground mb-2">
                   {selectedReward?.title}
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-muted-foreground mb-4">
                   This reward has been added to your account! It will be applied
                   automatically at checkout.
                 </p>
               </div>
               <Button
                 onClick={handleClose}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-accent hover:bg-accent/90 text-accent-foreground"
               >
                 Start Shopping
               </Button>

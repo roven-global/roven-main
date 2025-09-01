@@ -1094,7 +1094,7 @@ const UploadProduct = () => {
                   <div className="text-sm text-muted-foreground">
                     When variants are enabled, the base price and volume fields
                     above will be ignored.
-                    <strong className="text-red-600">
+                    <strong className="text-destructive">
                       {" "}
                       You must add at least one variant below.
                     </strong>
@@ -1931,7 +1931,7 @@ const UploadProduct = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="bg-primary hover:bg-muted-brown text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {loading ? (
                 "Saving..."

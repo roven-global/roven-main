@@ -442,7 +442,7 @@ const Shop = () => {
                             activeCustomMin ||
                             activeCustomMax,
                         }).some(Boolean) && (
-                          <span className="ml-2 bg-primary text-white text-xs rounded-full px-2 py-1">
+                          <span className="ml-2 bg-primary text-primary-foreground text-xs rounded-full px-2 py-1">
                             Active
                           </span>
                         )}
@@ -518,7 +518,7 @@ const Shop = () => {
                   ))}
                 </div>
               ) : error ? (
-                <div className="text-center text-red-500 py-10">{error}</div>
+                <div className="text-center text-destructive py-10">{error}</div>
               ) : products.length === 0 ? (
                 <div className="text-center text-muted-brown py-20 rounded-lg bg-gradient-to-br from-primary/10 via-white to-primary/10 border border-border">
                   <h3 className="text-2xl font-semibold mb-2 text-foreground">

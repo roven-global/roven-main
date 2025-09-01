@@ -102,7 +102,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({ open, onClose }) => {
   return (
     <div
       className={cn(
-        "fixed inset-x-0 top-20 bottom-0 bg-white z-[9999] transition-transform duration-500 ease-in-out",
+        "fixed inset-x-0 top-20 bottom-0 bg-background z-[9999] transition-transform duration-500 ease-in-out",
         {
           "translate-y-0": open,
           "translate-y-full": !open,
@@ -120,12 +120,12 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({ open, onClose }) => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={placeholderText}
-              className="w-full text-2xl font-bold bg-transparent border-none outline-none placeholder-gray-400"
+              className="w-full text-2xl font-bold bg-transparent border-none outline-none placeholder-muted-foreground"
             />
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-muted-foreground hover:text-foreground"
             aria-label="Close search"
           >
             <X className="h-8 w-8" />
@@ -135,7 +135,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({ open, onClose }) => {
         {/* Search Results Area */}
         <div className="flex-1 overflow-y-auto py-8 scrollbar-hide">
           {!query && !loading && (
-            <p className="text-center text-gray-500 text-lg">
+            <p className="text-center text-muted-foreground text-lg">
               Start typing to see products you are looking for.
             </p>
           )}
@@ -145,12 +145,12 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({ open, onClose }) => {
               <Loader2 className="animate-spin h-6 w-6 text-primary" />
             </div>
           ) : error ? (
-            <div className="text-red-500 text-center py-4">{error}</div>
+            <div className="text-destructive text-center py-4">{error}</div>
           ) : (
             <div>
               {results.categories.length > 0 && (
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-500 mb-4 text-center">
+                  <h3 className="text-lg font-semibold text-muted-foreground mb-4 text-center">
                     Categories
                   </h3>
                   <div className="flex flex-wrap justify-center gap-4">
@@ -158,7 +158,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({ open, onClose }) => {
                       <button
                         key={cat._id}
                         onClick={() => handleResultClick("category", cat.slug)}
-                        className="px-4 py-2 bg-gray-100 text-gray-800 rounded-full hover:bg-gray-200 transition"
+                        className="px-4 py-2 bg-muted/20 text-foreground rounded-full hover:bg-muted/30 transition"
                       >
                         {cat.name}
                       </button>
@@ -193,7 +193,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({ open, onClose }) => {
               {query &&
                 results.products.length === 0 &&
                 results.categories.length === 0 && (
-                  <div className="text-center text-gray-500 py-8">
+                  <div className="text-center text-muted-foreground py-8">
                     No results found for "{query}"
                   </div>
                 )}

@@ -90,8 +90,8 @@ const ForgotPassword = () => {
               </div>
 
               {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-600 text-sm text-center">{error}</p>
+                <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                  <p className="text-destructive text-sm text-center">{error}</p>
                 </div>
               )}
 
@@ -102,7 +102,7 @@ const ForgotPassword = () => {
                       className="block text-sm font-semibold text-foreground mb-2"
                       htmlFor="email"
                     >
-                      Email Address <span className="text-red-500">*</span>
+                      Email Address <span className="text-destructive">*</span>
                     </label>
                     <Input
                       id="email"
@@ -120,12 +120,12 @@ const ForgotPassword = () => {
 
                 <Button
                   type="submit"
-                  className="w-full h-11 bg-primary hover:bg-muted-brown text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 mt-auto"
+                  className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 mt-auto"
                   disabled={loading}
                 >
                   {loading ? (
                     <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground mr-2"></div>
                       Sending reset link...
                     </div>
                   ) : (
