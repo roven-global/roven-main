@@ -22,33 +22,29 @@ export default {
         sans: ["Inter", "sans-serif"],
       },
       colors: {
-        border: "#849289",
+        border: "#578466",
         input: "#E6EAE3",
         ring: "#578466",
         background: "#E5E9E2",
         foreground: "#1D352D",
+
         primary: {
-          DEFAULT: "#1D352D",
-          hover: "#26473E", // lighter green-black on hover
+          DEFAULT: "#1D352D", // Dark Green
+          hover: "#26473E",
           foreground: "#E6EAE3",
         },
         secondary: {
-          DEFAULT: "#686761",
-          hover: "#7A7972", // lighter grey on hover
+          DEFAULT: "#4f6e5d", // Dark Muted Green
+          hover: "#578466",
           foreground: "#E6EAE3",
         },
         destructive: {
           DEFAULT: "#cd1d00",
-          hover: "#e22b0f", // brighter red
-          foreground: "#E6EAE3",
-        },
-        muted: {
-          DEFAULT: "#6A7869",
-          hover: "#7E8D7D",
+          hover: "#e22b0f",
           foreground: "#E6EAE3",
         },
         accent: {
-          DEFAULT: "#578466",
+          DEFAULT: "#47b79e", // Vibrant Teal
           hover: "#699878",
           foreground: "#E6EAE3",
         },
@@ -67,13 +63,16 @@ export default {
           "primary-foreground": "#E6EAE3",
           accent: "#578466",
           "accent-foreground": "#E6EAE3",
-          border: "#849289",
-          ring: "#578466",
+          border: "#578466",
+          ring: "#47b79e",
         },
+
+        // Custom single colors
         dark: "#1D352D",
-        "muted-brown": "#686761",
-        "soft-green": "#6A7869",
-        "muted-pink-brown": "#849289",
+        "accent-green": "#578466",
+        "teal-vibrant": "#47b79e",
+        "dark-vibrant": "#14332C",
+        "light-vibrant": "#fcefeb",
         "alert-error": "#cd1d00",
       },
       backgroundImage: {
