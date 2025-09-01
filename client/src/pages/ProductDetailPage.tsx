@@ -717,23 +717,9 @@ const ProductDetailPage = () => {
 
             {/* Customer Reviews Section */}
             <div className="mt-12">
-              <div className="text-center">
-                <h2 className="font-sans text-xl font-bold text-foreground mb-2">
-                  — READ THE REVIEWS —
-                </h2>
-                <button
-                  onClick={() => {
-                    const reviewsSection =
-                      document.getElementById("customer-reviews");
-                    if (reviewsSection) {
-                      reviewsSection.scrollIntoView({ behavior: "smooth" });
-                    }
-                  }}
-                  className="text-muted-brown hover:text-primary text-sm cursor-pointer hover:underline transition-colors"
-                >
-                  See All
-                </button>
-              </div>
+              <h2 className="font-sans text-xl font-bold text-foreground mb-2 text-center">
+               — READ THE REVIEWS —
+              </h2>
               <div className="text-center mt-8 mb-8">
                 <Button
                   variant="outline"

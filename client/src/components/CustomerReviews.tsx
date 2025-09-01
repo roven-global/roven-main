@@ -287,7 +287,6 @@ const CustomerReviews = forwardRef<
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold text-foreground">Customer Reviews</h3>
         {totalReviews > 0 && (
           <span className="text-sm text-muted-brown">
             {totalReviews} review{totalReviews !== 1 ? "s" : ""}
