@@ -546,14 +546,14 @@ const updateProduct = asyncHandler(async (req, res) => {
       .json({ success: false, message: "Product not found." });
 
   let updateFields = {};
-  if (name) {
+  if (name !== undefined) {
     updateFields.name = sanitizeString(name);
     updateFields.slug = generateSlug(name);
   }
-  if (description) updateFields.description = sanitizeString(description);
+  if (description !== undefined) updateFields.description = sanitizeString(description);
   if (shortDescription !== undefined)
     updateFields.shortDescription = sanitizeString(shortDescription);
-  if (brand) updateFields.brand = sanitizeString(brand);
+  if (brand !== undefined) updateFields.brand = sanitizeString(brand);
   if (isActive !== undefined) updateFields.isActive = isActive === "true";
   if (isFeatured !== undefined) updateFields.isFeatured = isFeatured === "true";
   if (howToUse !== undefined) {
@@ -570,7 +570,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     updateFields.howToUse = parsedHowToUse;
   }
 
-  if (category && category !== String(product.category)) {
+  if (category !== undefined && category !== String(product.category)) {
     const categoryExists = await CategoryModel.findById(category);
     if (!categoryExists)
       return res
@@ -583,7 +583,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     updateFields.categorySlug = product.categorySlug;
   }
 
-  if (sku && sku !== product.sku) {
+  if (sku !== undefined && sku !== product.sku) {
     const existingProduct = await ProductModel.findOne({
       sku: sanitizeString(sku).toUpperCase(),
       _id: { $ne: id },
@@ -594,6 +594,19 @@ const updateProduct = asyncHandler(async (req, res) => {
         message: "Product with this SKU already exists.",
       });
     updateFields.sku = sanitizeString(sku).toUpperCase();
+  }
+
+  const useVariants = hasVariants === "true" || productType === "variant";
+
+  if (price !== undefined && !useVariants) {
+    const parsedPrice = parseFloat(price);
+    if (parsedPrice <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Price must be greater than 0 for single products.",
+      });
+    }
+    updateFields.price = parsedPrice;
   }
 
   const isVariantProduct =
@@ -860,7 +873,6 @@ const updateProduct = asyncHandler(async (req, res) => {
     data: updatedProduct,
   });
 });
-
 // ---- Delete Product ----
 const deleteProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
