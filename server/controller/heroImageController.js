@@ -19,7 +19,11 @@ const uploadHeroImage = asyncHandler(async (req, res) => {
     url: result.secure_url,
   });
 
-  res.status(201).json(newImage);
+  res.status(201).json({
+    success: true,
+    message: "Hero image uploaded successfully",
+    data: newImage
+  });
 });
 
 // @desc    Get all hero images
@@ -41,11 +45,17 @@ const deleteHeroImage = asyncHandler(async (req, res) => {
     throw new Error("Image not found.");
   }
 
-  // Delete image from Cloudinary
-  await cloudinary.uploader.destroy(image.public_id);
-
-  // Delete image from DB
+  // Delete from DB first to ensure it's removed from the site
   await image.deleteOne();
+
+  // Then, attempt to delete from Cloudinary
+  try {
+    await cloudinary.uploader.destroy(image.public_id);
+  } catch (error) {
+    // Log the error, but don't cause the request to fail,
+    // as the image is already removed from our database.
+    console.error(`Failed to delete image from Cloudinary (public_id: ${image.public_id}):`, error);
+  }
 
   res.status(200).json({ message: "Image deleted successfully." });
 });

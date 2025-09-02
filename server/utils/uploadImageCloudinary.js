@@ -24,9 +24,17 @@ const uploadImageCloudinary = asyncHandler(
 
     const buffer = image?.buffer || Buffer.from(await image.arrayBuffer());
 
+    const options = {
+      folder,
+      transformation: [
+        { width: 1200, crop: "limit" },
+        { quality: "auto", fetch_format: "auto" },
+      ],
+    };
+
     return new Promise((resolve, reject) => {
       cloudinary.uploader
-        .upload_stream({ folder }, (error, result) => {
+        .upload_stream(options, (error, result) => {
           if (error) return reject(error);
           resolve(result);
         })

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PageHeader from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ const AdminHeroImages: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchImages = async () => {
     setLoading(true);
@@ -59,8 +60,10 @@ const AdminHeroImages: React.FC = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       toast.success("Image uploaded successfully!");
-      setSelectedFile(null); // Reset file input
-      document.getElementById('image-upload-input')?.setAttribute('value', ''); // a bit hacky way to clear file input
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       fetchImages(); // Refresh the list
     } catch (error) {
       toast.error("Image upload failed.");
@@ -90,7 +93,7 @@ const AdminHeroImages: React.FC = () => {
       <Card className="mb-8">
         <CardContent className="pt-6">
           <div className="grid gap-4">
-            <Input id="image-upload-input" type="file" accept="image/*" onChange={handleFileChange} />
+            <Input ref={fileInputRef} id="image-upload-input" type="file" accept="image/*" onChange={handleFileChange} />
             <Button onClick={handleUpload} disabled={uploading || !selectedFile}>
               {uploading ? "Uploading..." : <><Upload className="mr-2 h-4 w-4" /> Upload Image</>}
             </Button>
