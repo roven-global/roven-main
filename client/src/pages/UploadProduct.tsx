@@ -126,9 +126,28 @@ const UploadProduct = () => {
   // New fields
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [suitableFor, setSuitableFor] = useState<string[]>([]);
-  const [newSuitableFor, setNewSuitableFor] = useState("");
   const [howToUse, setHowToUse] = useState<string[]>([]);
   const [newHowToUse, setNewHowToUse] = useState("");
+
+  const suitableForOptions = [
+    "Men",
+    "Women",
+    "Unisex",
+    "All",
+    "Dry",
+    "Wet",
+    "Sensitive",
+  ];
+
+  const handleSuitableForChange = (option: string, checked: boolean) => {
+    setSuitableFor((prev) => {
+      if (checked) {
+        return [...prev, option];
+      } else {
+        return prev.filter((item) => item !== option);
+      }
+    });
+  };
 
   // State for Related Products
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]); // Using any for simplicity here
@@ -685,9 +704,8 @@ const UploadProduct = () => {
 
       // Handle price, original price, and volume based on variant usage
       if (isUsingVariants) {
-        // When using variants, set base price to 0, but still send volume if needed
+        // When using variants, set base price to 0 and don't send top-level volume.
         formDataToSend.append("price", "0");
-        formDataToSend.append("volume", formData.volume || "");
         if (formData.originalPrice) formDataToSend.append("originalPrice", "0");
       } else {
         // When not using variants, ensure price is valid and send volume
@@ -989,83 +1007,86 @@ const UploadProduct = () => {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="volume">Volume</Label>
-                  <Input
-                    id="volume"
-                    value={formData.volume}
-                    onChange={(e) =>
-                      setFormData({ ...formData, volume: e.target.value })
-                    }
-                    placeholder="e.g., 100ml, 250ml, 1L"
-                  />
-                </div>
+                {!useVariants && (
+                  <div className="space-y-2">
+                    <Label htmlFor="volume">Volume</Label>
+                    <Input
+                      id="volume"
+                      value={formData.volume}
+                      onChange={(e) =>
+                        setFormData({ ...formData, volume: e.target.value })
+                      }
+                      placeholder="e.g., 100ml, 250ml, 1L"
+                    />
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Pricing Card - UPDATED */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="font-bold text-xl">₹</span>
-                Pricing (INR)
-              </CardTitle>
-              <CardDescription>
-                Set the pricing for your product in Indian Rupees (₹)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price (₹) *</Label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
-                      ₹
-                    </span>
-                    <Input
-                      id="price"
-                      type="number"
-                      step="0.01"
-                      value={formData.price}
-                      onChange={(e) =>
-                        setFormData({ ...formData, price: e.target.value })
-                      }
-                      placeholder="1,499.00"
-                      className="pl-7"
-                      required
-                      disabled={useVariants}
-                    />
+          {!useVariants && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="font-bold text-xl">₹</span>
+                  Pricing (INR)
+                </CardTitle>
+                <CardDescription>
+                  Set the pricing for your product in Indian Rupees (₹)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Price (₹) *</Label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+                        ₹
+                      </span>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        value={formData.price}
+                        onChange={(e) =>
+                          setFormData({ ...formData, price: e.target.value })
+                        }
+                        placeholder="1,499.00"
+                        className="pl-7"
+                        required
+                        disabled={useVariants}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="originalPrice">
+                      Original Price (₹) (Optional)
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+                        ₹
+                      </span>
+                      <Input
+                        id="originalPrice"
+                        type="number"
+                        step="0.01"
+                        value={formData.originalPrice}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            originalPrice: e.target.value,
+                          })
+                        }
+                        placeholder="1,999.00"
+                        className="pl-7"
+                        disabled={useVariants}
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="originalPrice">
-                    Original Price (₹) (Optional)
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
-                      ₹
-                    </span>
-                    <Input
-                      id="originalPrice"
-                      type="number"
-                      step="0.01"
-                      value={formData.originalPrice}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          originalPrice: e.target.value,
-                        })
-                      }
-                      placeholder="1,999.00"
-                      className="pl-7"
-                      disabled={useVariants}
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Variants Management */}
           <Card>
@@ -1645,53 +1666,28 @@ const UploadProduct = () => {
                 Suitable For
               </CardTitle>
               <CardDescription>
-                Add skin types, concerns, or demographics this product is
-                suitable for
+                Select the demographics this product is suitable for.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {suitableFor.map((item) => (
-                  <Badge
-                    key={item}
-                    variant="secondary"
-                    className="flex items-center gap-1"
-                  >
-                    {item}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-4 w-4 hover:bg-destructive hover:text-destructive-foreground"
-                      onClick={() => removeListItem(setSuitableFor, item)}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {suitableForOptions.map((option) => (
+                  <div key={option} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`suitable-for-${option}`}
+                      checked={suitableFor.includes(option)}
+                      onCheckedChange={(checked) =>
+                        handleSuitableForChange(option, checked as boolean)
+                      }
+                    />
+                    <Label
+                      htmlFor={`suitable-for-${option}`}
+                      className="text-sm font-normal"
                     >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </Badge>
+                      {option}
+                    </Label>
+                  </div>
                 ))}
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add suitable for"
-                  value={newSuitableFor}
-                  onChange={(e) => setNewSuitableFor(e.target.value)}
-                  onKeyPress={(e) =>
-                    e.key === "Enter" &&
-                    (e.preventDefault(),
-                    addListItem(setSuitableFor, newSuitableFor),
-                    setNewSuitableFor(""))
-                  }
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    addListItem(setSuitableFor, newSuitableFor);
-                    setNewSuitableFor("");
-                  }}
-                >
-                  Add
-                </Button>
               </div>
             </CardContent>
           </Card>

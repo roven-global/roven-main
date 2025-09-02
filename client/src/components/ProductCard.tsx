@@ -24,7 +24,9 @@ interface ProductCardProps {
   rating?: number;
   reviews?: number;
   category: string;
-  volume?: string;
+  specifications?: {
+    volume?: string;
+  };
   variants?: Array<{
     volume: string;
     price: number;
@@ -48,7 +50,7 @@ const ProductCard = ({
   rating = 0,
   reviews = 0,
   category,
-  volume,
+  specifications,
   variants,
   isNew,
   isSale,
@@ -106,8 +108,8 @@ const ProductCard = ({
     if (variants && variants.length === 1) {
       return variants[0].volume;
     }
-    if (volume) {
-      return volume;
+    if (specifications?.volume) {
+      return specifications.volume;
     }
     if (variants && variants.length > 1) {
       return `${variants.length} variants`;

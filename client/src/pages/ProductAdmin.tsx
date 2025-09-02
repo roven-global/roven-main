@@ -16,6 +16,11 @@ import SummaryApi from '@/common/summaryApi';
 import { formatRupees } from '@/lib/currency'; 
 import PageHeader from '@/components/ui/PageHeader';
 
+interface ProductVariant {
+  volume: string;
+  price: number;
+}
+
 interface Product {
   _id: string;
   name: string;
@@ -23,6 +28,7 @@ interface Product {
   shortDescription?: string;
   price: number;
   originalPrice?: number;
+  variants?: ProductVariant[];
   category: {
     _id: string;
     name: string;
@@ -397,7 +403,11 @@ const ProductAdmin = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">{formatRupees(product.price)}</span>
+                          <span className="font-medium">
+                            {(product.variants && product.variants.length > 0)
+                              ? `From ${formatRupees(product.price)}`
+                              : formatRupees(product.price)}
+                          </span>
                           {product.originalPrice && product.originalPrice > product.price && (
                             <span className="text-sm text-muted-foreground line-through">
                               {formatRupees(product.originalPrice)}
@@ -407,7 +417,9 @@ const ProductAdmin = () => {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {product.volume || 'Not specified'}
+                          {(product.variants && product.variants.length > 0)
+                            ? 'Multiple'
+                            : product.specifications?.volume || 'Not specified'}
                         </span>
                       </TableCell>
                       <TableCell className="font-mono text-sm">{product.sku}</TableCell>

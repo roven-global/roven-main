@@ -230,15 +230,28 @@ const createProduct = asyncHandler(async (req, res) => {
   let parsedSuitableFor = [];
   if (suitableFor) {
     try {
-      parsedSuitableFor =
-        typeof suitableFor === "string" ? JSON.parse(suitableFor) : suitableFor;
-      if (!Array.isArray(parsedSuitableFor)) parsedSuitableFor = [];
+      // Handle both string and array formats
+      if (typeof suitableFor === "string") {
+        parsedSuitableFor = JSON.parse(suitableFor);
+      } else if (Array.isArray(suitableFor)) {
+        parsedSuitableFor = suitableFor;
+      } else {
+        parsedSuitableFor = [];
+      }
+
+      // Ensure it's an array and filter out empty values
+      if (!Array.isArray(parsedSuitableFor)) {
+        parsedSuitableFor = [];
+      } else {
+        parsedSuitableFor = parsedSuitableFor.filter(
+          (item) => item && typeof item === "string" && item.trim().length > 0
+        );
+      }
     } catch (err) {
       logError("suitableFor-parse", err.message);
       parsedSuitableFor = [];
     }
   }
-
   // Tags, Benefits, HowToUse
   let parsedTags = tags;
   if (typeof tags === "string") {
@@ -305,6 +318,9 @@ const createProduct = asyncHandler(async (req, res) => {
 
   // Variants
   if (isVariantProduct) {
+    if (parsedSpecifications.volume) {
+      delete parsedSpecifications.volume;
+    }
     try {
       let parsedVariants =
         typeof variants === "string" ? JSON.parse(variants) : variants;
@@ -351,7 +367,12 @@ const createProduct = asyncHandler(async (req, res) => {
     productData.originalPrice = originalPrice
       ? parseFloat(originalPrice)
       : undefined;
-    productData.volume = volumeValue;
+    if (volumeValue) {
+      if (!productData.specifications) {
+        productData.specifications = {};
+      }
+      productData.specifications.volume = volumeValue;
+    }
   }
 
   const newProduct = new ProductModel(productData);
@@ -659,13 +680,6 @@ const updateProduct = asyncHandler(async (req, res) => {
       updateFields.originalPrice = originalPrice
         ? parseFloat(originalPrice)
         : undefined;
-    if (volume !== undefined) {
-      const volumeValue =
-        typeof volume === "string" && volume.trim() !== ""
-          ? volume.trim()
-          : undefined;
-      updateFields.volume = volumeValue;
-    } else if (product.volume) updateFields.volume = product.volume;
     updateFields.variants = [];
   }
 
@@ -692,6 +706,29 @@ const updateProduct = asyncHandler(async (req, res) => {
     updateFields.specifications = parsedSpecifications;
   } else {
     updateFields.specifications = product.specifications;
+  }
+
+  // Handle volume for non-variant products
+  if (!isVariantProduct && volume !== undefined) {
+    const volumeValue =
+      typeof volume === "string" && volume.trim() !== ""
+        ? volume.trim()
+        : undefined;
+
+    // Initialize specs if they don't exist
+    // This is safe now because the main spec block has run
+    if (!updateFields.specifications) {
+      updateFields.specifications = {};
+    }
+
+    if (volumeValue) {
+      updateFields.specifications.volume = volumeValue;
+    } else {
+      // If volume is sent as an empty string, remove it
+      if (updateFields.specifications) {
+        delete updateFields.specifications.volume;
+      }
+    }
   }
 
   // Handle ingredients separately for updates
@@ -790,6 +827,17 @@ const updateProduct = asyncHandler(async (req, res) => {
       });
     }
   } else updateFields.images = product.images;
+
+  // If the product is being updated to have variants, ensure specifications.volume is removed.
+  const finalVariants = updateFields.variants || product.variants;
+  if (finalVariants && finalVariants.length > 0) {
+    if (updateFields.specifications) {
+      delete updateFields.specifications.volume;
+    } else if (product.specifications && product.specifications.volume) {
+      updateFields.specifications = { ...product.specifications };
+      delete updateFields.specifications.volume;
+    }
+  }
 
   if (Object.keys(updateFields).length === 0)
     return res.status(400).json({

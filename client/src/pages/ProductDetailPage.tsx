@@ -591,6 +591,14 @@ const ProductDetailPage = () => {
                 </span>
               </div>
 
+              {/* Volume for single-variant products */}
+              {(!product.variants || product.variants.length === 0) && product.specifications?.volume && (
+                  <div className="text-sm">
+                      <span className="font-semibold text-foreground">Volume: </span>
+                      <span className="text-muted-brown">{product.specifications.volume}</span>
+                  </div>
+              )}
+
               {/* Price */}
               <div className="space-y-2">
                 <div className="flex items-center gap-3">

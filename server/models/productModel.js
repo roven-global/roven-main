@@ -156,6 +156,12 @@ const productSchema = new mongoose.Schema(
         type: String,
         enum: ["Men", "Women", "Unisex", "All", "Dry", "Wet", "Sensitive"],
         trim: true,
+        validate: {
+          validator: function (v) {
+            return v && v.trim().length > 0;
+          },
+          message: "Suitable for item cannot be empty",
+        },
       },
     ],
     benefits: [
