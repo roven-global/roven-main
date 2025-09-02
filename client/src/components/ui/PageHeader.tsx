@@ -4,9 +4,9 @@ import { Plus } from "lucide-react";
 
 interface PageHeaderProps {
   title: string;
-  description: string;
-  buttonText: string;
-  onButtonClick: () => void;
+  description?: string;
+  buttonText?: string;
+  onButtonClick?: () => void;
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({

@@ -40,6 +40,7 @@ const AdminSubscribers = lazy(() => import("./pages/AdminSubscribers"));
 const AdminReviews = lazy(() => import("./pages/AdminReviews"));
 const CouponAdmin = lazy(() => import("./pages/CouponAdmin"));
 const WelcomeGiftAdmin = lazy(() => import("./pages/WelcomeGiftAdmin"));
+const AdminHeroImages = lazy(() => import("./pages/AdminHeroImages"));
 const ContactUs = lazy(() => import("./pages/ContactUs"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const ShippingInfo = lazy(() => import("./pages/ShippingInfo"));
@@ -111,6 +112,7 @@ const AppContent = () => {
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="coupons" element={<CouponAdmin />} />
               <Route path="welcome-gifts" element={<WelcomeGiftAdmin />} />
+              <Route path="hero-images" element={<AdminHeroImages />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

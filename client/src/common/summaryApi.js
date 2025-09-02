@@ -281,6 +281,19 @@ const SummaryApi = {
     url: "/api/admin/overview",
     method: "get",
   },
+  // Hero Image endpoints
+  getHeroImages: {
+    url: "/api/hero-images",
+    method: "get",
+  },
+  uploadHeroImage: {
+    url: "/api/hero-images/upload",
+    method: "post",
+  },
+  deleteHeroImage: {
+    url: "/api/hero-images",
+    method: "delete",
+  },
   // Welcome Gift endpoints
   getAllWelcomeGifts: {
     url: "/api/welcome-gifts",

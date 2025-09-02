@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom"
-import { Home, BarChart, Boxes, PanelsTopLeft, Tag, Gift, Users, Mail, ExternalLink, MessageSquare } from "lucide-react"
+import { Home, BarChart, Boxes, PanelsTopLeft, Tag, Gift, Users, Mail, ExternalLink, MessageSquare, Image as ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface AdminSidebarProps extends React.HTMLAttributes<HTMLElement> {
@@ -56,6 +56,11 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
       title: "Welcome Gifts",
       href: "/admin/welcome-gifts",
       icon: <Gift size={20} />
+    },
+    {
+      title: "Hero Images",
+      href: "/admin/hero-images",
+      icon: <ImageIcon size={20} />
     }
   ]
   return (

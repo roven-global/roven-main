@@ -17,6 +17,7 @@ const couponRouter = require("./routes/couponRoute");
 const welcomeGiftRouter = require("./routes/welcomeGiftRoute");
 const reviewRouter = require("./routes/reviewRoute");
 const newsletterRouter = require("./routes/newsletterRoute");
+const heroImageRouter = require("./routes/heroImageRoute");
 const session = require("express-session");
 const passport = require("passport");
 require("./config/passport-setup");
@@ -194,6 +195,7 @@ app.use("/api/coupon", couponRouter);
 app.use("/api/welcome-gifts", welcomeGiftRouter);
 app.use("/api/reviews", reviewRouter);
 app.use("/api/newsletter", newsletterRouter);
+app.use("/api/hero-images", heroImageRouter);
 
 // --- SERVE FRONTEND ---
 app.use(
