@@ -5,7 +5,7 @@ import { MoveRight } from "lucide-react";
 
 const Hero = () => {
   return (
-    <section className="relative bg-gradient-to-br from-primary/10 via-muted-brown/5 to-primary/10 overflow-hidden">
+    <section className="relative bg-gradient-to-br from-primary/10 via-accent-green/5 to-primary/10 overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center justify-between min-h-[60vh] sm:min-h-[70vh] md:min-h-[80vh] py-12 sm:py-16 md:py-20">
           {/* Left Side: Text Content */}
@@ -13,16 +13,11 @@ const Hero = () => {
             <h1 className="font-sans text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold text-foreground mb-4 sm:mb-6 text-balance">
               Discover Your Natural Radiance
             </h1>
-            <p className="text-base sm:text-lg text-muted-brown mb-6 sm:mb-8 max-w-lg mx-auto md:mx-0 text-balance">
-              Experience the perfect blend of nature and luxury. Our products
-              are crafted with the finest botanical ingredients to enhance your
-              unique beauty.
-            </p>
             <div className="flex flex-col sm:flex-row justify-center md:justify-start gap-3 sm:gap-4">
               <Button
                 asChild
                 size="lg"
-                className="bg-primary text-foreground hover:bg-muted-brown hover:text-white transition-all duration-300 rounded-full px-6 sm:px-8 py-4 sm:py-6 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 w-full sm:w-auto"
+                className="bg-primary text-primary-foreground hover:bg-accent-green hover:text-white transition-all duration-300 rounded-full px-6 sm:px-8 py-4 sm:py-6 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 w-full sm:w-auto"
               >
                 <Link to="/shop">
                   Shop Collection
@@ -33,7 +28,7 @@ const Hero = () => {
                 asChild
                 size="lg"
                 variant="outline"
-                className="border-2 border-border text-muted-brown bg-transparent hover:bg-border/20 hover:border-border transition-all duration-300 rounded-full px-6 sm:px-8 py-4 sm:py-6 text-sm sm:text-base font-semibold w-full sm:w-auto"
+                className="border-2 border-accent-green text-accent-green bg-transparent hover:bg-accent-green/20 hover:border-accent-green transition-all duration-300 rounded-full px-6 sm:px-8 py-4 sm:py-6 text-sm sm:text-base font-semibold w-full sm:w-auto"
               >
                 <Link to="/about">Learn More</Link>
               </Button>
@@ -43,7 +38,7 @@ const Hero = () => {
           {/* Right Side: Image */}
           <div className="w-full md:w-1/2 mt-8 sm:mt-10 md:mt-0 flex justify-center items-center">
             <div className="relative w-[250px] h-[250px] sm:w-[300px] sm:h-[300px] md:w-[450px] md:h-[450px] lg:w-[500px] lg:h-[500px] animate-fade-in">
-              <div className="absolute inset-0 bg-gradient-to-br from-soft-beige to-warm-cream rounded-full transform-gpu"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-light-vibrant to-warm-cream rounded-full transform-gpu"></div>
               {/* <img
                 src={heroImage}
                 alt="Elegant beauty product display"
