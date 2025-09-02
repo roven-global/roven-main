@@ -78,7 +78,6 @@ interface Product {
   };
   brand: string;
   sku: string;
-  volume?: string;
   images: Array<{
     url: string;
     public_id: string;
@@ -206,7 +205,7 @@ const UploadProduct = () => {
           category: product.category._id,
           brand: product.brand,
           sku: product.sku,
-          volume: product.volume || "",
+          volume: product.specifications?.volume || "",
           isActive: product.isActive,
           isFeatured: product.isFeatured,
           specifications: {

@@ -596,38 +596,20 @@ const updateProduct = asyncHandler(async (req, res) => {
     updateFields.sku = sanitizeString(sku).toUpperCase();
   }
 
-  const useVariants = hasVariants === "true" || productType === "variant";
+  const isUpdatingVariants = hasVariants === "true";
 
-  if (price !== undefined && !useVariants) {
-    const parsedPrice = parseFloat(price);
-    if (parsedPrice <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Price must be greater than 0 for single products.",
-      });
-    }
-    updateFields.price = parsedPrice;
-  }
-
-  const isVariantProduct =
-    hasVariants === "true" ||
-    productType === "variant" ||
-    (variants && Array.isArray(variants) && variants.length > 0);
-
-  if (variants) {
+  if (isUpdatingVariants) {
     let parsedVariants = [];
     try {
       parsedVariants =
         typeof variants === "string" ? JSON.parse(variants) : variants;
-      if (
-        isVariantProduct &&
-        (!Array.isArray(parsedVariants) || parsedVariants.length === 0)
-      )
+      if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) {
         return res.status(400).json({
           success: false,
-          message:
-            "At least one product variant required for variant products.",
+          message: "At least one product variant is required.",
         });
+      }
+
       const variantSKUs = [];
       const mergedVariants = [...product.variants];
       for (let variant of parsedVariants) {
@@ -661,15 +643,18 @@ const updateProduct = asyncHandler(async (req, res) => {
           mergedVariants[existingVariantIndex] = variantData;
         else mergedVariants.push(variantData);
       }
+
       updateFields.variants = mergedVariants;
-      updateFields.price = Math.min(...mergedVariants.map((v) => v.price));
-      const variantsWithOriginalPrice = mergedVariants.filter(
-        (v) => v.originalPrice
-      );
-      updateFields.originalPrice =
-        variantsWithOriginalPrice.length > 0
-          ? Math.min(...variantsWithOriginalPrice.map((v) => v.originalPrice))
-          : undefined;
+      if (mergedVariants.length > 0) {
+        updateFields.price = Math.min(...mergedVariants.map((v) => v.price));
+        const variantsWithOriginalPrice = mergedVariants.filter(
+          (v) => v.originalPrice
+        );
+        updateFields.originalPrice =
+          variantsWithOriginalPrice.length > 0
+            ? Math.min(...variantsWithOriginalPrice.map((v) => v.originalPrice))
+            : undefined;
+      }
     } catch (err) {
       logError("variant-update-parse", err.message);
       return res.status(400).json({
@@ -677,22 +662,25 @@ const updateProduct = asyncHandler(async (req, res) => {
         message: "Invalid variants format in update payload.",
       });
     }
-  } else if (!isVariantProduct) {
+  } else {
+    // This is a single product update
     if (price !== undefined) {
       const parsedPrice = parseFloat(price);
-      if (parsedPrice <= 0)
+      if (parsedPrice <= 0) {
         return res.status(400).json({
           success: false,
-          message: "Price must be greater than 0 for single products.",
+          message: "Price must be greater than 0.",
         });
+      }
       updateFields.price = parsedPrice;
-    } else if (product.variants && product.variants.length > 0) {
-      updateFields.price = Math.min(...product.variants.map((v) => v.price));
     }
-    if (originalPrice !== undefined)
+
+    if (originalPrice !== undefined) {
       updateFields.originalPrice = originalPrice
         ? parseFloat(originalPrice)
         : undefined;
+    }
+
     updateFields.variants = [];
   }
 
@@ -717,31 +705,24 @@ const updateProduct = asyncHandler(async (req, res) => {
     parsedSpecifications = migrateSpecifications(parsedSpecifications);
 
     updateFields.specifications = parsedSpecifications;
-  } else {
-    updateFields.specifications = product.specifications;
   }
 
   // Handle volume for non-variant products
-  if (!isVariantProduct && volume !== undefined) {
+  if (!isUpdatingVariants && volume !== undefined) {
     const volumeValue =
       typeof volume === "string" && volume.trim() !== ""
         ? volume.trim()
         : undefined;
 
-    // Initialize specs if they don't exist
-    // This is safe now because the main spec block has run
-    if (!updateFields.specifications) {
-      updateFields.specifications = {};
-    }
+    // Initialize specs if they don't exist, preserving existing values
+    const currentSpecs = updateFields.specifications || product.specifications || {};
 
     if (volumeValue) {
-      updateFields.specifications.volume = volumeValue;
+      currentSpecs.volume = volumeValue;
     } else {
-      // If volume is sent as an empty string, remove it
-      if (updateFields.specifications) {
-        delete updateFields.specifications.volume;
-      }
+      delete currentSpecs.volume;
     }
+    updateFields.specifications = currentSpecs;
   }
 
   // Handle ingredients separately for updates
@@ -783,7 +764,7 @@ const updateProduct = asyncHandler(async (req, res) => {
       }
     }
     updateFields.tags = sanitizeArray(parsedTags);
-  } else updateFields.tags = product.tags;
+  }
   if (benefits !== undefined) {
     let parsedBenefits = benefits;
     if (typeof benefits === "string") {
@@ -794,7 +775,7 @@ const updateProduct = asyncHandler(async (req, res) => {
       }
     }
     updateFields.benefits = sanitizeArray(parsedBenefits);
-  } else updateFields.benefits = product.benefits;
+  }
 
   // Handle related products
   const { relatedProducts: relatedProductsBody } = req.body;
@@ -819,8 +800,6 @@ const updateProduct = asyncHandler(async (req, res) => {
       });
     }
     updateFields.relatedProducts = parsedRelatedProducts;
-  } else {
-    updateFields.relatedProducts = product.relatedProducts;
   }
 
   if (req.files && req.files.images && req.files.images.length > 0) {
@@ -839,7 +818,7 @@ const updateProduct = asyncHandler(async (req, res) => {
         error: err.message,
       });
     }
-  } else updateFields.images = product.images;
+  }
 
   // If the product is being updated to have variants, ensure specifications.volume is removed.
   const finalVariants = updateFields.variants || product.variants;
