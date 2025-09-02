@@ -93,7 +93,7 @@ const calculateLocalQuote = (
   availableCoupons: Coupon[],
   userReward: any | null
 ): OrderQuote | null => {
-    // ... (implementation is the same)
+  // ... (implementation is the same)
   if (cartItems.length === 0) {
     return null;
   }
@@ -155,12 +155,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orderQuote, setOrderQuote] = useState<OrderQuote | null>(null);
   const [isQuoteLoading, setIsQuoteLoading] = useState(false);
-  const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(null);
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(
+    null
+  );
   const { userReward } = useUserReward();
 
   // Fetch available coupons using React Query for caching
   const { data: availableCoupons = [] } = useQuery<Coupon[]>({
-    queryKey: ['active-coupons'],
+    queryKey: ["active-coupons"],
     queryFn: async () => {
       const response = await Axios.get(SummaryApi.getActiveCoupons.url);
       return response.data.data || [];
@@ -196,10 +198,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       setIsQuoteLoading(true);
       try {
         const subtotal = cartItems.reduce((acc, item) => {
-            const price = item.variant?.price || item.productId.price;
-            return acc + price * item.quantity;
+          const price = item.variant?.price || item.productId.price;
+          return acc + price * item.quantity;
         }, 0);
-        const shouldApplyWelcomeGift = userReward && subtotal >= userReward.minOrderAmount;
+        const shouldApplyWelcomeGift =
+          userReward && subtotal >= userReward.minOrderAmount;
 
         const response = await Axios.post(SummaryApi.getOrderQuote.url, {
           cartItems: cartItems,
@@ -209,7 +212,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
         if (response.data?.success) {
           setOrderQuote(response.data.data);
-          const serverCouponCode = response.data.data.appliedCoupon?.code || null;
+          const serverCouponCode =
+            response.data.data.appliedCoupon?.code || null;
           if (appliedCouponCode !== serverCouponCode) {
             setAppliedCouponCode(serverCouponCode);
           }
@@ -220,7 +224,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setIsQuoteLoading(false);
       }
     };
-    
+
     fetchAuthoritativeQuote();
   }, [cartItems, appliedCouponCode, availableCoupons, userReward]);
 
@@ -239,54 +243,67 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setAppliedCouponCode(null);
   }, []);
 
-  const addToCart = useCallback(async (item: any) => {
-    await Axios.post(SummaryApi.addToCart.url, { ...item });
-    await fetchUserCart();
-  }, [fetchUserCart]);
+  const addToCart = useCallback(
+    async (item: any) => {
+      await Axios.post(SummaryApi.addToCart.url, { ...item });
+      await fetchUserCart();
+    },
+    [fetchUserCart]
+  );
 
-  const removeFromCart = useCallback(async (cartItemId: string) => {
-    const originalCartItems = [...cartItems];
-    const updatedCartItems = cartItems.filter((item) => item._id !== cartItemId);
-    setCartItems(updatedCartItems);
-
-    try {
-      await Axios.delete(SummaryApi.deleteFromCart.url.replace(":cartItemId", cartItemId));
-    } catch (error) {
-      setCartItems(originalCartItems);
-      toast({
-        title: "Error removing item",
-        description: "Failed to remove item from cart. Please try again.",
-        variant: "destructive",
-      });
-    }
-  }, [cartItems]);
-
-  const updateQuantity = useCallback(async (cartItemId: string, quantity: number) => {
-    const originalCartItems = [...cartItems];
-    const itemIndex = cartItems.findIndex((item) => item._id === cartItemId);
-    if (itemIndex === -1) return;
-
-    const updatedCartItems = [...cartItems];
-    updatedCartItems[itemIndex] = {
-      ...updatedCartItems[itemIndex],
-      quantity: quantity,
-    };
-    setCartItems(updatedCartItems);
-
-    try {
-      await Axios.put(
-        SummaryApi.updateCart.url.replace(":cartItemId", cartItemId),
-        { quantity }
+  const removeFromCart = useCallback(
+    async (cartItemId: string) => {
+      const originalCartItems = [...cartItems];
+      const updatedCartItems = cartItems.filter(
+        (item) => item._id !== cartItemId
       );
-    } catch (error) {
-      setCartItems(originalCartItems);
-      toast({
-        title: "Error updating quantity",
-        description: "Failed to update item quantity. Please try again.",
-        variant: "destructive",
-      });
-    }
-  }, [cartItems]);
+      setCartItems(updatedCartItems);
+
+      try {
+        await Axios.delete(
+          SummaryApi.deleteFromCart.url.replace(":cartItemId", cartItemId)
+        );
+      } catch (error) {
+        setCartItems(originalCartItems);
+        toast({
+          title: "Error removing item",
+          description: "Failed to remove item from cart. Please try again.",
+          variant: "destructive",
+        });
+      }
+    },
+    [cartItems]
+  );
+
+  const updateQuantity = useCallback(
+    async (cartItemId: string, quantity: number) => {
+      const originalCartItems = [...cartItems];
+      const itemIndex = cartItems.findIndex((item) => item._id === cartItemId);
+      if (itemIndex === -1) return;
+
+      const updatedCartItems = [...cartItems];
+      updatedCartItems[itemIndex] = {
+        ...updatedCartItems[itemIndex],
+        quantity: quantity,
+      };
+      setCartItems(updatedCartItems);
+
+      try {
+        await Axios.put(
+          SummaryApi.updateCart.url.replace(":cartItemId", cartItemId),
+          { quantity }
+        );
+      } catch (error) {
+        setCartItems(originalCartItems);
+        toast({
+          title: "Error updating quantity",
+          description: "Failed to update item quantity. Please try again.",
+          variant: "destructive",
+        });
+      }
+    },
+    [cartItems]
+  );
 
   const cartCount = useMemo(() => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);

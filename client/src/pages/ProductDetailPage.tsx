@@ -96,9 +96,10 @@ const ProductDetailPage = () => {
   );
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
+  const [isUpdatingQuantity, setIsUpdatingQuantity] = useState(false);
   const { isAuthenticated, user, updateUser } = useAuth();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, cartItems, updateQuantity, removeFromCart } = useCart();
   const reviewsRef = useRef<CustomerReviewsHandles>(null);
   const [allReviews, setAllReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -107,11 +108,113 @@ const ProductDetailPage = () => {
     removeFromGuestWishlist,
     addToGuestCart,
     isInGuestWishlist,
+    guestCart,
+    updateGuestCartQuantity,
+    removeFromGuestCart,
   } = useGuest();
 
   const isLiked = isAuthenticated
     ? user?.wishlist?.includes(product?._id)
     : isInGuestWishlist(product?._id || "");
+
+  // Helper function to check if product is in cart and get its quantity
+  const getCartItemInfo = () => {
+    if (!product) return { isInCart: false, quantity: 0, cartItemId: null };
+
+    if (isAuthenticated) {
+      // For authenticated users, check cartItems from CartContext
+      const cartItem = cartItems.find((item) => {
+        if (item.productId._id === product._id) {
+          if (selectedVariant) {
+            // Check if variant matches
+            return item.variant?.sku === selectedVariant.sku;
+          } else {
+            // No variant selected, check if item has no variant
+            return !item.variant;
+          }
+        }
+        return false;
+      });
+
+      return {
+        isInCart: !!cartItem,
+        quantity: cartItem?.quantity || 0,
+        cartItemId: cartItem?._id || null,
+      };
+    } else {
+      // For guest users, check guestCart from GuestContext
+      const cartItem = guestCart.find((item) => {
+        if (item.id === product._id) {
+          if (selectedVariant) {
+            // Check if variant matches
+            return item.variant?.sku === selectedVariant.sku;
+          } else {
+            // No variant selected, check if item has no variant
+            return !item.variant;
+          }
+        }
+        return false;
+      });
+
+      return {
+        isInCart: !!cartItem,
+        quantity: cartItem?.quantity || 0,
+        cartItemId: null, // Guest cart doesn't have cartItemId
+      };
+    }
+  };
+
+  // Get current cart item info
+  const cartItemInfo = getCartItemInfo();
+
+  // Update local quantity when cart changes
+  useEffect(() => {
+    if (cartItemInfo.isInCart) {
+      setQuantity(cartItemInfo.quantity);
+    } else {
+      setQuantity(1);
+    }
+  }, [cartItemInfo.isInCart, cartItemInfo.quantity, cartItems, guestCart]);
+
+  // Update cart info when variant changes
+  useEffect(() => {
+    // This will trigger getCartItemInfo() to recalculate with new variant
+    // and update the UI accordingly
+  }, [selectedVariant]);
+
+  // Fetch cart data on mount to ensure synchronization
+  useEffect(() => {
+    if (isAuthenticated) {
+      // CartContext will handle fetching authenticated user's cart
+      // Guest cart is already loaded from localStorage in GuestContext
+    }
+  }, [isAuthenticated]);
+
+  // Debug: Log product data when it changes
+  useEffect(() => {
+    if (product) {
+      console.log("Product data loaded:", {
+        name: product.name,
+        suitableFor: product.suitableFor,
+        suitableForType: typeof product.suitableFor,
+        suitableForLength: product.suitableFor?.length,
+      });
+    }
+  }, [product]);
+
+  // Refresh cart data when component becomes visible (for better synchronization)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && isAuthenticated) {
+        // Refresh cart data when page becomes visible
+        // This ensures synchronization if cart was modified in another tab
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!slug) return;
@@ -254,6 +357,71 @@ const ProductDetailPage = () => {
     });
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 2000);
+  };
+
+  const handleQuantityChange = async (newQuantity: number) => {
+    if (!product || newQuantity < 0) return;
+
+    setIsUpdatingQuantity(true);
+
+    try {
+      if (newQuantity === 0) {
+        // Remove from cart
+        if (isAuthenticated && cartItemInfo.cartItemId) {
+          await removeFromCart(cartItemInfo.cartItemId);
+        } else {
+          removeFromGuestCart(
+            product._id,
+            selectedVariant
+              ? { volume: selectedVariant.volume, sku: selectedVariant.sku }
+              : undefined
+          );
+        }
+        toast({
+          title: "Removed from Cart",
+          description: product.name,
+        });
+        return;
+      }
+
+      // Check stock limit
+      const maxStock = selectedVariant?.stock ?? 10;
+      if (newQuantity > maxStock) {
+        toast({
+          title: "Stock Limit",
+          description: `Only ${maxStock} units available`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update quantity
+      if (isAuthenticated && cartItemInfo.cartItemId) {
+        await updateQuantity(cartItemInfo.cartItemId, newQuantity);
+      } else {
+        updateGuestCartQuantity(
+          product._id,
+          newQuantity,
+          selectedVariant
+            ? { volume: selectedVariant.volume, sku: selectedVariant.sku }
+            : undefined
+        );
+      }
+
+      setQuantity(newQuantity);
+      toast({
+        title: "Cart Updated",
+        description: `Quantity updated to ${newQuantity}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update cart. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingQuantity(false);
+    }
   };
 
   if (loading) {
@@ -488,33 +656,6 @@ const ProductDetailPage = () => {
               {/* Quantity and Add to Cart */}
               <div className="space-y-4">
                 <div className="flex items-center gap-4 flex-wrap">
-                  {/* Quantity Selector */}
-                  <div className="flex items-center border border-border rounded-lg overflow-hidden bg-white">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="px-3 py-2 hover:bg-primary/20 hover:text-primary transition-colors text-muted-brown"
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="px-4 py-2 font-semibold text-muted-brown min-w-[3rem] text-center">
-                      {quantity}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="px-3 py-2 hover:bg-primary/20 hover:text-primary transition-colors text-muted-brown"
-                      onClick={() =>
-                        setQuantity(
-                          Math.min(selectedVariant?.stock ?? 10, quantity + 1)
-                        )
-                      }
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-
                   {/* Wishlist Button */}
                   <Button
                     variant="outline"
@@ -530,35 +671,90 @@ const ProductDetailPage = () => {
                     <Heart
                       className={cn(
                         "h-5 w-5",
-                        isLiked
-                          ? "fill-accent text-accent"
-                          : "text-muted-brown"
+                        isLiked ? "fill-accent text-accent" : "text-muted-brown"
                       )}
                     />
                   </Button>
                 </div>
 
-                {/* Add to Cart Button */}
-                <Button
-                  size="lg"
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg transition-all py-3"
-                  onClick={handleAddToCart}
-                  disabled={selectedVariant?.stock === 0 || isAdded}
-                >
-                  {isAdded ? (
-                    <>
-                      <CheckCircle className="mr-2 h-5 w-5" />
-                      Added to Cart
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingBag className="mr-2 h-5 w-5" />
-                      {selectedVariant?.stock === 0
-                        ? "Out of Stock"
-                        : "Add to Cart"}
-                    </>
-                  )}
-                </Button>
+                {/* Dynamic Cart Button */}
+                {cartItemInfo.isInCart ? (
+                  // Quantity Selector (JioMart-style)
+                  <div className="w-full">
+                    <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm h-12 w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-12 w-16 hover:bg-gray-50 hover:text-gray-700 transition-colors duration-200 text-gray-600 disabled:opacity-40 flex items-center justify-center border-r border-gray-200"
+                        onClick={() => handleQuantityChange(quantity - 1)}
+                        disabled={
+                          selectedVariant?.stock === 0 || isUpdatingQuantity
+                        }
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <div className="h-12 flex-1 flex items-center justify-center bg-white border-r border-gray-200">
+                        <span className="font-semibold text-gray-800 text-lg">
+                          {isUpdatingQuantity ? (
+                            <div className="flex items-center gap-1">
+                              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse"></div>
+                              <div
+                                className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse"
+                                style={{ animationDelay: "0.2s" }}
+                              ></div>
+                              <div
+                                className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse"
+                                style={{ animationDelay: "0.4s" }}
+                              ></div>
+                            </div>
+                          ) : (
+                            quantity
+                          )}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-12 w-16 hover:bg-gray-50 hover:text-gray-700 transition-colors duration-200 text-gray-600 disabled:opacity-40 flex items-center justify-center"
+                        onClick={() => handleQuantityChange(quantity + 1)}
+                        disabled={
+                          selectedVariant?.stock === 0 ||
+                          quantity >= (selectedVariant?.stock ?? 10) ||
+                          isUpdatingQuantity
+                        }
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  // Add to Cart Button
+                  <Button
+                    size="lg"
+                    className="w-full h-12 bg-gradient-to-r from-primary via-primary/95 to-primary hover:from-primary/90 hover:via-primary hover:to-primary/90 text-primary-foreground font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-60 disabled:hover:scale-100 relative overflow-hidden"
+                    onClick={handleAddToCart}
+                    disabled={selectedVariant?.stock === 0 || isAdded}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"></div>
+                    <div className="relative flex items-center justify-center gap-2">
+                      {isAdded ? (
+                        <>
+                          <CheckCircle className="h-5 w-5" />
+                          <span className="tracking-wide">Added to Cart</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingBag className="h-5 w-5" />
+                          <span className="tracking-wide">
+                            {selectedVariant?.stock === 0
+                              ? "Out of Stock"
+                              : "Add to Cart"}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -663,23 +859,33 @@ const ProductDetailPage = () => {
                 </AccordionItem>
               )}
               {/* Suitable For */}
-              {product.suitableFor && product.suitableFor.length > 0 && (
-                <AccordionItem
-                  value="suitable-for"
-                  className="border border-border/20 rounded-xl overflow-hidden"
-                >
-                  <AccordionTrigger className="text-xl font-sans font-bold text-foreground px-6 py-4 hover:no-underline bg-primary/5">
-                    Suitable For
-                  </AccordionTrigger>
-                  <AccordionContent className="px-6 py-6 bg-white prose prose-sm max-w-none">
+              <AccordionItem
+                value="suitable-for"
+                className="border border-border/20 rounded-xl overflow-hidden"
+              >
+                <AccordionTrigger className="text-xl font-sans font-bold text-foreground px-6 py-4 hover:no-underline bg-primary/5">
+                  Suitable For
+                </AccordionTrigger>
+                <AccordionContent className="px-6 py-6 bg-white prose prose-sm max-w-none">
+                  {product.suitableFor && product.suitableFor.length > 0 ? (
                     <ul className="list-disc list-inside space-y-2">
                       {product.suitableFor.map((item, i) => (
                         <li key={i}>{item}</li>
                       ))}
                     </ul>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
+                  ) : (
+                    <p className="text-muted-brown text-center py-4">
+                      Information about suitable skin types and concerns will be
+                      available soon.
+                      <br />
+                      <span className="text-xs text-gray-500">
+                        Debug: suitableFor ={" "}
+                        {JSON.stringify(product.suitableFor)}
+                      </span>
+                    </p>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
               {/* Specifications */}
               {product.specifications &&
                 Object.keys(product.specifications).length > 0 && (
@@ -718,7 +924,7 @@ const ProductDetailPage = () => {
             {/* Customer Reviews Section */}
             <div className="mt-12">
               <h2 className="font-sans text-xl font-bold text-foreground mb-2 text-center">
-               — READ THE REVIEWS —
+                — READ THE REVIEWS —
               </h2>
               <div className="text-center mt-8 mb-8">
                 <Button

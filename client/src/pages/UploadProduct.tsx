@@ -767,6 +767,14 @@ const UploadProduct = () => {
       // Add Suitable For
       formDataToSend.append("suitableFor", JSON.stringify(suitableFor));
 
+      // Debug: Log what we're sending for suitableFor
+      console.log("Sending suitableFor data:", {
+        suitableFor,
+        stringified: JSON.stringify(suitableFor),
+        type: typeof suitableFor,
+        length: suitableFor.length,
+      });
+
       // Add related products
       formDataToSend.append(
         "relatedProducts",
@@ -1026,7 +1034,7 @@ const UploadProduct = () => {
                       placeholder="1,499.00"
                       className="pl-7"
                       required
-                        disabled={useVariants}
+                      disabled={useVariants}
                     />
                   </div>
                 </div>
@@ -1051,7 +1059,7 @@ const UploadProduct = () => {
                       }
                       placeholder="1,999.00"
                       className="pl-7"
-                        disabled={useVariants}
+                      disabled={useVariants}
                     />
                   </div>
                 </div>
