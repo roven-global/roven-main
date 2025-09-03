@@ -4,12 +4,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+
 import {
   Star,
   Heart,
@@ -19,6 +14,7 @@ import {
   ChevronRight,
   CheckCircle,
   AlertTriangle,
+  Share2,
 } from "lucide-react";
 import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
@@ -97,6 +93,8 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
   const [isUpdatingQuantity, setIsUpdatingQuantity] = useState(false);
+  const [activeTab, setActiveTab] = useState("description");
+  const [wishlistAnimation, setWishlistAnimation] = useState(false);
   const { isAuthenticated, user, updateUser } = useAuth();
   const navigate = useNavigate();
   const { addToCart, cartItems, updateQuantity, removeFromCart } = useCart();
@@ -263,6 +261,10 @@ const ProductDetailPage = () => {
 
   const handleLikeClick = async () => {
     if (!product) return;
+
+    // Trigger professional animation
+    setWishlistAnimation(true);
+    setTimeout(() => setWishlistAnimation(false), 1000); // Match animation duration
 
     if (!isAuthenticated) {
       if (isInGuestWishlist(product._id)) {
@@ -487,6 +489,37 @@ const ProductDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Inject custom CSS for professional animations */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        @keyframes heartBeat {
+          0% { transform: scale(1); }
+          14% { transform: scale(1.3); }
+          28% { transform: scale(1); }
+          42% { transform: scale(1.3); }
+          70% { transform: scale(1); }
+        }
+        
+        .animate-heart-beat {
+          animation: heartBeat 1.3s ease-in-out;
+        }
+        
+        .wishlist-button {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .wishlist-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .wishlist-button:active {
+          transform: translateY(0);
+        }
+      `,
+        }}
+      />
       <Navigation />
 
       {/* Main Product Section */}
@@ -592,12 +625,17 @@ const ProductDetailPage = () => {
               </div>
 
               {/* Volume for single-variant products */}
-              {(!product.variants || product.variants.length === 0) && product.specifications?.volume && (
+              {(!product.variants || product.variants.length === 0) &&
+                product.specifications?.volume && (
                   <div className="text-sm">
-                      <span className="font-semibold text-foreground">Volume: </span>
-                      <span className="text-muted-brown">{product.specifications.volume}</span>
+                    <span className="font-semibold text-foreground">
+                      Volume:{" "}
+                    </span>
+                    <span className="text-muted-brown">
+                      {product.specifications.volume}
+                    </span>
                   </div>
-              )}
+                )}
 
               {/* Price */}
               <div className="space-y-2">
@@ -664,24 +702,39 @@ const ProductDetailPage = () => {
               {/* Quantity and Add to Cart */}
               <div className="space-y-4">
                 <div className="flex items-center gap-4 flex-wrap">
-                  {/* Wishlist Button */}
+                  {/* Add to Wishlist Button */}
                   <Button
-                    variant="outline"
-                    size="icon"
-                    className={cn(
-                      "rounded-lg h-10 w-10 transition-colors border-border",
-                      isLiked
-                        ? "bg-accent/20 text-accent border-accent/30"
-                        : "hover:bg-primary/20 hover:text-primary text-muted-brown"
-                    )}
                     onClick={handleLikeClick}
+                    className={cn(
+                      "flex-1 bg-primary text-white rounded-lg wishlist-button",
+                      wishlistAnimation && "animate-heart-beat"
+                    )}
                   >
                     <Heart
                       className={cn(
-                        "h-5 w-5",
-                        isLiked ? "fill-accent text-accent" : "text-muted-brown"
+                        "h-5 w-5 mr-2 transition-all duration-100",
+                        isLiked ? "fill-white text-white" : "text-white"
                       )}
                     />
+                    {isLiked ? "Added to Wishlist" : "Add to Wishlist"}
+                  </Button>
+
+                  {/* Share Button */}
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-border text-muted-brown hover:bg-primary/20 hover:text-primary"
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: product.name,
+                          url: window.location.href,
+                        });
+                      } else {
+                        navigator.clipboard.writeText(window.location.href);
+                      }
+                    }}
+                  >
+                    <Share2 className="h-5 w-5 mr-2" /> Share
                   </Button>
                 </div>
 
@@ -769,165 +822,155 @@ const ProductDetailPage = () => {
         </div>
       </div>
 
-      {/* Product Details Tabs */}
+      {/* Product Details Tabs (Table-like UI instead of Accordion) */}
       <div className="bg-white border-t border-border/20">
         <div className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto">
-            <Accordion
-              type="multiple"
-              defaultValue={["description", "item-2"]}
-              className="w-full space-y-4"
-            >
-              {/* Description */}
-              {product.description && (
-                <AccordionItem
-                  value="description"
-                  className="border border-border/20 rounded-xl overflow-hidden"
-                >
-                  <AccordionTrigger className="text-xl font-sans font-bold text-foreground px-6 py-4 hover:no-underline bg-primary/5">
-                    Description
-                  </AccordionTrigger>
-                  <AccordionContent className="px-6 py-6 bg-white prose prose-sm max-w-none">
-                    <p>{product.description}</p>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
-              {/* Hero Ingredients */}
-              {product.ingredients && product.ingredients.length > 0 && (
-                <AccordionItem
-                  value="item-2"
-                  className="border border-border/20 rounded-xl overflow-hidden"
-                >
-                  <AccordionTrigger className="text-xl font-sans font-bold text-foreground px-6 py-4 hover:no-underline bg-primary/5">
-                    Hero Ingredients
-                  </AccordionTrigger>
-                  <AccordionContent className="px-6 py-6 bg-white">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {product.ingredients.map((ingredient: any, i: number) => (
-                        <div key={i} className="text-center space-y-3">
-                          {ingredient.image && (
-                            <div className="w-24 h-24 mx-auto rounded-full overflow-hidden bg-warm-cream-light">
-                              <img
-                                src={ingredient.image.url}
-                                alt={ingredient.name || `Ingredient ${i + 1}`}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          )}
-                          {ingredient.name && (
-                            <h4 className="font-semibold text-foreground">
-                              {ingredient.name}
-                            </h4>
-                          )}
-                          {ingredient.description && (
-                            <p className="text-sm text-muted-brown leading-relaxed">
-                              {ingredient.description}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
-              {/* How to Use */}
-              {product.howToUse && product.howToUse.length > 0 && (
-                <AccordionItem
-                  value="how-to-use"
-                  className="border border-border/20 rounded-xl overflow-hidden"
-                >
-                  <AccordionTrigger className="text-xl font-sans font-bold text-foreground px-6 py-4 hover:no-underline bg-primary/5">
-                    How to Use
-                  </AccordionTrigger>
-                  <AccordionContent className="px-6 py-6 bg-white prose prose-sm max-w-none">
-                    <ol className="list-decimal list-inside space-y-2">
-                      {product.howToUse.map((step, i) => (
-                        <li key={i}>{step}</li>
-                      ))}
-                    </ol>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
-              {/* Benefits */}
-              {product.benefits && product.benefits.length > 0 && (
-                <AccordionItem
-                  value="benefits"
-                  className="border border-border/20 rounded-xl overflow-hidden"
-                >
-                  <AccordionTrigger className="text-xl font-sans font-bold text-foreground px-6 py-4 hover:no-underline bg-primary/5">
-                    Benefits
-                  </AccordionTrigger>
-                  <AccordionContent className="px-6 py-6 bg-white prose prose-sm max-w-none">
-                    <ul className="list-disc list-inside space-y-2">
-                      {product.benefits.map((benefit, i) => (
-                        <li key={i}>{benefit}</li>
-                      ))}
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
-              {/* Suitable For */}
-              <AccordionItem
-                value="suitable-for"
-                className="border border-border/20 rounded-xl overflow-hidden"
-              >
-                <AccordionTrigger className="text-xl font-sans font-bold text-foreground px-6 py-4 hover:no-underline bg-primary/5">
-                  Suitable For
-                </AccordionTrigger>
-                <AccordionContent className="px-6 py-6 bg-white prose prose-sm max-w-none">
-                  {product.suitableFor && product.suitableFor.length > 0 ? (
-                    <ul className="list-disc list-inside space-y-2">
-                      {product.suitableFor.map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-muted-brown text-center py-4">
-                      Information about suitable skin types and concerns will be
-                      available soon.
-                      <br />
-                      <span className="text-xs text-gray-500">
-                        Debug: suitableFor ={" "}
-                        {JSON.stringify(product.suitableFor)}
-                      </span>
-                    </p>
+            <div className="border-b flex gap-6 mb-6 overflow-x-auto">
+              {[
+                { key: "description", label: "Description" },
+                { key: "ingredients", label: "Hero Ingredients" },
+                { key: "howto", label: "How to Use" },
+                { key: "benefits", label: "Benefits" },
+                { key: "suitable", label: "Suitable For" },
+                { key: "specs", label: "Specifications" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={cn(
+                    "pb-2 font-semibold",
+                    activeTab === tab.key
+                      ? "border-b-2 border-primary text-primary"
+                      : "text-muted-brown"
                   )}
-                </AccordionContent>
-              </AccordionItem>
-              {/* Specifications */}
-              {product.specifications &&
-                Object.keys(product.specifications).length > 0 && (
-                  <AccordionItem
-                    value="specifications"
-                    className="border border-border/20 rounded-xl overflow-hidden"
-                  >
-                    <AccordionTrigger className="text-xl font-sans font-bold text-foreground px-6 py-4 hover:no-underline bg-primary/5">
-                      Specifications
-                    </AccordionTrigger>
-                    <AccordionContent className="px-6 py-6 bg-white">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {Object.entries(product.specifications).map(
-                          ([key, value]) => (
-                            <div
-                              key={key}
-                              className="flex justify-between border-b border-border/20 pb-2"
-                            >
-                              <span className="font-semibold text-foreground capitalize">
-                                {key.replace(/([A-Z])/g, " $1")}
-                              </span>
-                              <span className="text-muted-brown">
-                                {Array.isArray(value)
-                                  ? value.join(", ")
-                                  : value}
-                              </span>
-                            </div>
-                          )
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="bg-white p-6 rounded-lg border">
+              {activeTab === "description" && product.description && (
+                <p>{product.description}</p>
+              )}
+
+              {activeTab === "ingredients" &&
+                product.ingredients &&
+                product.ingredients.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {product.ingredients.map((ingredient: any, i: number) => (
+                      <div key={i} className="text-center space-y-3">
+                        {ingredient.image && (
+                          <div className="w-24 h-24 mx-auto rounded-full overflow-hidden bg-warm-cream-light">
+                            <img
+                              src={ingredient.image.url}
+                              alt={ingredient.name || `Ingredient ${i + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        {ingredient.name && (
+                          <h4 className="font-semibold text-foreground">
+                            {ingredient.name}
+                          </h4>
+                        )}
+                        {ingredient.description && (
+                          <p className="text-sm text-muted-brown leading-relaxed">
+                            {ingredient.description}
+                          </p>
                         )}
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
+                    ))}
+                  </div>
                 )}
-            </Accordion>
+
+              {activeTab === "howto" &&
+                product.howToUse &&
+                product.howToUse.length > 0 && (
+                  <ol className="list-decimal pl-4 space-y-1">
+                    {product.howToUse.map((step, i) => (
+                      <li key={i}>{step}</li>
+                    ))}
+                  </ol>
+                )}
+
+              {activeTab === "benefits" &&
+                product.benefits &&
+                product.benefits.length > 0 && (
+                  <ul className="list-disc pl-4">
+                    {product.benefits.map((b, i) => (
+                      <li key={i}>{b}</li>
+                    ))}
+                  </ul>
+                )}
+
+              {activeTab === "suitable" &&
+                product.suitableFor &&
+                product.suitableFor.length > 0 && (
+                  <ul className="list-disc pl-4">
+                    {product.suitableFor.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>
+                )}
+
+              {activeTab === "specs" &&
+                product.specifications &&
+                Object.keys(product.specifications).length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {Object.entries(product.specifications).map(([k, v]) => (
+                      <div
+                        key={k}
+                        className="flex justify-between border-b pb-1"
+                      >
+                        <span className="font-semibold">{k}</span>
+                        <span className="text-muted-brown">
+                          {Array.isArray(v) ? v.join(", ") : v}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+              {/* Show message when no content is available for the selected tab */}
+              {activeTab === "description" && !product.description && (
+                <p className="text-muted-brown text-center py-4">
+                  No description available.
+                </p>
+              )}
+              {activeTab === "ingredients" &&
+                (!product.ingredients || product.ingredients.length === 0) && (
+                  <p className="text-muted-brown text-center py-4">
+                    No ingredient information available.
+                  </p>
+                )}
+              {activeTab === "howto" &&
+                (!product.howToUse || product.howToUse.length === 0) && (
+                  <p className="text-muted-brown text-center py-4">
+                    No usage instructions available.
+                  </p>
+                )}
+              {activeTab === "benefits" &&
+                (!product.benefits || product.benefits.length === 0) && (
+                  <p className="text-muted-brown text-center py-4">
+                    No benefits information available.
+                  </p>
+                )}
+              {activeTab === "suitable" &&
+                (!product.suitableFor || product.suitableFor.length === 0) && (
+                  <p className="text-muted-brown text-center py-4">
+                    No suitability information available.
+                  </p>
+                )}
+              {activeTab === "specs" &&
+                (!product.specifications ||
+                  Object.keys(product.specifications).length === 0) && (
+                  <p className="text-muted-brown text-center py-4">
+                    No specifications available.
+                  </p>
+                )}
+            </div>
 
             {/* Customer Reviews Section */}
             <div className="mt-12">
