@@ -468,7 +468,11 @@ const ProductCard = ({
                       variant="ghost"
                       size="sm"
                       className="h-8 w-12 hover:bg-gray-50 hover:text-gray-700 transition-colors duration-200 text-gray-600 disabled:opacity-40 flex items-center justify-center border-r border-gray-200 text-xs"
-                      onClick={() => handleQuantityChange(quantity - 1)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleQuantityChange(quantity - 1);
+                      }}
                       disabled={
                         (variants &&
                           variants.length === 1 &&
@@ -501,7 +505,11 @@ const ProductCard = ({
                       variant="ghost"
                       size="sm"
                       className="h-8 w-12 hover:bg-gray-50 hover:text-gray-700 transition-colors duration-200 text-gray-600 disabled:opacity-40 flex items-center justify-center text-xs"
-                      onClick={() => handleQuantityChange(quantity + 1)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleQuantityChange(quantity + 1);
+                      }}
                       disabled={
                         (variants &&
                           variants.length === 1 &&
