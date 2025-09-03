@@ -17,7 +17,10 @@ router.post(
   "/upload",
   auth,
   adminOnly,
-  upload.single("image"),
+  upload.fields([
+    { name: 'desktopImage', maxCount: 1 },
+    { name: 'mobileImage', maxCount: 1 }
+  ]),
   uploadHeroImage
 );
 router.delete("/:id", auth, adminOnly, deleteHeroImage);

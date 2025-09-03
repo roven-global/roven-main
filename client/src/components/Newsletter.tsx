@@ -41,19 +41,22 @@ const Newsletter = () => {
     <section className="py-20 bg-gradient-to-br from-primary/25 via-muted-brown/10 to-primary/15">
       <div className="container mx-auto px-4 text-center">
         <div className="max-w-2xl mx-auto">
-        <h2 className="font-sans text-4xl md:text-5xl font-bold text-foreground mb-4">
+          <h2 className="font-sans text-4xl md:text-5xl font-bold text-foreground mb-4">
             Join The Roven Club
           </h2>
           <p className="text-lg text-foreground/70 mb-8 text-balance">
-            Subscribe to our newsletter for exclusive offers, beauty tips,
-            and early access to new products.
+            Subscribe to our newsletter for exclusive offers, beauty tips, and
+            early access to new products.
           </p>
           {status === "success" ? (
             <div className="text-center p-4 bg-accent-green/10 text-accent-green rounded-lg">
               <p className="font-semibold">{message}</p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+            >
               <label htmlFor="newsletter-email" className="sr-only">
                 Email address
               </label>
@@ -78,7 +81,7 @@ const Newsletter = () => {
             </form>
           )}
 
-{status === "error" && message && (
+          {status === "error" && message && (
             <p className="text-sm text-destructive mt-4">{message}</p>
           )}
 

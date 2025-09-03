@@ -9,7 +9,9 @@ if (
   !process.env.CLOUDINARY_API_SECRET ||
   process.env.CLOUDINARY_CLOUD_NAME === "dummy"
 ) {
-  console.warn("Cloudinary environment variables are not properly set. Image upload will be disabled.");
+  console.warn(
+    "Cloudinary environment variables are not properly set. Image upload will be disabled."
+  );
 }
 
 cloudinary.config({
@@ -18,29 +20,28 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const uploadImageCloudinary = asyncHandler(
-  async (image, folder = "blinkit-cloud") => {
-    if (!image) throw new Error("No image provided for upload.");
+// Original uploadImageCloudinary function
+const uploadImageCloudinary = async (image, folder = "uploads") => {
+  if (!image) throw new Error("No image provided for upload.");
 
-    const buffer = image?.buffer || Buffer.from(await image.arrayBuffer());
+  const buffer = image?.buffer || Buffer.from(await image.arrayBuffer());
 
-    const options = {
-      folder,
-      transformation: [
-        { width: 1200, crop: "limit" },
-        { quality: "auto", fetch_format: "auto" },
-      ],
-    };
-
-    return new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(options, (error, result) => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream(
+        {
+          folder: folder,
+          resource_type: "auto",
+          quality: "auto",
+          fetch_format: "auto",
+        },
+        (error, result) => {
           if (error) return reject(error);
           resolve(result);
-        })
-        .end(buffer);
-    });
-  }
-);
+        }
+      )
+      .end(buffer);
+  });
+};
 
 module.exports = uploadImageCloudinary;

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import Axios from '@/utils/Axios';
-import SummaryApi from '@/common/summaryApi';
+import Axios from "@/utils/Axios";
+import SummaryApi from "@/common/summaryApi";
 
 // Define the Category interface for type safety
 interface Category {
@@ -31,15 +31,17 @@ const Categories = () => {
       setError(null);
       try {
         // Fetch only top-level categories for the homepage display
-        const response = await Axios.get(`${SummaryApi.getAllCategories.url}?parent=main&limit=3`);
+        const response = await Axios.get(
+          `${SummaryApi.getAllCategories.url}?parent=main&limit=3`
+        );
         if (response.data.success) {
           setCategories(response.data.data);
         } else {
-          throw new Error('Failed to fetch categories');
+          throw new Error("Failed to fetch categories");
         }
       } catch (err) {
-        setError('Could not load categories.');
-        console.error('Error fetching categories:', err);
+        setError("Could not load categories.");
+        console.error("Error fetching categories:", err);
       } finally {
         setLoading(false);
       }
@@ -49,14 +51,18 @@ const Categories = () => {
   }, []);
 
   return (
-    <section id="categories" className="py-20 bg-gradient-to-br from-primary/10 via-muted-brown/5 to-primary/10">
+    <section
+      id="categories"
+      className="py-20 bg-gradient-to-br from-primary/10 via-muted-brown/5 to-primary/10"
+    >
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="font-sans text-4xl md:text-5xl font-bold text-foreground mb-4">
             Shop by Category
           </h2>
           <p className="text-muted-brown text-lg max-w-2xl mx-auto text-balance">
-            Explore our curated collections, each designed to elevate your unique beauty journey.
+            Explore our curated collections, each designed to elevate your
+            unique beauty journey.
           </p>
         </div>
 
@@ -74,7 +80,11 @@ const Categories = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {categories.map((category) => (
-              <Link key={category._id} to={`/category/${category.slug}`} className="block group">
+              <Link
+                key={category._id}
+                to={`/category/${category.slug}`}
+                className="block group"
+              >
                 <Card className="overflow-hidden rounded-lg shadow-elegant hover:shadow-luxury transition-all duration-300 border-primary/30 bg-white/80 backdrop-blur-sm">
                   <div className="relative h-96">
                     <img

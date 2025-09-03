@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import ProductCard from "./ProductCard";
-import Axios from '../utils/Axios';
-import SummaryApi from '../common/summaryApi';
+import Axios from "../utils/Axios";
+import SummaryApi from "../common/summaryApi";
 import { Skeleton } from "./ui/skeleton";
 import { Link } from "react-router-dom";
 
@@ -63,8 +63,8 @@ const FeaturedProducts = () => {
   }, []);
 
   return (
-    <section id="featured-products" className="py-20 bg-gradient-to-br from-primary/5 via-white to-primary/5">
-      <div className="container mx-auto px-4">
+    <section id="featured-products" className="pt-20 pb-20 -mt-4 bg-white">
+      <div className="container mx-auto px-2 sm:px-4 max-w-full overflow-hidden">
         <div className="text-center mb-12">
           <h2 className="font-sans text-4xl md:text-5xl font-bold text-foreground mb-4">
             Featured Products
@@ -88,7 +88,7 @@ const FeaturedProducts = () => {
         ) : error ? (
           <div className="text-center text-destructive py-10">{error}</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12 mb-12">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 md:gap-6 gap-y-4 sm:gap-y-8 md:gap-y-12 mb-12">
             {products.map((product) => (
               <ProductCard
                 key={product._id}
@@ -97,15 +97,22 @@ const FeaturedProducts = () => {
                 name={product.name}
                 price={product.price}
                 originalPrice={product.originalPrice}
-                image={product.images[0]?.url || ''}
+                image={product.images[0]?.url || ""}
                 rating={product.ratings.average}
                 reviews={product.ratings.numOfReviews}
                 category={product.category.name}
-                volume={product.volume}
                 variants={product.variants}
-                isSale={!!(product.originalPrice && product.originalPrice > product.price)}
+                isSale={
+                  !!(
+                    product.originalPrice &&
+                    product.originalPrice > product.price
+                  )
+                }
                 benefits={product.benefits}
-                isNew={new Date(product.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}
+                isNew={
+                  new Date(product.createdAt) >
+                  new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                }
                 hideAddToCart={true}
               />
             ))}
@@ -114,7 +121,11 @@ const FeaturedProducts = () => {
 
         <div className="text-center">
           <Link to="/shop">
-            <Button size="lg" variant="outline" className="border-2 border-border text-muted-foreground bg-transparent hover:bg-accent hover:text-accent-foreground transition-all duration-300 rounded-full px-8 py-6 text-base font-semibold">
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-2 border-border text-muted-foreground bg-transparent hover:bg-accent hover:text-accent-foreground transition-all duration-300 rounded-full px-8 py-6 text-base font-semibold"
+            >
               View All Products
             </Button>
           </Link>

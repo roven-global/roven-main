@@ -27,38 +27,37 @@ const Hero = () => {
   }, []);
 
   return (
-    <section className="relative w-full h-screen overflow-hidden">
+    <section className="relative w-full min-h-[200px] max-h-[350px] sm:min-h-[250px] sm:max-h-[450px] md:max-h-[550px] overflow-hidden -mb-4">
       {loading ? (
-        <Skeleton className="absolute inset-0 w-full h-full" />
+        <Skeleton className="w-full h-[200px] sm:h-[250px] md:h-[350px]" />
       ) : (
         <Swiper
           modules={[Autoplay]}
           loop={true}
           autoplay={{ delay: 5000, disableOnInteraction: false }}
           slidesPerView={1}
+          className="w-full h-full"
         >
           {heroImages.map((image) => (
             <SwiperSlide key={image._id}>
+              {/* Mobile Image - Hidden on desktop */}
               <img
-                src={image.url}
-                alt="Hero image"
+                src={image.mobileUrl || image.url}
+                alt={image.alt || "Hero image"}
                 decoding="async"
-                className="w-full h-screen object-cover"
+                className="w-full h-full object-cover md:hidden"
+              />
+              {/* Desktop Image - Hidden on mobile */}
+              <img
+                src={image.desktopUrl || image.url}
+                alt={image.alt || "Hero image"}
+                decoding="async"
+                className="w-full h-full object-cover hidden md:block"
               />
             </SwiperSlide>
           ))}
         </Swiper>
       )}
-
-      {/* Overlay content (keep your hero text/buttons here) */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black/40">
-        <h1 className="text-4xl md:text-6xl font-bold mb-4">
-          Welcome to Our Website
-        </h1>
-        <p className="text-lg md:text-2xl mb-6">
-          Your tagline or description goes here
-        </p>
-      </div>
     </section>
   );
 };

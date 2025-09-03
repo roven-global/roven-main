@@ -54,6 +54,7 @@ const ProductCard = ({
   variants,
   isNew,
   isSale,
+  benefits,
   hideAddToCart = false,
 }: ProductCardProps) => {
   const { isAuthenticated, user, updateUser } = useAuth();
@@ -257,55 +258,56 @@ const ProductCard = ({
         </div>
 
         {/* Compact Content Layout */}
-        <CardContent className="p-4 flex flex-col flex-grow bg-white">
-          {/* Category */}
-          <div className="mb-2">
-            <span className="text-xs font-medium text-muted-brown uppercase tracking-wide">
-              {category}
-            </span>
-          </div>
-
+        <CardContent className="p-4 flex flex-col flex-grow bg-white text-center">
           {/* Product Title */}
-          <h3 className="font-sans font-bold text-lg text-foreground mb-2 line-clamp-2 leading-tight flex-grow">
+          <h3 className="font-sans font-bold text-sm sm:text-lg text-foreground mb-0 line-clamp-2 leading-tight">
             {name}
           </h3>
 
-          {/* Rating and Volume Row */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`w-3 h-3 ${
-                    i < Math.floor(rating)
-                      ? "fill-accent text-accent"
-                      : "text-border/50"
-                  }`}
-                />
-              ))}
-              <span className="text-xs font-medium text-muted-brown ml-1">
-                {rating.toFixed(1)}
-              </span>
-              <span className="text-xs text-muted-brown">({reviews})</span>
+          {/* Benefits - Show first 2 benefits in green text */}
+          {benefits && benefits.length > 0 && (
+            <div className="mb-1">
+              <p className="text-xs sm:text-sm text-green-600 font-medium line-clamp-2 leading-tight">
+                {benefits.slice(0, 2).join(" | ")}
+              </p>
             </div>
-            {getDisplayVolume() && (
-              <span className="text-xs text-muted-brown font-medium">
+          )}
+
+          {/* Product Quantity/Volume */}
+          {getDisplayVolume() && (
+            <div className="mb-1">
+              <span className="text-xs sm:text-sm text-muted-brown font-medium">
                 {getDisplayVolume()}
               </span>
-            )}
+            </div>
+          )}
+
+          {/* Rating and Reviews */}
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <div className="flex items-center gap-1">
+              <Star className="w-3 h-3 fill-accent text-accent" />
+              <span className="text-xs sm:text-sm font-medium text-muted-brown">
+                {rating.toFixed(1)}
+              </span>
+            </div>
+            <span className="text-xs sm:text-sm text-muted-brown">
+              ({reviews} Reviews)
+            </span>
           </div>
 
           {/* Price Section */}
-          <div className="mb-4">
-            <div className="flex items-baseline gap-2">
+          <div className="mt-auto">
+            <div className="flex items-center justify-center gap-2">
               {variants && variants.length > 1 && (
-                <span className="text-xs text-muted-brown font-medium">From</span>
+                <span className="text-xs sm:text-sm text-muted-brown">
+                  From
+                </span>
               )}
-              <span className="font-sans font-bold text-xl text-foreground">
+              <span className="font-sans font-bold text-base sm:text-xl text-foreground">
                 {formatRupees(getDisplayPrice())}
               </span>
               {getDisplayOriginalPrice() && (
-                <span className="text-sm text-border line-through">
+                <span className="text-xs sm:text-sm text-border line-through">
                   {formatRupees(getDisplayOriginalPrice())}
                 </span>
               )}
@@ -317,7 +319,7 @@ const ProductCard = ({
             <div className="mt-auto">
               <Button
                 variant="default"
-                className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-xs sm:text-sm"
                 onClick={handleAddToCart}
                 disabled={getTotalStock() === 0 || isAdded}
               >

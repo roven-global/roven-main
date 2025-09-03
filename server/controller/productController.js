@@ -550,7 +550,8 @@ const updateProduct = asyncHandler(async (req, res) => {
     updateFields.name = sanitizeString(name);
     updateFields.slug = generateSlug(name);
   }
-  if (description !== undefined) updateFields.description = sanitizeString(description);
+  if (description !== undefined)
+    updateFields.description = sanitizeString(description);
   if (shortDescription !== undefined)
     updateFields.shortDescription = sanitizeString(shortDescription);
   if (brand !== undefined) updateFields.brand = sanitizeString(brand);
@@ -715,7 +716,8 @@ const updateProduct = asyncHandler(async (req, res) => {
         : undefined;
 
     // Initialize specs if they don't exist, preserving existing values
-    const currentSpecs = updateFields.specifications || product.specifications || {};
+    const currentSpecs =
+      updateFields.specifications || product.specifications || {};
 
     if (volumeValue) {
       currentSpecs.volume = volumeValue;
