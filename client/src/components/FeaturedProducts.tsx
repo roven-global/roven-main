@@ -62,6 +62,7 @@ const FeaturedProducts = () => {
     fetchFeaturedProducts();
   }, []);
 
+  
   return (
     <section id="featured-products" className="pt-20 pb-20 -mt-4 bg-card/80">
       <div className="container mx-auto px-2 sm:px-4 max-w-full overflow-hidden">
