@@ -199,6 +199,25 @@
   display: none;  /* Safari and Chrome */
 }
 
+/* Smooth horizontal scrolling for product cards */
+.horizontal-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+}
+
+.horizontal-scroll > * {
+  scroll-snap-align: start;
+}
+
+/* Touch-friendly scrolling on mobile */
+@media (max-width: 768px) {
+  .horizontal-scroll {
+    scroll-snap-type: x proximity;
+    scroll-padding: 0 1rem;
+  }
+}
+
 /* Mobile-optimized form inputs */
 .mobile-form-input {
   @apply h-11 sm:h-12 text-base sm:text-sm;

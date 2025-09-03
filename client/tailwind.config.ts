@@ -48,9 +48,9 @@ export default {
           foreground: "#1D352D",
         },
         accent: {
-          DEFAULT: "#47b79e", // Vibrant Teal
-          hover: "#699878",
-          foreground: "#E6EAE3",
+          DEFAULT: "#a3b18a", // Sage Vibrant
+          hover: "#8a9b74",
+          foreground: "#1D352D",
         },
         popover: {
           DEFAULT: "#E5E9E2",
@@ -65,19 +65,19 @@ export default {
           foreground: "#1D352D",
           primary: "#1D352D",
           "primary-foreground": "#E6EAE3",
-          accent: "#578466",
-          "accent-foreground": "#E6EAE3",
+          accent: "#a3b18a", // Updated to Sage Vibrant
+          "accent-foreground": "#1D352D",
           border: "#578466",
-          ring: "#47b79e",
+          ring: "#a3b18a", // Updated to Sage Vibrant
         },
 
         // Custom single colors
         dark: "#1D352D",
-        "accent-green": "#578466",
-        "teal-vibrant": "#47b79e",
+        "accent-green": "#578466", // keep as muted alternative
         "dark-vibrant": "#14332C",
         "light-vibrant": "#fcefeb",
         "alert-error": "#cd1d00",
+        "muted-green": "#6f8160",
       },
       backgroundImage: {
         "gradient-primary": "var(--gradient-primary)",

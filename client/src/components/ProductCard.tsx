@@ -212,7 +212,7 @@ const ProductCard = ({
     <Card className="group relative w-full h-full flex flex-col bg-white border border-border/20 hover:border-primary/30 rounded-xl shadow-sm hover:shadow-elegant transition-all duration-300 overflow-hidden touch-manipulation">
       <Link to={`/product/${slug}`} className="flex flex-col h-full">
         {/* Large Product Image */}
-        <div className="relative overflow-hidden bg-warm-cream">
+        <div className="relative overflow-hidden bg-white">
           <div className="aspect-[4/5] w-full">
             <img
               src={image}
@@ -224,7 +224,7 @@ const ProductCard = ({
           {/* Discount Badge - Top Left */}
           {discount > 0 && (
             <div className="absolute top-3 left-3">
-              <Badge className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold shadow-sm border-0">
+              <Badge className="bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full font-semibold shadow-sm border-0">
                 {discount}% OFF
               </Badge>
             </div>
@@ -233,7 +233,7 @@ const ProductCard = ({
           {/* NEW Badge - Top Left (if no discount) */}
           {isNew && !discount && (
             <div className="absolute top-3 left-3">
-              <Badge className="bg-primary text-white text-xs px-2 py-1 rounded-full font-semibold shadow-sm border-0">
+              <Badge className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-semibold shadow-sm border-0">
                 <Sparkles className="w-3 h-3 mr-1" />
                 NEW
               </Badge>
@@ -251,7 +251,7 @@ const ProductCard = ({
             <Heart
               className={cn(
                 "h-4 w-4 transition-all duration-300",
-                isLiked ? "fill-primary text-primary-dark" : "text-foreground"
+                isLiked ? "fill-primary text-primary" : "text-foreground"
               )}
             />
           </Button>
@@ -260,14 +260,14 @@ const ProductCard = ({
         {/* Compact Content Layout */}
         <CardContent className="p-4 flex flex-col flex-grow bg-white text-center">
           {/* Product Title */}
-          <h3 className="font-sans font-bold text-sm sm:text-lg text-foreground mb-0 line-clamp-2 leading-tight">
+          <h3 className="font-sans font-bold text-sm sm:text-lg text-foreground mb-1 line-clamp-2 leading-tight">
             {name}
           </h3>
 
           {/* Benefits - Show first 2 benefits in green text */}
           {benefits && benefits.length > 0 && (
             <div className="mb-1">
-              <p className="text-xs sm:text-sm text-green-600 font-medium line-clamp-2 leading-tight">
+              <p className="text-xs sm:text-sm text-muted-green font-medium line-clamp-2 leading-tight">
                 {benefits.slice(0, 2).join(" | ")}
               </p>
             </div>
@@ -276,7 +276,7 @@ const ProductCard = ({
           {/* Product Quantity/Volume */}
           {getDisplayVolume() && (
             <div className="mb-1">
-              <span className="text-xs sm:text-sm text-muted-brown font-medium">
+              <span className="text-xs sm:text-sm text-muted-foreground font-medium">
                 {getDisplayVolume()}
               </span>
             </div>
@@ -286,11 +286,11 @@ const ProductCard = ({
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="flex items-center gap-1">
               <Star className="w-3 h-3 fill-accent text-accent" />
-              <span className="text-xs sm:text-sm font-medium text-muted-brown">
+              <span className="text-xs sm:text-sm font-medium text-muted-foreground">
                 {rating.toFixed(1)}
               </span>
             </div>
-            <span className="text-xs sm:text-sm text-muted-brown">
+            <span className="text-xs sm:text-sm text-muted-foreground">
               ({reviews} Reviews)
             </span>
           </div>
@@ -299,7 +299,7 @@ const ProductCard = ({
           <div className="mt-auto">
             <div className="flex items-center justify-center gap-2">
               {variants && variants.length > 1 && (
-                <span className="text-xs sm:text-sm text-muted-brown">
+                <span className="text-xs sm:text-sm text-muted-foreground">
                   From
                 </span>
               )}
@@ -307,7 +307,7 @@ const ProductCard = ({
                 {formatRupees(getDisplayPrice())}
               </span>
               {getDisplayOriginalPrice() && (
-                <span className="text-xs sm:text-sm text-border line-through">
+                <span className="text-xs sm:text-sm text-muted-foreground line-through">
                   {formatRupees(getDisplayOriginalPrice())}
                 </span>
               )}
