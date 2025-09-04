@@ -356,7 +356,7 @@ const ProductCard = ({
       <Link to={`/product/${slug}`} className="flex flex-col h-full">
         {/* Large Product Image */}
         <div className="relative overflow-hidden bg-white">
-          <div className="aspect-square w-full p-3">
+          <div className="aspect-square w-full">
             <div className="w-full h-full bg-gray-50 rounded-lg overflow-hidden">
               <img
                 src={image}
