@@ -45,6 +45,7 @@ interface GuestContextType {
   ) => void;
   clearGuestData: () => void;
   guestCartCount: number;
+  guestCartSubtotal: number;
   isInGuestWishlist: (id: string) => boolean;
 }
 
@@ -240,6 +241,11 @@ export const GuestProvider = ({ children }: { children: ReactNode }) => {
     0
   );
 
+  const guestCartSubtotal = guestCart.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
+
   // Welcome gift validation and discount computation were previously performed here for
   // guest users. This has been removed so the backend remains the single source of truth.
   // The UI should consume validated discounts via authenticated flows or server responses.
@@ -256,6 +262,7 @@ export const GuestProvider = ({ children }: { children: ReactNode }) => {
         updateGuestCartQuantity,
         clearGuestData,
         guestCartCount,
+        guestCartSubtotal,
         isInGuestWishlist,
       }}
     >
