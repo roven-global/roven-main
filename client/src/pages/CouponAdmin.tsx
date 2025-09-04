@@ -137,17 +137,25 @@ const CouponAdmin = () => {
   const onSubmit = async (data: CouponFormValues) => {
     try {
       const response = editingCoupon
-        ? await Axios.put(SummaryApi.updateCoupon.url.replace(":id", editingCoupon._id), data)
+        ? await Axios.put(
+            SummaryApi.updateCoupon.url.replace(":id", editingCoupon._id),
+            data
+          )
         : await Axios.post(SummaryApi.createCoupon.url, data);
 
       if (response.data.success) {
-        toast({ title: `Coupon ${editingCoupon ? 'updated' : 'created'} successfully!` });
+        toast({
+          title: `Coupon ${
+            editingCoupon ? "updated" : "created"
+          } successfully!`,
+        });
         fetchCoupons();
         setIsDialogOpen(false);
         setEditingCoupon(null);
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "An unexpected error occurred.";
+      const errorMessage =
+        error.response?.data?.message || "An unexpected error occurred.";
       toast({
         title: "Error saving coupon",
         description: errorMessage,
@@ -246,14 +254,17 @@ const CouponAdmin = () => {
                 onClick={() => {
                   if (!analytics) fetchAnalytics();
                 }}
+                className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
               >
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Analytics
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl bg-card border-border">
               <DialogHeader>
-                <DialogTitle>Coupon Analytics</DialogTitle>
+                <DialogTitle className="text-foreground">
+                  Coupon Analytics
+                </DialogTitle>
               </DialogHeader>
               {analyticsLoading ? (
                 <div className="flex justify-center items-center py-12">
@@ -263,30 +274,51 @@ const CouponAdmin = () => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
-                      <h4 className="text-2xl font-bold">{analytics.totalCoupons}</h4>
-                      <p className="text-sm text-muted-foreground">Total Coupons</p>
+                      <h4 className="text-2xl font-bold">
+                        {analytics.totalCoupons}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Total Coupons
+                      </p>
                     </div>
                     <div>
-                      <h4 className="text-2xl font-bold">{analytics.activeCoupons}</h4>
-                      <p className="text-sm text-muted-foreground">Active Coupons</p>
+                      <h4 className="text-2xl font-bold">
+                        {analytics.activeCoupons}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Active Coupons
+                      </p>
                     </div>
                     <div>
-                      <h4 className="text-2xl font-bold">{formatRupees(analytics.totalDiscountGiven)}</h4>
-                      <p className="text-sm text-muted-foreground">Total Discount Given</p>
+                      <h4 className="text-2xl font-bold">
+                        {formatRupees(analytics.totalDiscountGiven)}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Total Discount Given
+                      </p>
                     </div>
                   </div>
                   <div className="space-y-2 pt-4">
                     <h3 className="font-medium">Most Used Coupons</h3>
                     {analytics.mostUsedCoupons.map((coupon: any) => (
-                      <div key={coupon.couponId} className="flex justify-between items-center bg-muted/10 p-2 rounded">
-                        <span className="font-medium">{coupon.name} ({coupon.code})</span>
-                        <span className="text-sm text-muted-foreground">{coupon.totalUsage} uses</span>
+                      <div
+                        key={coupon.couponId}
+                        className="flex justify-between items-center bg-muted/10 p-2 rounded"
+                      >
+                        <span className="font-medium">
+                          {coupon.name} ({coupon.code})
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {coupon.totalUsage} uses
+                        </span>
                       </div>
                     ))}
                   </div>
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-12">Could not load analytics data.</p>
+                <p className="text-center text-muted-foreground py-12">
+                  Could not load analytics data.
+                </p>
               )}
             </DialogContent>
           </Dialog>
@@ -302,7 +334,7 @@ const CouponAdmin = () => {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="bg-card border-border">
         <CardContent className="pt-6">
           <div className="flex gap-4 items-center">
             <div className="flex-1 relative">
@@ -311,17 +343,32 @@ const CouponAdmin = () => {
                 placeholder="Search coupons..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-48 bg-input border-border text-foreground focus:ring-ring">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectContent className="bg-card border-border">
+                <SelectItem
+                  value="all"
+                  className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                >
+                  All Status
+                </SelectItem>
+                <SelectItem
+                  value="active"
+                  className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                >
+                  Active
+                </SelectItem>
+                <SelectItem
+                  value="inactive"
+                  className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                >
+                  Inactive
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -336,7 +383,7 @@ const CouponAdmin = () => {
       ) : (
         <div>
           {coupons.length === 0 ? (
-            <Card>
+            <Card className="bg-card border-border">
               <CardContent className="p-8 text-center">
                 <p className="text-muted-foreground">
                   No coupons found. Create your first coupon to get started.
@@ -344,16 +391,18 @@ const CouponAdmin = () => {
               </CardContent>
             </Card>
           ) : (
-            <Card>
+            <Card className="bg-card border-border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Coupon</TableHead>
-                    <TableHead>Discount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Usage</TableHead>
-                    <TableHead>Validity</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-foreground">Coupon</TableHead>
+                    <TableHead className="text-foreground">Discount</TableHead>
+                    <TableHead className="text-foreground">Status</TableHead>
+                    <TableHead className="text-foreground">Usage</TableHead>
+                    <TableHead className="text-foreground">Validity</TableHead>
+                    <TableHead className="text-right text-foreground">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -380,6 +429,7 @@ const CouponAdmin = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handleToggleStatus(coupon._id)}
+                            className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                           >
                             {coupon.isActive ? (
                               <XCircle className="w-4 h-4" />
@@ -391,6 +441,7 @@ const CouponAdmin = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => openEditDialog(coupon)}
+                            className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -398,7 +449,7 @@ const CouponAdmin = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDeleteCoupon(coupon._id)}
-                            className="text-destructive hover:text-destructive/90"
+                            className="border-border text-destructive hover:bg-destructive hover:text-destructive-foreground"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -420,10 +471,11 @@ const CouponAdmin = () => {
             variant="outline"
             onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
+            className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
           >
             Previous
           </Button>
-          <span className="text-sm text-muted-brown">
+          <span className="text-sm text-muted-foreground">
             Page {currentPage} of {totalPages} ({totalItems} total)
           </span>
           <Button
@@ -432,6 +484,7 @@ const CouponAdmin = () => {
               setCurrentPage((prev) => Math.min(totalPages, prev + 1))
             }
             disabled={currentPage === totalPages}
+            className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
           >
             Next
           </Button>
@@ -440,12 +493,12 @@ const CouponAdmin = () => {
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-foreground">
               {editingCoupon ? "Edit Coupon" : "Create New Coupon"}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-muted-foreground">
               {editingCoupon
                 ? "Update the coupon details."
                 : "Add a new promotional coupon to your system."}

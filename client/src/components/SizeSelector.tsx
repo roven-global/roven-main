@@ -64,11 +64,11 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
               onKeyDown={(e) => handleKeyDown(e, variant)}
               disabled={isDisabled}
               className={cn(
-                "relative group p-4 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                "relative group p-3 border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 w-40 h-44",
                 "hover:shadow-md hover:border-primary/50",
                 isSelected
-                  ? "border-primary bg-primary/5 shadow-md"
-                  : "border-border bg-card hover:border-primary/30",
+                  ? "border-primary bg-blue-50 shadow-md"
+                  : "border-border bg-gray-100 hover:border-primary/30",
                 isDisabled &&
                   "opacity-50 cursor-not-allowed hover:shadow-none hover:border-border"
               )}
@@ -100,14 +100,14 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
               )}
 
               {/* Size Label */}
-              <div className="text-center">
-                <div className="font-semibold text-foreground text-lg mb-1">
+              <div className="text-center space-y-1.5">
+                <div className="font-semibold text-foreground text-base">
                   {variant.volume}
                 </div>
 
                 {/* Price */}
-                <div className="space-y-1">
-                  <div className="font-bold text-foreground">
+                <div className="space-y-0.5">
+                  <div className="font-bold text-foreground text-sm">
                     {formatRupees(variant.price)}
                   </div>
 
@@ -129,12 +129,12 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
 
                 {/* Stock Status */}
                 {variant.stock === 0 && (
-                  <div className="text-xs text-destructive font-medium mt-1">
+                  <div className="text-xs text-destructive font-medium">
                     Out of Stock
                   </div>
                 )}
                 {variant.stock > 0 && variant.stock <= 5 && (
-                  <div className="text-xs text-destructive font-medium mt-1">
+                  <div className="text-xs text-destructive font-medium">
                     Only {variant.stock} left
                   </div>
                 )}

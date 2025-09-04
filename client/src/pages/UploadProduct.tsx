@@ -894,7 +894,10 @@ const UploadProduct = () => {
         </div>
         <div className="flex items-center space-x-2">
           <Link to="/admin/product">
-            <Button variant="outline">
+            <Button
+              variant="outline"
+              className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+            >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
@@ -904,20 +907,22 @@ const UploadProduct = () => {
       <div className="mt-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Package className="h-5 w-5" />
                 Basic Information
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 Enter the basic details of your product
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Product Name *</Label>
+                  <Label htmlFor="name" className="text-foreground">
+                    Product Name *
+                  </Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -926,10 +931,13 @@ const UploadProduct = () => {
                     }
                     placeholder="Enter product name"
                     required
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="brand">Brand *</Label>
+                  <Label htmlFor="brand" className="text-foreground">
+                    Brand *
+                  </Label>
                   <Input
                     id="brand"
                     value={formData.brand}
@@ -938,12 +946,15 @@ const UploadProduct = () => {
                     }
                     placeholder="Enter brand name"
                     required
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="shortDescription">Short Description</Label>
+                <Label htmlFor="shortDescription" className="text-foreground">
+                  Short Description
+                </Label>
                 <Input
                   id="shortDescription"
                   value={formData.shortDescription}
@@ -954,11 +965,14 @@ const UploadProduct = () => {
                     })
                   }
                   placeholder="Brief description for product listings"
+                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
+                <Label htmlFor="description" className="text-foreground">
+                  Description *
+                </Label>
                 <Textarea
                   id="description"
                   value={formData.description}
@@ -968,24 +982,31 @@ const UploadProduct = () => {
                   placeholder="Detailed product description"
                   rows={4}
                   required
+                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="category">Category *</Label>
+                  <Label htmlFor="category" className="text-foreground">
+                    Category *
+                  </Label>
                   <Select
                     value={formData.category}
                     onValueChange={(value) =>
                       setFormData({ ...formData, category: value })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-input border-border text-foreground focus:ring-ring">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-card border-border">
                       {categories.map((category) => (
-                        <SelectItem key={category._id} value={category._id}>
+                        <SelectItem
+                          key={category._id}
+                          value={category._id}
+                          className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
                           {category.parentCategory
                             ? `${category.parentCategory.name} > ${category.name}`
                             : category.name}
@@ -995,7 +1016,9 @@ const UploadProduct = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sku">SKU *</Label>
+                  <Label htmlFor="sku" className="text-foreground">
+                    SKU *
+                  </Label>
                   <Input
                     id="sku"
                     value={formData.sku}
@@ -1004,11 +1027,14 @@ const UploadProduct = () => {
                     }
                     placeholder="Enter SKU"
                     required
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                   />
                 </div>
                 {!useVariants && (
                   <div className="space-y-2">
-                    <Label htmlFor="volume">Volume</Label>
+                    <Label htmlFor="volume" className="text-foreground">
+                      Volume
+                    </Label>
                     <Input
                       id="volume"
                       value={formData.volume}
@@ -1016,6 +1042,7 @@ const UploadProduct = () => {
                         setFormData({ ...formData, volume: e.target.value })
                       }
                       placeholder="e.g., 100ml, 250ml, 1L"
+                      className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                     />
                   </div>
                 )}
@@ -1024,20 +1051,22 @@ const UploadProduct = () => {
           </Card>
 
           {!useVariants && (
-            <Card>
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-foreground">
                   <span className="font-bold text-xl">₹</span>
                   Pricing (INR)
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-muted-foreground">
                   Set the pricing for your product in Indian Rupees (₹)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price (₹) *</Label>
+                    <Label htmlFor="price" className="text-foreground">
+                      Price (₹) *
+                    </Label>
                     <div className="relative">
                       <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
                         ₹
@@ -1051,14 +1080,14 @@ const UploadProduct = () => {
                           setFormData({ ...formData, price: e.target.value })
                         }
                         placeholder="1,499.00"
-                        className="pl-7"
+                        className="pl-7 bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                         required
                         disabled={useVariants}
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="originalPrice">
+                    <Label htmlFor="originalPrice" className="text-foreground">
                       Original Price (₹) (Optional)
                     </Label>
                     <div className="relative">
@@ -1077,7 +1106,7 @@ const UploadProduct = () => {
                           })
                         }
                         placeholder="1,999.00"
-                        className="pl-7"
+                        className="pl-7 bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                         disabled={useVariants}
                       />
                     </div>
@@ -1088,13 +1117,13 @@ const UploadProduct = () => {
           )}
 
           {/* Variants Management */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Package className="h-5 w-5" />
                 Product Variants
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 Add multiple sizes/volumes for this product (optional)
               </CardDescription>
             </CardHeader>
@@ -1105,7 +1134,9 @@ const UploadProduct = () => {
                   checked={useVariants}
                   onCheckedChange={setUseVariants}
                 />
-                <Label htmlFor="use-variants">Enable product variants</Label>
+                <Label htmlFor="use-variants" className="text-foreground">
+                  Enable product variants
+                </Label>
               </div>
 
               {useVariants && variants.length === 0 && (
@@ -1142,6 +1173,7 @@ const UploadProduct = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => removeVariant(index)}
+                          className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -1149,18 +1181,19 @@ const UploadProduct = () => {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div className="space-y-2">
-                          <Label>Volume *</Label>
+                          <Label className="text-foreground">Volume *</Label>
                           <Input
                             placeholder="e.g., 100ml, 200ml"
                             value={variant.volume}
                             onChange={(e) =>
                               updateVariant(index, "volume", e.target.value)
                             }
+                            className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label>Price (₹) *</Label>
+                          <Label className="text-foreground">Price (₹) *</Label>
                           <Input
                             type="number"
                             step="0.01"
@@ -1173,11 +1206,14 @@ const UploadProduct = () => {
                                 parseFloat(e.target.value) || 0
                               )
                             }
+                            className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label>Original Price (₹)</Label>
+                          <Label className="text-foreground">
+                            Original Price (₹)
+                          </Label>
                           <Input
                             type="number"
                             step="0.01"
@@ -1190,11 +1226,14 @@ const UploadProduct = () => {
                                 parseFloat(e.target.value) || 0
                               )
                             }
+                            className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label>Stock Quantity *</Label>
+                          <Label className="text-foreground">
+                            Stock Quantity *
+                          </Label>
                           <Input
                             type="number"
                             placeholder="0"
@@ -1206,22 +1245,26 @@ const UploadProduct = () => {
                                 parseInt(e.target.value) || 0
                               )
                             }
+                            className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label>SKU *</Label>
+                          <Label className="text-foreground">SKU *</Label>
                           <Input
                             placeholder="Unique SKU"
                             value={variant.sku}
                             onChange={(e) =>
                               updateVariant(index, "sku", e.target.value)
                             }
+                            className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label>Low Stock Threshold</Label>
+                          <Label className="text-foreground">
+                            Low Stock Threshold
+                          </Label>
                           <Input
                             type="number"
                             placeholder="5"
@@ -1233,6 +1276,7 @@ const UploadProduct = () => {
                                 parseInt(e.target.value) || 5
                               )
                             }
+                            className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                           />
                         </div>
                       </div>
@@ -1245,14 +1289,22 @@ const UploadProduct = () => {
                             updateVariant(index, "isActive", checked)
                           }
                         />
-                        <Label htmlFor={`variant-active-${index}`}>
+                        <Label
+                          htmlFor={`variant-active-${index}`}
+                          className="text-foreground"
+                        >
                           Active
                         </Label>
                       </div>
                     </div>
                   ))}
 
-                  <Button type="button" variant="outline" onClick={addVariant}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addVariant}
+                    className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                  >
                     <Plus className="mr-2 h-4 w-4" />
                     Add Variant
                   </Button>
@@ -1262,13 +1314,13 @@ const UploadProduct = () => {
           </Card>
 
           {/* Images */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <ImageIcon className="h-5 w-5" />
                 Product Images
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 Upload product images (max 10MB each)
               </CardDescription>
             </CardHeader>
@@ -1295,7 +1347,7 @@ const UploadProduct = () => {
                   </div>
                 ))}
 
-                <div className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center">
+                <div className="aspect-square rounded-lg border-2 border-dashed border-border flex items-center justify-center">
                   <Label
                     htmlFor="images"
                     className="cursor-pointer flex flex-col items-center gap-2 text-muted-foreground hover:text-foreground"
@@ -1317,16 +1369,19 @@ const UploadProduct = () => {
           </Card>
 
           {/* Specifications */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle>Specifications</CardTitle>
-              <CardDescription>
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Package className="h-5 w-5" />
+                Specifications
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Add product specifications and features
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Skin Type</Label>
+                <Label className="text-foreground">Skin Type</Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     "Normal",
@@ -1369,7 +1424,7 @@ const UploadProduct = () => {
                       />
                       <Label
                         htmlFor={`skin-${type}`}
-                        className="text-sm font-normal"
+                        className="text-sm font-normal text-foreground"
                       >
                         {type}
                       </Label>
@@ -1380,7 +1435,7 @@ const UploadProduct = () => {
 
               {/* Hair Type */}
               <div className="space-y-2">
-                <Label>Hair Type</Label>
+                <Label className="text-foreground">Hair Type</Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     "Normal",
@@ -1423,7 +1478,7 @@ const UploadProduct = () => {
                       />
                       <Label
                         htmlFor={`hair-${type}`}
-                        className="text-sm font-normal"
+                        className="text-sm font-normal text-foreground"
                       >
                         {type}
                       </Label>
@@ -1440,6 +1495,7 @@ const UploadProduct = () => {
                     onChange={(e) =>
                       updateSpecification(index, "key", e.target.value)
                     }
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                   />
                   <Input
                     placeholder="Specification value"
@@ -1447,12 +1503,14 @@ const UploadProduct = () => {
                     onChange={(e) =>
                       updateSpecification(index, "value", e.target.value)
                     }
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
                     onClick={() => removeSpecification(index)}
+                    className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -1462,6 +1520,7 @@ const UploadProduct = () => {
                 type="button"
                 variant="outline"
                 onClick={addSpecification}
+                className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Specification
@@ -1470,13 +1529,13 @@ const UploadProduct = () => {
           </Card>
 
           {/* Tags */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Tag className="h-5 w-5" />
                 Tags
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 Add tags to help customers find your product
               </CardDescription>
             </CardHeader>
@@ -1509,8 +1568,14 @@ const UploadProduct = () => {
                   onKeyPress={(e) =>
                     e.key === "Enter" && (e.preventDefault(), addTag())
                   }
+                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                 />
-                <Button type="button" variant="outline" onClick={addTag}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addTag}
+                  className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                >
                   Add
                 </Button>
               </div>
@@ -1518,13 +1583,13 @@ const UploadProduct = () => {
           </Card>
 
           {/* Benefits */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Package className="h-5 w-5" />
                 Benefits
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 Add key benefits of your product
               </CardDescription>
             </CardHeader>
@@ -1557,8 +1622,14 @@ const UploadProduct = () => {
                   onKeyPress={(e) =>
                     e.key === "Enter" && (e.preventDefault(), addBenefit())
                   }
+                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                 />
-                <Button type="button" variant="outline" onClick={addBenefit}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addBenefit}
+                  className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                >
                   Add
                 </Button>
               </div>
@@ -1566,19 +1637,22 @@ const UploadProduct = () => {
           </Card>
 
           {/* Hero Ingredients */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Package className="h-5 w-5" />
                 Hero Ingredients
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 Add key ingredients with description and image
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {ingredients.map((ing, index) => (
-                <div key={index} className="border rounded-lg p-4 space-y-3">
+                <div
+                  key={index}
+                  className="border border-border rounded-lg p-4 space-y-3"
+                >
                   <div className="flex gap-2">
                     <Input
                       placeholder="Ingredient name"
@@ -1586,6 +1660,7 @@ const UploadProduct = () => {
                       onChange={(e) =>
                         updateIngredient(index, "name", e.target.value)
                       }
+                      className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                     />
                     <Button
                       type="button"
@@ -1602,6 +1677,7 @@ const UploadProduct = () => {
                     onChange={(e) =>
                       updateIngredient(index, "description", e.target.value)
                     }
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                   />
                   <div>
                     {ing.imageUrl && (
@@ -1643,6 +1719,7 @@ const UploadProduct = () => {
                             );
                           }
                         }}
+                        className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                       />
                       <p className="text-xs text-muted-foreground">
                         Supported formats: JPG, PNG, GIF. Max size: 10MB
@@ -1651,20 +1728,25 @@ const UploadProduct = () => {
                   </div>
                 </div>
               ))}
-              <Button type="button" variant="outline" onClick={addIngredient}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addIngredient}
+                className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+              >
                 <Plus className="mr-2 h-4 w-4" /> Add Ingredient
               </Button>
             </CardContent>
           </Card>
 
           {/* Suitable For */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Package className="h-5 w-5" />
                 Suitable For
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 Select the demographics this product is suitable for.
               </CardDescription>
             </CardHeader>
@@ -1681,7 +1763,7 @@ const UploadProduct = () => {
                     />
                     <Label
                       htmlFor={`suitable-for-${option}`}
-                      className="text-sm font-normal"
+                      className="text-sm font-normal text-foreground"
                     >
                       {option}
                     </Label>
@@ -1692,13 +1774,13 @@ const UploadProduct = () => {
           </Card>
 
           {/* How to Use */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Package className="h-5 w-5" />
                 How to Use
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 Add step-by-step instructions for using your product
               </CardDescription>
             </CardHeader>
@@ -1707,14 +1789,14 @@ const UploadProduct = () => {
                 {howToUse.map((step, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-2 p-2 border rounded-md"
+                    className="flex items-center gap-2 p-2 border border-border rounded-md"
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-medium text-foreground">
                           Step {index + 1}:
                         </span>
-                        <span className="text-sm">{step}</span>
+                        <span className="text-sm text-foreground">{step}</span>
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
                         {step.length}/300 characters
@@ -1745,6 +1827,7 @@ const UploadProduct = () => {
                       setNewHowToUse(""))
                     }
                     maxLength={300}
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                   />
                   <Button
                     type="button"
@@ -1754,6 +1837,7 @@ const UploadProduct = () => {
                       setNewHowToUse("");
                     }}
                     disabled={!newHowToUse.trim() || newHowToUse.length > 300}
+                    className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                   >
                     Add
                   </Button>
@@ -1767,20 +1851,22 @@ const UploadProduct = () => {
           </Card>
 
           {/* Related Products */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Package className="h-5 w-5" />
                 Related Products
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 Manually select products to show in the "You May Also Like"
                 section.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Search for products to add</Label>
+                <Label className="text-foreground">
+                  Search for products to add
+                </Label>
                 <div className="flex gap-2">
                   <Input
                     placeholder="Search by name, brand, or tag..."
@@ -1790,11 +1876,13 @@ const UploadProduct = () => {
                       e.key === "Enter" &&
                       (e.preventDefault(), handleRelatedProductSearch())
                     }
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                   />
                   <Button
                     type="button"
                     onClick={handleRelatedProductSearch}
                     disabled={isSearching}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
                     {isSearching ? (
                       "Searching..."
@@ -1806,11 +1894,11 @@ const UploadProduct = () => {
               </div>
 
               {relatedProductSearchResults.length > 0 && (
-                <div className="border rounded-md max-h-60 overflow-y-auto">
+                <div className="border border-border rounded-md max-h-60 overflow-y-auto">
                   {relatedProductSearchResults.map((product) => (
                     <div
                       key={product._id}
-                      className="flex items-center justify-between p-2 border-b"
+                      className="flex items-center justify-between p-2 border-b border-border"
                     >
                       <div className="flex items-center gap-2">
                         <img
@@ -1819,7 +1907,9 @@ const UploadProduct = () => {
                           className="w-10 h-10 object-cover rounded"
                         />
                         <div>
-                          <p className="font-medium">{product.name}</p>
+                          <p className="font-medium text-foreground">
+                            {product.name}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             {product.brand}
                           </p>
@@ -1830,6 +1920,7 @@ const UploadProduct = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => addRelatedProduct(product)}
+                        className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                       >
                         Add
                       </Button>
@@ -1841,13 +1932,15 @@ const UploadProduct = () => {
               <Separator />
 
               <div className="space-y-2">
-                <Label>Current Related Products</Label>
+                <Label className="text-foreground">
+                  Current Related Products
+                </Label>
                 {relatedProducts.length > 0 ? (
                   <div className="space-y-2">
                     {relatedProducts.map((product) => (
                       <div
                         key={product._id}
-                        className="flex items-center justify-between p-2 border rounded-md"
+                        className="flex items-center justify-between p-2 border border-border rounded-md"
                       >
                         <div className="flex items-center gap-2">
                           <img
@@ -1856,7 +1949,9 @@ const UploadProduct = () => {
                             className="w-10 h-10 object-cover rounded"
                           />
                           <div>
-                            <p className="font-medium">{product.name}</p>
+                            <p className="font-medium text-foreground">
+                              {product.name}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               {product.sku}
                             </p>
@@ -1884,17 +1979,19 @@ const UploadProduct = () => {
           </Card>
 
           {/* Settings */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle>Settings</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-foreground">Settings</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Configure product visibility and features
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="isActive">Active</Label>
+                  <Label htmlFor="isActive" className="text-foreground">
+                    Active
+                  </Label>
                   <p className="text-sm text-muted-foreground">
                     Make this product visible to customers
                   </p>
@@ -1910,7 +2007,9 @@ const UploadProduct = () => {
               <Separator />
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="isFeatured">Featured</Label>
+                  <Label htmlFor="isFeatured" className="text-foreground">
+                    Featured
+                  </Label>
                   <p className="text-sm text-muted-foreground">
                     Show this product in featured sections
                   </p>
@@ -1929,7 +2028,11 @@ const UploadProduct = () => {
           {/* Submit Button */}
           <div className="flex justify-end gap-4">
             <Link to="/admin/product">
-              <Button type="button" variant="outline">
+              <Button
+                type="button"
+                variant="outline"
+                className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+              >
                 Cancel
               </Button>
             </Link>

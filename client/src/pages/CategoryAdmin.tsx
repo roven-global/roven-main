@@ -255,10 +255,14 @@ const CategoryPage = () => {
             />
           </div>
         </TableCell>
-        <TableCell className="font-medium">{category.name}</TableCell>
+        <TableCell className="font-medium text-foreground">
+          {category.name}
+        </TableCell>
         <TableCell>
           {category.parentCategory ? (
-            <Badge variant="outline">{category.parentCategory.name}</Badge>
+            <Badge variant="outline" className="border-border text-foreground">
+              {category.parentCategory.name}
+            </Badge>
           ) : (
             <Badge variant="secondary">Main Category</Badge>
           )}
@@ -266,7 +270,7 @@ const CategoryPage = () => {
         <TableCell>
           <Badge variant="secondary">{category.productsCount || 0}</Badge>
         </TableCell>
-        <TableCell>
+        <TableCell className="text-foreground">
           {new Date(category.createdAt).toLocaleDateString()}
         </TableCell>
         <TableCell>
@@ -275,25 +279,34 @@ const CategoryPage = () => {
               variant="outline"
               size="sm"
               onClick={() => handleEditCategory(category)}
+              className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
             >
               <Edit className="h-4 w-4" />
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                >
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="bg-card border-border">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Category</AlertDialogTitle>
-                  <AlertDialogDescription>
+                  <AlertDialogTitle className="text-foreground">
+                    Delete Category
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-muted-foreground">
                     Are you sure you want to delete "{category.name}"? This
                     action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+                    Cancel
+                  </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => handleDeleteCategory(category._id)}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -320,15 +333,15 @@ const CategoryPage = () => {
         buttonText="Add Category"
         onButtonClick={handleAddCategory}
       />
-      <Card>
+      <Card className="bg-card border-border">
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Filter className="h-5 w-5" />
                 Categories
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 Manage your product categories and their hierarchy
               </CardDescription>
             </div>
@@ -344,16 +357,20 @@ const CategoryPage = () => {
                       <span className="hidden sm:inline">Delete Selected</span>
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="bg-card border-border">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
+                      <AlertDialogTitle className="text-foreground">
+                        Are you sure?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-muted-foreground">
                         This will permanently delete {selectedCategories.length}{" "}
                         categories. This action cannot be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+                        Cancel
+                      </AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleBulkDelete}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -373,17 +390,32 @@ const CategoryPage = () => {
                 placeholder="Search categories..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
               />
             </div>
             <Select value={filterParent} onValueChange={setFilterParent}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-48 bg-input border-border text-foreground focus:ring-ring">
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="main">Main Categories</SelectItem>
-                <SelectItem value="sub">Subcategories</SelectItem>
+              <SelectContent className="bg-card border-border">
+                <SelectItem
+                  value="all"
+                  className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                >
+                  All Categories
+                </SelectItem>
+                <SelectItem
+                  value="main"
+                  className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                >
+                  Main Categories
+                </SelectItem>
+                <SelectItem
+                  value="sub"
+                  className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                >
+                  Subcategories
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -398,35 +430,35 @@ const CategoryPage = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                  <TableHead className="w-[60px]">
-                    <Checkbox
-                      checked={
-                        allVisibleCategories.length > 0 &&
-                        selectedCategories.length ===
-                          allVisibleCategories.length
-                          ? true
-                          : selectedCategories.length > 0
-                          ? "indeterminate"
-                          : false
-                      }
-                      onCheckedChange={handleSelectAll}
-                      aria-label="Select all"
-                    />
-                  </TableHead>
-                  <TableHead>Image</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Parent</TableHead>
-                  <TableHead>Products</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {visibleTopLevelCategories.map((cat) =>
-                  renderCategoryRow(cat, 0)
-                )}
-              </TableBody>
-            </Table>
+                    <TableHead className="w-[60px]">
+                      <Checkbox
+                        checked={
+                          allVisibleCategories.length > 0 &&
+                          selectedCategories.length ===
+                            allVisibleCategories.length
+                            ? true
+                            : selectedCategories.length > 0
+                            ? "indeterminate"
+                            : false
+                        }
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
+                    <TableHead className="text-foreground">Image</TableHead>
+                    <TableHead className="text-foreground">Name</TableHead>
+                    <TableHead className="text-foreground">Parent</TableHead>
+                    <TableHead className="text-foreground">Products</TableHead>
+                    <TableHead className="text-foreground">Created</TableHead>
+                    <TableHead className="text-foreground">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {visibleTopLevelCategories.map((cat) =>
+                    renderCategoryRow(cat, 0)
+                  )}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>

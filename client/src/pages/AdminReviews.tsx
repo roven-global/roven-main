@@ -1,18 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { toast } from "@/hooks/use-toast";
-import { Search, Filter, Edit, Trash2 } from 'lucide-react';
-import Axios from '@/utils/Axios';
-import SummaryApi from '@/common/summaryApi';
+import { Search, Filter, Edit, Trash2 } from "lucide-react";
+import Axios from "@/utils/Axios";
+import SummaryApi from "@/common/summaryApi";
 
 interface Review {
   _id: string;
@@ -41,9 +79,9 @@ interface PaginationData {
 const AdminReviews = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationData>({
     currentPage: 1,
@@ -54,7 +92,7 @@ const AdminReviews = () => {
   });
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentReview, setCurrentReview] = useState<Review | null>(null);
-  const [editData, setEditData] = useState({ rating: 0, review: '' });
+  const [editData, setEditData] = useState({ rating: 0, review: "" });
 
   const itemsPerPage = 10;
 
@@ -72,16 +110,18 @@ const AdminReviews = () => {
         sortOrder,
       });
 
-      if (searchTerm) params.append('search', searchTerm);
+      if (searchTerm) params.append("search", searchTerm);
 
-      const response = await Axios.get(`${SummaryApi.getAllReviews.url}?${params.toString()}`);
+      const response = await Axios.get(
+        `${SummaryApi.getAllReviews.url}?${params.toString()}`
+      );
 
       if (response.data.success) {
         setReviews(response.data.data.reviews);
         setPagination(response.data.data.pagination);
       }
     } catch (error) {
-      console.error('Error fetching reviews:', error);
+      console.error("Error fetching reviews:", error);
       toast({
         title: "Error",
         description: "Failed to fetch reviews",
@@ -94,7 +134,9 @@ const AdminReviews = () => {
 
   const handleDelete = async (reviewId: string) => {
     try {
-      const response = await Axios.delete(`${SummaryApi.adminDeleteReview.url}/${reviewId}`);
+      const response = await Axios.delete(
+        `${SummaryApi.adminDeleteReview.url}/${reviewId}`
+      );
       if (response.data.success) {
         toast({
           title: "Success",
@@ -103,7 +145,7 @@ const AdminReviews = () => {
         fetchReviews();
       }
     } catch (error: any) {
-      console.error('Error deleting review:', error);
+      console.error("Error deleting review:", error);
       toast({
         title: "Error",
         description: error.response?.data?.message || "Failed to delete review",
@@ -123,7 +165,10 @@ const AdminReviews = () => {
     if (!currentReview) return;
 
     try {
-      const response = await Axios.put(`${SummaryApi.adminUpdateReview.url}/${currentReview._id}`, editData);
+      const response = await Axios.put(
+        `${SummaryApi.adminUpdateReview.url}/${currentReview._id}`,
+        editData
+      );
       if (response.data.success) {
         toast({
           title: "Success",
@@ -133,7 +178,7 @@ const AdminReviews = () => {
         fetchReviews();
       }
     } catch (error: any) {
-      console.error('Error updating review:', error);
+      console.error("Error updating review:", error);
       toast({
         title: "Error",
         description: error.response?.data?.message || "Failed to update review",
@@ -170,25 +215,23 @@ const AdminReviews = () => {
           <h2 className="font-sans text-3xl font-bold tracking-tight text-foreground">
             Review Management
           </h2>
-          <p className="text-muted-foreground">
-            Manage all customer reviews.
-          </p>
+          <p className="text-muted-foreground">Manage all customer reviews.</p>
         </div>
       </div>
-      <Card>
+      <Card className="bg-card border-border">
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Filter className="h-5 w-5" />
                 Reviews
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 Manage and moderate customer feedback.
               </CardDescription>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center pt-4">
             <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -196,12 +239,12 @@ const AdminReviews = () => {
                 placeholder="Search reviews..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
               />
             </form>
           </div>
         </CardHeader>
-        
+
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center h-32">
@@ -225,8 +268,12 @@ const AdminReviews = () => {
                     {reviews.map((review) => (
                       <TableRow key={review._id}>
                         <TableCell>
-                          <div className="font-medium">{review.user.name}</div>
-                          <div className="text-sm text-muted-foreground">{review.user.email}</div>
+                          <div className="font-medium text-foreground">
+                            {review.user.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {review.user.email}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-muted-foreground">
@@ -234,39 +281,63 @@ const AdminReviews = () => {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{review.rating} ★</Badge>
+                          <Badge
+                            variant="outline"
+                            className="border-border text-foreground"
+                          >
+                            {review.rating} ★
+                          </Badge>
                         </TableCell>
                         <TableCell>
-                          <p className="max-w-xs truncate">{review.review}</p>
+                          <p className="max-w-xs truncate text-foreground">
+                            {review.review}
+                          </p>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-foreground">
                           {new Date(review.createdAt).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => {
-                              setCurrentReview(review);
-                              setEditData({ rating: review.rating, review: review.review });
-                              setIsEditDialogOpen(true);
-                            }}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setCurrentReview(review);
+                                setEditData({
+                                  rating: review.rating,
+                                  review: review.review,
+                                });
+                                setIsEditDialogOpen(true);
+                              }}
+                              className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                                >
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
+                              <AlertDialogContent className="bg-card border-border">
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Review</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete this review? This action cannot be undone.
+                                  <AlertDialogTitle className="text-foreground">
+                                    Delete Review
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription className="text-muted-foreground">
+                                    Are you sure you want to delete this review?
+                                    This action cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction 
+                                  <AlertDialogCancel className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+                                    Cancel
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction
                                     onClick={() => handleDelete(review._id)}
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   >
@@ -288,16 +359,28 @@ const AdminReviews = () => {
                   <Pagination>
                     <PaginationContent>
                       <PaginationItem>
-                        <PaginationPrevious 
-                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                          className={`cursor-pointer ${!pagination.hasPrev && 'opacity-50 cursor-not-allowed'}`}
+                        <PaginationPrevious
+                          onClick={() =>
+                            setCurrentPage((prev) => Math.max(1, prev - 1))
+                          }
+                          className={`cursor-pointer ${
+                            !pagination.hasPrev &&
+                            "opacity-50 cursor-not-allowed"
+                          }`}
                         />
                       </PaginationItem>
                       {generatePaginationItems()}
                       <PaginationItem>
-                        <PaginationNext 
-                          onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
-                          className={`cursor-pointer ${!pagination.hasNext && 'opacity-50 cursor-not-allowed'}`}
+                        <PaginationNext
+                          onClick={() =>
+                            setCurrentPage((prev) =>
+                              Math.min(pagination.totalPages, prev + 1)
+                            )
+                          }
+                          className={`cursor-pointer ${
+                            !pagination.hasNext &&
+                            "opacity-50 cursor-not-allowed"
+                          }`}
                         />
                       </PaginationItem>
                     </PaginationContent>
@@ -310,43 +393,52 @@ const AdminReviews = () => {
       </Card>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] bg-card border-border">
           <form onSubmit={handleUpdate}>
             <DialogHeader>
-              <DialogTitle>Edit Review</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-foreground">Edit Review</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
                 Make changes to the review below. Click save when you're done.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="rating" className="text-right">
+                <Label htmlFor="rating" className="text-right text-foreground">
                   Rating
                 </Label>
                 <Input
                   id="rating"
                   type="number"
                   value={editData.rating}
-                  onChange={(e) => setEditData({ ...editData, rating: Number(e.target.value) })}
-                  className="col-span-3"
+                  onChange={(e) =>
+                    setEditData({ ...editData, rating: Number(e.target.value) })
+                  }
+                  className="col-span-3 bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                   min="1"
                   max="5"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="review" className="text-right">
+                <Label htmlFor="review" className="text-right text-foreground">
                   Review
                 </Label>
                 <Textarea
                   id="review"
                   value={editData.review}
-                  onChange={(e) => setEditData({ ...editData, review: e.target.value })}
-                  className="col-span-3"
+                  onChange={(e) =>
+                    setEditData({ ...editData, review: e.target.value })
+                  }
+                  className="col-span-3 bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit">Save changes</Button>
+              <Button
+                type="submit"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Save changes
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

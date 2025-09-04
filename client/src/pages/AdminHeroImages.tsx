@@ -182,10 +182,10 @@ const AdminHeroImages: React.FC = () => {
         </h2>
       </div>
 
-      <Card className="mb-8">
+      <Card className="mb-8 bg-card border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ImageIcon className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <ImageIcon className="h-5 w-5 text-primary" />
             Upload New Hero Image
           </CardTitle>
           <p className="text-sm text-muted-foreground">
@@ -198,7 +198,7 @@ const AdminHeroImages: React.FC = () => {
             <div>
               <label
                 htmlFor="desktop-image-upload-input"
-                className="block text-sm font-medium mb-2"
+                className="block text-sm font-medium mb-2 text-foreground"
               >
                 Select Desktop Image File
               </label>
@@ -208,17 +208,17 @@ const AdminHeroImages: React.FC = () => {
                 type="file"
                 accept="image/*"
                 onChange={handleDesktopFileChange}
-                className="cursor-pointer"
+                className="cursor-pointer bg-input border-border text-foreground focus:ring-ring"
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Recommended: High resolution image 1920x1080 or 16:9 aspect
                 ratio, max 2MB.
                 <br />
-                <span className="text-blue-600 font-medium">💡 Tip:</span> Use
+                <span className="text-primary font-medium">💡 Tip:</span> Use
                 landscape orientation for better desktop viewing experience.
               </p>
               {selectedDesktopFile && (
-                <p className="text-xs text-green-600 mt-1">
+                <p className="text-xs text-accent mt-1">
                   ✓ Selected: {selectedDesktopFile.name}
                 </p>
               )}
@@ -227,7 +227,7 @@ const AdminHeroImages: React.FC = () => {
             <div>
               <label
                 htmlFor="mobile-image-upload-input"
-                className="block text-sm font-medium mb-2"
+                className="block text-sm font-medium mb-2 text-foreground"
               >
                 Select Mobile Image File
               </label>
@@ -237,17 +237,17 @@ const AdminHeroImages: React.FC = () => {
                 type="file"
                 accept="image/*"
                 onChange={handleMobileFileChange}
-                className="cursor-pointer"
+                className="cursor-pointer bg-input border-border text-foreground focus:ring-ring"
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Recommended: Mobile-optimized image 768×400px, 4:3 aspect ratio,
                 max 200Kb.
                 <br />
-                <span className="text-blue-600 font-medium">💡 Tip:</span> Use
+                <span className="text-primary font-medium">💡 Tip:</span> Use
                 portrait orientation for better mobile viewing experience.
               </p>
               {selectedMobileFile && (
-                <p className="text-xs text-green-600 mt-1">
+                <p className="text-xs text-accent mt-1">
                   ✓ Selected: {selectedMobileFile.name}
                 </p>
               )}
@@ -256,7 +256,7 @@ const AdminHeroImages: React.FC = () => {
             <div>
               <label
                 htmlFor="alt-text"
-                className="block text-sm font-medium mb-2"
+                className="block text-sm font-medium mb-2 text-foreground"
               >
                 Alt Text (Optional)
               </label>
@@ -265,17 +265,18 @@ const AdminHeroImages: React.FC = () => {
                 placeholder="Enter descriptive text for accessibility"
                 value={altText}
                 onChange={(e) => setAltText(e.target.value)}
+                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
               />
             </div>
 
             <Button
               onClick={handleUpload}
               disabled={isUploadDisabled()}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {uploading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
                   Processing...
                 </>
               ) : (
@@ -292,7 +293,7 @@ const AdminHeroImages: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden">
+            <Card key={i} className="overflow-hidden bg-card border-border">
               <Skeleton className="w-full h-48" />
               <CardContent className="p-4">
                 <Skeleton className="h-4 w-3/4 mb-2" />
@@ -312,7 +313,10 @@ const AdminHeroImages: React.FC = () => {
           </div>
         ) : (
           images.map((image) => (
-            <Card key={image._id} className="overflow-hidden group">
+            <Card
+              key={image._id}
+              className="overflow-hidden group bg-card border-border"
+            >
               <div className="relative">
                 {/* Desktop Preview */}
                 <div className="hidden md:block">
@@ -356,10 +360,13 @@ const AdminHeroImages: React.FC = () => {
               <CardContent className="p-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-sm truncate">
+                    <h3 className="font-medium text-sm truncate text-foreground">
                       {image.alt || "Hero Image"}
                     </h3>
-                    <Badge variant="outline" className="text-xs">
+                    <Badge
+                      variant="outline"
+                      className="text-xs border-border text-foreground"
+                    >
                       {formatDate(image.createdAt)}
                     </Badge>
                   </div>

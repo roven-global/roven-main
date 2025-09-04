@@ -289,15 +289,23 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <Card>
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle>Appearance</CardTitle>
-          <CardDescription>How the gift will look to the user.</CardDescription>
+          <CardTitle className="text-foreground">Appearance</CardTitle>
+          <CardDescription className="text-muted-foreground">
+            How the gift will look to the user.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" {...register("title")} />
+            <Label htmlFor="title" className="text-foreground">
+              Title
+            </Label>
+            <Input
+              id="title"
+              {...register("title")}
+              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+            />
             {errors.title && (
               <p className="text-destructive text-xs mt-1">
                 {errors.title.message}
@@ -306,8 +314,14 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea id="description" {...register("description")} />
+            <Label htmlFor="description" className="text-foreground">
+              Description
+            </Label>
+            <Textarea
+              id="description"
+              {...register("description")}
+              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+            />
             {errors.description && (
               <p className="text-destructive text-xs mt-1">
                 {errors.description.message}
@@ -317,18 +331,22 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Icon</Label>
+              <Label className="text-foreground">Icon</Label>
               <Controller
                 name="icon"
                 control={control}
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-input border-border text-foreground focus:ring-ring">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-card border-border">
                       {iconOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
+                        <SelectItem
+                          key={option.value}
+                          value={option.value}
+                          className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
                           <div className="flex items-center gap-2">
                             {option.icon}
                             {option.label}
@@ -341,13 +359,13 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
               />
             </div>
             <div>
-              <Label>Color</Label>
+              <Label className="text-foreground">Color</Label>
               <Controller
                 name="color"
                 control={control}
                 render={({ field }) => (
                   <Select onValueChange={handleColorChange} value={field.value}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-input border-border text-foreground focus:ring-ring">
                       <div className="flex items-center gap-2">
                         <div
                           className={`w-4 h-4 rounded-full ${
@@ -361,9 +379,13 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
                         }
                       </div>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-card border-border">
                       {colorOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
+                        <SelectItem
+                          key={option.value}
+                          value={option.value}
+                          className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
                           <div className="flex items-center gap-2">
                             <div
                               className={`w-4 h-4 rounded-full ${option.swatch}`}
@@ -381,20 +403,23 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle>Reward Details</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-foreground">Reward Details</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Define the reward and how it's redeemed.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="reward">Reward Text</Label>
+            <Label htmlFor="reward" className="text-foreground">
+              Reward Text
+            </Label>
             <Input
               id="reward"
               {...register("reward")}
               placeholder="e.g., 'Get 10% OFF your first order!'"
+              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
             />
             {errors.reward && (
               <p className="text-destructive text-xs mt-1">
@@ -403,11 +428,14 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
             )}
           </div>
           <div>
-            <Label htmlFor="couponCode">Coupon Code</Label>
+            <Label htmlFor="couponCode" className="text-foreground">
+              Coupon Code
+            </Label>
             <Input
               id="couponCode"
               {...register("couponCode")}
               placeholder="e.g., WELCOME10"
+              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
             />
             {errors.couponCode && (
               <p className="text-destructive text-xs mt-1">
@@ -416,21 +444,25 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
             )}
           </div>
           <div>
-            <Label>Reward Type</Label>
+            <Label className="text-foreground">Reward Type</Label>
             <Controller
               name="rewardType"
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-input border-border text-foreground focus:ring-ring">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-card border-border">
                     {rewardTypeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                      >
                         <div className="flex flex-col">
                           <span className="font-medium">{option.label}</span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             {option.description}
                           </span>
                         </div>
@@ -445,19 +477,22 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
       </Card>
 
       {rewardType !== "buy_one_get_one" && (
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>Discount Conditions</CardTitle>
+            <CardTitle className="text-foreground">
+              Discount Conditions
+            </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="rewardValue">
+              <Label htmlFor="rewardValue" className="text-foreground">
                 Reward Value ({rewardType === "percentage" ? "%" : "₹"})
               </Label>
               <Input
                 id="rewardValue"
                 type="number"
                 {...register("rewardValue", { valueAsNumber: true })}
+                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
               />
               {errors.rewardValue && (
                 <p className="text-destructive text-xs mt-1">
@@ -467,11 +502,14 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
             </div>
             {rewardType === "percentage" && (
               <div>
-                <Label htmlFor="maxDiscount">Max Discount (₹) - Optional</Label>
+                <Label htmlFor="maxDiscount" className="text-foreground">
+                  Max Discount (₹) - Optional
+                </Label>
                 <Input
                   id="maxDiscount"
                   type="number"
                   {...register("maxDiscount", { valueAsNumber: true })}
+                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                 />
                 {errors.maxDiscount && (
                   <p className="text-destructive text-xs mt-1">
@@ -481,11 +519,14 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
               </div>
             )}
             <div>
-              <Label htmlFor="minOrderAmount">Min Order Amount (₹)</Label>
+              <Label htmlFor="minOrderAmount" className="text-foreground">
+                Min Order Amount (₹)
+              </Label>
               <Input
                 id="minOrderAmount"
                 type="number"
                 {...register("minOrderAmount", { valueAsNumber: true })}
+                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
               />
               {errors.minOrderAmount && (
                 <p className="text-destructive text-xs mt-1">
@@ -498,21 +539,24 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
       )}
 
       {rewardType === "buy_one_get_one" && (
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>BOGO Settings</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-foreground">BOGO Settings</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Configure the rules for your Buy One Get One offer.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="buyQuantity">Buy Quantity</Label>
+                <Label htmlFor="buyQuantity" className="text-foreground">
+                  Buy Quantity
+                </Label>
                 <Input
                   id="buyQuantity"
                   type="number"
                   {...register("buyQuantity", { valueAsNumber: true })}
+                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                 />
                 {errors.buyQuantity && (
                   <p className="text-destructive text-xs mt-1">
@@ -521,11 +565,14 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
                 )}
               </div>
               <div>
-                <Label htmlFor="getQuantity">Get Quantity (Free)</Label>
+                <Label htmlFor="getQuantity" className="text-foreground">
+                  Get Quantity (Free)
+                </Label>
                 <Input
                   id="getQuantity"
                   type="number"
                   {...register("getQuantity", { valueAsNumber: true })}
+                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                 />
                 {errors.getQuantity && (
                   <p className="text-destructive text-xs mt-1">
@@ -535,7 +582,9 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
               </div>
             </div>
             <div>
-              <Label>Applicable Categories (optional)</Label>
+              <Label className="text-foreground">
+                Applicable Categories (optional)
+              </Label>
               <Controller
                 name="applicableCategories"
                 control={control}
@@ -568,14 +617,26 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
             />
           )}
         />
-        <Label htmlFor="isActive">Active</Label>
+        <Label htmlFor="isActive" className="text-foreground">
+          Active
+        </Label>
       </div>
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+        >
           Cancel
         </Button>
-        <Button type="submit">{editingGift ? "Update" : "Create"} Gift</Button>
+        <Button
+          type="submit"
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          {editingGift ? "Update" : "Create"} Gift
+        </Button>
       </div>
     </form>
   );

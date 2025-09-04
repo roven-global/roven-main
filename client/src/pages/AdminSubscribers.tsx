@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Table,
   TableHeader,
@@ -7,7 +7,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Pagination,
   PaginationContent,
@@ -15,12 +15,12 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@/components/ui/pagination';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
-import Axios from '@/utils/Axios';
-import { format } from 'date-fns';
+} from "@/components/ui/pagination";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import Axios from "@/utils/Axios";
+import { format } from "date-fns";
 
 // Type definitions
 interface Subscriber {
@@ -43,7 +43,10 @@ const AdminSubscribers = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const page = useMemo(() => parseInt(searchParams.get('page') || '1', 10), [searchParams]);
+  const page = useMemo(
+    () => parseInt(searchParams.get("page") || "1", 10),
+    [searchParams]
+  );
   const limit = 15; // As defined in the backend
 
   useEffect(() => {
@@ -51,12 +54,15 @@ const AdminSubscribers = () => {
       setLoading(true);
       setError(null);
       try {
-        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+        const params = new URLSearchParams({
+          page: String(page),
+          limit: String(limit),
+        });
         const res = await Axios.get(`/api/newsletter?${params.toString()}`);
         setSubscribers(res.data.data.subscribers);
         setPagination(res.data.data.pagination);
       } catch (err) {
-        setError('Failed to fetch subscribers.');
+        setError("Failed to fetch subscribers.");
         console.error(err);
       } finally {
         setLoading(false);
@@ -69,7 +75,7 @@ const AdminSubscribers = () => {
   const handlePageChange = (newPage: number) => {
     if (newPage > 0 && newPage <= (pagination?.totalPages || 1)) {
       const newParams = new URLSearchParams(searchParams);
-      newParams.set('page', String(newPage));
+      newParams.set("page", String(newPage));
       setSearchParams(newParams);
     }
   };
@@ -85,20 +91,25 @@ const AdminSubscribers = () => {
         <h1 className="text-3xl font-sans font-bold text-foreground">
           Newsletter Subscribers
         </h1>
-        <Button onClick={handleExport}>
+        <Button
+          onClick={handleExport}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground"
+        >
           <Download className="mr-2 h-4 w-4" />
           Export as CSV
         </Button>
       </div>
 
-      {error && <p className="text-red-500 mb-4">{error}</p>}
+      {error && <p className="text-destructive mb-4">{error}</p>}
 
-      <div className="rounded-lg border">
+      <div className="rounded-lg border border-border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Email Address</TableHead>
-              <TableHead className="w-[250px]">Subscription Date</TableHead>
+              <TableHead className="text-foreground">Email Address</TableHead>
+              <TableHead className="w-[250px] text-foreground">
+                Subscription Date
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -113,13 +124,20 @@ const AdminSubscribers = () => {
             ) : subscribers.length > 0 ? (
               subscribers.map((subscriber) => (
                 <TableRow key={subscriber._id}>
-                  <TableCell className="font-medium">{subscriber.email}</TableCell>
-                  <TableCell>{format(new Date(subscriber.createdAt), 'PPpp')}</TableCell>
+                  <TableCell className="font-medium text-foreground">
+                    {subscriber.email}
+                  </TableCell>
+                  <TableCell className="text-foreground">
+                    {format(new Date(subscriber.createdAt), "PPpp")}
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={2} className="text-center h-24">
+                <TableCell
+                  colSpan={2}
+                  className="text-center h-24 text-muted-foreground"
+                >
                   No subscribers found.
                 </TableCell>
               </TableRow>
@@ -135,16 +153,25 @@ const AdminSubscribers = () => {
               <PaginationItem>
                 <PaginationPrevious
                   href="#"
-                  onClick={(e) => { e.preventDefault(); handlePageChange(page - 1); }}
-                  className={page <= 1 ? 'pointer-events-none opacity-50' : ''}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handlePageChange(page - 1);
+                  }}
+                  className={`cursor-pointer ${
+                    page <= 1 ? "pointer-events-none opacity-50" : ""
+                  }`}
                 />
               </PaginationItem>
               {[...Array(pagination.totalPages)].map((_, i) => (
                 <PaginationItem key={i}>
                   <PaginationLink
                     href="#"
-                    onClick={(e) => { e.preventDefault(); handlePageChange(i + 1); }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handlePageChange(i + 1);
+                    }}
                     isActive={page === i + 1}
+                    className="cursor-pointer"
                   >
                     {i + 1}
                   </PaginationLink>
@@ -153,8 +180,15 @@ const AdminSubscribers = () => {
               <PaginationItem>
                 <PaginationNext
                   href="#"
-                  onClick={(e) => { e.preventDefault(); handlePageChange(page + 1); }}
-                  className={page >= pagination.totalPages ? 'pointer-events-none opacity-50' : ''}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handlePageChange(page + 1);
+                  }}
+                  className={`cursor-pointer ${
+                    page >= pagination.totalPages
+                      ? "pointer-events-none opacity-50"
+                      : ""
+                  }`}
                 />
               </PaginationItem>
             </PaginationContent>

@@ -38,11 +38,11 @@ const categorySchema = new mongoose.Schema(
 );
 
 const generateSlug = (name) => {
-    return slugify(name, {
-        lower: true,
-        remove: /[*+~.()'"!:@]/g,
-        strict: true,
-    });
+  return slugify(name, {
+    lower: true,
+    remove: /[*+~.()'"!:@]/g,
+    strict: true,
+  });
 };
 
 // Create slug from name before saving a NEW category
@@ -60,7 +60,6 @@ categorySchema.pre("findOneAndUpdate", async function (next) {
   }
   next();
 });
-
 
 // Virtual for subcategories
 categorySchema.virtual("subcategories", {

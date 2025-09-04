@@ -308,19 +308,25 @@ const WelcomeGiftAdmin = () => {
                       <div className="text-2xl font-bold">
                         {analytics.totalGifts}
                       </div>
-                      <div className="text-sm text-muted-foreground">Total Gifts</div>
+                      <div className="text-sm text-muted-foreground">
+                        Total Gifts
+                      </div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold">
                         {analytics.activeGifts}
                       </div>
-                      <div className="text-sm text-muted-foreground">Active Gifts</div>
+                      <div className="text-sm text-muted-foreground">
+                        Active Gifts
+                      </div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold">
                         {analytics.totalUsage}
                       </div>
-                      <div className="text-sm text-muted-foreground">Total Claims</div>
+                      <div className="text-sm text-muted-foreground">
+                        Total Claims
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-2 pt-4">
@@ -359,12 +365,12 @@ const WelcomeGiftAdmin = () => {
                 Add Gift
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border">
               <DialogHeader>
-                <DialogTitle>
+                <DialogTitle className="text-foreground">
                   {editingGift ? "Edit Welcome Gift" : "Add New Welcome Gift"}
                 </DialogTitle>
-                <DialogDescription>
+                <DialogDescription className="text-muted-foreground">
                   {editingGift
                     ? "Update the details of this welcome gift."
                     : "Create a new welcome gift for users. Fill in the details below."}
@@ -438,7 +444,9 @@ const WelcomeGiftAdmin = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">{gift.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {gift.description}
+              </p>
               <div className="p-2 bg-white rounded text-sm font-mono">
                 {gift.reward}
               </div>

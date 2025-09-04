@@ -20,7 +20,8 @@ const calculateOrderTotals = async (cartItems, user, couponCode, applyWelcomeGif
     const orderItems = [];
 
     for (const item of cartItems) {
-        const product = await ProductModel.findById(item.productId?._id || item.productId);
+        const productId = typeof item.productId === 'string' ? item.productId : item.productId?._id;
+        const product = await ProductModel.findById(productId);
         if (!product) continue;
 
         let unitPrice = product.price;

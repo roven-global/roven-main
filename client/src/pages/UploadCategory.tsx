@@ -1,14 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Upload, Image as ImageIcon, Save, X } from 'lucide-react';
-import Axios from '@/utils/Axios';
-import SummaryApi from '@/common/summaryApi';
+import { Upload, Image as ImageIcon, Save, X } from "lucide-react";
+import Axios from "@/utils/Axios";
+import SummaryApi from "@/common/summaryApi";
 
 interface Category {
   _id: string;
@@ -39,14 +57,14 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
   onClose,
   onSuccess,
   editingCategory,
-  parentCategories
+  parentCategories,
 }) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
+  const [imagePreview, setImagePreview] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    parentCategory: '',
+    name: "",
+    parentCategory: "",
   });
 
   // Update form data when editing category changes
@@ -54,7 +72,7 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
     if (editingCategory) {
       setFormData({
         name: editingCategory.name,
-        parentCategory: editingCategory.parentCategory?._id || 'none',
+        parentCategory: editingCategory.parentCategory?._id || "none",
       });
       setImagePreview(editingCategory.image.url);
     } else {
@@ -70,9 +88,9 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
   }, [open]);
 
   const resetForm = () => {
-    setFormData({ name: '', parentCategory: 'none' });
+    setFormData({ name: "", parentCategory: "none" });
     setImageFile(null);
-    setImagePreview('');
+    setImagePreview("");
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,7 +107,7 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
       }
 
       // Check file type
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         toast({
           title: "Error",
           description: "Please select a valid image file",
@@ -109,7 +127,7 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.name.trim()) {
       toast({
@@ -132,14 +150,14 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
     setSubmitting(true);
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('name', formData.name.trim());
-      
-      if (formData.parentCategory && formData.parentCategory !== 'none') {
-        formDataToSend.append('parentCategory', formData.parentCategory);
+      formDataToSend.append("name", formData.name.trim());
+
+      if (formData.parentCategory && formData.parentCategory !== "none") {
+        formDataToSend.append("parentCategory", formData.parentCategory);
       }
-      
+
       if (imageFile) {
-        formDataToSend.append('image', imageFile);
+        formDataToSend.append("image", imageFile);
       }
 
       let response;
@@ -150,7 +168,7 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
           url: `${SummaryApi.updateCategory.url}/${editingCategory._id}`,
           data: formDataToSend,
           headers: {
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
           },
         });
       } else {
@@ -160,7 +178,7 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
           url: SummaryApi.createCategory.url,
           data: formDataToSend,
           headers: {
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
           },
         });
       }
@@ -168,20 +186,23 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
       if (response.data.success) {
         toast({
           title: "Success",
-          description: editingCategory 
-            ? "Category updated successfully" 
+          description: editingCategory
+            ? "Category updated successfully"
             : "Category created successfully",
         });
         onSuccess();
         onClose();
       } else {
-        throw new Error(response.data.message || 'Failed to save category');
+        throw new Error(response.data.message || "Failed to save category");
       }
     } catch (error: any) {
-      console.error('Error saving category:', error);
+      console.error("Error saving category:", error);
       toast({
         title: "Error",
-        description: error.response?.data?.message || error.message || "Failed to save category",
+        description:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to save category",
         variant: "destructive",
       });
     } finally {
@@ -191,58 +212,81 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
 
   const removeImage = () => {
     setImageFile(null);
-    setImagePreview('');
+    setImagePreview("");
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-card border-border">
         <DialogHeader>
-          <DialogTitle className="font-sans flex items-center gap-2">
-            <ImageIcon className="h-5 w-5" />
-            {editingCategory ? 'Edit Category' : 'Add New Category'}
+          <DialogTitle className="font-sans flex items-center gap-2 text-foreground">
+            <ImageIcon className="h-5 w-5 text-primary" />
+            {editingCategory ? "Edit Category" : "Add New Category"}
           </DialogTitle>
-          <DialogDescription>
-            {editingCategory 
-              ? 'Update the category details below' 
-              : 'Create a new category for your products'}
+          <DialogDescription className="text-muted-foreground">
+            {editingCategory
+              ? "Update the category details below"
+              : "Create a new category for your products"}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-lg">Basic Information</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg text-foreground">
+                Basic Information
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Enter the basic details of your category
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Category Name *</Label>
+                <Label htmlFor="name" className="text-foreground">
+                  Category Name *
+                </Label>
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   placeholder="Enter category name"
                   required
+                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="parentCategory">Parent Category (Optional)</Label>
-                <Select 
-                  value={formData.parentCategory || 'none'} 
-                  onValueChange={(value) => setFormData({...formData, parentCategory: value === 'none' ? '' : value})}
+                <Label htmlFor="parentCategory" className="text-foreground">
+                  Parent Category (Optional)
+                </Label>
+                <Select
+                  value={formData.parentCategory || "none"}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      parentCategory: value === "none" ? "" : value,
+                    })
+                  }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-input border-border text-foreground focus:ring-ring">
                     <SelectValue placeholder="Select parent category" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None (Main Category)</SelectItem>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem
+                      value="none"
+                      className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                    >
+                      None (Main Category)
+                    </SelectItem>
                     {parentCategories.map((category) => (
-                      <SelectItem key={category._id} value={category._id}>
+                      <SelectItem
+                        key={category._id}
+                        value={category._id}
+                        className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                      >
                         {category.name}
                       </SelectItem>
                     ))}
@@ -253,10 +297,12 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
           </Card>
 
           {/* Image Upload */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-lg">Category Image</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg text-foreground">
+                Category Image
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Upload an image for your category (max 10MB)
               </CardDescription>
             </CardHeader>
@@ -264,9 +310,9 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
               <div className="flex items-start gap-4">
                 <div className="flex-1">
                   <Label htmlFor="image" className="cursor-pointer">
-                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
-                      <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
+                    <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors bg-input/50">
+                      <Upload className="h-8 w-8 mx-auto mb-2 text-primary" />
+                      <p className="text-sm text-foreground">
                         Click to upload image or drag and drop
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -282,13 +328,13 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
                     className="hidden"
                   />
                 </div>
-                
+
                 {imagePreview && (
                   <div className="relative">
-                    <div className="w-32 h-32 rounded-lg overflow-hidden border">
-                      <img 
-                        src={imagePreview} 
-                        alt="Category preview" 
+                    <div className="w-32 h-32 rounded-lg overflow-hidden border border-border">
+                      <img
+                        src={imagePreview}
+                        alt="Category preview"
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -309,13 +355,18 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+            >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              disabled={submitting} 
-              className="bg-gradient-luxury"
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {submitting ? (
                 <>
@@ -325,7 +376,7 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  {editingCategory ? 'Update Category' : 'Create Category'}
+                  {editingCategory ? "Update Category" : "Create Category"}
                 </>
               )}
             </Button>
