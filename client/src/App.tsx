@@ -3,17 +3,25 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { GuestProvider } from "@/contexts/GuestContext";
 import { UserRewardProvider } from "@/contexts/UserRewardContext";
 import { SearchProvider, useSearch } from "@/contexts/SearchContext";
 import SearchDropdown from "@/components/ui/SearchDropdown";
 import { AdminLayout } from "./components/Layout";
-import AdminRoute from "./AdminRoute";
+import AdminRoute from "@/routes/AdminRoute";
+import CheckoutRoute from "@/routes/CheckoutRoute";
 import RewardPopup from "@/components/RewardPopup";
 import { useRewardPopup } from "@/hooks/useRewardPopup";
+import { toast } from "./hooks/use-toast";
 import FullPageLoader from "./components/ui/FullPageLoader";
 
 const Index = lazy(() => import("./pages/Index"));
@@ -55,6 +63,30 @@ const AppContent = () => {
     resetEligibilityCheck,
   } = useRewardPopup();
   const { isSearchOpen, closeSearch } = useSearch();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Listen for global session expiration events
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      logout();
+      toast({
+        title: "Session Expired",
+        description: "Your session has expired. Please log in again.",
+        variant: "destructive",
+      });
+      if (location.pathname !== "/login") {
+        navigate("/login");
+      }
+    };
+
+    window.addEventListener("sessionExpired", handleSessionExpired);
+
+    return () => {
+      window.removeEventListener("sessionExpired", handleSessionExpired);
+    };
+  }, [logout, navigate]);
 
   // Listen for logout events to reset eligibility check
   useEffect(() => {
@@ -74,10 +106,9 @@ const AppContent = () => {
 
   return (
     <>
-      <BrowserRouter future={{ v7_relativeSplatPath: true }}>
-        <Suspense fallback={<FullPageLoader />}>
-          <Routes>
-            <Route path="/" element={<Index />} />
+      <Suspense fallback={<FullPageLoader />}>
+        <Routes>
+          <Route path="/" element={<Index />} />
             <Route path="/shop" element={<Shop />} />
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
@@ -89,7 +120,14 @@ const AppContent = () => {
             <Route path="/product/:slug" element={<ProductDetailPage />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
+            <Route
+              path="/checkout"
+              element={
+                <CheckoutRoute>
+                  <Checkout />
+                </CheckoutRoute>
+              }
+            />
             <Route path="/payment" element={<Payment />} />
             <Route path="/contactus" element={<ContactUs />} />
             <Route path="/faq" element={<FAQ />} />
@@ -120,7 +158,6 @@ const AppContent = () => {
         </Suspense>
         {/* Search Overlay */}
         <SearchDropdown open={isSearchOpen} onClose={closeSearch} />
-      </BrowserRouter>
 
       {/* Reward Popup for First-Time Visitors */}
       <RewardPopup isOpen={isRewardPopupOpen} onClose={closeRewardPopup} />
@@ -136,9 +173,11 @@ const App = () => (
           <CartProvider>
             <AuthProvider>
               <SearchProvider>
-                <Toaster />
-                <Sonner />
-                <AppContent />
+                <BrowserRouter>
+                  <Toaster />
+                  <Sonner />
+                  <AppContent />
+                </BrowserRouter>
               </SearchProvider>
             </AuthProvider>
           </CartProvider>

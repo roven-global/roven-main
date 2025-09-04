@@ -66,8 +66,10 @@ const refreshAccessToken = async (refreshToken) => {
     localStorage.setItem("accesstoken", accessToken);
     return accessToken;
   } catch (error) {
-    // It's useful to log the refresh token error
     console.error('Refresh token error:', error);
+    // If refresh fails, the session is truly expired.
+    // Dispatch an event that the App can listen to, to trigger a global logout.
+    window.dispatchEvent(new Event('sessionExpired'));
     return null;
   }
 };

@@ -37,8 +37,12 @@ const Cart = () => {
     isQuoteLoading,
     availableCoupons,
   } = useCart();
-  const { guestCart, removeFromGuestCart, updateGuestCartQuantity } =
-    useGuest();
+  const {
+    guestCart,
+    removeFromGuestCart,
+    updateGuestCartQuantity,
+    guestCartSubtotal,
+  } = useGuest();
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [scrollContainerRef, setScrollContainerRef] =
     useState<HTMLDivElement | null>(null);
@@ -125,17 +129,44 @@ const Cart = () => {
     0
   );
 
-  const subtotal = orderQuote?.subtotal ?? 0;
-  const shippingCost = orderQuote?.shippingCost ?? 0;
-  const couponDiscount = orderQuote?.discounts?.coupon ?? 0;
-  const welcomeGiftDiscount = orderQuote?.discounts?.welcomeGift ?? 0;
-  const finalTotal = orderQuote?.finalTotal ?? 0;
-  const totalSavings =
-    (orderQuote?.discounts?.total ?? 0) +
-    (orderQuote?.shippingCost === 0 && subtotal > 0 ? 40 : 0);
+  const subtotal = isAuthenticated
+    ? orderQuote?.subtotal ?? 0
+    : guestCartSubtotal;
+  const shippingCost = isAuthenticated ? orderQuote?.shippingCost ?? 0 : 0;
+  const couponDiscount = isAuthenticated
+    ? orderQuote?.discounts?.coupon ?? 0
+    : 0;
+  const welcomeGiftDiscount = isAuthenticated
+    ? orderQuote?.discounts?.welcomeGift ?? 0
+    : 0;
+  const finalTotal = isAuthenticated
+    ? orderQuote?.finalTotal ?? 0
+    : guestCartSubtotal;
+  const totalSavings = isAuthenticated
+    ? (orderQuote?.discounts?.total ?? 0) +
+      (orderQuote?.shippingCost === 0 && subtotal > 0 ? 40 : 0)
+    : 0;
 
   const handleCheckout = () => {
-    navigate("/checkout");
+    if (displayCartItems.length === 0) {
+      toast({
+        title: "Your cart is empty",
+        description: "Please add items before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isAuthenticated) {
+      navigate("/checkout");
+    } else {
+      toast({
+        title: "Login Required",
+        description: "Please login to continue with your checkout.",
+        variant: "destructive",
+      });
+      navigate("/login");
+    }
   };
 
   if (authLoading) {
@@ -515,7 +546,6 @@ const Cart = () => {
                         <Button
                           onClick={handleCheckout}
                           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-md py-3 font-medium"
-                          disabled={displayCartItems.length === 0}
                         >
                           Proceed to Checkout
                         </Button>

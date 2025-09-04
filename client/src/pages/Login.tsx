@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,16 +69,15 @@ const Login = () => {
     isAuthenticated,
     loading,
   } = useAuth();
-  // Capture redirect intent from navigation state
-  const redirectTo =
-    (history.state && history.state.usr && history.state.usr.redirectTo) || "/";
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
 
   // Redirect if already authenticated
   React.useEffect(() => {
     if (!loading && isAuthenticated) {
-      navigate(redirectTo || "/");
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated, loading, navigate, redirectTo]);
+  }, [isAuthenticated, loading, navigate, from]);
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -119,7 +118,7 @@ const Login = () => {
       const success = await loginUser(payload);
 
       if (success) {
-        navigate(redirectTo || "/");
+        navigate(from, { replace: true });
       } else {
         // Error is now set in the AuthContext, so we can use it here.
         // We'll set a local error for immediate feedback.
