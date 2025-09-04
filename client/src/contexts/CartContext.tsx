@@ -155,9 +155,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orderQuote, setOrderQuote] = useState<OrderQuote | null>(null);
   const [isQuoteLoading, setIsQuoteLoading] = useState(false);
-  const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(
-    null
-  );
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(() => {
+    return sessionStorage.getItem("appliedCouponCode");
+  });
   const { userReward } = useUserReward();
 
   // Fetch available coupons using React Query for caching
@@ -230,16 +230,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   // ... (rest of the provider is the same)
   const applyCoupon = useCallback((code: string) => {
+    sessionStorage.setItem("appliedCouponCode", code);
     setAppliedCouponCode(code);
   }, []);
 
   const removeCoupon = useCallback(() => {
+    sessionStorage.removeItem("appliedCouponCode");
     setAppliedCouponCode(null);
   }, []);
 
   const clearCart = useCallback(() => {
     setCartItems([]);
     setOrderQuote(null);
+    sessionStorage.removeItem("appliedCouponCode");
     setAppliedCouponCode(null);
   }, []);
 

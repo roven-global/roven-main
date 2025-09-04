@@ -461,38 +461,38 @@ const ProductCard = ({
           {!hideAddToCart && (
             <div className="mt-auto">
               {cartItemInfo.isInCart ? (
-                // Quantity Selector (JioMart-style)
+                // Quantity Selector (Cart.tsx style)
                 <div className="w-full">
-                  <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm h-8 w-full">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-12 hover:bg-gray-50 hover:text-gray-700 transition-colors duration-200 text-gray-600 disabled:opacity-40 flex items-center justify-center border-r border-gray-200 text-xs"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleQuantityChange(quantity - 1);
-                      }}
-                      disabled={
-                        (variants &&
-                          variants.length === 1 &&
-                          variants[0].stock === 0) ||
-                        isUpdatingQuantity
-                      }
-                    >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <div className="h-8 flex-1 flex items-center justify-center bg-white border-r border-gray-200">
-                      <span className="font-semibold text-gray-800 text-sm">
+                  <div className="flex items-center justify-center">
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 rounded border"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleQuantityChange(quantity - 1);
+                        }}
+                        disabled={
+                          (variants &&
+                            variants.length === 1 &&
+                            variants[0].stock === 0) ||
+                          isUpdatingQuantity
+                        }
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="text-sm font-medium w-8 text-center border-t border-b py-1">
                         {isUpdatingQuantity ? (
-                          <div className="flex items-center gap-1">
-                            <div className="w-1 h-1 bg-gray-400 rounded-full animate-pulse"></div>
+                          <div className="flex items-center justify-center gap-1">
+                            <div className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse"></div>
                             <div
-                              className="w-1 h-1 bg-gray-400 rounded-full animate-pulse"
+                              className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse"
                               style={{ animationDelay: "0.2s" }}
                             ></div>
                             <div
-                              className="w-1 h-1 bg-gray-400 rounded-full animate-pulse"
+                              className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse"
                               style={{ animationDelay: "0.4s" }}
                             ></div>
                           </div>
@@ -500,29 +500,29 @@ const ProductCard = ({
                           quantity
                         )}
                       </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 rounded border"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleQuantityChange(quantity + 1);
+                        }}
+                        disabled={
+                          (variants &&
+                            variants.length === 1 &&
+                            variants[0].stock === 0) ||
+                          quantity >=
+                            (variants && variants.length === 1
+                              ? variants[0].stock
+                              : 10) ||
+                          isUpdatingQuantity
+                        }
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-12 hover:bg-gray-50 hover:text-gray-700 transition-colors duration-200 text-gray-600 disabled:opacity-40 flex items-center justify-center text-xs"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleQuantityChange(quantity + 1);
-                      }}
-                      disabled={
-                        (variants &&
-                          variants.length === 1 &&
-                          variants[0].stock === 0) ||
-                        quantity >=
-                          (variants && variants.length === 1
-                            ? variants[0].stock
-                            : 10) ||
-                        isUpdatingQuantity
-                      }
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
                   </div>
                 </div>
               ) : (

@@ -740,31 +740,31 @@ const ProductDetailPage = () => {
 
                 {/* Dynamic Cart Button */}
                 {cartItemInfo.isInCart ? (
-                  // Quantity Selector (JioMart-style)
+                  // Quantity Selector (Cart.tsx style with Add to Cart button dimensions)
                   <div className="w-full">
-                    <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm h-12 w-full">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-12 w-16 hover:bg-gray-50 hover:text-gray-700 transition-colors duration-200 text-gray-600 disabled:opacity-40 flex items-center justify-center border-r border-gray-200"
-                        onClick={() => handleQuantityChange(quantity - 1)}
-                        disabled={
-                          selectedVariant?.stock === 0 || isUpdatingQuantity
-                        }
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <div className="h-12 flex-1 flex items-center justify-center bg-white border-r border-gray-200">
-                        <span className="font-semibold text-gray-800 text-lg">
+                    <div className="flex items-center justify-center">
+                      <div className="flex items-center gap-1 h-10">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-10 w-16 p-0 rounded border-2 border-gray-300 hover:border-gray-400 bg-primary text-white touch-manipulation"
+                          onClick={() => handleQuantityChange(quantity - 1)}
+                          disabled={
+                            selectedVariant?.stock === 0 || isUpdatingQuantity
+                          }
+                        >
+                          <Minus className="h-2 w-3" />
+                        </Button>
+                        <span className="text-sm font-medium w-16 text-center border-t border-b py-1 h-10 flex items-center justify-center bg-slate-50">
                           {isUpdatingQuantity ? (
-                            <div className="flex items-center gap-1">
-                              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse"></div>
+                            <div className="flex items-center justify-center gap-1">
+                              <div className="w-1 h-1 bg-mutedforeground rounded-full animate-pulse"></div>
                               <div
-                                className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse"
+                                className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse"
                                 style={{ animationDelay: "0.2s" }}
                               ></div>
                               <div
-                                className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse"
+                                className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse"
                                 style={{ animationDelay: "0.4s" }}
                               ></div>
                             </div>
@@ -772,32 +772,31 @@ const ProductDetailPage = () => {
                             quantity
                           )}
                         </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-10 w-16 p-0 rounded border-2 border-gray-300 hover:border-gray-400 bg-primary text-white touch-manipulation"
+                          onClick={() => handleQuantityChange(quantity + 1)}
+                          disabled={
+                            selectedVariant?.stock === 0 ||
+                            quantity >= (selectedVariant?.stock ?? 10) ||
+                            isUpdatingQuantity
+                          }
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-12 w-16 hover:bg-gray-50 hover:text-gray-700 transition-colors duration-200 text-gray-600 disabled:opacity-40 flex items-center justify-center"
-                        onClick={() => handleQuantityChange(quantity + 1)}
-                        disabled={
-                          selectedVariant?.stock === 0 ||
-                          quantity >= (selectedVariant?.stock ?? 10) ||
-                          isUpdatingQuantity
-                        }
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
                     </div>
                   </div>
                 ) : (
                   // Add to Cart Button
                   <Button
                     size="lg"
-                    className="w-full h-12 bg-gradient-to-r from-primary via-primary/95 to-primary hover:from-primary/90 hover:via-primary hover:to-primary/90 text-primary-foreground font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-60 disabled:hover:scale-100 relative overflow-hidden"
+                    className="w-full h-10 bg-primary text-white hover:bg-primary/90 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-60 disabled:hover:scale-100 touch-manipulation"
                     onClick={handleAddToCart}
                     disabled={selectedVariant?.stock === 0 || isAdded}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"></div>
-                    <div className="relative flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-2">
                       {isAdded ? (
                         <>
                           <CheckCircle className="h-5 w-5" />

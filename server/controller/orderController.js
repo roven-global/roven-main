@@ -18,6 +18,7 @@ const calculateOrderTotals = async (cartItems, user, couponCode, applyWelcomeGif
 
     let subtotal = 0;
     const orderItems = [];
+    const populatedCartItems = [];
 
     for (const item of cartItems) {
         const productId = typeof item.productId === 'string' ? item.productId : item.productId?._id;
@@ -41,6 +42,7 @@ const calculateOrderTotals = async (cartItems, user, couponCode, applyWelcomeGif
             volume: item.variant?.volume || product.volume,
             variant: item.variant ? { sku: item.variant.sku, volume: item.variant.volume } : undefined,
         });
+        populatedCartItems.push({ ...item, productId: product });
     }
 
     if (orderItems.length === 0) throw new Error("No valid items in cart");
@@ -52,7 +54,7 @@ const calculateOrderTotals = async (cartItems, user, couponCode, applyWelcomeGif
         if (coupon?.isValid) {
             const canUse = await CouponUsageModel.canUserUseCoupon(coupon._id, user._id, coupon.perUserLimit);
             const userOrderCount = await OrderModel.countDocuments({ user: user._id });
-            const canApply = coupon.canBeApplied(subtotal, user._id, userOrderCount);
+            const canApply = coupon.canBeApplied(subtotal, user._id, userOrderCount, populatedCartItems);
             if (canUse && canApply.valid) {
                 couponDiscount = coupon.calculateDiscount(subtotal);
                 appliedCoupon = coupon;

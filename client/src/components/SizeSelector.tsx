@@ -51,7 +51,7 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
         <h4 className="text-lg font-semibold text-foreground">Select Size</h4>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+      <div className="flex gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-hide sm:flex-wrap">
         {variants.map((variant) => {
           const isSelected = selectedVariant?.sku === variant.sku;
           const isDisabled = variant.stock === 0 || !variant.isActive;
@@ -64,7 +64,9 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
               onKeyDown={(e) => handleKeyDown(e, variant)}
               disabled={isDisabled}
               className={cn(
-                "relative group p-3 border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 w-40 h-44",
+                "relative group border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                "w-40 sm:w-44 md:w-48 lg:w-52 h-36 sm:h-40 md:h-44 lg:h-48 flex-shrink-0 sm:flex-shrink snap-start",
+                "p-2 sm:p-3 md:p-4",
                 "hover:shadow-md hover:border-primary/50",
                 isSelected
                   ? "border-primary bg-blue-50 shadow-md"
@@ -100,20 +102,20 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
               )}
 
               {/* Size Label */}
-              <div className="text-center space-y-1.5">
-                <div className="font-semibold text-foreground text-base">
+              <div className="text-center space-y-1 sm:space-y-2 flex flex-col justify-center h-full overflow-hidden">
+                <div className="font-semibold text-foreground text-sm sm:text-base truncate">
                   {variant.volume}
                 </div>
 
                 {/* Price */}
-                <div className="space-y-0.5">
-                  <div className="font-bold text-foreground text-sm">
+                <div className="space-y-0.5 sm:space-y-1">
+                  <div className="font-bold text-foreground text-xs sm:text-sm truncate">
                     {formatRupees(variant.price)}
                   </div>
 
                   {/* Unit Price */}
                   {unitPrice > 0 && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-muted-foreground leading-tight break-words px-1">
                       ({formatRupees(unitPrice)} / 100ml)
                     </div>
                   )}
@@ -121,7 +123,7 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({
                   {/* Original Price */}
                   {variant.originalPrice &&
                     variant.originalPrice > variant.price && (
-                      <div className="text-xs text-muted-foreground/80 line-through">
+                      <div className="text-xs text-muted-foreground/80 line-through truncate">
                         {formatRupees(variant.originalPrice)}
                       </div>
                     )}
