@@ -21,9 +21,9 @@ const ContactUs = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 items-start">
+          <div className="space-y-12">
             {/* Contact Form */}
-            <div className="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-md">
+            <div className="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-md max-w-md mx-auto">
               <h2 className="text-xl sm:text-2xl font-semibold text-foreground mb-4 sm:mb-6">
                 Send us a Message
               </h2>
@@ -81,59 +81,53 @@ const ContactUs = () => {
             </div>
 
             {/* Contact Information */}
-            <div className="space-y-8">
-              <div className="flex items-start gap-4">
-                <div className="bg-primary/20 p-3 rounded-full">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+              <div className="flex flex-col items-center text-center">
+                <div className="bg-primary/20 p-3 rounded-full mb-4">
                   <Mail className="h-6 w-6 text-primary" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-foreground">
-                    Email Us
-                  </h3>
-                  <p className="text-muted-brown">
-                    Reach out to us via email for any inquiries.
-                  </p>
-                  <a
-                    href="mailto:support@roven.com"
-                    className="text-primary font-medium hover:underline"
-                  >
-                    support@roven.com
-                  </a>
-                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  Email Us
+                </h3>
+                <p className="text-muted-brown mb-3">
+                  Reach out to us via email for any inquiries.
+                </p>
+                <a
+                  href="mailto:support@roven.com"
+                  className="text-primary font-medium hover:underline"
+                >
+                  support@roven.com
+                </a>
               </div>
-              <div className="flex items-start gap-4">
-                <div className="bg-primary/20 p-3 rounded-full">
+              <div className="flex flex-col items-center text-center">
+                <div className="bg-primary/20 p-3 rounded-full mb-4">
                   <Phone className="h-6 w-6 text-primary" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-foreground">
-                    Call Us
-                  </h3>
-                  <p className="text-muted-brown">
-                    Our team is available during business hours.
-                  </p>
-                  <a
-                    href="tel:+1234567890"
-                    className="text-primary font-medium hover:underline"
-                  >
-                    (123) 456-7890
-                  </a>
-                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  Call Us
+                </h3>
+                <p className="text-muted-brown mb-3">
+                  Our team is available during business hours.
+                </p>
+                <a
+                  href="tel:+1234567890"
+                  className="text-primary font-medium hover:underline"
+                >
+                  (123) 456-7890
+                </a>
               </div>
-              <div className="flex items-start gap-4">
-                <div className="bg-primary/20 p-3 rounded-full">
+              <div className="flex flex-col items-center text-center">
+                <div className="bg-primary/20 p-3 rounded-full mb-4">
                   <MapPin className="h-6 w-6 text-primary" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-foreground">
-                    Visit Us
-                  </h3>
-                  <p className="text-muted-brown">
-                    123 Beauty Lane, Suite 100
-                    <br />
-                    Wellness City, 12345
-                  </p>
-                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  Visit Us
+                </h3>
+                <p className="text-muted-brown">
+                  123 Beauty Lane, Suite 100
+                  <br />
+                  Wellness City, 12345
+                </p>
               </div>
             </div>
           </div>
