@@ -1,11 +1,10 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import isAdmin from '@/utils/isAdmin';
 import FullPageLoader from '@/components/ui/FullPageLoader';
 
-const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-    const { isAuthenticated, user, loading } = useAuth();
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+    const { isAuthenticated, loading } = useAuth();
     const location = useLocation();
 
     if (loading) {
@@ -16,11 +15,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    if (!isAdmin(user?.role)) {
-        return <Navigate to="/not-authorized" replace />;
-    }
-
     return <>{children}</>;
 };
 
-export default AdminRoute;
+export default ProtectedRoute;

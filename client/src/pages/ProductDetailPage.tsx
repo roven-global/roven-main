@@ -31,6 +31,7 @@ import RelatedProducts from "@/components/RelatedProducts";
 import CustomerReviews, {
   CustomerReviewsHandles,
 } from "@/components/CustomerReviews";
+import ProductDescription from "@/components/ProductDescription";
 
 interface Review {
   _id: string;
@@ -821,7 +822,7 @@ const ProductDetailPage = () => {
         </div>
       </div>
 
-      {/* Product Details Tabs (Table-like UI instead of Accordion) */}
+      {/* Product Details Tabs */}
       <div className="bg-white border-t border-border/20">
         <div className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto">
@@ -832,7 +833,6 @@ const ProductDetailPage = () => {
                 { key: "howto", label: "How to Use" },
                 { key: "benefits", label: "Benefits" },
                 { key: "suitable", label: "Suitable For" },
-                { key: "specs", label: "Specifications" },
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -850,94 +850,185 @@ const ProductDetailPage = () => {
             </div>
 
             <div className="bg-white p-6 rounded-lg border">
-              {activeTab === "description" && product.description && (
-                <p>{product.description}</p>
+              {activeTab === "description" && (
+                <ProductDescription
+                  description={product.description}
+                  specifications={product.specifications}
+                />
               )}
 
               {activeTab === "ingredients" &&
                 product.ingredients &&
                 product.ingredients.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {product.ingredients.map((ingredient: any, i: number) => (
-                      <div key={i} className="text-center space-y-3">
-                        {ingredient.image && (
-                          <div className="w-24 h-24 mx-auto rounded-full overflow-hidden bg-warm-cream-light">
-                            <img
-                              src={ingredient.image.url}
-                              alt={ingredient.name || `Ingredient ${i + 1}`}
-                              className="w-full h-full object-cover"
-                            />
+                  <div className="space-y-6">
+                    {/* Section Title */}
+                    <div className="text-left">
+                      <h3 className="text-2xl font-bold text-foreground mb-2">
+                        Hero Ingredients
+                      </h3>
+                    </div>
+
+                    {/* Ingredients Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {product.ingredients.map((ingredient: any, i: number) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-4 p-4 bg-white border border-border/20 rounded-lg hover:shadow-md transition-shadow duration-200"
+                        >
+                          {/* Left side: Circular ingredient image */}
+                          {ingredient.image && (
+                            <div className="flex-shrink-0">
+                              <div className="w-24 h-24 rounded-full overflow-hidden bg-warm-cream-light border-2 border-border/30 shadow-sm">
+                                <img
+                                  src={ingredient.image.url}
+                                  alt={ingredient.name || `Ingredient ${i + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Right side: Ingredient name and description */}
+                          <div className="flex-1 min-w-0">
+                            {ingredient.name && (
+                              <h4 className="font-bold text-foreground text-base mb-1">
+                                {ingredient.name}
+                              </h4>
+                            )}
+                            {ingredient.description && (
+                              <p className="text-sm text-muted-brown leading-relaxed">
+                                {ingredient.description}
+                              </p>
+                            )}
                           </div>
-                        )}
-                        {ingredient.name && (
-                          <h4 className="font-semibold text-foreground">
-                            {ingredient.name}
-                          </h4>
-                        )}
-                        {ingredient.description && (
-                          <p className="text-sm text-muted-brown leading-relaxed">
-                            {ingredient.description}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
               {activeTab === "howto" &&
                 product.howToUse &&
                 product.howToUse.length > 0 && (
-                  <ol className="list-decimal pl-4 space-y-1">
-                    {product.howToUse.map((step, i) => (
-                      <li key={i}>{step}</li>
-                    ))}
-                  </ol>
+                  <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+                    {/* Section Title */}
+                    <div className="text-left mb-6">
+                      <h3 className="text-2xl font-bold text-foreground mb-1">
+                        Follow These Steps
+                      </h3>
+                      <p className="text-sm text-muted-brown">
+                        Simple instructions for best results
+                      </p>
+                    </div>
+
+                    {/* Steps List */}
+                    <div className="mx-auto space-y-2">
+                      {product.howToUse.map((step, i) => (
+                        <div
+                          key={i}
+                          className="flex items-start gap-4 py-2 px-2 rounded-sm border border-border/20 hover:bg-warm-cream-light/30 transition-all duration-200 group"
+                        >
+                          {/* Step Number Badge */}
+                          <div className="flex-shrink-0">
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm md:text-base shadow-sm group-hover:shadow-md transition-shadow duration-200">
+                              {i + 1}
+                            </div>
+                          </div>
+
+                          {/* Step Content */}
+                          <div className="flex-1 min-w-0 pt-1">
+                            <p className="text-foreground text-sm md:text-base leading-relaxed font-medium">
+                              {step}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
               {activeTab === "benefits" &&
                 product.benefits &&
                 product.benefits.length > 0 && (
-                  <ul className="list-disc pl-4">
-                    {product.benefits.map((b, i) => (
-                      <li key={i}>{b}</li>
-                    ))}
-                  </ul>
+                  <div className="space-y-6">
+                    {/* Section Title */}
+                    <div className="text-left">
+                      <h3 className="text-2xl font-bold text-foreground mb-2">
+                        Key Benefits
+                      </h3>
+                    </div>
+
+                    {/* Benefits Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {product.benefits.map((benefit, i) => (
+                        <div
+                          key={i}
+                          className="flex items-start gap-3 p-4 bg-white border border-border/20 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+                        >
+                          {/* Checkmark Icon */}
+                          <div className="flex-shrink-0 mt-0.5">
+                            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                              <svg
+                                className="w-4 h-4 text-primary"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+
+                          {/* Benefit Text */}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-foreground leading-relaxed">
+                              {benefit}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
               {activeTab === "suitable" &&
                 product.suitableFor &&
                 product.suitableFor.length > 0 && (
-                  <ul className="list-disc pl-4">
-                    {product.suitableFor.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
-                )}
+                  <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+                    {/* Section Title */}
+                    <div className="text-left mb-6">
+                      <h3 className="text-2xl font-bold text-foreground mb-1">
+                        Suitable For
+                      </h3>
+                      <p className="text-sm text-muted-brown">
+                        Perfect for these skin types and concerns
+                      </p>
+                    </div>
 
-              {activeTab === "specs" &&
-                product.specifications &&
-                Object.keys(product.specifications).length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {Object.entries(product.specifications).map(([k, v]) => (
-                      <div
-                        key={k}
-                        className="flex justify-between border-b pb-1"
-                      >
-                        <span className="font-semibold">{k}</span>
-                        <span className="text-muted-brown">
-                          {Array.isArray(v) ? v.join(", ") : v}
-                        </span>
-                      </div>
-                    ))}
+                    {/* Suitable For Badges */}
+                    <div className="flex flex-wrap gap-3">
+                      {product.suitableFor.map((suitable, i) => (
+                        <div
+                          key={i}
+                          className="inline-flex items-center px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-semibold border border-primary/20 hover:bg-primary/15 hover:border-primary/30 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 animate-in fade-in-0 slide-in-from-bottom-2"
+                          style={{
+                            animationDelay: `${i * 100}ms`,
+                            animationFillMode: "both",
+                          }}
+                        >
+                          <span className="whitespace-nowrap">{suitable}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
               {/* Show message when no content is available for the selected tab */}
-              {activeTab === "description" && !product.description && (
-                <p className="text-muted-brown text-center py-4">
-                  No description available.
-                </p>
-              )}
               {activeTab === "ingredients" &&
                 (!product.ingredients || product.ingredients.length === 0) && (
                   <p className="text-muted-brown text-center py-4">
@@ -960,13 +1051,6 @@ const ProductDetailPage = () => {
                 (!product.suitableFor || product.suitableFor.length === 0) && (
                   <p className="text-muted-brown text-center py-4">
                     No suitability information available.
-                  </p>
-                )}
-              {activeTab === "specs" &&
-                (!product.specifications ||
-                  Object.keys(product.specifications).length === 0) && (
-                  <p className="text-muted-brown text-center py-4">
-                    No specifications available.
                   </p>
                 )}
             </div>

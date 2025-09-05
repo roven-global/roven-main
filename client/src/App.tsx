@@ -18,6 +18,7 @@ import { SearchProvider, useSearch } from "@/contexts/SearchContext";
 import SearchDropdown from "@/components/ui/SearchDropdown";
 import { AdminLayout } from "./components/Layout";
 import AdminRoute from "@/routes/AdminRoute";
+import ProtectedRoute from "@/routes/ProtectedRoute";
 import CheckoutRoute from "@/routes/CheckoutRoute";
 import RewardPopup from "@/components/RewardPopup";
 import { useRewardPopup } from "@/hooks/useRewardPopup";
@@ -26,6 +27,8 @@ import FullPageLoader from "./components/ui/FullPageLoader";
 
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const NotAuthorized = lazy(() => import("./pages/NotAuthorized"));
+const Orders = lazy(() => import("./pages/Orders"));
 const Login = lazy(() => import("./pages/Login"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const OtpVerification = lazy(() => import("./pages/OtpVerification"));
@@ -115,17 +118,41 @@ const AppContent = () => {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/otp-verification" element={<OtpVerification />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/category/:slug" element={<CategoryProductsPage />} />
             <Route path="/product/:slug" element={<ProductDetailPage />} />
-            <Route path="/wishlist" element={<Wishlist />} />
+            <Route
+              path="/wishlist"
+              element={
+                <ProtectedRoute>
+                  <Wishlist />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/cart" element={<Cart />} />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <Orders />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/checkout"
               element={
-                <CheckoutRoute>
-                  <Checkout />
-                </CheckoutRoute>
+                <ProtectedRoute>
+                  <CheckoutRoute>
+                    <Checkout />
+                  </CheckoutRoute>
+                </ProtectedRoute>
               }
             />
             <Route path="/payment" element={<Payment />} />
@@ -153,6 +180,7 @@ const AppContent = () => {
               <Route path="hero-images" element={<AdminHeroImages />} />
             </Route>
 
+            <Route path="/not-authorized" element={<NotAuthorized />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
