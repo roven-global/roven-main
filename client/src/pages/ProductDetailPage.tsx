@@ -664,11 +664,11 @@ const ProductDetailPage = () => {
             <div className="space-y-6">
               {/* Product Name */}
               <div>
-                <h1 className="font-sans text-3xl lg:text-4xl font-bold text-foreground leading-tight">
+                <h1 className="font-sans text-xl sm:text-3xl lg:text-4xl font-bold text-foreground leading-tight">
                   {product.name}
                 </h1>
                 {product.shortDescription && (
-                  <p className="text-muted-brown mt-2 text-lg">
+                  <p className="text-muted-brown mt-2 text-sm sm:text-lg">
                     {product.shortDescription}
                   </p>
                 )}
@@ -713,17 +713,17 @@ const ProductDetailPage = () => {
               {/* Price */}
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <span className="font-sans text-3xl font-bold text-foreground">
+                  <span className="font-sans text-2xl sm:text-3xl font-bold text-foreground">
                     {formatRupees(currentPrice)}
                   </span>
                   {originalPrice && (
-                    <span className="text-lg text-border line-through">
+                    <span className="text-base sm:text-lg text-border line-through">
                       {formatRupees(originalPrice)}
                     </span>
                   )}
                 </div>
                 {discount > 0 && (
-                  <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-sm font-semibold inline-block">
+                  <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs sm:text-sm font-semibold inline-block">
                     {discount}% OFF
                   </span>
                 )}
@@ -890,27 +890,31 @@ const ProductDetailPage = () => {
         <div className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto">
             {/* Desktop Tab Navigation */}
-            <div className="hidden md:block border-b flex gap-6 mb-6">
-              {[
-                { key: "description", label: "Description" },
-                { key: "ingredients", label: "Hero Ingredients" },
-                { key: "howto", label: "How to Use" },
-                { key: "benefits", label: "Benefits" },
-                { key: "suitable", label: "Suitable For" },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={cn(
-                    "pb-2 font-semibold whitespace-nowrap",
-                    activeTab === tab.key
-                      ? "border-b-2 border-primary text-primary"
-                      : "text-muted-brown"
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            <div className="hidden md:block mb-6">
+              <div className="border-b border-border/20">
+                <div className="flex gap-8 -mb-px">
+                  {[
+                    { key: "description", label: "Description" },
+                    { key: "ingredients", label: "Hero Ingredients" },
+                    { key: "howto", label: "How to Use" },
+                    { key: "benefits", label: "Benefits" },
+                    { key: "suitable", label: "Suitable For" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActiveTab(tab.key)}
+                      className={cn(
+                        "pb-4 px-1 font-semibold text-sm whitespace-nowrap transition-all duration-200 border-b-2",
+                        activeTab === tab.key
+                          ? "border-primary text-primary"
+                          : "border-transparent text-muted-brown hover:text-foreground hover:border-border/30"
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Mobile Tab Slider */}

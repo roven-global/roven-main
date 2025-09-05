@@ -501,8 +501,8 @@ const Checkout = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Shipping Address Section - First on mobile, second on desktop */}
-              <div className="lg:col-span-2 space-y-6 order-1 lg:order-1">
+              {/* Shipping Address Section - Second on mobile, first on desktop */}
+              <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
                 {/* Shipping Address Section */}
                 <div className="bg-white rounded-lg border shadow-sm">
                   <div className="p-4 border-b">
@@ -859,8 +859,8 @@ const Checkout = () => {
                 </div>
               </div>
 
-              {/* Right Column - Price Summary - Second on mobile, first on desktop */}
-              <div className="space-y-6 lg:col-span-1 order-2 lg:order-2">
+              {/* Welcome Gift Section - First on mobile, second on desktop */}
+              <div className="lg:col-span-1 order-1 lg:order-2">
                 <div className="bg-white rounded-lg border shadow-sm">
                   <div className="p-4 border-b">
                     <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -872,6 +872,10 @@ const Checkout = () => {
                     <WelcomeGiftReward />
                   </div>
                 </div>
+              </div>
+
+              {/* Price Summary Section - Third on mobile, third on desktop */}
+              <div className="lg:col-span-1 order-3 lg:order-3">
                 <PriceSummary
                   isQuoteLoading={isQuoteLoading}
                   subtotal={subtotal}

@@ -44,6 +44,9 @@ const Cart = () => {
     guestCartSubtotal,
   } = useGuest();
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [updatingQuantityId, setUpdatingQuantityId] = useState<string | null>(
+    null
+  );
   const [scrollContainerRef, setScrollContainerRef] =
     useState<HTMLDivElement | null>(null);
   const [removingCouponId, setRemovingCouponId] = useState<string | null>(null);
@@ -69,17 +72,23 @@ const Cart = () => {
     fetchLifetimeSavings();
   }, [isAuthenticated]);
 
-  const handleUpdateQuantity = (
+  const handleUpdateQuantity = async (
     cartItemId: string,
     newQuantity: number,
     variant?: { volume: string; sku: string }
   ) => {
     if (newQuantity < 1) return;
 
-    if (isAuthenticated) {
-      updateQuantity(cartItemId, newQuantity);
-    } else {
-      updateGuestCartQuantity(cartItemId, newQuantity, variant);
+    setUpdatingQuantityId(cartItemId);
+
+    try {
+      if (isAuthenticated) {
+        await updateQuantity(cartItemId, newQuantity);
+      } else {
+        updateGuestCartQuantity(cartItemId, newQuantity, variant);
+      }
+    } finally {
+      setUpdatingQuantityId(null);
     }
   };
 
@@ -218,7 +227,7 @@ const Cart = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
-                    <div className="lg:col-span-2 space-y-4 lg:space-y-6 order-1 lg:order-1">
+                    <div className="lg:col-span-2 space-y-4 lg:space-y-6 order-2 lg:order-1">
                       {availableCoupons.length > 0 && (
                         <div className="bg-white rounded-lg border shadow-sm">
                           <div className="p-4 border-b">
@@ -385,18 +394,25 @@ const Cart = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="p-3 bg-primary/10 border-b lg:hidden">
-                          <div className="text-sm text-muted-brown text-center">
-                            <span className="font-medium">Cart Summary:</span>
-                            <span className="ml-2">
-                              Items - {totalUniqueItems}
-                            </span>
-                            <span className="mx-2">|</span>
-                            <span>Quantity - {totalQuantity}</span>
-                            <span className="mx-2">|</span>
-                            <span className="font-semibold">
-                              Total - {formatRupees(subtotal)}
-                            </span>
+                        <div className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border-b lg:hidden">
+                          <div className="flex flex-col space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-muted-brown font-medium">
+                                Cart Summary
+                              </span>
+                              <span className="text-sm text-muted-brown">
+                                {totalUniqueItems} item
+                                {totalUniqueItems !== 1 ? "s" : ""} •{" "}
+                                {totalQuantity} qty
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-brown">
+                              </span>
+                              <span className="text-md font-bold text-foreground">
+                                {formatRupees(subtotal)}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
@@ -469,7 +485,7 @@ const Cart = () => {
                                       <Button
                                         variant="outline"
                                         size="sm"
-                                        className="h-6 w-6 sm:h-8 sm:w-8 p-0 rounded border"
+                                        className="h-6 w-6 sm:h-8 sm:w-8 p-0 rounded border transition-all duration-300 hover:scale-110 hover:shadow-md hover:border-primary/50"
                                         onClick={() =>
                                           handleUpdateQuantity(
                                             item._id || item.id,
@@ -477,17 +493,36 @@ const Cart = () => {
                                             item.variant
                                           )
                                         }
-                                        disabled={item.quantity === 1}
+                                        disabled={
+                                          item.quantity === 1 ||
+                                          updatingQuantityId ===
+                                            (item._id || item.id)
+                                        }
                                       >
-                                        <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                                        <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3 transition-transform duration-200" />
                                       </Button>
                                       <span className="text-sm font-medium w-8 text-center border-t border-b py-1">
-                                        {item.quantity}
+                                        {updatingQuantityId ===
+                                        (item._id || item.id) ? (
+                                          <div className="flex items-center justify-center gap-1">
+                                            <div className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse"></div>
+                                            <div
+                                              className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse"
+                                              style={{ animationDelay: "0.2s" }}
+                                            ></div>
+                                            <div
+                                              className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse"
+                                              style={{ animationDelay: "0.4s" }}
+                                            ></div>
+                                          </div>
+                                        ) : (
+                                          item.quantity
+                                        )}
                                       </span>
                                       <Button
                                         variant="outline"
                                         size="sm"
-                                        className="h-6 w-6 sm:h-8 sm:w-8 p-0 rounded border"
+                                        className="h-6 w-6 sm:h-8 sm:w-8 p-0 rounded border transition-all duration-300 hover:scale-110 hover:shadow-md hover:border-primary/50"
                                         onClick={() =>
                                           handleUpdateQuantity(
                                             item._id || item.id,
@@ -495,8 +530,12 @@ const Cart = () => {
                                             item.variant
                                           )
                                         }
+                                        disabled={
+                                          updatingQuantityId ===
+                                          (item._id || item.id)
+                                        }
                                       >
-                                        <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                                        <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3 transition-transform duration-200" />
                                       </Button>
                                     </div>
                                     <div className="text-right">
@@ -518,19 +557,7 @@ const Cart = () => {
                       </div>
                     </div>
 
-                    <div className="space-y-4 lg:space-y-6 lg:col-span-1 order-2 lg:order-2">
-                      <div className="bg-white rounded-lg border shadow-sm">
-                        <div className="p-4 border-b">
-                          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                            <Gift className="w-5 h-5 text-primary" />
-                            Welcome Gift
-                          </h3>
-                        </div>
-                        <div className="p-4">
-                          <WelcomeGiftReward />
-                        </div>
-                      </div>
-
+                    <div className="lg:hidden order-3">
                       <PriceSummary
                         isQuoteLoading={isQuoteLoading}
                         subtotal={subtotal}
@@ -550,6 +577,42 @@ const Cart = () => {
                           Proceed to Checkout
                         </Button>
                       </PriceSummary>
+                    </div>
+
+                    <div className="space-y-4 lg:space-y-6 lg:col-span-1 order-1 lg:order-2">
+                      <div className="bg-white rounded-lg border shadow-sm">
+                        <div className="p-4 border-b">
+                          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                            <Gift className="w-5 h-5 text-primary" />
+                            Welcome Gift
+                          </h3>
+                        </div>
+                        <div className="p-4">
+                          <WelcomeGiftReward />
+                        </div>
+                      </div>
+
+                      <div className="hidden lg:block">
+                        <PriceSummary
+                          isQuoteLoading={isQuoteLoading}
+                          subtotal={subtotal}
+                          couponDiscount={couponDiscount}
+                          welcomeGiftDiscount={welcomeGiftDiscount}
+                          shippingCost={shippingCost}
+                          finalTotal={finalTotal}
+                          totalSavings={totalSavings}
+                          isAuthenticated={isAuthenticated}
+                          lifetimeSavings={lifetimeSavings}
+                          lifetimeSavingsLoading={lifetimeSavingsLoading}
+                        >
+                          <Button
+                            onClick={handleCheckout}
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-md py-3 font-medium"
+                          >
+                            Proceed to Checkout
+                          </Button>
+                        </PriceSummary>
+                      </div>
                     </div>
                   </div>
                 )}
