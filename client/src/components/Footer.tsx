@@ -43,9 +43,13 @@ const Footer = () => {
             <div className="mb-4 sm:mb-6">
               <Link
                 to="/"
-                className="font-sans text-2xl sm:text-3xl lg:text-4xl font-bold text-primary mb-4 block hover:text-accent-green transition-all duration-500 transform hover:scale-105"
+                className="block hover:scale-105 transition-all duration-500 transform"
               >
-                Roven
+                <img
+                  src="/Roven-Beauty-Logo.png"
+                  alt="Roven Beauty"
+                  className="h-12 sm:h-14 lg:h-16 w-auto mx-auto lg:mx-0"
+                />
               </Link>
             </div>
 

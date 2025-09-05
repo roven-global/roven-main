@@ -107,11 +107,12 @@ const Navigation = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link
-            to="/"
-            className="font-sans text-3xl font-bold text-foreground"
-          >
-            Roven
+          <Link to="/" className="flex items-center">
+            <img
+              src="/Roven-Beauty-Logo.png"
+              alt="Roven Beauty"
+              className="h-10 w-auto"
+            />
           </Link>
 
           {/* Main Nav */}
