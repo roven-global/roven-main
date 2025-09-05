@@ -450,9 +450,7 @@ const Checkout = () => {
   const discountAmount = orderQuote?.discounts?.coupon ?? 0;
   const welcomeGiftDiscount = orderQuote?.discounts?.welcomeGift ?? 0;
   const finalTotal = orderQuote?.finalTotal ?? 0;
-  const totalSavings =
-    (orderQuote?.discounts?.total ?? 0) +
-    (shippingCost === 0 && subtotal > 0 ? 40 : 0);
+  const totalSavings = orderQuote?.discounts?.total ?? 0;
 
   if (cartLoading || authLoading) {
     return (

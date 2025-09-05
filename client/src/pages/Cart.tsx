@@ -151,10 +151,7 @@ const Cart = () => {
   const finalTotal = isAuthenticated
     ? orderQuote?.finalTotal ?? 0
     : guestCartSubtotal;
-  const totalSavings = isAuthenticated
-    ? (orderQuote?.discounts?.total ?? 0) +
-      (orderQuote?.shippingCost === 0 && subtotal > 0 ? 40 : 0)
-    : 0;
+  const totalSavings = isAuthenticated ? orderQuote?.discounts?.total ?? 0 : 0;
 
   const handleCheckout = () => {
     if (displayCartItems.length === 0) {
@@ -407,8 +404,7 @@ const Cart = () => {
                               </span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-brown">
-                              </span>
+                              <span className="text-sm text-muted-brown"></span>
                               <span className="text-md font-bold text-foreground">
                                 {formatRupees(subtotal)}
                               </span>
