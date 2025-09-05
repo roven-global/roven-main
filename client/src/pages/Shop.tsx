@@ -116,73 +116,74 @@ const Shop = () => {
   const perPage = 9;
 
   // Fetching Logic
-  const fetchProducts = useCallback(async (page: number, loadMore = false) => {
-    if (loadMore) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
-    }
-    setError(null);
-
-    try {
-      const params = new URLSearchParams();
-      params.append("page", String(page));
-      params.append("limit", String(perPage));
-
-      if (activeCategory !== "all") {
-        params.append("category", activeCategory);
-      }
-      if (activeSkinTypes.length > 0 && !activeSkinTypes.includes("All")) {
-        params.append("skinType", activeSkinTypes.join(","));
-      }
-      if (activeHairTypes.length > 0 && !activeHairTypes.includes("All")) {
-        params.append("hairType", activeHairTypes.join(","));
-      }
-      if (activePriceRange) {
-        const [min, max] = activePriceRange.split("-");
-        params.append("minPrice", min);
-        params.append("maxPrice", max);
+  const fetchProducts = useCallback(
+    async (page: number, loadMore = false) => {
+      if (loadMore) {
+        setLoadingMore(true);
       } else {
-        if (activeCustomMin) params.append("minPrice", activeCustomMin);
-        if (activeCustomMax) params.append("maxPrice", activeCustomMax);
+        setLoading(true);
       }
-      if (sortBy) {
-        const [sortField, sortOrder] = sortBy.split("-");
-        params.append("sortBy", sortField);
-        params.append("sortOrder", sortOrder);
-      }
+      setError(null);
 
-      const response = await Axios.get(
-        `${SummaryApi.getAllProducts.url}?${params.toString()}`
-      );
+      try {
+        const params = new URLSearchParams();
+        params.append("page", String(page));
+        params.append("limit", String(perPage));
 
-      if (response.data.success) {
-        const { products: newProducts, pagination: newPagination } =
-          response.data.data;
-        setProducts(
-          loadMore ? [...products, ...newProducts] : newProducts
+        if (activeCategory !== "all") {
+          params.append("category", activeCategory);
+        }
+        if (activeSkinTypes.length > 0 && !activeSkinTypes.includes("All")) {
+          params.append("skinType", activeSkinTypes.join(","));
+        }
+        if (activeHairTypes.length > 0 && !activeHairTypes.includes("All")) {
+          params.append("hairType", activeHairTypes.join(","));
+        }
+        if (activePriceRange) {
+          const [min, max] = activePriceRange.split("-");
+          params.append("minPrice", min);
+          params.append("maxPrice", max);
+        } else {
+          if (activeCustomMin) params.append("minPrice", activeCustomMin);
+          if (activeCustomMax) params.append("maxPrice", activeCustomMax);
+        }
+        if (sortBy) {
+          const [sortField, sortOrder] = sortBy.split("-");
+          params.append("sortBy", sortField);
+          params.append("sortOrder", sortOrder);
+        }
+
+        const response = await Axios.get(
+          `${SummaryApi.getAllProducts.url}?${params.toString()}`
         );
-        setPagination(newPagination);
-      } else {
-        throw new Error("Failed to fetch products");
+
+        if (response.data.success) {
+          const { products: newProducts, pagination: newPagination } =
+            response.data.data;
+          setProducts(loadMore ? [...products, ...newProducts] : newProducts);
+          setPagination(newPagination);
+        } else {
+          throw new Error("Failed to fetch products");
+        }
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError("Could not load products. Please try again later.");
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
       }
-    } catch (err) {
-      console.error("Error fetching products:", err);
-      setError("Could not load products. Please try again later.");
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, [
-    activeCategory,
-    activeSkinTypes,
-    activeHairTypes,
-    activePriceRange,
-    activeCustomMin,
-    activeCustomMax,
-    sortBy,
-    products,
-  ]);
+    },
+    [
+      activeCategory,
+      activeSkinTypes,
+      activeHairTypes,
+      activePriceRange,
+      activeCustomMin,
+      activeCustomMax,
+      sortBy,
+      products,
+    ]
+  );
 
   // Fetch categories once on mount
   useEffect(() => {
@@ -214,7 +215,7 @@ const Shop = () => {
     activeCustomMax,
     sortBy,
   ]);
-  
+
   const handleLoadMore = () => {
     if (pagination.hasNext && !loadingMore) {
       fetchProducts(pagination.currentPage + 1, true);
@@ -222,7 +223,7 @@ const Shop = () => {
   };
 
   const handleApplyFilters = () => {
-    setPagination(p => ({ ...p, currentPage: 1 }));
+    setPagination((p) => ({ ...p, currentPage: 1 }));
     setActiveCategory(pendingCategory);
     setActiveSkinTypes(pendingSkinTypes);
     setActiveHairTypes(pendingHairTypes);
@@ -232,7 +233,7 @@ const Shop = () => {
   };
 
   const handleClearFilters = () => {
-    setPagination(p => ({ ...p, currentPage: 1 }));
+    setPagination((p) => ({ ...p, currentPage: 1 }));
     setPendingCategory("all");
     setPendingSkinTypes([]);
     setPendingHairTypes([]);
@@ -249,48 +250,68 @@ const Shop = () => {
   };
 
   const FilterContent = () => (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="font-bold text-xl">FILTERS</h3>
+    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+      <div className="flex justify-between items-center mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-border/20">
+        <h3 className="font-bold text-xs sm:text-xl">FILTERS</h3>
         <Button variant="ghost" size="sm" onClick={handleClearFilters}>
           Clear
         </Button>
       </div>
-      <Accordion
-        type="multiple"
-        value={openAccordionItems}
-        onValueChange={setOpenAccordionItems}
-        className="w-full space-y-4"
-      >
-        <AccordionItem value="product-type">
-          <AccordionTrigger>Product Type</AccordionTrigger>
-          <AccordionContent>
-            <div className="space-y-2">
-              {categories.map((category) => (
-                <div key={category._id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`cat-${category._id}`}
-                    checked={pendingCategory === category._id}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setPendingCategory(category._id);
-                      } else {
-                        setPendingCategory("all");
-                      }
-                    }}
-                  />
-                  <label htmlFor={`cat-${category._id}`}>{category.name}</label>
-                </div>
-              ))}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="skin-type">
-          <AccordionTrigger>Skin Type</AccordionTrigger>
-          <AccordionContent>
-            <div className="space-y-2">
-              {["All", "Combination", "Oily", "Dry", "Normal", "Sensitive"].map(
-                (type) => (
+      <div className="pb-4">
+        <Accordion
+          type="multiple"
+          value={openAccordionItems}
+          onValueChange={setOpenAccordionItems}
+          className="w-full space-y-3 sm:space-y-4"
+        >
+          <AccordionItem value="product-type">
+            <AccordionTrigger className="text-xs sm:text-sm">
+              Product Type
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-2">
+                {categories.map((category) => (
+                  <div
+                    key={category._id}
+                    className="flex items-center space-x-2"
+                  >
+                    <Checkbox
+                      id={`cat-${category._id}`}
+                      checked={pendingCategory === category._id}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setPendingCategory(category._id);
+                        } else {
+                          setPendingCategory("all");
+                        }
+                      }}
+                      className="h-2.5 w-2.5 sm:h-4 sm:w-4"
+                    />
+                    <label
+                      htmlFor={`cat-${category._id}`}
+                      className="text-xs sm:text-sm"
+                    >
+                      {category.name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="skin-type">
+            <AccordionTrigger className="text-xs sm:text-sm">
+              Skin Type
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-2">
+                {[
+                  "All",
+                  "Combination",
+                  "Oily",
+                  "Dry",
+                  "Normal",
+                  "Sensitive",
+                ].map((type) => (
                   <div key={type} className="flex items-center space-x-2">
                     <Checkbox
                       id={`skin-${type}`}
@@ -302,20 +323,33 @@ const Shop = () => {
                             : prev.filter((t) => t !== type)
                         );
                       }}
+                      className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                     />
-                    <label htmlFor={`skin-${type}`}>{type}</label>
+                    <label
+                      htmlFor={`skin-${type}`}
+                      className="text-xs sm:text-sm"
+                    >
+                      {type}
+                    </label>
                   </div>
-                )
-              )}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="hair-type">
-          <AccordionTrigger>Hair Type</AccordionTrigger>
-          <AccordionContent>
-            <div className="space-y-2">
-              {["All", "Normal", "Dry", "Oily", "Damaged", "Color-Treated"].map(
-                (type) => (
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="hair-type">
+            <AccordionTrigger className="text-xs sm:text-sm">
+              Hair Type
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-2">
+                {[
+                  "All",
+                  "Normal",
+                  "Dry",
+                  "Oily",
+                  "Damaged",
+                  "Color-Treated",
+                ].map((type) => (
                   <div key={type} className="flex items-center space-x-2">
                     <Checkbox
                       id={`hair-${type}`}
@@ -327,59 +361,90 @@ const Shop = () => {
                             : prev.filter((t) => t !== type)
                         );
                       }}
+                      className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                     />
-                    <label htmlFor={`hair-${type}`}>{type}</label>
+                    <label
+                      htmlFor={`hair-${type}`}
+                      className="text-xs sm:text-sm"
+                    >
+                      {type}
+                    </label>
                   </div>
-                )
-              )}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="price-range">
-          <AccordionTrigger>Price Range</AccordionTrigger>
-          <AccordionContent>
-            <div className="space-y-4">
-              <RadioGroup
-                value={pendingPriceRange}
-                onValueChange={setPendingPriceRange}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="0-500" id="price-1" />
-                  <Label htmlFor="price-1">Under ₹500</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="500-1000" id="price-2" />
-                  <Label htmlFor="price-2">₹500 - ₹1000</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="1000-2000" id="price-3" />
-                  <Label htmlFor="price-3">₹1000 - ₹2000</Label>
-                </div>
-              </RadioGroup>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  placeholder="Min"
-                  value={pendingCustomMin}
-                  onChange={(e) => setPendingCustomMin(e.target.value)}
-                  className="w-full"
-                />
-                <span>-</span>
-                <Input
-                  type="number"
-                  placeholder="Max"
-                  value={pendingCustomMax}
-                  onChange={(e) => setPendingCustomMax(e.target.value)}
-                  className="w-full"
-                />
+                ))}
               </div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-      <Button className="w-full mt-6" onClick={handleApplyFilters}>
-        Apply
-      </Button>
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="price-range">
+            <AccordionTrigger className="text-xs sm:text-sm">
+              Price Range
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-4">
+                <RadioGroup
+                  value={pendingPriceRange}
+                  onValueChange={setPendingPriceRange}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem
+                      value="0-500"
+                      id="price-1"
+                      className="h-2.5 w-2.5 sm:h-4 sm:w-4"
+                    />
+                    <Label htmlFor="price-1" className="text-xs sm:text-sm">
+                      Under ₹500
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem
+                      value="500-1000"
+                      id="price-2"
+                      className="h-2.5 w-2.5 sm:h-4 sm:w-4"
+                    />
+                    <Label htmlFor="price-2" className="text-xs sm:text-sm">
+                      ₹500 - ₹1000
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem
+                      value="1000-2000"
+                      id="price-3"
+                      className="h-2.5 w-2.5 sm:h-4 sm:w-4"
+                    />
+                    <Label htmlFor="price-3" className="text-xs sm:text-sm">
+                      ₹1000 - ₹2000
+                    </Label>
+                  </div>
+                </RadioGroup>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={pendingCustomMin}
+                    onChange={(e) => setPendingCustomMin(e.target.value)}
+                    className="w-full"
+                  />
+                  <span>-</span>
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={pendingCustomMax}
+                    onChange={(e) => setPendingCustomMax(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </div>
+      <div className="pt-3 sm:pt-4 border-t border-border/20 mt-4 sm:mt-6">
+        <Button
+          className="w-full text-xs sm:text-sm"
+          onClick={handleApplyFilters}
+        >
+          Apply Filters
+        </Button>
+      </div>
     </div>
   );
 
@@ -389,17 +454,17 @@ const Shop = () => {
 
       <section className="relative bg-gradient-to-br from-primary/10 via-muted-brown/10 to-foreground/10 py-20">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="font-sans text-5xl md:text-6xl font-bold text-foreground mb-6">
+          <h1 className="font-sans text-3xl sm:text-5xl md:text-6xl font-bold text-foreground mb-6">
             Shop Our Collection
           </h1>
-          <p className="text-xl text-muted-brown leading-relaxed">
+          <p className="text-sm sm:text-xl text-muted-brown leading-relaxed">
             Discover luxury beauty products crafted with the finest ingredients.
           </p>
         </div>
       </section>
 
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4">
+      <section className="py-4 sm:py-8 bg-background">
+        <div className="container mx-auto px-2">
           <div className="grid grid-cols-1 lg:grid-cols-4 lg:gap-8">
             <aside className="hidden lg:block col-span-1">
               <div className="sticky top-24">
@@ -407,15 +472,15 @@ const Shop = () => {
               </div>
             </aside>
             <main className="col-span-1 lg:col-span-3">
-              <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+              <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8 gap-4">
                 <div>
-                  <h2 className="text-3xl font-sans font-bold text-foreground">
+                  <h2 className="text-xl sm:text-3xl font-sans font-bold text-foreground">
                     {activeCategory === "all"
                       ? "All Products"
                       : categories.find((c) => c._id === activeCategory)
                           ?.name || "Products"}
                   </h2>
-                  <p className="text-muted-brown mt-1">
+                  <p className="text-xs sm:text-sm text-muted-brown mt-1">
                     Showing {products.length} of {pagination.totalProducts}{" "}
                     products
                   </p>
@@ -427,7 +492,7 @@ const Shop = () => {
                     <SheetTrigger asChild>
                       <Button
                         variant="outline"
-                        className="w-full sm:w-auto border-border text-muted-brown hover:bg-primary/20 hover:text-primary lg:hidden bg-white shadow-sm"
+                        className="w-full sm:w-auto border-border text-muted-brown hover:bg-primary/20 hover:text-primary lg:hidden bg-white shadow-sm min-h-[44px]"
                         size="lg"
                       >
                         <Filter className="mr-2 h-5 w-5" />
@@ -450,17 +515,17 @@ const Shop = () => {
                     </SheetTrigger>
                     <SheetContent
                       side="left"
-                      className="w-[320px] sm:w-[380px] bg-white border-border overflow-y-auto"
+                      className="w-[320px] sm:w-[380px] bg-white border-border overflow-hidden flex flex-col z-[60]"
                     >
-                      <SheetHeader className="sticky top-0 bg-white z-10 pb-4 border-b border-border/20">
-                        <SheetTitle className="text-foreground text-xl">
+                      <SheetHeader className="flex-shrink-0 bg-white pb-4 border-b border-border/20">
+                        <SheetTitle className="text-foreground text-lg sm:text-xl">
                           Filter Products
                         </SheetTitle>
-                        <p className="text-sm text-muted-brown">
+                        <p className="text-xs sm:text-sm text-muted-brown">
                           Refine your search to find exactly what you need
                         </p>
                       </SheetHeader>
-                      <div className="py-4">
+                      <div className="flex-1 overflow-y-auto py-4">
                         <FilterContent />
                       </div>
                     </SheetContent>
@@ -468,7 +533,7 @@ const Shop = () => {
 
                   {/* Sort Dropdown */}
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-full sm:w-[180px] border-border text-muted-brown bg-white shadow-sm">
+                    <SelectTrigger className="w-full sm:w-[180px] border-border text-muted-brown bg-white shadow-sm h-7 sm:h-10 text-xs sm:text-sm">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-border">
@@ -508,7 +573,7 @@ const Shop = () => {
               </div>
 
               {loading ? (
-                <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 lg:grid-cols-3">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <div key={i} className="space-y-2">
                       <Skeleton className="h-64 w-full bg-border/20" />
@@ -518,18 +583,20 @@ const Shop = () => {
                   ))}
                 </div>
               ) : error ? (
-                <div className="text-center text-destructive py-10">{error}</div>
+                <div className="text-center text-destructive py-10">
+                  {error}
+                </div>
               ) : products.length === 0 ? (
-                <div className="text-center text-muted-brown py-20 rounded-lg bg-gradient-to-br from-primary/10 via-white to-primary/10 border border-border">
-                  <h3 className="text-2xl font-semibold mb-2 text-foreground">
+                <div className="text-center text-muted-brown py-20 rounded-lg bg-white border border-border">
+                  <h3 className="text-lg sm:text-2xl font-semibold mb-2 text-foreground">
                     No Products Found
                   </h3>
-                  <p>
+                  <p className="text-sm sm:text-base">
                     Try adjusting your filters to find what you're looking for.
                   </p>
                 </div>
               ) : (
-                <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-2 sm:gap-2 lg:gap-3 grid-cols-2 lg:grid-cols-3">
                   {products.map((product) => {
                     const thirtyDaysAgo = new Date();
                     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -547,7 +614,6 @@ const Shop = () => {
                         rating={product.ratings.average}
                         reviews={product.ratings.numOfReviews}
                         category={product.category.name}
-                        volume={product.volume}
                         variants={product.variants}
                         isSale={
                           !!(
@@ -570,7 +636,7 @@ const Shop = () => {
                     size="lg"
                     onClick={handleLoadMore}
                     disabled={loadingMore}
-                    className="border-border text-muted-brown hover:bg-primary/20 hover:text-primary"
+                    className="border-border text-muted-brown hover:bg-primary/20 hover:text-primary text-sm sm:text-base"
                   >
                     {loadingMore ? (
                       <>

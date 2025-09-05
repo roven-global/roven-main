@@ -1,11 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import Axios from "@/utils/Axios";
-import { Input } from "./input";
 import { useNavigate } from "react-router-dom";
 import { Loader2, X } from "lucide-react";
 import ProductCard from "../ProductCard";
 import { cn } from "@/lib/utils";
-import { Link } from "react-router-dom";
 import { useTypewriter } from "@/hooks/useTypewriter";
 
 interface SearchDropdownProps {
@@ -102,7 +100,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({ open, onClose }) => {
   return (
     <div
       className={cn(
-        "fixed inset-x-0 top-20 bottom-0 bg-background z-[9999] transition-transform duration-500 ease-in-out",
+        "fixed inset-x-0 top-20 bottom-0 bg-white z-[9999] transition-transform duration-500 ease-in-out",
         {
           "translate-y-0": open,
           "translate-y-full": !open,
@@ -181,7 +179,6 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({ open, onClose }) => {
                       rating={prod.ratings?.average || 0}
                       reviews={prod.ratings?.numOfReviews || 0}
                       category={prod.category?.name || ""}
-                      volume={prod.volume}
                       isNew={prod.isNew}
                       isSale={prod.isSale}
                       benefits={prod.benefits}

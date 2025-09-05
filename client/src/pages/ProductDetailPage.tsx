@@ -1199,13 +1199,13 @@ const ProductDetailPage = () => {
       {/* Related Products */}
       {product && (
         <div className="bg-background">
-          <div className="container mx-auto px-4 py-12">
-            <div className="max-w-6xl mx-auto">
-              <h2 className="font-sans text-xl font-bold text-foreground mb-2 text-center">
+          <div className="container mx-auto px-2 sm:px-4 py-12 max-w-full overflow-hidden">
+            <div className="text-center mb-8">
+              <h2 className="font-sans text-xl font-bold text-foreground mb-2">
                 — You May Also Like —
               </h2>
-              <RelatedProducts currentProductId={product._id} />
             </div>
+            <RelatedProducts currentProductId={product._id} />
           </div>
         </div>
       )}

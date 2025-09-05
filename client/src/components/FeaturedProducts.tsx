@@ -66,10 +66,10 @@ const FeaturedProducts = () => {
     <section id="featured-products" className="pt-20 pb-20 -mt-4 bg-card/80">
       <div className="container mx-auto px-2 sm:px-4 max-w-full overflow-hidden">
         <div className="text-center mb-12">
-          <h2 className="font-sans text-4xl md:text-5xl font-bold text-foreground mb-4">
+          <h2 className="font-sans text-2xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
             Featured Products
           </h2>
-          <p className="text-muted-brown text-lg max-w-2xl mx-auto text-balance">
+          <p className="text-muted-brown text-sm sm:text-lg max-w-2xl mx-auto text-balance">
             Discover our handpicked selection of premium beauty products,
             crafted with the finest ingredients for exceptional results.
           </p>
@@ -130,7 +130,7 @@ const FeaturedProducts = () => {
             <Button
               size="lg"
               variant="outline"
-              className="border-2 border-border text-muted-foreground bg-transparent hover:bg-accent hover:text-accent-foreground transition-all duration-300 rounded-full px-8 py-6 text-base font-semibold"
+              className="border-2 border-border text-muted-foreground bg-transparent hover:bg-accent hover:text-accent-foreground transition-all duration-300 rounded-full px-8 py-6 text-sm sm:text-base font-semibold"
             >
               View All Products
             </Button>

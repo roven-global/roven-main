@@ -352,11 +352,11 @@ const ProductCard = ({
   const discount = calculateDiscount();
 
   return (
-    <Card className="group relative w-full h-full flex flex-col bg-white border border-border/20 hover:border-primary/30 rounded-lg shadow-sm hover:shadow-elegant transition-all duration-300 overflow-hidden touch-manipulation">
+    <Card className="group relative w-full h-full sm:h-full min-h-[400px] sm:min-h-0 flex flex-col bg-white border border-border/20 hover:border-primary/30 rounded-lg shadow-sm hover:shadow-elegant transition-all duration-300 overflow-hidden touch-manipulation">
       <Link to={`/product/${slug}`} className="flex flex-col h-full">
         {/* Large Product Image */}
         <div className="relative overflow-hidden bg-white">
-          <div className="aspect-square w-full">
+          <div className="aspect-[3/4] w-full sm:aspect-square">
             <div className="w-full h-full bg-gray-50 rounded-lg overflow-hidden">
               <img
                 src={image}
@@ -405,13 +405,13 @@ const ProductCard = ({
         {/* Compact Content Layout */}
         <CardContent className="p-2 flex flex-col flex-grow bg-white text-center">
           {/* Product Title */}
-          <h3 className="font-sans font-bold text-sm text-foreground mb-0.5 line-clamp-2 leading-tight">
+          <h3 className="font-sans font-bold text-xs sm:text-sm text-foreground mb-1 sm:mb-0.5 line-clamp-2 leading-tight">
             {name}
           </h3>
 
           {/* Benefits - Show first 2 benefits in green text */}
           {benefits && benefits.length > 0 && (
-            <div className="mb-0.5">
+            <div className="mb-1 sm:mb-0.5">
               <p className="text-xs text-muted-green font-medium line-clamp-2 leading-tight">
                 {benefits.slice(0, 2).join(" | ")}
               </p>
@@ -420,7 +420,7 @@ const ProductCard = ({
 
           {/* Product Quantity/Volume */}
           {getDisplayVolume() && (
-            <div className="mb-0.5">
+            <div className="mb-1 sm:mb-0.5">
               <span className="text-xs text-muted-foreground font-medium">
                 {getDisplayVolume()}
               </span>
@@ -428,7 +428,7 @@ const ProductCard = ({
           )}
 
           {/* Rating and Reviews */}
-          <div className="flex items-center justify-center gap-2 mb-1">
+          <div className="flex items-center justify-center gap-2 mb-2 sm:mb-1">
             <div className="flex items-center gap-1">
               <Star className="w-3 h-3 fill-accent text-accent" />
               <span className="text-xs font-medium text-muted-foreground">
@@ -446,7 +446,7 @@ const ProductCard = ({
               {variants && variants.length > 1 && (
                 <span className="text-xs text-muted-foreground">From</span>
               )}
-              <span className="font-sans font-bold text-sm text-foreground">
+              <span className="font-sans font-bold text-xs sm:text-sm text-foreground">
                 {formatRupees(getDisplayPrice())}
               </span>
               {getDisplayOriginalPrice() && (
@@ -483,7 +483,7 @@ const ProductCard = ({
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
-                      <span className="text-sm font-medium w-8 text-center border-t border-b py-1">
+                      <span className="text-xs sm:text-sm font-medium w-8 text-center border-t border-b py-1">
                         {isUpdatingQuantity ? (
                           <div className="flex items-center justify-center gap-1">
                             <div className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse"></div>
@@ -529,7 +529,7 @@ const ProductCard = ({
                 // Add to Cart Button
                 <Button
                   variant="default"
-                  className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold py-1.5 px-3 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-xs"
+                  className="w-full bg-foreground hover:bg-foreground/90 text-background font-semibold py-1.5 px-3 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-[10px] sm:text-xs"
                   onClick={handleAddToCart}
                   disabled={getTotalStock() === 0 || isAdded}
                 >

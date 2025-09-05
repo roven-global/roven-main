@@ -101,10 +101,10 @@ const Categories = () => {
     <section id="categories" className="py-20 bg-gray-50">
       <div className="px-4 md:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="font-sans text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+          <h2 className="font-sans text-2xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-4">
             Shop by Category
           </h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+          <p className="text-gray-600 text-sm sm:text-lg max-w-2xl mx-auto">
             Explore our curated collections, each designed to elevate your
             unique beauty journey.
           </p>

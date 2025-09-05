@@ -91,7 +91,9 @@ const CategorySection: React.FC<CategorySectionProps> = ({
     <section className={`py-8 md:py-12 ${currentTheme.bg}`}>
       <div className="px-4 md:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-6 md:mb-8">
-          <h2 className={`text-3xl md:text-4xl font-bold ${currentTheme.text}`}>
+          <h2
+            className={`text-xl sm:text-3xl md:text-4xl font-bold ${currentTheme.text}`}
+          >
             {category.name}
           </h2>
           <Link to={`/category/${category.slug}`}>
