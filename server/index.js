@@ -27,10 +27,13 @@ const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
 const hpp = require("hpp");
-const fs = require("fs");
+const fs = require("fs").promises;
 const https = require("https");
 const nocache = require("nocache");
 const path = require("path");
+const {
+  getProductBySlugForSSR,
+} = require("./controller/productController.js");
 
 // --- Constants ---
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
@@ -203,6 +206,38 @@ app.use(
     maxAge: "1y",
   })
 );
+app.get("/product/:slug", async (req, res, next) => {
+  try {
+    const { slug } = req.params;
+    const product = await getProductBySlugForSSR(slug);
+    const indexPath = path.join(__dirname, "..", "client", "dist", "index.html");
+    let html = await fs.readFile(indexPath, "utf-8");
+
+    if (product) {
+      const { name, shortDescription, images, variants } = product;
+      const imageUrl = images?.[0]?.url || "https://i.imgur.com/1twoa5I.png"; // Fallback image
+      const description =
+        shortDescription || "Check out this amazing product!";
+      const url = `${FRONTEND_URL}/product/${slug}`;
+
+      const metaTags = `
+        <meta property="og:title" content="${name}" />
+        <meta property="og:description" content="${description}" />
+        <meta property="og:image" content="${imageUrl}" />
+        <meta property="og:url" content="${url}" />
+        <meta name="twitter:card" content="summary_large_image">
+      `;
+
+      html = html.replace("</head>", `${metaTags}</head>`);
+    }
+
+    res.send(html);
+  } catch (error) {
+    console.error("SSR Error:", error);
+    next(error);
+  }
+});
+
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
 });

@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Star,
   Heart,
@@ -15,6 +23,7 @@ import {
   CheckCircle,
   AlertTriangle,
   Share2,
+  Copy,
 } from "lucide-react";
 import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
@@ -96,12 +105,14 @@ const ProductDetailPage = () => {
   const [isUpdatingQuantity, setIsUpdatingQuantity] = useState(false);
   const [activeTab, setActiveTab] = useState("description");
   const [wishlistAnimation, setWishlistAnimation] = useState(false);
+  const [isShareModalOpen, setShareModalOpen] = useState(false);
   const { isAuthenticated, user, updateUser } = useAuth();
   const navigate = useNavigate();
   const { addToCart, cartItems, updateQuantity, removeFromCart } = useCart();
   const reviewsRef = useRef<CustomerReviewsHandles>(null);
   const [allReviews, setAllReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const tabSliderRef = useRef<HTMLDivElement>(null);
   const {
     addToGuestWishlist,
     removeFromGuestWishlist,
@@ -200,6 +211,22 @@ const ProductDetailPage = () => {
       });
     }
   }, [product]);
+
+  // Auto-scroll active tab into view on mobile
+  useEffect(() => {
+    if (tabSliderRef.current && window.innerWidth < 768) {
+      const activeButton = tabSliderRef.current.querySelector(
+        `[data-tab="${activeTab}"]`
+      ) as HTMLElement;
+      if (activeButton) {
+        activeButton.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "center",
+        });
+      }
+    }
+  }, [activeTab]);
 
   // Refresh cart data when component becomes visible (for better synchronization)
   useEffect(() => {
@@ -487,9 +514,44 @@ const ProductDetailPage = () => {
   const discount = originalPrice
     ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
     : 0;
+  const handleShare = async () => {
+    if (!product) return;
+
+    const shareData = {
+      title: product.name,
+      text: `${product.shortDescription || product.description}\nVolume: ${
+        selectedVariant?.volume || product.specifications?.volume || ""
+      }`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        toast({ title: "Product shared successfully!" });
+      } catch (error) {
+        console.error("Error sharing:", error);
+        toast({
+          title: "Could not share product",
+          variant: "destructive",
+        });
+      }
+    } else {
+      setShareModalOpen(true);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>{product.name} | Roven</title>
+        <meta name="description" content={product.shortDescription} />
+        <meta property="og:title" content={product.name} />
+        <meta property="og:description" content={product.shortDescription} />
+        <meta property="og:image" content={product.images[0]?.url} />
+        <meta property="og:url" content={window.location.href} />
+        <meta name="twitter:card" content="summary_large_image" />
+      </Helmet>
       {/* Inject custom CSS for professional animations */}
       <style
         dangerouslySetInnerHTML={{
@@ -517,6 +579,16 @@ const ProductDetailPage = () => {
         
         .wishlist-button:active {
           transform: translateY(0);
+        }
+        
+        /* Hide scrollbar for mobile tab slider */
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
         }
       `,
         }}
@@ -724,16 +796,7 @@ const ProductDetailPage = () => {
                   <Button
                     variant="outline"
                     className="flex-1 border-border text-muted-brown hover:bg-primary/20 hover:text-primary"
-                    onClick={() => {
-                      if (navigator.share) {
-                        navigator.share({
-                          title: product.name,
-                          url: window.location.href,
-                        });
-                      } else {
-                        navigator.clipboard.writeText(window.location.href);
-                      }
-                    }}
+                    onClick={handleShare}
                   >
                     <Share2 className="h-5 w-5 mr-2" /> Share
                   </Button>
@@ -826,34 +889,8 @@ const ProductDetailPage = () => {
       <div className="bg-white border-t border-border/20">
         <div className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto">
-            {/* Mobile Slider Tabs */}
-            <div className="md:hidden border-b mb-6 overflow-x-auto pb-4 scrollbar-hide horizontal-scroll">
-              <div className="flex gap-4 min-w-max">
-                {[
-                  { key: "description", label: "Description" },
-                  { key: "ingredients", label: "Hero Ingredients" },
-                  { key: "howto", label: "How to Use" },
-                  { key: "benefits", label: "Benefits" },
-                  { key: "suitable", label: "Suitable For" },
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={cn(
-                      "flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 snap-start",
-                      activeTab === tab.key
-                        ? "bg-primary text-white shadow-md"
-                        : "bg-gray-100 text-muted-brown hover:bg-gray-200"
-                    )}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Desktop Tabs */}
-            <div className="hidden md:flex border-b gap-6 mb-6">
+            {/* Desktop Tab Navigation */}
+            <div className="hidden md:block border-b flex gap-6 mb-6">
               {[
                 { key: "description", label: "Description" },
                 { key: "ingredients", label: "Hero Ingredients" },
@@ -865,7 +902,7 @@ const ProductDetailPage = () => {
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className={cn(
-                    "pb-2 font-semibold",
+                    "pb-2 font-semibold whitespace-nowrap",
                     activeTab === tab.key
                       ? "border-b-2 border-primary text-primary"
                       : "text-muted-brown"
@@ -874,6 +911,48 @@ const ProductDetailPage = () => {
                   {tab.label}
                 </button>
               ))}
+            </div>
+
+            {/* Mobile Tab Slider */}
+            <div className="md:hidden mb-6">
+              <div className="relative">
+                {/* Scroll indicators */}
+                <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+                <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+                {/* Tab slider container */}
+                <div
+                  ref={tabSliderRef}
+                  className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 snap-x snap-mandatory"
+                  style={{
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                    WebkitOverflowScrolling: "touch",
+                  }}
+                >
+                  {[
+                    { key: "description", label: "Description" },
+                    { key: "ingredients", label: "Hero Ingredients" },
+                    { key: "howto", label: "How to Use" },
+                    { key: "benefits", label: "Benefits" },
+                    { key: "suitable", label: "Suitable For" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.key}
+                      data-tab={tab.key}
+                      onClick={() => setActiveTab(tab.key)}
+                      className={cn(
+                        "flex-shrink-0 px-4 py-2 rounded-full font-semibold text-sm transition-all duration-200 snap-start",
+                        activeTab === tab.key
+                          ? "bg-primary text-white shadow-md"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="bg-white p-6 rounded-lg border">
@@ -1128,6 +1207,27 @@ const ProductDetailPage = () => {
       )}
 
       <Footer />
+      <Dialog open={isShareModalOpen} onOpenChange={setShareModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share this product</DialogTitle>
+            <DialogDescription>
+              Copy the link below to share this product with others.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center space-x-2">
+            <Input value={window.location.href} readOnly />
+            <Button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                toast({ title: "Link copied to clipboard!" });
+              }}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -251,7 +251,7 @@ const CustomerReviews = forwardRef<
       {[1, 2, 3, 4, 5].map((star) => (
         <Star
           key={star}
-          className={`h-5 w-5 cursor-pointer ${
+          className={`h-4 w-4 sm:h-5 sm:w-5 cursor-pointer touch-manipulation ${
             readOnly
               ? star <= value
                 ? "text-accent fill-accent"
@@ -285,10 +285,10 @@ const CustomerReviews = forwardRef<
   );
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
+    <div className="w-full">
+      <div className="flex justify-between items-center mb-4 px-2 sm:px-0">
         {totalReviews > 0 && (
-          <span className="text-sm text-muted-brown">
+          <span className="text-sm text-muted-brown font-medium">
             {totalReviews} review{totalReviews !== 1 ? "s" : ""}
           </span>
         )}
@@ -298,10 +298,10 @@ const CustomerReviews = forwardRef<
       {showForm && !userReview && (
         <form
           onSubmit={handleReviewSubmit}
-          className="mb-8 p-6 border border-primary/20 rounded-xl bg-white space-y-6 shadow-sm"
+          className="mb-6 sm:mb-8 p-4 sm:p-6 border border-primary/20 rounded-xl bg-white space-y-4 sm:space-y-6 shadow-sm mx-2 sm:mx-0"
         >
-          <div className="flex justify-between items-center">
-            <h4 className="font-semibold text-foreground">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <h4 className="font-semibold text-foreground text-sm sm:text-base">
               Write your review for {productName}
             </h4>
             <Button
@@ -309,7 +309,7 @@ const CustomerReviews = forwardRef<
               variant="ghost"
               size="sm"
               onClick={() => setShowForm(false)}
-              className="text-muted-brown hover:text-primary"
+              className="text-muted-brown hover:text-primary self-start sm:self-auto"
             >
               Cancel
             </Button>
@@ -334,13 +334,13 @@ const CustomerReviews = forwardRef<
               onChange={(e) => setReviewText(e.target.value)}
               placeholder="Share your thoughts about this product..."
               required
-              className="min-h-[100px] resize-none"
+              className="min-h-[100px] resize-none text-sm sm:text-base"
             />
           </div>
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-primary hover:bg-primary/90 text-white"
+            className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white"
           >
             {isSubmitting ? "Submitting..." : "Submit Review"}
           </Button>
@@ -348,42 +348,42 @@ const CustomerReviews = forwardRef<
       )}
 
       {isLoading ? (
-        <div className="space-y-4">
+        <div className="space-y-4 px-2 sm:px-0">
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
         </div>
       ) : reviews.length > 0 ? (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
           {reviews.map((review) => (
             <div
               key={review._id}
-              className="border border-primary/20 rounded-lg p-4 bg-white"
+              className="border border-primary/20 rounded-lg p-3 sm:p-4 bg-white shadow-sm"
             >
               {editingReviewId === review._id ? (
                 // Edit mode
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-semibold text-foreground">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                    <h4 className="font-semibold text-foreground text-sm sm:text-base">
                       Edit Your Review
                     </h4>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full sm:w-auto">
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={cancelEditing}
-                        className="text-muted-brown hover:text-primary"
+                        className="text-muted-brown hover:text-primary text-xs sm:text-sm flex-1 sm:flex-none"
                       >
-                        <X className="h-4 w-4 mr-1" />
+                        <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                         Cancel
                       </Button>
                       <Button
                         size="sm"
                         onClick={saveEditedReview}
                         disabled={isEditing}
-                        className="bg-primary hover:bg-primary/90 text-white"
+                        className="bg-primary hover:bg-primary/90 text-white text-xs sm:text-sm flex-1 sm:flex-none"
                       >
-                        <Check className="h-4 w-4 mr-1" />
+                        <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                         {isEditing ? "Saving..." : "Save"}
                       </Button>
                     </div>
@@ -406,16 +406,16 @@ const CustomerReviews = forwardRef<
                       onChange={(e) => setEditReviewText(e.target.value)}
                       placeholder="Share your thoughts about this product..."
                       required
-                      className="min-h-[100px] resize-none"
+                      className="min-h-[100px] resize-none text-sm sm:text-base"
                     />
                   </div>
                 </div>
               ) : (
                 // Display mode
                 <div className="space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className="w-10 h-10 rounded-full bg-warm-cream overflow-hidden flex-shrink-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-warm-cream overflow-hidden flex-shrink-0">
                         <img
                           src={
                             review.user?.avatar?.url ||
@@ -428,18 +428,18 @@ const CustomerReviews = forwardRef<
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-semibold text-foreground text-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                          <p className="font-semibold text-foreground text-xs sm:text-sm">
                             {review.user?.name || "Anonymous User"}
                             {review.user._id === user?._id && (
-                              <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded-full ml-2">
+                              <span className="text-xs text-primary bg-primary/10 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full ml-1 sm:ml-2">
                                 You
                               </span>
                             )}
                           </p>
                           <StarRating readOnly value={review.rating} />
                         </div>
-                        <p className="text-sm text-muted-brown leading-relaxed">
+                        <p className="text-xs sm:text-sm text-muted-brown leading-relaxed">
                           {review.review}
                         </p>
                         <p className="text-xs text-border mt-2">
@@ -455,29 +455,30 @@ const CustomerReviews = forwardRef<
                       </div>
                     </div>
 
-                    {/* Action buttons for user's own review */}
+                    {/* Action buttons for user's own review - Top Right */}
                     {review.user._id === user?._id && (
-                      <div className="flex gap-2 ml-4">
+                      <div className="flex gap-1 sm:gap-2 flex-shrink-0">
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => startEditing(review)}
-                          className="text-muted-brown hover:text-primary h-8 px-2"
+                          className="text-muted-brown hover:text-primary h-7 w-7 sm:h-8 sm:w-auto sm:px-2"
                         >
-                          <Edit3 className="h-4 w-4 mr-1" />
+                          <Edit3 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                          <span className="hidden sm:inline">Edit</span>
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => deleteReview(review._id)}
                           disabled={deletingReviewId === review._id}
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 h-7 w-7 sm:h-8 sm:w-8 p-0"
                           title="Delete review"
                         >
                           {deletingReviewId === review._id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                            <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-red-500"></div>
                           ) : (
-                            <X className="h-4 w-4" />
+                            <X className="h-3 w-3 sm:h-4 sm:w-4" />
                           )}
                         </Button>
                       </div>
@@ -490,12 +491,12 @@ const CustomerReviews = forwardRef<
 
           {/* Load More Button */}
           {hasMoreReviews && (
-            <div className="text-center pt-4">
+            <div className="text-center pt-4 px-2 sm:px-0">
               <Button
                 variant="outline"
                 onClick={loadMoreReviews}
                 disabled={loadingMore}
-                className="border-primary text-primary hover:bg-primary/10 hover:text-primary"
+                className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10 hover:text-primary text-sm"
               >
                 {loadingMore ? (
                   <>
@@ -510,9 +511,11 @@ const CustomerReviews = forwardRef<
           )}
         </div>
       ) : (
-        <div className="text-center py-8">
-          <p className="text-muted-brown text-lg">No reviews yet.</p>
-          <p className="text-border text-sm mt-1">
+        <div className="text-center py-6 sm:py-8 px-2 sm:px-0">
+          <p className="text-muted-brown text-base sm:text-lg">
+            No reviews yet.
+          </p>
+          <p className="text-border text-xs sm:text-sm mt-1">
             Be the first to review this product!
           </p>
         </div>

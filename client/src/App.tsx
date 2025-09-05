@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 import {
   BrowserRouter,
   Routes,
@@ -112,80 +113,80 @@ const AppContent = () => {
       <Suspense fallback={<FullPageLoader />}>
         <Routes>
           <Route path="/" element={<Index />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/otp-verification" element={<OtpVerification />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/category/:slug" element={<CategoryProductsPage />} />
-            <Route path="/product/:slug" element={<ProductDetailPage />} />
-            <Route
-              path="/wishlist"
-              element={
-                <ProtectedRoute>
-                  <Wishlist />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/cart" element={<Cart />} />
-            <Route
-              path="/orders"
-              element={
-                <ProtectedRoute>
-                  <Orders />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/checkout"
-              element={
-                <ProtectedRoute>
-                  <CheckoutRoute>
-                    <Checkout />
-                  </CheckoutRoute>
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/payment" element={<Payment />} />
-            <Route path="/contactus" element={<ContactUs />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/shipping-info" element={<ShippingInfo />} />
-            <Route path="/returns" element={<Returns />} />
-            <Route
-              path="/admin"
-              element={
-                <AdminRoute>
-                  <AdminLayout />
-                </AdminRoute>
-              }
-            >
-              <Route index element={<AdminOverview />} />
-              <Route path="category" element={<CategoryAdmin />} />
-              <Route path="product" element={<ProductAdmin />} />
-              <Route path="product/upload" element={<UploadProduct />} />
-              <Route path="customers" element={<AdminCustomers />} />
-              <Route path="subscribers" element={<AdminSubscribers />} />
-              <Route path="reviews" element={<AdminReviews />} />
-              <Route path="coupons" element={<CouponAdmin />} />
-              <Route path="welcome-gifts" element={<WelcomeGiftAdmin />} />
-              <Route path="hero-images" element={<AdminHeroImages />} />
-            </Route>
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/otp-verification" element={<OtpVerification />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/category/:slug" element={<CategoryProductsPage />} />
+          <Route path="/product/:slug" element={<ProductDetailPage />} />
+          <Route
+            path="/wishlist"
+            element={
+              <ProtectedRoute>
+                <Wishlist />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/cart" element={<Cart />} />
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute>
+                <Orders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute>
+                <CheckoutRoute>
+                  <Checkout />
+                </CheckoutRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/payment" element={<Payment />} />
+          <Route path="/contactus" element={<ContactUs />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/shipping-info" element={<ShippingInfo />} />
+          <Route path="/returns" element={<Returns />} />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
+            <Route index element={<AdminOverview />} />
+            <Route path="category" element={<CategoryAdmin />} />
+            <Route path="product" element={<ProductAdmin />} />
+            <Route path="product/upload" element={<UploadProduct />} />
+            <Route path="customers" element={<AdminCustomers />} />
+            <Route path="subscribers" element={<AdminSubscribers />} />
+            <Route path="reviews" element={<AdminReviews />} />
+            <Route path="coupons" element={<CouponAdmin />} />
+            <Route path="welcome-gifts" element={<WelcomeGiftAdmin />} />
+            <Route path="hero-images" element={<AdminHeroImages />} />
+          </Route>
 
-            <Route path="/not-authorized" element={<NotAuthorized />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-        {/* Search Overlay */}
-        <SearchDropdown open={isSearchOpen} onClose={closeSearch} />
+          <Route path="/not-authorized" element={<NotAuthorized />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+      {/* Search Overlay */}
+      <SearchDropdown open={isSearchOpen} onClose={closeSearch} />
 
       {/* Reward Popup for First-Time Visitors */}
       <RewardPopup isOpen={isRewardPopupOpen} onClose={closeRewardPopup} />
@@ -194,25 +195,27 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <GuestProvider>
-        <UserRewardProvider>
-          <CartProvider>
-            <AuthProvider>
-              <SearchProvider>
-                <BrowserRouter>
-                  <Toaster />
-                  <Sonner />
-                  <AppContent />
-                </BrowserRouter>
-              </SearchProvider>
-            </AuthProvider>
-          </CartProvider>
-        </UserRewardProvider>
-      </GuestProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <GuestProvider>
+          <UserRewardProvider>
+            <CartProvider>
+              <AuthProvider>
+                <SearchProvider>
+                  <BrowserRouter>
+                    <Toaster />
+                    <Sonner />
+                    <AppContent />
+                  </BrowserRouter>
+                </SearchProvider>
+              </AuthProvider>
+            </CartProvider>
+          </UserRewardProvider>
+        </GuestProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;

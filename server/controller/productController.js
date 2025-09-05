@@ -508,6 +508,19 @@ const getProductById = asyncHandler(async (req, res) => {
   });
 });
 
+const getProductBySlugForSSR = async (slug) => {
+  try {
+    const product = await ProductModel.findOne({ slug: slug });
+    if (!product) {
+      return null;
+    }
+    return product;
+  } catch (error) {
+    console.error("Error fetching product by slug for SSR:", error);
+    return null;
+  }
+};
+
 // ---- Update Product ----
 const updateProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -1150,4 +1163,5 @@ module.exports = {
   updateVariantStock,
   getRelatedProducts,
   migrateLegacySpecifications,
+  getProductBySlugForSSR,
 };
