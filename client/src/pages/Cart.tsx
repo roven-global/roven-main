@@ -389,7 +389,7 @@ const Cart = () => {
                           <div className="text-sm text-muted-brown text-center">
                             <span className="font-medium">Cart Summary:</span>
                             <span className="ml-2">
-                                Items - {totalUniqueItems}
+                              Items - {totalUniqueItems}
                             </span>
                             <span className="mx-2">|</span>
                             <span>Quantity - {totalQuantity}</span>
@@ -469,7 +469,7 @@ const Cart = () => {
                                       <Button
                                         variant="outline"
                                         size="sm"
-                                        className="h-8 w-8 p-0 rounded border"
+                                        className="h-6 w-6 sm:h-8 sm:w-8 p-0 rounded border"
                                         onClick={() =>
                                           handleUpdateQuantity(
                                             item._id || item.id,
@@ -479,7 +479,7 @@ const Cart = () => {
                                         }
                                         disabled={item.quantity === 1}
                                       >
-                                        <Minus className="h-3 w-3" />
+                                        <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                       </Button>
                                       <span className="text-sm font-medium w-8 text-center border-t border-b py-1">
                                         {item.quantity}
@@ -487,7 +487,7 @@ const Cart = () => {
                                       <Button
                                         variant="outline"
                                         size="sm"
-                                        className="h-8 w-8 p-0 rounded border"
+                                        className="h-6 w-6 sm:h-8 sm:w-8 p-0 rounded border"
                                         onClick={() =>
                                           handleUpdateQuantity(
                                             item._id || item.id,
@@ -496,7 +496,7 @@ const Cart = () => {
                                           )
                                         }
                                       >
-                                        <Plus className="h-3 w-3" />
+                                        <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                       </Button>
                                     </div>
                                     <div className="text-right">
