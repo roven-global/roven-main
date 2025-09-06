@@ -88,10 +88,10 @@ const CategoryProductsPage = () => {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <main className="flex-grow">
-        <section className="relative bg-gradient-to-br from-primary/10 via-muted-brown/10 to-foreground/10 py-20">
+        <section className="relative bg-gradient-to-br from-primary/10 via-muted-brown/10 to-foreground/10 py-8 sm:py-20">
           <div className="container mx-auto px-4">
             {/* Back button positioned at top-left */}
-            <div className="mb-8 pt-2 -mt-4">
+            <div className="mb-4 sm:mb-8 pt-2 -mt-4">
               <Link to="/#categories" className="inline-block">
                 <Button
                   variant="outline"
@@ -108,9 +108,9 @@ const CategoryProductsPage = () => {
             {/* Centered title */}
             <div className="text-center">
               {loading ? (
-                <Skeleton className="h-12 w-1/3 mx-auto" />
+                <Skeleton className="h-8 sm:h-12 w-1/3 mx-auto" />
               ) : (
-                <h1 className="font-sans text-2xl md:text-3xl font-bold text-foreground">
+                <h1 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
                   {categoryName || "Category"}
                 </h1>
               )}
@@ -157,6 +157,9 @@ const CategoryProductsPage = () => {
                         product.ratings ? product.ratings.numOfReviews : 0
                       }
                       category={product.category ? product.category.name : ""}
+                      specifications={
+                        product.volume ? { volume: product.volume } : undefined
+                      }
                       isSale={
                         !!(
                           product.originalPrice &&

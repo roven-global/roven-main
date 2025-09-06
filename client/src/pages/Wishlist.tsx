@@ -96,9 +96,9 @@ const Wishlist = () => {
     <div className="min-h-screen flex flex-col bg-">
       <Navigation />
       <main className="flex-grow">
-        <section className="py-8 sm:py-12 bg-background border-b border-border/50">
+        <section className="py-6 sm:py-12 bg-background border-b border-border/50">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="font-sans text-3xl sm:text-4xl md:text-5xl font-bold text-foreground">
+            <h1 className="font-sans text-2xl sm:text-4xl md:text-5xl font-bold text-foreground">
               My Wishlist
             </h1>
           </div>
@@ -144,7 +144,9 @@ const Wishlist = () => {
                           ? product.category?.name
                           : "Uncategorized"
                       }
-                      volume={product.volume}
+                      specifications={
+                        product.volume ? { volume: product.volume } : undefined
+                      }
                       benefits={product.benefits}
                       isSale={
                         !!(

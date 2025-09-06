@@ -452,12 +452,12 @@ const Shop = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <section className="relative bg-gradient-to-br from-primary/10 via-muted-brown/10 to-foreground/10 py-20">
+      <section className="relative bg-gradient-to-br from-primary/10 via-muted-brown/10 to-foreground/10 py-8 sm:py-20">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="font-sans text-3xl sm:text-5xl md:text-6xl font-bold text-foreground mb-6">
+          <h1 className="font-sans text-2xl sm:text-5xl md:text-6xl font-bold text-foreground mb-4 sm:mb-6">
             Shop Our Collection
           </h1>
-          <p className="text-sm sm:text-xl text-muted-brown leading-relaxed">
+          <p className="text-xs sm:text-xl text-muted-brown leading-relaxed">
             Discover luxury beauty products crafted with the finest ingredients.
           </p>
         </div>
@@ -614,6 +614,7 @@ const Shop = () => {
                         rating={product.ratings.average}
                         reviews={product.ratings.numOfReviews}
                         category={product.category.name}
+                        specifications={product.specifications}
                         variants={product.variants}
                         isSale={
                           !!(

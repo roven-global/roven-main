@@ -114,16 +114,16 @@ const About = () => {
       <Navigation />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary/10 via-muted-brown/10 to-foreground/10 py-12 sm:py-16 md:py-20">
+      <section className="relative bg-gradient-to-br from-primary/10 via-muted-brown/10 to-foreground/10 py-8 sm:py-16 md:py-20">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="font-sans text-5xl md:text-6xl font-bold text-foreground mb-6">
+            <h1 className="font-sans text-3xl sm:text-5xl md:text-6xl font-bold text-foreground mb-4 sm:mb-6">
               Our Story of
               <span className="block text-transparent bg-gradient-to-r from-primary to-muted-brown bg-clip-text">
                 Natural Beauty
               </span>
             </h1>
-            <p className="text-xl text-muted-brown mb-8 leading-relaxed">
+            <p className="text-base sm:text-xl text-muted-brown mb-6 sm:mb-8 leading-relaxed">
               Founded on the belief that beauty should be inclusive,
               sustainable, and transformative. We create premium products that
               celebrate your unique radiance while caring for our planet.
@@ -255,7 +255,9 @@ const About = () => {
                   </div>
                   <Card className="flex-1 group-hover:shadow-md transition-shadow bg-white border-border/50">
                     <CardContent className="p-6">
-                      <p className="text-lg text-muted-brown">{milestone.event}</p>
+                      <p className="text-lg text-muted-brown">
+                        {milestone.event}
+                      </p>
                     </CardContent>
                   </Card>
                 </div>
@@ -331,7 +333,9 @@ const About = () => {
                     <h3 className="font-semibold text-lg text-foreground">
                       {cert.name}
                     </h3>
-                    <p className="text-muted-brown text-sm">{cert.description}</p>
+                    <p className="text-muted-brown text-sm">
+                      {cert.description}
+                    </p>
                   </div>
                 </CardContent>
               </Card>

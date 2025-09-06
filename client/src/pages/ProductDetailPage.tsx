@@ -41,6 +41,13 @@ import CustomerReviews, {
   CustomerReviewsHandles,
 } from "@/components/CustomerReviews";
 import ProductDescription from "@/components/ProductDescription";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 interface Review {
   _id: string;
@@ -112,7 +119,6 @@ const ProductDetailPage = () => {
   const reviewsRef = useRef<CustomerReviewsHandles>(null);
   const [allReviews, setAllReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
-  const tabSliderRef = useRef<HTMLDivElement>(null);
   const {
     addToGuestWishlist,
     removeFromGuestWishlist,
@@ -202,22 +208,6 @@ const ProductDetailPage = () => {
     if (product) {
     }
   }, [product]);
-
-  // Auto-scroll active tab into view on mobile
-  useEffect(() => {
-    if (tabSliderRef.current && window.innerWidth < 768) {
-      const activeButton = tabSliderRef.current.querySelector(
-        `[data-tab="${activeTab}"]`
-      ) as HTMLElement;
-      if (activeButton) {
-        activeButton.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "center",
-        });
-      }
-    }
-  }, [activeTab]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -477,8 +467,8 @@ const ProductDetailPage = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
-        <div className="container mx-auto px-4 py-20 text-center">
-          <h2 className="text-xl sm:text-2xl font-semibold text-destructive">
+        <div className="container mx-auto px-4 py-12 sm:py-20 text-center">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-destructive">
             {error || "Product not found."}
           </h2>
           <Link to="/shop">
@@ -905,21 +895,15 @@ const ProductDetailPage = () => {
 
             {/* Mobile Tab Slider */}
             <div className="md:hidden mb-6">
-              <div className="relative">
-                {/* Scroll indicators */}
-                <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-                <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-
-                {/* Tab slider container */}
-                <div
-                  ref={tabSliderRef}
-                  className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 snap-x snap-mandatory"
-                  style={{
-                    scrollbarWidth: "none",
-                    msOverflowStyle: "none",
-                    WebkitOverflowScrolling: "touch",
-                  }}
-                >
+              <Carousel
+                opts={{
+                  align: "start",
+                  loop: false,
+                  dragFree: true,
+                }}
+                className="w-full"
+              >
+                <CarouselContent className="-ml-2">
                   {[
                     { key: "description", label: "Description" },
                     { key: "ingredients", label: "Hero Ingredients" },
@@ -927,22 +911,25 @@ const ProductDetailPage = () => {
                     { key: "benefits", label: "Benefits" },
                     { key: "suitable", label: "Suitable For" },
                   ].map((tab) => (
-                    <button
-                      key={tab.key}
-                      data-tab={tab.key}
-                      onClick={() => setActiveTab(tab.key)}
-                      className={cn(
-                        "flex-shrink-0 px-4 py-2 rounded-full font-semibold text-sm transition-all duration-200 snap-start",
-                        activeTab === tab.key
-                          ? "bg-primary text-white shadow-md"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      )}
-                    >
-                      {tab.label}
-                    </button>
+                    <CarouselItem key={tab.key} className="pl-2 basis-auto">
+                      <button
+                        data-tab={tab.key}
+                        onClick={() => setActiveTab(tab.key)}
+                        className={cn(
+                          "px-4 py-2 rounded-full font-semibold text-sm transition-all duration-200 whitespace-nowrap",
+                          activeTab === tab.key
+                            ? "bg-primary text-white shadow-md"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        )}
+                      >
+                        {tab.label}
+                      </button>
+                    </CarouselItem>
                   ))}
-                </div>
-              </div>
+                </CarouselContent>
+                <CarouselPrevious className="left-0 h-8 w-8 hidden" />
+                <CarouselNext className="right-0 h-8 w-8 hidden" />
+              </Carousel>
             </div>
 
             <div className="bg-white p-6 rounded-lg border">

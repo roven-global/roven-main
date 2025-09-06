@@ -3,6 +3,14 @@ import Axios from "@/utils/Axios";
 import SummaryApi from "@/common/summaryApi";
 import CategorySection from "./CategorySection";
 import { Skeleton } from "./ui/skeleton";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "./ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 // Define the Category interface for type safety
 interface Category {
@@ -115,28 +123,68 @@ const Categories = () => {
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="space-y-8">
                 <Skeleton className="h-10 w-1/3 bg-gray-200" />
-                {/* Mobile: Grid layout skeleton */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:hidden gap-4 md:gap-6">
-                  {Array.from({ length: 4 }).map((_, j) => (
-                    <div key={j} className="space-y-2">
-                      <Skeleton className="h-64 w-full bg-gray-200" />
-                      <Skeleton className="h-4 w-2/3 bg-gray-200" />
-                      <Skeleton className="h-4 w-1/2 bg-gray-200" />
-                    </div>
-                  ))}
+                {/* Mobile: Carousel skeleton */}
+                <div className="md:hidden -mx-4">
+                  <Carousel
+                    opts={{
+                      align: "start",
+                      loop: true,
+                    }}
+                    plugins={[
+                      Autoplay({
+                        delay: 5000,
+                        stopOnInteraction: false,
+                      }),
+                    ]}
+                    className="w-full"
+                  >
+                    <CarouselContent className="-ml-2">
+                      {Array.from({ length: 4 }).map((_, j) => (
+                        <CarouselItem key={j} className="pl-2 basis-3/4">
+                          <div className="space-y-2">
+                            <Skeleton className="h-64 w-full bg-gray-200" />
+                            <Skeleton className="h-4 w-2/3 bg-gray-200" />
+                            <Skeleton className="h-4 w-1/2 bg-gray-200" />
+                          </div>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="hidden" />
+                    <CarouselNext className="hidden" />
+                  </Carousel>
                 </div>
-                {/* Desktop: Horizontal scroll skeleton */}
-                <div className="hidden md:flex gap-4 sm:gap-6 md:gap-8 overflow-x-auto pb-4 scrollbar-hide horizontal-scroll">
-                  {Array.from({ length: 4 }).map((_, j) => (
-                    <div
-                      key={j}
-                      className="flex-shrink-0 w-64 sm:w-72 md:w-80 space-y-2"
-                    >
-                      <Skeleton className="h-72 w-full bg-gray-200 rounded-lg" />
-                      <Skeleton className="h-4 w-5/6 bg-gray-200 rounded-md" />
-                      <Skeleton className="h-4 w-1/2 bg-gray-200 rounded-md" />
-                    </div>
-                  ))}
+                {/* Desktop: Carousel skeleton */}
+                <div className="hidden md:block">
+                  <Carousel
+                    opts={{
+                      align: "start",
+                      loop: true,
+                    }}
+                    plugins={[
+                      Autoplay({
+                        delay: 5000,
+                        stopOnInteraction: false,
+                      }),
+                    ]}
+                    className="w-full"
+                  >
+                    <CarouselContent className="-ml-4">
+                      {Array.from({ length: 4 }).map((_, j) => (
+                        <CarouselItem
+                          key={j}
+                          className="pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4"
+                        >
+                          <div className="space-y-2">
+                            <Skeleton className="h-72 w-full bg-gray-200 rounded-lg" />
+                            <Skeleton className="h-4 w-5/6 bg-gray-200 rounded-md" />
+                            <Skeleton className="h-4 w-1/2 bg-gray-200 rounded-md" />
+                          </div>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="hidden" />
+                    <CarouselNext className="hidden" />
+                  </Carousel>
                 </div>
               </div>
             ))}
