@@ -1,7 +1,10 @@
 const mongoose = require("mongoose");
 const slugify = require("slugify");
 
-// Schema for hero ingredients
+/**
+ * Ingredient Schema
+ * Schema for product ingredients with image support
+ */
 const ingredientSchema = new mongoose.Schema(
   {
     name: { type: String, trim: true, required: true },
@@ -14,6 +17,10 @@ const ingredientSchema = new mongoose.Schema(
   { _id: false }
 );
 
+/**
+ * Product Schema
+ * Main product schema with variants, specifications, and inventory management
+ */
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -210,7 +217,9 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Slug pre-save
+/**
+ * Pre-save middleware to generate slug from product name
+ */
 productSchema.pre("save", function (next) {
   if (this.isModified("name")) {
     this.slug = slugify(this.name, {

@@ -1,6 +1,11 @@
+const asyncHandler = require("express-async-handler");
 const mongoose = require("mongoose");
 
-const connectDb = async () => {
+/**
+ * Database Configuration
+ * Handles MongoDB connection with error handling
+ */
+const connectDb = asyncHandler(async () => {
   try {
     const connect = await mongoose.connect(process.env.CONNECTION_STRING);
     console.log(
@@ -14,6 +19,6 @@ const connectDb = async () => {
     );
     throw err; // Throw the error instead of just logging
   }
-};
+});
 
 module.exports = connectDb;

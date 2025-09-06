@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 
 const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
 
+/**
+ * Newsletter Subscriber Schema
+ * Schema for newsletter email subscriptions
+ */
 const newsletterSubscriberSchema = new mongoose.Schema(
   {
     email: {
@@ -18,4 +22,7 @@ const newsletterSubscriberSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("NewsletterSubscriber", newsletterSubscriberSchema);
+module.exports = mongoose.model(
+  "NewsletterSubscriber",
+  newsletterSubscriberSchema
+);

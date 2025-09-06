@@ -1,5 +1,6 @@
 /**
- * Generates an HTML email template for email verification.
+ * Email Template Utility
+ * Generates HTML email templates for user communications
  */
 const verifyEmailTemplate = ({ name, url } = {}) => {
   const displayName = name || "User";

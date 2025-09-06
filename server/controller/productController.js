@@ -6,24 +6,20 @@ const uploadImageCloudinary = require("../utils/uploadImageCloudinary");
 const ProductModel = require("../models/productModel");
 const CategoryModel = require("../models/categoryModel");
 
-// Helpers
 const sanitizeString = (val) => (typeof val === "string" ? val.trim() : "");
 const sanitizeArray = (arr) =>
   Array.isArray(arr) ? arr.map(sanitizeString) : [];
 const logError = (ctx, msg) => console.error(`[PRODUCT][ERROR][${ctx}] ${msg}`);
 
-// Helper: Migrate legacy skinType/hairType from string to array
 const migrateSpecifications = (specs) => {
   if (!specs) return specs;
 
   const migrated = { ...specs };
 
-  // Migrate skinType if it's a string
   if (migrated.skinType && typeof migrated.skinType === "string") {
     migrated.skinType = [migrated.skinType];
   }
 
-  // Migrate hairType if it's a string
   if (migrated.hairType && typeof migrated.hairType === "string") {
     migrated.hairType = [migrated.hairType];
   }
@@ -35,7 +31,6 @@ const migrateSpecifications = (specs) => {
 const generateSlug = (name) =>
   slugify(name, { lower: true, remove: /[*+~.()'"!:@]/g });
 
-// Helper: process hero ingredient images
 const processIngredientImages = async (ingredients, files) => {
   if (!Array.isArray(ingredients)) return [];
   const processed = [];
@@ -76,7 +71,6 @@ const createProduct = asyncHandler(async (req, res) => {
       .status(400)
       .json({ success: false, message: "Invalid or missing request body." });
 
-  // Sanitize required fields
   let {
     name,
     description,
@@ -106,7 +100,6 @@ const createProduct = asyncHandler(async (req, res) => {
   brand = sanitizeString(brand);
   sku = sanitizeString(sku);
 
-  // Validate missing required fields
   const reqFields = { name, description, category, brand, sku };
   const missingFields = Object.entries(reqFields)
     .filter(([_, v]) => !v)
@@ -187,7 +180,6 @@ const createProduct = asyncHandler(async (req, res) => {
     });
   }
 
-  // Parse specifications
   let parsedSpecifications = {};
   if (specifications) {
     try {
@@ -207,7 +199,6 @@ const createProduct = asyncHandler(async (req, res) => {
     parsedSpecifications = migrateSpecifications(parsedSpecifications);
   }
 
-  // Parse ingredients
   let parsedIngredients = [];
   if (req.body.ingredients) {
     try {
@@ -226,7 +217,6 @@ const createProduct = asyncHandler(async (req, res) => {
     }
   }
 
-  // Parse suitableFor
   let parsedSuitableFor = [];
   if (suitableFor) {
     try {

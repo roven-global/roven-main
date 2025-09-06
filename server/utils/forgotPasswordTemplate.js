@@ -1,3 +1,7 @@
+/**
+ * Email Template Utility
+ * Generates HTML email templates for user communications
+ */
 const forgotPasswordTemplate = ({ name, otp }) => {
   return `
       <div>

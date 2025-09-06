@@ -1,6 +1,10 @@
 const mongoose = require("mongoose");
-const slugify = require("slugify"); // It's good practice to use a library for consistency
+const slugify = require("slugify");
 
+/**
+ * Category Schema
+ * Stores product categories with hierarchical structure support
+ */
 const categorySchema = new mongoose.Schema(
   {
     name: {
@@ -45,7 +49,9 @@ const generateSlug = (name) => {
   });
 };
 
-// Create slug from name before saving a NEW category
+/**
+ * Pre-save middleware to generate slug from category name
+ */
 categorySchema.pre("save", function (next) {
   if (this.isModified("name")) {
     this.slug = generateSlug(this.name);
@@ -53,6 +59,9 @@ categorySchema.pre("save", function (next) {
   next();
 });
 
+/**
+ * Pre-update middleware to generate slug when category name is updated
+ */
 categorySchema.pre("findOneAndUpdate", async function (next) {
   const update = this.getUpdate();
   if (update.name) {

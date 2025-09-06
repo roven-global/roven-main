@@ -13,17 +13,12 @@ const {
   executeWithOptionalTransaction,
 } = require("../utils/transactionHandler");
 
-// Security helpers
 const sanitizeString = (str) =>
   typeof str === "string" ? str.trim().replace(/[<>\"']/g, "") : "";
-const logSecurityEvent = (event, details) => {
-  console.log(`[SECURITY][${new Date().toISOString()}][${event}]`, details);
-};
 
-// Rate limiting for gift claims
 const giftClaimLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 3, // limit each IP to 3 gift claims per windowMs
+  max: 3,
   message: {
     success: false,
     message: "Too many gift claims. Please try again later.",
@@ -32,35 +27,19 @@ const giftClaimLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-
-// @desc Test endpoint to verify server functionality
-// @route GET /api/welcome-gifts/test
-// @access Public
-const testWelcomeGiftEndpoint = asyncHandler(async (req, res) => {
-  console.log("Welcome gift test endpoint called");
-  res.status(200).json({
-    success: true,
-    message: "Welcome gift test endpoint working",
-    timestamp: new Date().toISOString(),
-    serverStatus: "running",
-  });
-});
-
 // @desc Get all welcome gifts
 // @route GET /api/welcome-gifts
 // @access Public
 const getAllWelcomeGifts = asyncHandler(async (req, res) => {
   try {
-    console.log("Getting all welcome gifts...");
-    const limit = await AdminSetting.getSetting('activeWelcomeGiftLimit', 6); // Default to 6
+    const limit = await AdminSetting.getSetting("activeWelcomeGiftLimit", 6);
 
     const gifts = await WelcomeGift.aggregate([
       { $match: { isActive: true } },
       { $sample: { size: Number(limit) } },
-      { $project: { __v: 0 } } // Exclude the __v field
+      { $project: { __v: 0 } }, // Exclude the __v field
     ]);
 
-    console.log(`Found and sampled ${gifts.length} active welcome gifts.`);
     res.status(200).json({
       success: true,
       data: gifts,
@@ -324,13 +303,20 @@ const toggleWelcomeGiftStatus = asyncHandler(async (req, res) => {
 
   // If activating the gift, check against the limit
   if (!gift.isActive) {
-    const limitSetting = await AdminSetting.getSetting('activeWelcomeGiftLimit', 6); // Default to 6 if not set
+    const limitSetting = await AdminSetting.getSetting(
+      "activeWelcomeGiftLimit",
+      6
+    ); // Default to 6 if not set
     const activeGiftLimit = Number(limitSetting);
-    const activeGiftsCount = await WelcomeGift.countDocuments({ isActive: true });
+    const activeGiftsCount = await WelcomeGift.countDocuments({
+      isActive: true,
+    });
 
     if (activeGiftsCount >= activeGiftLimit) {
       res.status(400);
-      throw new Error(`You have reached the limit of ${activeGiftLimit} active welcome gifts. Please deactivate another gift before activating a new one.`);
+      throw new Error(
+        `You have reached the limit of ${activeGiftLimit} active welcome gifts. Please deactivate another gift before activating a new one.`
+      );
     }
   }
 
@@ -391,18 +377,10 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
     // Generate anonymous ID if not provided or invalid
     if (!anonymousId) {
       anonymousId = generateSecureAnonymousId();
-      console.log("Generated new anonymous ID for claim:", anonymousId);
     } else if (!validateAnonymousId(anonymousId)) {
       logSecurityEvent("INVALID_ANONYMOUS_ID", { anonymousId, clientIP });
       throw new Error("Invalid anonymous ID. Please refresh and try again.");
     }
-
-    console.log("Claim function - anonymousId details:", {
-      anonymousId,
-      anonymousIdLength: anonymousId?.length,
-      anonymousIdParts: anonymousId?.split("-")?.length,
-      isValid: validateAnonymousId(anonymousId),
-    });
 
     // Get gift with optional session for atomic operation
     const gift = session
@@ -420,18 +398,6 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
       });
       throw new Error("This welcome gift is not active");
     }
-
-    // Log gift object structure for debugging
-    console.log("Gift object structure:", {
-      id: gift._id,
-      title: gift.title,
-      reward: gift.reward,
-      rewardText: gift.rewardText,
-      description: gift.description,
-      hasReward: !!gift.reward,
-      hasRewardText: !!gift.rewardText,
-      hasDescription: !!gift.description,
-    });
 
     // The pre-check for claimed gifts is removed to prevent race conditions.
     // We now rely on the unique index on the UserReward collection and handle the duplicate key error.
@@ -453,11 +419,8 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
         ? (await UserReward.create([userRewardData], { session }))[0]
         : await UserReward.create(userRewardData);
 
-      console.log("UserReward created successfully:", userReward._id);
-
       // If successful, increment the usage count for the gift.
       await gift.incrementUsage(session);
-      console.log("Gift usage incremented successfully for gift:", gift._id);
 
       // If the user is logged in, update their user record.
       if (req.user) {
@@ -470,7 +433,6 @@ const claimWelcomeGift = asyncHandler(async (req, res) => {
           },
           { session }
         );
-        console.log("User record updated for user:", req.user._id);
       }
     } catch (error) {
       // Check for duplicate key error (code 11000)
@@ -747,13 +709,6 @@ const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
     isUsed: false,
   });
 
-  console.log("ValidateWelcomeGiftCoupon: Initial userReward lookup result:", {
-    userReward: !!userReward,
-    userId: req.user._id,
-    giftId: gift._id,
-    hasAnonymousId: !!bodyAnonymousId,
-  });
-
   // The primary migration path is now handled by AuthContext upon login.
   // This function should only validate for an already authenticated and migrated user.
   // The inline migration fallback has been removed to simplify the logic.
@@ -816,13 +771,11 @@ const validateWelcomeGiftCoupon = asyncHandler(async (req, res) => {
       userId: req.user?._id,
       clientIP,
     });
-    return res
-      .status(400)
-      .json({
-        success: false,
-        message:
-          "This welcome gift has already been redeemed. Cannot use it again.",
-      });
+    return res.status(400).json({
+      success: false,
+      message:
+        "This welcome gift has already been redeemed. Cannot use it again.",
+    });
   }
 
   // Server-side discount calculation using validated data
@@ -913,12 +866,6 @@ const migrateAnonymousGift = asyncHandler(async (req, res) => {
 
     // Validate anonymous ID with detailed logging
     const isValidAnonymousId = validateAnonymousId(anonymousId);
-    console.log("Migration - Anonymous ID validation:", {
-      anonymousId,
-      isValidAnonymousId,
-      anonymousIdLength: anonymousId?.length,
-      anonymousIdParts: anonymousId?.split("-")?.length,
-    });
 
     if (!isValidAnonymousId) {
       logSecurityEvent("INVALID_MIGRATION_ATTEMPT", {
@@ -946,24 +893,6 @@ const migrateAnonymousGift = asyncHandler(async (req, res) => {
         ? await UserReward.find({ anonymousId, isUsed: false }).session(session)
         : await UserReward.find({ anonymousId, isUsed: false });
 
-      console.log("Migration Debug:", {
-        userId: req.user._id,
-        anonymousId,
-        anonymousIdLength: anonymousId?.length,
-        anonymousIdParts: anonymousId?.split("-")?.length,
-        existingUserReward: !!existingUserReward,
-        anonymousRewardsCount: anonymousRewards.length,
-        unusedAnonymousRewardsCount: unusedAnonymousRewards.length,
-        anonymousRewards: anonymousRewards.map((r) => ({
-          id: r._id,
-          isUsed: r.isUsed,
-          giftId: r.giftId,
-          rewardTitle: r.rewardTitle,
-          storedAnonymousId: r.anonymousId,
-          storedAnonymousIdLength: r.anonymousId?.length,
-        })),
-      });
-
       // Check if migration is possible with atomic operations
       const canMigrate = session
         ? await UserReward.canMigrateAnonymousGift(
@@ -975,20 +904,7 @@ const migrateAnonymousGift = asyncHandler(async (req, res) => {
 
       if (!canMigrate) {
         if (existingUserReward) {
-          console.log("Migration not needed: User already has a reward", {
-            userId: req.user._id,
-            existingRewardId: existingUserReward._id,
-          });
         } else {
-          console.log(
-            "Migration not possible: No anonymous gift found for migration",
-            {
-              userId: req.user._id,
-              anonymousId,
-              anonymousRewardsFound: anonymousRewards.length,
-              unusedRewardsFound: unusedAnonymousRewards.length,
-            }
-          );
         }
 
         return {
@@ -1081,7 +997,10 @@ const applyGiftClaimLimiter = (req, res, next) => {
   next();
 };
 
-// Check if a user has an active, unused welcome gift
+/**
+ * Check if user has an active, unused welcome gift
+ * @route GET /api/welcome-gifts/check-status
+ */
 const checkRewardStatus = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -1124,7 +1043,6 @@ module.exports = {
   validateWelcomeGiftCoupon,
   migrateAnonymousGift,
   applyGiftClaimLimiter,
-  testWelcomeGiftEndpoint,
   getAnonymousId,
   checkRewardStatus,
 };

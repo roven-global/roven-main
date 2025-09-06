@@ -34,6 +34,10 @@ const subscribeToNewsletter = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * Get all newsletter subscribers with pagination
+ * @route GET /api/newsletter/subscribers
+ */
 const getSubscribers = asyncHandler(async (req, res) => {
   const { page = 1, limit = 15 } = req.query;
 
@@ -63,6 +67,10 @@ const getSubscribers = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Export newsletter subscribers as CSV file
+ * @route GET /api/newsletter/export-csv
+ */
 const exportSubscribersAsCSV = asyncHandler(async (req, res) => {
   const subscribers = await NewsletterSubscriber.find().lean();
 
@@ -75,7 +83,7 @@ const exportSubscribersAsCSV = asyncHandler(async (req, res) => {
     { label: "Email", value: "email" },
     { label: "Subscribed At", value: "createdAt" },
   ];
-  
+
   const json2csvParser = new Parser({ fields });
   const csv = json2csvParser.parse(subscribers);
 

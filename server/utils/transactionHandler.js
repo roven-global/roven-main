@@ -1,6 +1,10 @@
+const asyncHandler = require("express-async-handler");
 const mongoose = require("mongoose");
 
-// Check if MongoDB instance supports transactions
+/**
+ * Transaction Handler Utility
+ * Provides MongoDB transaction support with fallback for non-replica set environments
+ */
 const supportsTransactions = () => {
   try {
     // A more robust check for replica set environments
@@ -13,8 +17,12 @@ const supportsTransactions = () => {
   }
 };
 
-// Helper function to execute a block of code with or without a transaction
-const executeWithOptionalTransaction = async (callback) => {
+/**
+ * Execute a block of code with or without a transaction
+ * @param {Function} callback - Function to execute within transaction
+ * @returns {Promise} Result of the callback execution
+ */
+const executeWithOptionalTransaction = asyncHandler(async (callback) => {
   if (supportsTransactions()) {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -31,10 +39,12 @@ const executeWithOptionalTransaction = async (callback) => {
     }
   } else {
     // Execute without transactions for environments that don't support it (e.g., local standalone MongoDB)
-    console.warn("Transactions are not supported by this MongoDB setup. Running operation without transaction.");
+    console.warn(
+      "Transactions are not supported by this MongoDB setup. Running operation without transaction."
+    );
     return await callback(null);
   }
-};
+});
 
 module.exports = {
   supportsTransactions,

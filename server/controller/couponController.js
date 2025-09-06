@@ -495,6 +495,10 @@ const getCouponUsage = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Get coupon analytics and usage statistics
+ * @route GET /api/coupon/analytics
+ */
 const getCouponAnalytics = asyncHandler(async (req, res) => {
   const totalCoupons = await CouponModel.countDocuments();
   const activeCoupons = await CouponModel.countDocuments({ isActive: true });

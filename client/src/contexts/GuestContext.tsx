@@ -41,7 +41,7 @@ interface GuestContextType {
   updateGuestCartQuantity: (
     id: string,
     quantity: number,
-    variant?: { volume:string; sku: string }
+    variant?: { volume: string; sku: string }
   ) => void;
   clearGuestData: () => void;
   guestCartCount: number;
@@ -63,7 +63,6 @@ export const GuestProvider = ({ children }: { children: ReactNode }) => {
   const [guestWishlist, setGuestWishlist] = useState<GuestWishlistItem[]>([]);
   const [guestCart, setGuestCart] = useState<GuestCartItem[]>([]);
 
-  // Load guest data from localStorage on mount
   useEffect(() => {
     const savedWishlist = localStorage.getItem("shimmer_guest_wishlist");
     const savedCart = localStorage.getItem("shimmer_guest_cart");
@@ -72,7 +71,6 @@ export const GuestProvider = ({ children }: { children: ReactNode }) => {
       try {
         setGuestWishlist(JSON.parse(savedWishlist));
       } catch (error) {
-        console.error("Error parsing guest wishlist:", error);
         localStorage.removeItem("shimmer_guest_wishlist");
       }
     }
@@ -81,13 +79,11 @@ export const GuestProvider = ({ children }: { children: ReactNode }) => {
       try {
         setGuestCart(JSON.parse(savedCart));
       } catch (error) {
-        console.error("Error parsing guest cart:", error);
         localStorage.removeItem("shimmer_guest_cart");
       }
     }
   }, []);
 
-  // Save guest data to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem(
       "shimmer_guest_wishlist",
@@ -201,12 +197,6 @@ export const GuestProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    console.log("GuestContext: Updating guest cart quantity:", {
-      id,
-      quantity,
-      variant,
-    });
-
     setGuestCart((prev) => {
       const newCart = prev.map((cartItem) =>
         cartItem.id === id &&
@@ -214,12 +204,6 @@ export const GuestProvider = ({ children }: { children: ReactNode }) => {
           ? { ...cartItem, quantity }
           : cartItem
       );
-
-      console.log("GuestContext: Guest cart updated:", {
-        oldCount: prev.length,
-        newCount: newCart.length,
-        updatedItem: newCart.find((item) => item.id === id),
-      });
 
       return newCart;
     });
@@ -240,8 +224,8 @@ export const GuestProvider = ({ children }: { children: ReactNode }) => {
     (acc, item) => acc + item.quantity,
     0
   );
-  
-    const guestCartSubtotal = guestCart.reduce(
+
+  const guestCartSubtotal = guestCart.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
   );

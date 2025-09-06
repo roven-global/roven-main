@@ -12,38 +12,32 @@ const auth = require("../middleware/auth");
 const adminOnly = require("../middleware/adminOnly");
 const router = express.Router();
 
-// =================================================================
-// @desc    Admin Routes
-// =================================================================
-router
-  .route("/admin/all")
-  .get(auth, adminOnly, getAllReviews);
+/**
+ * Admin Routes - Require authentication and admin privileges
+ */
+// Get all reviews for admin
+router.route("/admin/all").get(auth, adminOnly, getAllReviews);
+
+// Admin update/delete specific review
 router
   .route("/admin/:reviewId")
   .put(auth, adminOnly, adminUpdateReview)
   .delete(auth, adminOnly, adminDeleteReview);
 
-// =================================================================
-// @desc    User and Public Routes
-// =================================================================
-// @route   POST /api/reviews
-// @desc    Create a new review
-// @access  Private
+/**
+ * User and Public Routes
+ */
+
+// Create a new review
 router.route("/").post(auth, createReview);
 
-// @route   PUT /api/reviews/:reviewId
-// @desc    Update a review
-// @access  Private
+// Update a review
 router.route("/:reviewId").put(auth, updateReview);
 
-// @route   DELETE /api/reviews/:reviewId
-// @desc    Delete a review
-// @access  Private
+// Delete a review
 router.route("/:reviewId").delete(auth, deleteReview);
 
-// @route   GET /api/reviews/:productSlug
-// @desc    Get all reviews for a specific product
-// @access  Public
+// Get all reviews for a specific product (public)
 router.route("/:productSlug").get(getReviewsForProduct);
 
 module.exports = router;

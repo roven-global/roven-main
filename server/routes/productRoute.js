@@ -1,4 +1,3 @@
-// productRoute.js file
 const express = require("express");
 const {
   createProduct,
@@ -19,20 +18,46 @@ const adminOnly = require("../middleware/adminOnly");
 const productUpload = require("../middleware/multer").productUpload;
 const router = express.Router();
 
-// Public routes
+// Get all products with pagination and filtering
 router.route("/all").get(getAllProducts);
+
+// Search products
 router.route("/search").get(searchProducts);
+
+// Get featured products
 router.route("/featured").get(getFeaturedProducts);
+
+// Get related products
 router.route("/related/:id").get(getRelatedProducts);
+
+// Get products by category
 router.route("/category/:categoryId").get(getProductsByCategory);
+
+// Get product by ID or slug
 router.route("/:identifier").get(getProductById);
+
+// Get product variants
 router.route("/:id/variants").get(getProductVariants);
 
-// Admin-only routes (require authentication and admin privileges)
+/**
+ * Admin Routes - Require authentication and admin privileges
+ */
+
+// Create new product
 router.route("/create").post(auth, adminOnly, productUpload, createProduct);
+
+// Bulk delete products
 router.route("/bulk-delete").delete(auth, adminOnly, bulkDeleteProducts);
+
+// Update product
 router.route("/:id").put(auth, adminOnly, productUpload, updateProduct);
+
+// Delete product
 router.route("/:id").delete(auth, adminOnly, deleteProduct);
-router.route("/:id/variant/:variantSku/stock").put(auth, adminOnly, updateVariantStock);
+
+// Update variant stock
+router
+  .route("/:id/variant/:variantSku/stock")
+  .put(auth, adminOnly, updateVariantStock);
 
 module.exports = router;

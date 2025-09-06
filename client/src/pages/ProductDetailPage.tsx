@@ -127,12 +127,10 @@ const ProductDetailPage = () => {
     ? user?.wishlist?.includes(product?._id)
     : isInGuestWishlist(product?._id || "");
 
-  // Helper function to check if product is in cart and get its quantity
   const getCartItemInfo = () => {
     if (!product) return { isInCart: false, quantity: 0, cartItemId: null };
 
     if (isAuthenticated) {
-      // For authenticated users, check cartItems from CartContext
       const cartItem = cartItems.find((item) => {
         if (item.productId._id === product._id) {
           if (selectedVariant) {
@@ -152,7 +150,6 @@ const ProductDetailPage = () => {
         cartItemId: cartItem?._id || null,
       };
     } else {
-      // For guest users, check guestCart from GuestContext
       const cartItem = guestCart.find((item) => {
         if (item.id === product._id) {
           if (selectedVariant) {
@@ -203,12 +200,6 @@ const ProductDetailPage = () => {
   // Debug: Log product data when it changes
   useEffect(() => {
     if (product) {
-      console.log("Product data loaded:", {
-        name: product.name,
-        suitableFor: product.suitableFor,
-        suitableForType: typeof product.suitableFor,
-        suitableForLength: product.suitableFor?.length,
-      });
     }
   }, [product]);
 
@@ -228,12 +219,9 @@ const ProductDetailPage = () => {
     }
   }, [activeTab]);
 
-  // Refresh cart data when component becomes visible (for better synchronization)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && isAuthenticated) {
-        // Refresh cart data when page becomes visible
-        // This ensures synchronization if cart was modified in another tab
       }
     };
 
@@ -414,7 +402,6 @@ const ProductDetailPage = () => {
         return;
       }
 
-      // Check stock limit
       const maxStock = selectedVariant?.stock ?? 10;
       if (newQuantity > maxStock) {
         toast({
@@ -425,7 +412,6 @@ const ProductDetailPage = () => {
         return;
       }
 
-      // Update quantity
       if (isAuthenticated && cartItemInfo.cartItemId) {
         await updateQuantity(cartItemInfo.cartItemId, newQuantity);
       } else {

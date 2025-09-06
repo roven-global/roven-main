@@ -1,6 +1,10 @@
 const mongoose = require("mongoose");
-const Product = require("./productModel"); // Import Product model for statics
+const Product = require("./productModel");
 
+/**
+ * Review Schema
+ * Schema for product reviews with rating and text feedback
+ */
 const reviewSchema = new mongoose.Schema(
   {
     product: {
@@ -70,14 +74,17 @@ reviewSchema.statics.calculateAverageRatings = async function (productId) {
   }
 };
 
-// Post-save hook to recalculate ratings after a new review is saved
+/**
+ * Post-save middleware to recalculate product ratings
+ */
 reviewSchema.post("save", function () {
   // `this.constructor` refers to the model (Review)
   this.constructor.calculateAverageRatings(this.product);
 });
 
-// Post-remove hook to recalculate ratings after a review is deleted
-// findOneAndDelete/findByIdAndDelete triggers the 'findOneAndDelete' middleware
+/**
+ * Post-delete middleware to recalculate product ratings after review deletion
+ */
 reviewSchema.post(/^findOneAnd/, async function (doc) {
   if (doc) {
     await doc.constructor.calculateAverageRatings(doc.product);

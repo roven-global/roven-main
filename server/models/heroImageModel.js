@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 
+/**
+ * Hero Image Schema
+ * Schema for hero banner images with device-specific variants
+ */
 const heroImageSchema = new mongoose.Schema(
   {
     public_id: {

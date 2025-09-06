@@ -31,11 +31,8 @@ const fs = require("fs").promises;
 const https = require("https");
 const nocache = require("nocache");
 const path = require("path");
-const {
-  getProductBySlugForSSR,
-} = require("./controller/productController.js");
+const { getProductBySlugForSSR } = require("./controller/productController.js");
 
-// --- Constants ---
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const RATE_LIMIT_MAX_REQUESTS = 1000;
 const BODY_LIMIT = "10mb";
@@ -44,19 +41,9 @@ const isProduction = process.env.NODE_ENV === "production";
 const FRONTEND_URL =
   process.env.FRONTEND_URL || "https://roven-main.onrender.com";
 
-// --- Express Setup ---
 const app = express();
-app.set("trust proxy", true); // Required for proxies like Render
+app.set("trust proxy", true);
 
-// --- Debug Origin Logging (temporary) ---
-app.use((req, res, next) => {
-  if (req.headers.origin) {
-    console.log(`Incoming request origin: ${req.headers.origin}`);
-  }
-  next();
-});
-
-// --- Helmet Security Headers ---
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
@@ -73,7 +60,6 @@ app.use(
   })
 );
 
-// --- CORS Configuration ---
 const allowedOrigins = [
   FRONTEND_URL,
   "http://localhost:5173",
@@ -84,11 +70,10 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow server-to-server, Postman, etc.
+      if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        console.warn(`CORS Blocked: ${origin}`);
         callback(new Error("Not allowed by CORS"));
       }
     },
@@ -98,18 +83,15 @@ app.use(
   })
 );
 
-// --- Body & Cookie Parsers ---
 app.use(express.json({ limit: BODY_LIMIT }));
 app.use(express.urlencoded({ limit: BODY_LIMIT, extended: true }));
 app.use(cookieParser());
 
-// --- Anti-Attack & No-Cache ---
 app.use(mongoSanitize());
 app.use(xss());
 app.use(hpp());
 app.use(nocache());
 
-// --- Rate Limiting ---
 const apiLimiter = rateLimit({
   windowMs: RATE_LIMIT_WINDOW_MS,
   max: RATE_LIMIT_MAX_REQUESTS,
@@ -119,7 +101,6 @@ const apiLimiter = rateLimit({
 });
 app.use("/api/", apiLimiter);
 
-// Stricter Auth Limits
 const authLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 50,
@@ -133,7 +114,6 @@ app.use("/api/user/login", authLimiter);
 app.use("/api/user/register", authLimiter);
 app.use("/api/user/forgot-password", authLimiter);
 
-// Welcome Gift Abuse Prevention
 const claimLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
@@ -144,23 +124,19 @@ const claimLimiter = rateLimit({
 });
 app.use("/api/welcome-gifts/:id/claim", claimLimiter);
 
-// --- Compression & Logging ---
 app.use(
   compression({
     level: 9,
     filter: (req, res) => {
       if (req.headers["x-no-compression"]) {
-        // don't compress responses with this request header
         return false;
       }
-      // fallback to standard filter function
       return compression.filter(req, res);
     },
   })
 );
 app.use(morgan(isProduction ? "combined" : "dev"));
 
-// --- Session Security ---
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "not-so-secret",
@@ -175,16 +151,13 @@ app.use(
   })
 );
 
-// --- Passport Auth ---
 app.use(passport.initialize());
 app.use(passport.session());
 
-// --- API ROUTES ---
 app.get("/", (req, res) => {
   res.send("API is running!");
 });
 
-// Fix potential double-slash issue: No trailing slash on base path
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/product", productRouter);
@@ -200,7 +173,6 @@ app.use("/api/reviews", reviewRouter);
 app.use("/api/newsletter", newsletterRouter);
 app.use("/api/hero-images", heroImageRouter);
 
-// --- SERVE FRONTEND ---
 app.use(
   express.static(path.join(__dirname, "..", "client", "dist"), {
     maxAge: "1y",
@@ -210,14 +182,19 @@ app.get("/product/:slug", async (req, res, next) => {
   try {
     const { slug } = req.params;
     const product = await getProductBySlugForSSR(slug);
-    const indexPath = path.join(__dirname, "..", "client", "dist", "index.html");
+    const indexPath = path.join(
+      __dirname,
+      "..",
+      "client",
+      "dist",
+      "index.html"
+    );
     let html = await fs.readFile(indexPath, "utf-8");
 
     if (product) {
       const { name, shortDescription, images, variants } = product;
-      const imageUrl = images?.[0]?.url || "https://i.imgur.com/1twoa5I.png"; // Fallback image
-      const description =
-        shortDescription || "Check out this amazing product!";
+      const imageUrl = images?.[0]?.url || "https://i.imgur.com/1twoa5I.png";
+      const description = shortDescription || "Check out this amazing product!";
       const url = `${FRONTEND_URL}/product/${slug}`;
 
       const metaTags = `
@@ -233,7 +210,6 @@ app.get("/product/:slug", async (req, res, next) => {
 
     res.send(html);
   } catch (error) {
-    console.error("SSR Error:", error);
     next(error);
   }
 });
@@ -242,14 +218,11 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
 });
 
-// --- 404 Handler ---
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "API route not found" });
 });
 
-// --- Global Error Handler ---
 app.use((err, req, res, next) => {
-  console.error("[Global Error Handler]", err.stack || err);
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal Server Error",
@@ -257,12 +230,10 @@ app.use((err, req, res, next) => {
   });
 });
 
-// --- Start Server with DB Connection ---
 const startServer = async () => {
   try {
     await connectDb();
     if (isProduction && process.env.SSL_KEY && process.env.SSL_CERT) {
-      // HTTPS in production if provided
       const sslOptions = {
         key: fs.readFileSync(process.env.SSL_KEY),
         cert: fs.readFileSync(process.env.SSL_CERT),

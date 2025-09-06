@@ -1,47 +1,63 @@
+const asyncHandler = require("express-async-handler");
 const ProductModel = require("../models/productModel");
 
-const validateCartItems = async (cartItems) => {
-    if (!Array.isArray(cartItems)) return { isValid: false, message: "Invalid cart items format" };
+/**
+ * Cart Validation Utility
+ * Validates cart items and calculates accurate pricing
+ **/
 
-    const validatedItems = [];
-    let totalCartValue = 0;
+const validateCartItems = asyncHandler(async (cartItems) => {
+  if (!Array.isArray(cartItems))
+    return { isValid: false, message: "Invalid cart items format" };
 
-    for (const item of cartItems) {
-        try {
-            const productId = (item && item.productId && typeof item.productId === 'object')
-                ? (item.productId._id || item.productId.id)
-                : item?.productId;
-            if (!productId) continue;
+  const validatedItems = [];
+  let totalCartValue = 0;
 
-            const product = await ProductModel.findById(productId).populate('category');
-            if (!product) continue;
+  for (const item of cartItems) {
+    try {
+      const productId =
+        item && item.productId && typeof item.productId === "object"
+          ? item.productId._id || item.productId.id
+          : item?.productId;
+      if (!productId) continue;
 
-            let actualPrice = product.price;
-            if (item.variant?.sku && Array.isArray(product.variants) && product.variants.length > 0) {
-                const variant = product.variants.find(v => v.sku === item.variant.sku);
-                if (variant) actualPrice = variant.price;
-            }
+      const product = await ProductModel.findById(productId).populate(
+        "category"
+      );
+      if (!product) continue;
 
-            const quantity = Math.max(1, Math.min(99, parseInt(item.quantity) || 1));
-            const itemTotal = actualPrice * quantity;
-            totalCartValue += itemTotal;
+      let actualPrice = product.price;
+      if (
+        item.variant?.sku &&
+        Array.isArray(product.variants) &&
+        product.variants.length > 0
+      ) {
+        const variant = product.variants.find(
+          (v) => v.sku === item.variant.sku
+        );
+        if (variant) actualPrice = variant.price;
+      }
 
-            validatedItems.push({
-                ...item,
-                actualPrice,
-                quantity,
-                itemTotal
-            });
-        } catch (error) {
-            // skip invalid item
-        }
+      const quantity = Math.max(1, Math.min(99, parseInt(item.quantity) || 1));
+      const itemTotal = actualPrice * quantity;
+      totalCartValue += itemTotal;
+
+      validatedItems.push({
+        ...item,
+        actualPrice,
+        quantity,
+        itemTotal,
+      });
+    } catch (error) {
+      // skip invalid item
     }
+  }
 
-    return {
-        isValid: validatedItems.length > 0,
-        validatedItems,
-        totalCartValue: Math.round(totalCartValue * 100) / 100,
-    };
-};
+  return {
+    isValid: validatedItems.length > 0,
+    validatedItems,
+    totalCartValue: Math.round(totalCartValue * 100) / 100,
+  };
+});
 
 module.exports = { validateCartItems };

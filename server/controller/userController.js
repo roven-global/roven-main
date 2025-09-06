@@ -1,5 +1,3 @@
-// userController.js
-
 const UserModel = require("../models/userModel");
 const ProductModel = require("../models/productModel");
 const asyncHandler = require("express-async-handler");
@@ -13,20 +11,18 @@ const generateOTP = require("../utils/generateOTP");
 const forgotPasswordTemplate = require("../utils/forgotPasswordTemplate");
 const validator = require("validator");
 
-// --- Helpers ---
 const sanitizeString = (val) => (typeof val === "string" ? val.trim() : "");
-const logDebug = (context, obj) =>
-  console.log(`[USER][DEBUG][${context}]`, obj);
-const logError = (context, msg) =>
-  console.error(`[USER][ERROR][${context}] ${msg}`);
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const mobileRegex = /^[6-9]\d{9}$/; // India-specific: 10 digits starting with 6-9
+const mobileRegex = /^[6-9]\d{9}$/;
 
 const isEmail = (val) => emailRegex.test((val || "").trim());
 const isMobile = (val) => mobileRegex.test((val || "").trim());
 
-// ----- Registration -----
+/**
+ * Register a new user with email or mobile number
+ * @route POST /api/user/register
+ */
 const registerUser = asyncHandler(async (req, res) => {
   let { name, email, mobile, password, emailOrMobile } = req.body || {};
   name = sanitizeString(name);
@@ -35,11 +31,8 @@ const registerUser = asyncHandler(async (req, res) => {
   emailOrMobile = sanitizeString(emailOrMobile);
   password = sanitizeString(password);
 
-  logDebug("register--incoming", req.body);
-
   if (!name) return res.status(400).json({ message: "Name is required." });
 
-  // Auto-detect field
   if (!email && !mobile && emailOrMobile) {
     if (isEmail(emailOrMobile)) email = emailOrMobile;
     else if (isMobile(emailOrMobile)) mobile = emailOrMobile;
@@ -47,14 +40,11 @@ const registerUser = asyncHandler(async (req, res) => {
       return res
         .status(400)
         .json({ message: "Please provide a valid email or mobile number." });
-    logDebug("register--auto-detection", { email, mobile });
   }
 
-  // Misplaced mobile in email field
   if (email && isMobile(email)) {
     mobile = email;
     email = undefined;
-    logDebug("register--fixed-mobile-in-email", { mobile });
   }
 
   if (!email && !mobile)
@@ -98,7 +88,6 @@ const registerUser = asyncHandler(async (req, res) => {
       mobile,
       password: hashedPassword,
     });
-    logDebug("register--success", { userId: newUser._id });
     return res.status(201).json({
       success: true,
       message: "User registered successfully",
@@ -113,33 +102,32 @@ const registerUser = asyncHandler(async (req, res) => {
     if (err.code === 11000 && err.keyValue) {
       const field = Object.keys(err.keyValue)[0];
       const value = err.keyValue[field];
-      logError("register--duplicate", `Duplicate ${field}: ${value}`);
       return res.status(400).json({
         message: `This ${
           field === "email" ? "email address" : "mobile number"
         } (${value}) is already registered.`,
       });
     }
-    logError("register--unknown", err.message);
     throw err;
   }
 });
 
-// ----- Login -----
 const cookiesOption = {
   httpOnly: true,
   secure: true,
   sameSite: "None",
 };
 
+/**
+ * Authenticate user login with email or mobile number
+ * @route POST /api/user/login
+ */
 const login = asyncHandler(async (req, res) => {
   let { email, mobile, password, emailOrMobile } = req.body || {};
   email = sanitizeString(email);
   mobile = sanitizeString(mobile);
   emailOrMobile = sanitizeString(emailOrMobile);
   password = sanitizeString(password);
-
-  logDebug("login--incoming", req.body);
 
   if (!email && !mobile && emailOrMobile) {
     if (isEmail(emailOrMobile)) email = emailOrMobile;
@@ -193,7 +181,6 @@ const login = asyncHandler(async (req, res) => {
   res.cookie("accessToken", accessToken, cookiesOption);
   res.cookie("refreshToken", refreshToken, cookiesOption);
 
-  logDebug("login--success", { userId: user._id });
   return res.json({
     success: true,
     message: "Login successful.",
@@ -201,14 +188,20 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
-// ----- Logout -----
+/**
+ * Logout user by clearing authentication cookies
+ * @route POST /api/user/logout
+ */
 const logout = asyncHandler(async (req, res) => {
   res.clearCookie("accessToken", cookiesOption);
   res.clearCookie("refreshToken", cookiesOption);
   return res.json({ success: true, message: "Logged out successfully." });
 });
 
-// ----- Update User Details -----
+/**
+ * Update user profile details
+ * @route PUT /api/user/update
+ */
 const updateUserDetails = asyncHandler(async (req, res) => {
   const userId = req.user?._id || req.userId;
   if (!userId)
@@ -217,7 +210,6 @@ const updateUserDetails = asyncHandler(async (req, res) => {
       .json({ success: false, message: "Unauthorized: User ID missing." });
 
   const { name, email, mobile, phone, address, password } = req.body || {};
-  logDebug("updateUser--incoming", req.body);
 
   let updateFields = {};
   if (name && sanitizeString(name) !== "")
@@ -272,7 +264,6 @@ const updateUserDetails = asyncHandler(async (req, res) => {
   if (!updateUser)
     return res.status(404).json({ success: false, message: "User not found." });
 
-  logDebug("updateUser--success", updateFields);
   return res.json({
     success: true,
     message: "Updated user successfully.",
@@ -280,7 +271,10 @@ const updateUserDetails = asyncHandler(async (req, res) => {
   });
 });
 
-// ----- Avatar Upload -----
+/**
+ * Upload user profile avatar image
+ * @route POST /api/user/upload-avatar
+ */
 const uploadAvatar = asyncHandler(async (req, res) => {
   const userId = req.user?._id || req.userId;
   const image = req.file;
@@ -311,7 +305,6 @@ const uploadAvatar = asyncHandler(async (req, res) => {
       data: { _id: userId, avatar: upload.url },
     });
   } catch (err) {
-    logError("avatar-upload", err.message);
     return res.status(500).json({
       success: false,
       message: "Image upload failed.",
@@ -320,7 +313,10 @@ const uploadAvatar = asyncHandler(async (req, res) => {
   }
 });
 
-// ----- Forgot Password, OTP, Reset Password -----
+/**
+ * Send forgot password OTP to user's email or mobile
+ * @route POST /api/user/forgot-password
+ */
 const forgotPassword = asyncHandler(async (req, res) => {
   let email = sanitizeString(req.body.email);
   let mobile = sanitizeString(req.body.mobile);
@@ -356,7 +352,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
         html: forgotPasswordTemplate({ name: user.name, otp }),
       });
     } else if (mobile) {
-      logDebug("forgotPassword--smsOTP", `OTP for ${mobile}: ${otp}`);
     }
 
     const field = email ? "email address" : "mobile number";
@@ -365,7 +360,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
       message: `If the ${field} exists, an OTP has been sent.`,
     });
   } catch (err) {
-    logError("forgotPassword", err.message);
     return res.status(500).json({
       success: false,
       message: "Failed to process forgot password request.",
@@ -374,6 +368,10 @@ const forgotPassword = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * Verify forgot password OTP
+ * @route POST /api/user/verify-forgot-password-otp
+ */
 const verifyForgotPasswordOtp = asyncHandler(async (req, res) => {
   let otp = sanitizeString(req.body.otp);
   let email = sanitizeString(req.body.email);
@@ -412,6 +410,10 @@ const verifyForgotPasswordOtp = asyncHandler(async (req, res) => {
   return res.json({ success: true, message: "OTP verified successfully." });
 });
 
+/**
+ * Reset user password after OTP verification
+ * @route POST /api/user/reset-password
+ */
 const resetPassword = asyncHandler(async (req, res) => {
   let newPassword = sanitizeString(req.body.newPassword);
   let confirmPassword = sanitizeString(req.body.confirmPassword);
@@ -464,7 +466,10 @@ const resetPassword = asyncHandler(async (req, res) => {
   return res.json({ success: true, message: "Password updated successfully." });
 });
 
-// ----- Refresh Token -----
+/**
+ * Refresh access token using refresh token
+ * @route POST /api/user/refresh-token
+ */
 const refreshToken = asyncHandler(async (req, res) => {
   let token = req.cookies.refreshToken;
   if (!token && req.headers.authorization) {
@@ -489,7 +494,6 @@ const refreshToken = asyncHandler(async (req, res) => {
       message: "New access token issued.",
     });
   } catch (err) {
-    logError("refreshToken", err.message);
     return res.status(401).json({
       success: false,
       message: "Invalid or expired refresh token.",
@@ -498,7 +502,10 @@ const refreshToken = asyncHandler(async (req, res) => {
   }
 });
 
-// ----- Get User Details -----
+/**
+ * Get current user details
+ * @route GET /api/user/details
+ */
 const getUserDetails = asyncHandler(async (req, res) => {
   const userId = req.user?._id || req.userId;
   if (!userId)
@@ -524,7 +531,6 @@ const getUserDetails = asyncHandler(async (req, res) => {
 
     return res.json({ success: true, data: user });
   } catch (error) {
-    logError("getUserDetails", error.message);
     return res.status(500).json({
       success: false,
       message: "Error fetching user details",
@@ -533,7 +539,10 @@ const getUserDetails = asyncHandler(async (req, res) => {
   }
 });
 
-// ----- Profile Stats -----
+/**
+ * Get user profile statistics
+ * @route GET /api/user/profile-stats
+ */
 const getUserProfileStats = asyncHandler(async (req, res) => {
   const userId = req.user?._id || req.userId;
   if (!userId)
@@ -558,12 +567,13 @@ const getUserProfileStats = asyncHandler(async (req, res) => {
   return res.json({ success: true, data: stats });
 });
 
-// ----- Wishlist -----
+/**
+ * Toggle product in user's wishlist
+ * @route POST /api/user/toggle-wishlist
+ */
 const toggleWishlist = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
   const productId = sanitizeString(req.body.productId);
-
-  logDebug("wishlist--toggle--incoming", { userId, productId });
 
   if (!userId)
     return res
@@ -604,6 +614,10 @@ const toggleWishlist = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * Get user's wishlist
+ * @route GET /api/user/wishlist
+ */
 const getWishlist = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
   if (!userId)
@@ -625,7 +639,10 @@ const getWishlist = asyncHandler(async (req, res) => {
   return res.json({ success: true, wishlist: user.wishlist });
 });
 
-// ----- Reward Claim/Use -----
+/**
+ * Claim welcome gift reward
+ * @route POST /api/user/claim-reward
+ */
 const claimReward = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
   const rewardId = sanitizeString(req.body.rewardId);
@@ -661,7 +678,6 @@ const claimReward = asyncHandler(async (req, res) => {
       data: updatedUser,
     });
   } catch (error) {
-    logError("claimReward", error.message);
     return res.status(500).json({
       success: false,
       message: "Error claiming reward",
@@ -670,6 +686,10 @@ const claimReward = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * Mark welcome gift reward as used
+ * @route POST /api/user/use-reward
+ */
 const useReward = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
   if (!userId)
@@ -703,7 +723,6 @@ const useReward = asyncHandler(async (req, res) => {
       data: updatedUser,
     });
   } catch (error) {
-    logError("useReward", error.message);
     return res.status(500).json({
       success: false,
       message: "Error using reward",
@@ -712,6 +731,10 @@ const useReward = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * Get user's claimed reward details
+ * @route GET /api/user/reward
+ */
 const getUserReward = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
   if (!userId) {
@@ -721,7 +744,6 @@ const getUserReward = asyncHandler(async (req, res) => {
   }
 
   try {
-    // We need to import the UserReward model to query it.
     const UserRewardModel = require("../models/userRewardModel");
     const userReward = await UserRewardModel.findOne({
       userId: userId,
@@ -729,14 +751,11 @@ const getUserReward = asyncHandler(async (req, res) => {
     }).populate("giftId");
 
     if (userReward && userReward.giftId) {
-      // Return the details of the gift itself
       return res.json({ success: true, data: userReward.giftId });
     } else {
-      // If no active reward, return null
       return res.json({ success: true, data: null });
     }
   } catch (error) {
-    logError("getUserReward", error.message);
     return res.status(500).json({
       success: false,
       message: "Error fetching user reward",
@@ -745,32 +764,38 @@ const getUserReward = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * Verify user email with verification code
+ * @route POST /api/user/verify-email
+ */
+const verifyEmail = asyncHandler(async (req, res) => {
+  if (!req.body || typeof req.body !== "object")
+    return res
+      .status(400)
+      .json({ success: false, message: "Missing request body." });
+  let { code } = req.body || {};
+  code = validator.trim(validator.escape(code || ""));
+  if (!code)
+    return res
+      .status(400)
+      .json({ success: false, message: "Verification code is required." });
+  const user = await UserModel.findById(code);
+  if (!user)
+    return res.status(400).json({
+      success: false,
+      message: "Invalid or expired verification code.",
+    });
+  if (user.verify_email)
+    return res
+      .status(200)
+      .json({ success: true, message: "Email already verified." });
+  await UserModel.updateOne({ _id: code }, { verify_email: true });
+  return res.json({ success: true, message: "Email verified successfully." });
+});
+
 module.exports = {
   registerUser,
-  verifyEmail: asyncHandler(async (req, res) => {
-    if (!req.body || typeof req.body !== "object")
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing request body." });
-    let { code } = req.body || {};
-    code = validator.trim(validator.escape(code || ""));
-    if (!code)
-      return res
-        .status(400)
-        .json({ success: false, message: "Verification code is required." });
-    const user = await UserModel.findById(code);
-    if (!user)
-      return res.status(400).json({
-        success: false,
-        message: "Invalid or expired verification code.",
-      });
-    if (user.verify_email)
-      return res
-        .status(200)
-        .json({ success: true, message: "Email already verified." });
-    await UserModel.updateOne({ _id: code }, { verify_email: true });
-    return res.json({ success: true, message: "Email verified successfully." });
-  }),
+  verifyEmail,
   login,
   logout,
   uploadAvatar,

@@ -1,9 +1,11 @@
-// server/models/userModel.js
-
 const mongoose = require("mongoose");
 
 const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
 
+/**
+ * User Schema
+ * Stores user information including authentication and profile data
+ */
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -12,17 +14,21 @@ const userSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: function () { return !this.mobile; },
+      required: function () {
+        return !this.mobile;
+      },
       unique: true,
       sparse: true,
       match: [emailRegex, "Please provide a valid email address"],
-      set: v => v === "" ? undefined : v,
+      set: (v) => (v === "" ? undefined : v),
       default: undefined,
     },
     password: {
       type: String,
       // Password is not required if signing up with Google
-      required: function () { return !this.googleId; },
+      required: function () {
+        return !this.googleId;
+      },
     },
     googleId: {
       type: String,
@@ -31,7 +37,8 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
-      default: "https://res.cloudinary.com/dkq55s6t8/image/upload/v1717398335/Roven/Avatar/default_avatar.png",
+      default:
+        "https://res.cloudinary.com/dkq55s6t8/image/upload/v1717398335/Roven/Avatar/default_avatar.png",
     },
     // Add these fields for efficient reward checking
     rewardClaimed: {
@@ -49,11 +56,16 @@ const userSchema = new mongoose.Schema(
     },
     mobile: {
       type: String,
-      required: function () { return !this.email; },
+      required: function () {
+        return !this.email;
+      },
       unique: true,
       sparse: true,
-      match: [/^[6-9]\d{9}$/, "Please provide a valid 10-digit Indian mobile number"],
-      set: v => v === "" ? undefined : v, 
+      match: [
+        /^[6-9]\d{9}$/,
+        "Please provide a valid 10-digit Indian mobile number",
+      ],
+      set: (v) => (v === "" ? undefined : v),
       default: undefined,
     },
     phone: {
@@ -112,10 +124,12 @@ const userSchema = new mongoose.Schema(
       enum: ["USER", "ADMIN"],
       default: "USER",
     },
-    wishlist: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Product'
-    }]
+    wishlist: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+      },
+    ],
   },
   {
     timestamps: true, // Adds createdAt and updatedAt fields for auditing

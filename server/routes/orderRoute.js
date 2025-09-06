@@ -3,26 +3,26 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 const adminOnly = require("../middleware/adminOnly");
 const {
-    createOrder,
-    getUserOrders,
-    getOrderById,
-    updateOrderStatus,
-    cancelOrder,
-    getAllOrders,
-    getLifetimeSavings,
-    getOrderQuote,
+  createOrder,
+  getUserOrders,
+  getOrderById,
+  updateOrderStatus,
+  cancelOrder,
+  getAllOrders,
+  getLifetimeSavings,
+  getOrderQuote,
 } = require("../controller/orderController");
 
-// Create new order (requires auth)
+// Create new order
 router.post("/create", auth, createOrder);
 
-// Get user orders (requires auth)
+// Get user's orders
 router.get("/user", auth, getUserOrders);
 
-// Get lifetime savings (requires auth)
+// Get user's lifetime savings
 router.get("/lifetime-savings", auth, getLifetimeSavings);
 
-// Get server-authoritative order quote (requires auth)
+// Get order quote
 router.post("/quote", auth, getOrderQuote);
 
 // Admin routes (requires auth + admin) - must come before /:id routes
@@ -31,10 +31,17 @@ router.get("/all", auth, adminOnly, getAllOrders);
 // Get order by ID (requires auth)
 router.get("/:id", auth, getOrderById);
 
-// Cancel order (requires auth)
+// Cancel order
 router.put("/:id/cancel", auth, cancelOrder);
 
-// Update order status (Admin only)
+/**
+ * Admin Routes - Require authentication and admin privileges
+ */
+
+// Get all orders
+router.get("/all", auth, adminOnly, getAllOrders);
+
+// Update order status
 router.put("/:id/status", auth, adminOnly, updateOrderStatus);
 
 module.exports = router;

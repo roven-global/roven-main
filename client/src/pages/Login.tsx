@@ -23,7 +23,7 @@ import Footer from "@/components/Footer";
 
 // Validation helpers
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const mobileRegex = /^[6-9]\d{9}$/; // India-specific: 10 digits, starts with 6-9
+const mobileRegex = /^[6-9]\d{9}$/;
 const isEmail = (val: string) => emailRegex.test(val.trim());
 const isMobile = (val: string) => mobileRegex.test(val.trim());
 
@@ -60,7 +60,7 @@ const Login = () => {
   const [registerError, setRegisterError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
-  const [registerStep, setRegisterStep] = useState(1); // 1: name/email/mobile, 2: password
+  const [registerStep, setRegisterStep] = useState(1);
   const navigate = useNavigate();
   const {
     loginUser,
@@ -72,7 +72,6 @@ const Login = () => {
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
 
-  // Redirect if already authenticated
   React.useEffect(() => {
     if (!loading && isAuthenticated) {
       navigate(from, { replace: true });
@@ -97,7 +96,6 @@ const Login = () => {
     },
   });
 
-  // Login API handler
   const handleLogin = async (values: z.infer<typeof loginSchema>) => {
     setLoginError("");
     clearError();
@@ -154,12 +152,6 @@ const Login = () => {
         return;
       }
 
-      // Log the payload before sending
-      console.log(
-        "[FRONTEND] Registration payload being sent to API:",
-        payload
-      );
-
       const response = await Axios({
         method: SummaryApi.register.method,
         url: SummaryApi.register.url,
@@ -172,12 +164,6 @@ const Login = () => {
         password: values.password,
       });
     } catch (err: any) {
-      // Log error response for debugging
-      console.log(
-        "[FRONTEND] Registration error response:",
-        err?.response?.data || err
-      );
-
       const errorMessage =
         err?.response?.data?.message ||
         "Registration failed. Please try again.";
@@ -289,7 +275,8 @@ const Login = () => {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-sm font-semibold text-foreground">
-                              Password <span className="text-destructive">*</span>
+                              Password{" "}
+                              <span className="text-destructive">*</span>
                             </FormLabel>
                             <FormControl>
                               <div className="relative">

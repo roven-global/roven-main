@@ -4,19 +4,31 @@ const router = express.Router();
 const generateAccessToken = require("../utils/generateAccessToken");
 const generateRefreshToken = require("../utils/generateRefreshToken");
 
+/**
+ * Auth Routes
+ * Handles OAuth authentication with Google
+ */
+
+/**
+ * Cookie configuration for secure token storage
+ */
 const cookiesOption = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "None",
 };
 
-// Auth with Google
+/**
+ * Google OAuth Routes
+ */
+
+// Initiate Google OAuth authentication
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// Callback route for Google to redirect to
+// Google OAuth callback handler
 router.get(
   "/google/callback",
   passport.authenticate("google", {

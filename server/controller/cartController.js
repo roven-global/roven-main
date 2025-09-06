@@ -27,7 +27,6 @@ const addToCart = asyncHandler(async (req, res) => {
       .json({ success: false, message: "Product not found." });
   }
 
-  // Validate variant if provided
   if (variant) {
     if (!variant.sku) {
       return res.status(400).json({
@@ -36,7 +35,6 @@ const addToCart = asyncHandler(async (req, res) => {
       });
     }
 
-    // Check if the variant exists in the product
     const productVariant = product.variants.find(v => v.sku === variant.sku.toUpperCase());
     if (!productVariant) {
       return res.status(404).json({
@@ -45,7 +43,6 @@ const addToCart = asyncHandler(async (req, res) => {
       });
     }
 
-    // Validate quantity against stock
     if (productVariant.stock < quantity) {
       return res.status(400).json({
         success: false,
@@ -53,7 +50,6 @@ const addToCart = asyncHandler(async (req, res) => {
       });
     }
   } else {
-    // For single products, check if product has variants
     if (product.variants && product.variants.length > 0) {
       return res.status(400).json({
         success: false,
@@ -93,7 +89,6 @@ const addToCart = asyncHandler(async (req, res) => {
     existingCartItem.quantity = newQuantity;
     await existingCartItem.save();
   } else {
-    // Create new cart item
     const cartItemData = {
       userId,
       productId,
@@ -112,7 +107,7 @@ const addToCart = asyncHandler(async (req, res) => {
     const newCartItem = new CartProductModel(cartItemData);
     await newCartItem.save();
 
-    // Ensure the cart item is added to user's shopping_cart array
+
     await UserModel.findByIdAndUpdate(userId, {
       $addToSet: { shopping_cart: newCartItem._id }
     });
@@ -219,7 +214,7 @@ const mergeCart = asyncHandler(async (req, res) => {
         quantity: localItem.quantity,
       });
       await newCartItem.save();
-      // Ensure the cart item is added to user's shopping_cart array
+
       await UserModel.findByIdAndUpdate(userId, {
         $addToSet: { shopping_cart: newCartItem._id }
       });
@@ -236,19 +231,16 @@ const mergeCart = asyncHandler(async (req, res) => {
 const getCart = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  // Check if user exists
   const user = await UserModel.findById(userId);
   if (!user) {
     return res.status(404).json({ success: false, message: "User not found." });
   }
 
-  // First, get all cart items for this user directly from CartProductModel
   const cartItems = await CartProductModel.find({ userId }).populate({
     path: 'productId',
     model: 'Product'
   });
 
-  // Update user's shopping_cart array to match actual cart items
   const cartItemIds = cartItems.map(item => item._id);
   await UserModel.findByIdAndUpdate(userId, {
     $set: { shopping_cart: cartItemIds }
@@ -263,5 +255,5 @@ module.exports = {
   updateCartItem,
   removeCartItem,
   mergeCart,
-  getCart, // Export the new function
+  getCart, 
 };

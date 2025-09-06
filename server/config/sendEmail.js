@@ -1,3 +1,4 @@
+const asyncHandler = require("express-async-handler");
 const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -31,39 +32,41 @@ const getTransporter = () => {
 
 /**
  * Send an email using Nodemailer (SMTP)
- * @param {Object} params
- * @param {string|string[]} params.sendTo - Recipient email(s)
- * @param {string} params.subject - Email subject
- * @param {string} params.html - Email HTML body
- * @param {string} [params.name] - Sender display name (optional)
- * @param {string} [params.from] - Override from address (optional)
  */
-const sendEmail = async ({ name, sendTo, subject, html, from }) => {
-  if (!sendTo || !subject || !html) {
-    const errorMsg = "sendTo, subject, and html are required fields.";
-    console.error("[sendEmail] Validation Error:", errorMsg);
-    return { success: false, error: errorMsg };
+const sendEmail = asyncHandler(
+  async ({ name, sendTo, subject, html, from }) => {
+    if (!sendTo || !subject || !html) {
+      const errorMsg = "sendTo, subject, and html are required fields.";
+      console.error("[sendEmail] Validation Error:", errorMsg);
+      return { success: false, error: errorMsg };
+    }
+
+    try {
+      const tx = getTransporter();
+
+      const defaultFromName = name || process.env.FROM_NAME || "Roven";
+      const defaultFromEmail =
+        process.env.FROM_EMAIL ||
+        process.env.SMTP_FROM ||
+        process.env.SMTP_USER;
+      const fromAddress = from || `${defaultFromName} <${defaultFromEmail}>`;
+
+      const info = await tx.sendMail({
+        from: fromAddress,
+        to: Array.isArray(sendTo) ? sendTo : [sendTo],
+        subject,
+        html,
+      });
+
+      return { success: true, data: info };
+    } catch (err) {
+      console.error(
+        "[sendEmail] SMTP error:",
+        err && err.message ? err.message : err
+      );
+      return { success: false, error: err && err.message ? err.message : err };
+    }
   }
-
-  try {
-    const tx = getTransporter();
-
-    const defaultFromName = name || process.env.FROM_NAME || "Roven";
-    const defaultFromEmail = process.env.FROM_EMAIL || process.env.SMTP_FROM || process.env.SMTP_USER;
-    const fromAddress = from || `${defaultFromName} <${defaultFromEmail}>`;
-
-    const info = await tx.sendMail({
-      from: fromAddress,
-      to: Array.isArray(sendTo) ? sendTo : [sendTo],
-      subject,
-      html,
-    });
-
-    return { success: true, data: info };
-  } catch (err) {
-    console.error("[sendEmail] SMTP error:", err && err.message ? err.message : err);
-    return { success: false, error: err && err.message ? err.message : err };
-  }
-};
+);
 
 module.exports = sendEmail;

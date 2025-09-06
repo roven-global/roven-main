@@ -379,7 +379,6 @@ const Checkout = () => {
           prev.filter((addr) => addr._id !== addressId)
         );
 
-        // If the deleted address was selected, clear the selection
         if (selectedAddressId === addressId) {
           setSelectedAddressId(null);
 

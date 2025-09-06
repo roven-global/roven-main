@@ -1,6 +1,10 @@
 const mongoose = require("mongoose");
 const addressSubSchema = require("./shared/addressSchema");
 
+/**
+ * Order Item Schema
+ * Schema for individual items within an order
+ */
 const orderItemSchema = new mongoose.Schema({
   product: {
     type: mongoose.Schema.Types.ObjectId,
@@ -29,6 +33,10 @@ const orderItemSchema = new mongoose.Schema({
   },
 });
 
+/**
+ * Order Schema
+ * Main order schema with payment and shipping information
+ */
 const orderSchema = new mongoose.Schema(
   {
     user: {
@@ -110,7 +118,9 @@ orderSchema.pre("save", function (next) {
     const year = date.getFullYear().toString().slice(-2);
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const day = date.getDate().toString().padStart(2, "0");
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
+    const random = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, "0");
     this.orderNumber = `ORD${year}${month}${day}${random}`;
   }
   next();
@@ -141,7 +151,9 @@ orderSchema.virtual("statusTimeline").get(function () {
     },
   ];
 
-  const currentIndex = timeline.findIndex(item => item.status === this.orderStatus);
+  const currentIndex = timeline.findIndex(
+    (item) => item.status === this.orderStatus
+  );
   return timeline.slice(0, currentIndex + 1);
 });
 

@@ -1,6 +1,10 @@
 const mongoose = require("mongoose");
 const addressSubSchema = require("./shared/addressSchema");
 
+/**
+ * Address Schema
+ * Stores user addresses with default address management
+ */
 const addressSchema = new mongoose.Schema(
   {
     user: {
@@ -23,7 +27,9 @@ const addressSchema = new mongoose.Schema(
   }
 );
 
-// Ensure only one default address per user
+/**
+ * Pre-save middleware to ensure only one default address per user
+ */
 addressSchema.pre("save", async function (next) {
   if (this.isDefault) {
     await this.constructor.updateMany(
@@ -34,7 +40,9 @@ addressSchema.pre("save", async function (next) {
   next();
 });
 
-// Index for better query performance
+/**
+ * Indexes for better query performance
+ */
 addressSchema.index({ user: 1, isActive: 1 });
 addressSchema.index({ user: 1, isDefault: 1 });
 

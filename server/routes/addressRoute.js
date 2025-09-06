@@ -2,13 +2,18 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
 const {
-    saveAddress,
-    getUserAddresses,
-    getDefaultAddress,
-    updateAddress,
-    deleteAddress,
-    setDefaultAddress,
+  saveAddress,
+  getUserAddresses,
+  getDefaultAddress,
+  updateAddress,
+  deleteAddress,
+  setDefaultAddress,
 } = require("../controller/addressController");
+
+/**
+ * Address Routes
+ * Handles user address management for authenticated users
+ */
 
 // All routes require authentication
 router.use(auth);
@@ -22,7 +27,7 @@ router.get("/user", getUserAddresses);
 // Get user's default address
 router.get("/default", getDefaultAddress);
 
-// Set default address (must come before /:id routes)
+// Set default address
 router.put("/:id/default", setDefaultAddress);
 
 // Update address

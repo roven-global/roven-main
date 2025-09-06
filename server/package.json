@@ -9,8 +9,7 @@
     "test:coverage": "jest --coverage",
     "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "start": "node index.js",
-    "dev": "nodemon index.js",
-    "seed:welcome-gifts": "node utils/seedWelcomeGifts.js"
+    "dev": "nodemon index.js"
   },
   "keywords": [],
   "author": "",

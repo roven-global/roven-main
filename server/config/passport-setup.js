@@ -2,7 +2,11 @@ const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const UserModel = require("../models/userModel");
 
-// Only configure Google OAuth if credentials are provided
+/**
+ * Passport Configuration
+ * Handles Google OAuth authentication setup
+ */
+
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   passport.use(
     new GoogleStrategy(
@@ -49,7 +53,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     )
   );
 } else {
-  console.warn("Google OAuth credentials not provided. Google authentication will be disabled.");
+  console.warn(
+    "Google OAuth credentials not provided. Google authentication will be disabled."
+  );
 }
 
 // These are not strictly needed for JWT, but good practice with Passport
@@ -57,6 +63,9 @@ passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
+/**
+ * Deserialize user from session storage
+ */
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await UserModel.findById(id);

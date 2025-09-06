@@ -3,6 +3,10 @@ const HeroImage = require("../models/heroImageModel");
 const uploadImageCloudinary = require("../utils/uploadImageCloudinary");
 const cloudinary = require("cloudinary").v2;
 
+/**
+ * Upload hero image for desktop and/or mobile
+ * @route POST /api/hero-images/upload
+ */
 const uploadHeroImage = asyncHandler(async (req, res) => {
   if (!req.files || (!req.files.desktopImage && !req.files.mobileImage)) {
     res.status(400);

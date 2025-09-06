@@ -222,7 +222,6 @@ const UploadProduct = () => {
           },
         });
 
-        // Set existing images
         const existingImages: ImagePreview[] = product.images.map(
           (img, index) => ({
             file: new File([], `existing-${index}`),
@@ -301,7 +300,6 @@ const UploadProduct = () => {
     }
   }, [isEditing, editProductId, fetchProduct]);
 
-  // Cleanup ingredient image URLs on unmount
   useEffect(() => {
     return () => {
       ingredients.forEach((ing) => {
@@ -317,7 +315,6 @@ const UploadProduct = () => {
 
     files.forEach((file) => {
       if (file.size > 10 * 1024 * 1024) {
-        // 10MB limit
         toast({
           title: "Error",
           description: "Image size should be less than 10MB",
@@ -421,7 +418,6 @@ const UploadProduct = () => {
   };
 
   const handleIngredientImageChange = (index: number, file: File) => {
-    // Validate file type
     const allowedTypes = [
       "image/jpeg",
       "image/jpg",
@@ -439,7 +435,6 @@ const UploadProduct = () => {
       return;
     }
 
-    // Validate file size (10MB limit)
     if (file.size > 10 * 1024 * 1024) {
       toast({
         title: "File Too Large",
@@ -479,13 +474,11 @@ const UploadProduct = () => {
     });
   };
 
-  // Helper functions for new fields
   const addListItem = (
     listSetter: React.Dispatch<React.SetStateAction<string[]>>,
     value: string
   ) => {
     if (value.trim()) {
-      // Check if this is for howToUse and validate length
       if (listSetter === setHowToUse && value.trim().length > 300) {
         toast({
           title: "Validation Error",
@@ -691,7 +684,6 @@ const UploadProduct = () => {
       // Ensure we have the right data structure based on variant usage
       const isUsingVariants = useVariants && variants.length > 0;
 
-      // Add basic product data
       formDataToSend.append("name", formData.name);
       formDataToSend.append("description", formData.description);
       formDataToSend.append("shortDescription", formData.shortDescription);
@@ -757,7 +749,6 @@ const UploadProduct = () => {
 
       formDataToSend.append("specifications", JSON.stringify(specsObject));
 
-      // Add ingredients as JSON, including existing image URLs
       const ingredientsData = ingredients.map((ing) => ({
         name: ing.name,
         description: ing.description,
@@ -783,14 +774,6 @@ const UploadProduct = () => {
 
       // Add Suitable For
       formDataToSend.append("suitableFor", JSON.stringify(suitableFor));
-
-      // Debug: Log what we're sending for suitableFor
-      console.log("Sending suitableFor data:", {
-        suitableFor,
-        stringified: JSON.stringify(suitableFor),
-        type: typeof suitableFor,
-        length: suitableFor.length,
-      });
 
       // Add related products
       formDataToSend.append(
@@ -819,15 +802,6 @@ const UploadProduct = () => {
           return;
         }
       }
-
-      // Debug: Log what we're sending
-      console.log("Form data being sent:", {
-        useVariants,
-        variantsCount: variants.length,
-        isUsingVariants,
-        price: formData.price,
-        hasVariants: isUsingVariants ? "true" : "false",
-      });
 
       // Add images (only new ones for editing)
       const newImages = imageFiles.filter(

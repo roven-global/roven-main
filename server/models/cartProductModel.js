@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 
+/**
+ * Cart Product Schema
+ * Schema for items in user's shopping cart with variant support
+ */
 const cartproductSchema = new mongoose.Schema(
   {
     productId: {
@@ -40,6 +44,9 @@ const cartproductSchema = new mongoose.Schema(
 );
 
 // Compound index to ensure unique product-variant combinations per user
-cartproductSchema.index({ userId: 1, productId: 1, "variant.sku": 1 }, { unique: true });
+cartproductSchema.index(
+  { userId: 1, productId: 1, "variant.sku": 1 },
+  { unique: true }
+);
 
 module.exports = mongoose.model("cartProduct", cartproductSchema);

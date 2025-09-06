@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 
+/**
+ * Coupon Usage Schema
+ * Schema for tracking coupon usage history and analytics
+ */
 const couponUsageSchema = new mongoose.Schema(
   {
     coupon: {
@@ -50,7 +54,11 @@ couponUsageSchema.statics.getUserUsageCount = function (couponId, userId) {
 };
 
 // Method to check if user can use coupon
-couponUsageSchema.statics.canUserUseCoupon = async function (couponId, userId, perUserLimit) {
+couponUsageSchema.statics.canUserUseCoupon = async function (
+  couponId,
+  userId,
+  perUserLimit
+) {
   const usageCount = await this.getUserUsageCount(couponId, userId);
   return usageCount < perUserLimit;
 };
