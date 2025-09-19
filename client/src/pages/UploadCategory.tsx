@@ -65,6 +65,7 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
   const [formData, setFormData] = useState({
     name: "",
     parentCategory: "",
+    categoryRanking: 0,
   });
 
   // Update form data when editing category changes
@@ -73,6 +74,7 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
       setFormData({
         name: editingCategory.name,
         parentCategory: editingCategory.parentCategory?._id || "none",
+        categoryRanking: editingCategory.categoryRanking || 0,
       });
       setImagePreview(editingCategory.image.url);
     } else {
@@ -88,7 +90,7 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
   }, [open]);
 
   const resetForm = () => {
-    setFormData({ name: "", parentCategory: "none" });
+    setFormData({ name: "", parentCategory: "none", categoryRanking: 0 });
     setImageFile(null);
     setImagePreview("");
   };
@@ -151,6 +153,10 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("name", formData.name.trim());
+      formDataToSend.append(
+        "categoryRanking",
+        formData.categoryRanking.toString()
+      );
 
       if (formData.parentCategory && formData.parentCategory !== "none") {
         formDataToSend.append("parentCategory", formData.parentCategory);
@@ -217,13 +223,13 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-card border-border">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-admin-card border-admin-border">
         <DialogHeader>
-          <DialogTitle className="font-sans flex items-center gap-2 text-foreground">
+          <DialogTitle className="font-sans flex items-center gap-2 text-admin-text">
             <ImageIcon className="h-5 w-5 text-primary" />
             {editingCategory ? "Edit Category" : "Add New Category"}
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground">
+          <DialogDescription className="text-admin-muted">
             {editingCategory
               ? "Update the category details below"
               : "Create a new category for your products"}
@@ -232,18 +238,18 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
-          <Card className="bg-card border-border">
+          <Card className="bg-admin-card border-admin-border shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg text-foreground">
+              <CardTitle className="text-lg text-admin-text">
                 Basic Information
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-admin-muted">
                 Enter the basic details of your category
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-foreground">
+                <Label htmlFor="name" className="text-admin-text">
                   Category Name *
                 </Label>
                 <Input
@@ -254,12 +260,12 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
                   }
                   placeholder="Enter category name"
                   required
-                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                  className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="parentCategory" className="text-foreground">
+                <Label htmlFor="parentCategory" className="text-admin-text">
                   Parent Category (Optional)
                 </Label>
                 <Select
@@ -271,13 +277,13 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
                     })
                   }
                 >
-                  <SelectTrigger className="bg-input border-border text-foreground focus:ring-ring">
+                  <SelectTrigger className="bg-admin-card border-admin-border text-admin-text focus:ring-primary shadow-sm">
                     <SelectValue placeholder="Select parent category" />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
+                  <SelectContent className="bg-admin-card border-admin-border">
                     <SelectItem
                       value="none"
-                      className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                      className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
                     >
                       None (Main Category)
                     </SelectItem>
@@ -285,7 +291,7 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
                       <SelectItem
                         key={category._id}
                         value={category._id}
-                        className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                        className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
                       >
                         {category.name}
                       </SelectItem>
@@ -293,16 +299,40 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="categoryRanking" className="text-admin-text">
+                  Category Ranking
+                </Label>
+                <p className="text-sm text-admin-muted">
+                  Set the display order for categories on the home page (0 =
+                  lowest priority, higher numbers = higher priority)
+                </p>
+                <Input
+                  id="categoryRanking"
+                  type="number"
+                  min="0"
+                  value={formData.categoryRanking}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      categoryRanking: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  placeholder="0"
+                  className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
+                />
+              </div>
             </CardContent>
           </Card>
 
           {/* Image Upload */}
-          <Card className="bg-card border-border">
+          <Card className="bg-admin-card border-admin-border shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg text-foreground">
+              <CardTitle className="text-lg text-admin-text">
                 Category Image
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-admin-muted">
                 Upload an image for your category (max 10MB)
               </CardDescription>
             </CardHeader>
@@ -310,12 +340,12 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
               <div className="flex items-start gap-4">
                 <div className="flex-1">
                   <Label htmlFor="image" className="cursor-pointer">
-                    <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors bg-input/50">
+                    <div className="border-2 border-dashed border-admin-border rounded-lg p-8 text-center hover:border-primary transition-colors bg-admin-accent/10">
                       <Upload className="h-8 w-8 mx-auto mb-2 text-primary" />
-                      <p className="text-sm text-foreground">
+                      <p className="text-sm text-admin-text">
                         Click to upload image or drag and drop
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-admin-muted mt-1">
                         PNG, JPG, GIF up to 10MB
                       </p>
                     </div>
@@ -331,7 +361,7 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
 
                 {imagePreview && (
                   <div className="relative">
-                    <div className="w-32 h-32 rounded-lg overflow-hidden border border-border">
+                    <div className="w-32 h-32 rounded-lg overflow-hidden border border-admin-border">
                       <img
                         src={imagePreview}
                         alt="Category preview"
@@ -359,7 +389,7 @@ const UploadCategory: React.FC<UploadCategoryProps> = ({
               type="button"
               variant="outline"
               onClick={onClose}
-              className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+              className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text"
             >
               Cancel
             </Button>

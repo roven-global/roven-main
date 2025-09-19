@@ -89,7 +89,6 @@ const createProduct = asyncHandler(async (req, res) => {
     suitableFor,
     tags,
     benefits,
-    isFeatured,
     isActive,
     howToUse,
   } = req.body;
@@ -301,7 +300,6 @@ const createProduct = asyncHandler(async (req, res) => {
     benefits: parsedBenefits,
     isActive:
       isActive === "true" || isActive === true || isActive === undefined, // default true
-    isFeatured: isFeatured === "true" || isFeatured === true,
     howToUse: parsedHowToUse,
     variants: [],
   };
@@ -369,6 +367,11 @@ const createProduct = asyncHandler(async (req, res) => {
   await newProduct.save();
   await newProduct.populate("category", "name slug");
 
+  console.log(`New product created successfully`);
+
+  // Dispatch event to refresh Shop page when new product is created
+  // Note: This will be handled by the frontend after receiving the response
+
   return res.status(201).json({
     success: true,
     message: "Product created successfully.",
@@ -392,6 +395,7 @@ const getAllProducts = asyncHandler(async (req, res) => {
     limit = 10,
     search,
     isActive,
+    admin,
   } = req.query;
 
   let filter = {};
@@ -441,14 +445,33 @@ const getAllProducts = asyncHandler(async (req, res) => {
   if (sortBy === "featured") {
     sort.isFeatured = -1;
     sort.createdAt = -1;
-  } else if (sortBy === "rating")
+  } else if (sortBy === "rating") {
     sort["ratings.average"] = sortOrder === "asc" ? 1 : -1;
-  else sort[sortBy] = sortOrder === "desc" ? -1 : 1;
+  } else if (sortBy === "products_ranking") {
+    // Products ranking sorting: only show products with ranking > 0 for frontend
+    // Admin requests can see all products including rank 0
+    const isAdminRequest = admin === "true";
+    if (!isAdminRequest) {
+      // Frontend requests: filter out rank 0 products
+      filter.products_ranking = { $gt: 0 };
+    }
+
+    if (sortOrder === "asc") {
+      sort.products_ranking = 1; // Ascending: 1, 2, 3, etc.
+    } else {
+      sort.products_ranking = -1; // Descending: 3, 2, 1, etc.
+    }
+  } else {
+    sort[sortBy] = sortOrder === "desc" ? -1 : 1;
+  }
 
   const safeLimit = Math.min(parseInt(limit), 50); // safe max page size
   const skip = (page - 1) * safeLimit;
 
-  const products = await ProductModel.find(filter)
+  let products;
+
+  // Use regular find for sorting
+  products = await ProductModel.find(filter)
     .populate("category", "name slug")
     .sort(sort)
     .skip(skip)
@@ -534,6 +557,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     benefits,
     isActive,
     isFeatured,
+    ranking_featured,
     howToUse,
   } = req.body;
 
@@ -559,7 +583,39 @@ const updateProduct = asyncHandler(async (req, res) => {
     updateFields.shortDescription = sanitizeString(shortDescription);
   if (brand !== undefined) updateFields.brand = sanitizeString(brand);
   if (isActive !== undefined) updateFields.isActive = isActive === "true";
-  if (isFeatured !== undefined) updateFields.isFeatured = isFeatured === "true";
+
+  // Handle featured status
+  if (isFeatured !== undefined) {
+    const newFeaturedStatus = isFeatured === "true" || isFeatured === true;
+    const currentProduct = await ProductModel.findById(id);
+    const wasFeatured = currentProduct?.isFeatured || false;
+
+    updateFields.isFeatured = newFeaturedStatus;
+    console.log(
+      `Updating product ${id} featured status: ${newFeaturedStatus} (original: ${isFeatured}, type: ${typeof isFeatured})`
+    );
+
+    // If product is being added to featured (was not featured, now is featured)
+    if (!wasFeatured && newFeaturedStatus) {
+      // Shift existing featured ranks to make room for rank 1
+      await shiftFeaturedRanksForNewProduct();
+      // Set the new product's ranking to 1
+      updateFields.ranking_featured = 1;
+      console.log(
+        `Product ${id} added to featured with rank 1, existing ranks shifted up`
+      );
+    }
+  }
+
+  // Handle featured ranking
+  if (ranking_featured !== undefined) {
+    const newRanking = parseInt(ranking_featured);
+    if (newRanking >= 0) {
+      updateFields.ranking_featured = newRanking;
+      console.log(`Updating product ${id} featured ranking: ${newRanking}`);
+    }
+  }
+
   if (howToUse !== undefined) {
     let parsedHowToUse = [];
     if (typeof howToUse === "string") {
@@ -842,6 +898,8 @@ const updateProduct = asyncHandler(async (req, res) => {
       message: "No valid fields provided for update.",
     });
 
+  console.log(`Updating product ${id} with fields:`, updateFields);
+
   const updatedProduct = await ProductModel.findByIdAndUpdate(
     id,
     updateFields,
@@ -850,6 +908,12 @@ const updateProduct = asyncHandler(async (req, res) => {
       runValidators: true,
     }
   ).populate("category", "name slug");
+
+  // No automatic gap closing - admin has full control over rankings
+
+  console.log(
+    `Product ${id} updated successfully. New featured status: ${updatedProduct.isFeatured}, New featured ranking: ${updatedProduct.ranking_featured}`
+  );
 
   return res.json({
     success: true,
@@ -865,7 +929,10 @@ const deleteProduct = asyncHandler(async (req, res) => {
     return res
       .status(404)
       .json({ success: false, message: "Product not found." });
+
+  // Delete the product - no automatic gap closing
   await ProductModel.findByIdAndDelete(id);
+
   return res.json({ success: true, message: "Product deleted successfully." });
 });
 
@@ -878,12 +945,21 @@ const bulkDeleteProducts = asyncHandler(async (req, res) => {
       message: "Product IDs must be provided as a non-empty array.",
     });
 
+  // Check if any of the products being deleted are featured
+  const featuredProducts = await ProductModel.find({
+    _id: { $in: ids },
+    isFeatured: true,
+    // Include all featured products regardless of ranking (including rank 0)
+  });
+
   const result = await ProductModel.deleteMany({ _id: { $in: ids } });
   if (result.deletedCount === 0)
     return res.status(404).json({
       success: false,
       message: "No products found with the provided IDs.",
     });
+
+  // No automatic gap closing - admin has full control over rankings
 
   return res.json({
     success: true,
@@ -1044,17 +1120,287 @@ const updateVariantStock = asyncHandler(async (req, res) => {
 
 // ---- Featured Products ----
 const getFeaturedProducts = asyncHandler(async (req, res) => {
-  const { limit = 8 } = req.query;
-  const products = await ProductModel.find({ isFeatured: true, isActive: true })
+  const {
+    limit = 8,
+    page = 1,
+    search,
+    category,
+    isActive,
+    sortBy = "ranking_featured",
+    sortOrder = "asc",
+  } = req.query;
+
+  // Check if featured products section is enabled (only for non-admin requests)
+  const isAdminRequest = req.query.admin === "true";
+  let isFeaturedEnabled = true;
+
+  if (!isAdminRequest) {
+    const AdminSetting = require("../models/adminSettingsModel");
+    isFeaturedEnabled = await AdminSetting.getSetting(
+      "is_featured_enabled",
+      true
+    );
+
+    // If featured products section is disabled for public requests, return empty array
+    if (!isFeaturedEnabled) {
+      return res.json({
+        success: true,
+        message: "Featured products section is disabled.",
+        data: [],
+        isEnabled: false,
+      });
+    }
+  }
+
+  // First, let's check what products exist in the database
+  const allProducts = await ProductModel.find({}).select(
+    "name isFeatured isActive ranking_featured"
+  );
+  console.log(
+    "ALL PRODUCTS IN DATABASE:",
+    allProducts.map((p) => ({
+      name: p.name,
+      isFeatured: p.isFeatured,
+      isActive: p.isActive,
+      ranking_featured: p.ranking_featured,
+    }))
+  );
+
+  // Build query filters
+  const queryFilters = {
+    isFeatured: { $eq: true }, // Explicitly check for true
+    // Remove ranking filter - allow rank 0 products to remain featured
+  };
+
+  // Add isActive filter if specified
+  if (isActive !== undefined) {
+    queryFilters.isActive = isActive === "true";
+  } else {
+    queryFilters.isActive = { $eq: true }; // Default to active only
+  }
+
+  // Add search filter if specified
+  if (search) {
+    queryFilters.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  // Add category filter if specified
+  if (category && category !== "all") {
+    queryFilters.category = category;
+  }
+
+  // Build sort object
+  const sortObj = {};
+  if (sortBy === "ranking_featured") {
+    sortObj.ranking_featured = sortOrder === "desc" ? -1 : 1;
+  } else if (sortBy === "name") {
+    sortObj.name = sortOrder === "desc" ? -1 : 1;
+  } else if (sortBy === "price") {
+    sortObj.price = sortOrder === "desc" ? -1 : 1;
+  } else {
+    sortObj.ranking_featured = 1; // Default sort
+  }
+
+  // Calculate pagination
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const limitNum = Math.min(parseInt(limit), 50);
+
+  // Try a more explicit query to ensure we only get truly featured products
+  const products = await ProductModel.find(queryFilters)
     .populate("category", "name slug")
-    .sort({ createdAt: -1 })
-    .limit(Math.min(parseInt(limit), 50));
+    .sort(sortObj)
+    .skip(skip)
+    .limit(limitNum);
+
+  // Get total count for pagination
+  const totalProducts = await ProductModel.countDocuments(queryFilters);
+
+  // Debug: Log the order of products being returned with featured status
+  console.log(
+    "FEATURED PRODUCTS QUERY RESULT:",
+    products.map((p) => ({
+      name: p.name,
+      isFeatured: p.isFeatured,
+      ranking_featured: p.ranking_featured,
+      isActive: p.isActive,
+    }))
+  );
+
+  // Calculate pagination info
+  const totalPages = Math.ceil(totalProducts / limitNum);
+  const hasNextPage = parseInt(page) < totalPages;
+  const hasPrevPage = parseInt(page) > 1;
+
   return res.json({
     success: true,
     message: "Featured products retrieved successfully.",
-    data: products,
+    data: {
+      products: products,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: totalPages,
+        totalProducts: totalProducts,
+        hasNextPage: hasNextPage,
+        hasPrevPage: hasPrevPage,
+        limit: limitNum,
+      },
+    },
+    isEnabled: true,
   });
 });
+
+// ---- Update Product Featured Ranking ----
+const updateProductFeaturedRanking = asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+  const { ranking_featured } = req.body;
+
+  if (ranking_featured < 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Featured ranking cannot be negative",
+    });
+  }
+
+  try {
+    const product = await ProductModel.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    const newRanking = parseInt(ranking_featured);
+
+    // If ranking hasn't changed, no need to update
+    if (product.ranking_featured === newRanking) {
+      return res.json({
+        success: true,
+        message: "Product featured ranking unchanged",
+        data: product,
+      });
+    }
+
+    // Update the product's ranking directly without shifting other products
+    // Admin input is authoritative - allow gaps and duplicates as requested
+    // Rank 0 is allowed and treated as a valid rank for ranking purposes
+    product.ranking_featured = newRanking;
+    await product.save();
+
+    return res.json({
+      success: true,
+      message: "Product featured ranking updated successfully",
+      data: product,
+    });
+  } catch (error) {
+    console.error("Error updating product featured ranking:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update product featured ranking",
+    });
+  }
+});
+
+// ---- Update Products Ranking ----
+const updateProductsRanking = asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+  const { products_ranking } = req.body;
+
+  if (products_ranking < 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Products ranking cannot be negative",
+    });
+  }
+
+  try {
+    const product = await ProductModel.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    const newRanking = parseInt(products_ranking);
+
+    // If ranking hasn't changed, no need to update
+    if (product.products_ranking === newRanking) {
+      return res.json({
+        success: true,
+        message: "Product ranking unchanged",
+        data: product,
+      });
+    }
+
+    // Update the product's ranking directly without shifting other products
+    // Admin input is authoritative - allow gaps and duplicates as requested
+    // Rank 0 is allowed and treated as a valid rank for ranking purposes
+    product.products_ranking = newRanking;
+    await product.save();
+
+    return res.json({
+      success: true,
+      message: "Product ranking updated successfully",
+      data: product,
+    });
+  } catch (error) {
+    console.error("Error updating product ranking:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update product ranking",
+    });
+  }
+});
+
+// ---- Shift Featured Ranks for New Product ----
+const shiftFeaturedRanksForNewProduct = async () => {
+  try {
+    // Increment all existing featured product ranks by 1
+    // This makes room for a new product at rank 1
+    await ProductModel.updateMany(
+      { isFeatured: true, ranking_featured: { $gte: 1 } },
+      { $inc: { ranking_featured: 1 } }
+    );
+
+    console.log("Featured ranks shifted successfully for new product");
+  } catch (error) {
+    console.error("Error shifting featured ranks:", error);
+    throw error;
+  }
+};
+
+// ---- Close Ranking Gaps ----
+const closeRankingGaps = async (rankingType) => {
+  try {
+    const field = "ranking_featured";
+    const filter = { isFeatured: true, [field]: { $gt: 0 } };
+
+    // Get all products with rankings, sorted by current ranking
+    const products = await ProductModel.find(filter)
+      .sort({ [field]: 1 })
+      .select(`_id ${field}`);
+
+    // Reassign rankings sequentially starting from 1
+    for (let i = 0; i < products.length; i++) {
+      const expectedRanking = i + 1;
+      if (products[i][field] !== expectedRanking) {
+        await ProductModel.findByIdAndUpdate(products[i]._id, {
+          [field]: expectedRanking,
+        });
+      }
+    }
+
+    console.log(
+      `Successfully closed ${rankingType} ranking gaps for ${products.length} products`
+    );
+  } catch (error) {
+    console.error(`Error closing ${rankingType} ranking gaps:`, error);
+  }
+};
 
 // ---- Migrate Legacy Specifications ----
 const migrateLegacySpecifications = asyncHandler(async (req, res) => {
@@ -1152,6 +1498,9 @@ module.exports = {
   getProductVariants,
   updateVariantStock,
   getRelatedProducts,
+  updateProductFeaturedRanking,
+  updateProductsRanking,
+  shiftFeaturedRanksForNewProduct,
   migrateLegacySpecifications,
   getProductBySlugForSSR,
 };

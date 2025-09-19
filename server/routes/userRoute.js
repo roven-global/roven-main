@@ -20,7 +20,7 @@ const {
 } = require("../controller/userController");
 const auth = require("../middleware/auth");
 const upload = require("../middleware/multer");
-const adminOnly = require("../middleware/adminOnly");
+const { adminOnly } = require("../middleware/adminOnly");
 const router = express.Router();
 
 // User registration

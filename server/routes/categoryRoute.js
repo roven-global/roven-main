@@ -4,13 +4,14 @@ const {
   getAllCategories,
   getCategoryById,
   updateCategory,
+  updateCategoryRanking,
   deleteCategory,
   bulkDeleteCategories,
   getCategoryHierarchy,
   searchCategories,
 } = require("../controller/categoryController");
 const auth = require("../middleware/auth");
-const adminOnly = require("../middleware/adminOnly");
+const { adminOnly } = require("../middleware/adminOnly");
 const upload = require("../middleware/multer");
 const router = express.Router();
 
@@ -42,6 +43,9 @@ router.route("/bulk-delete").delete(auth, adminOnly, bulkDeleteCategories);
 router
   .route("/:id")
   .put(auth, adminOnly, upload.single("image"), updateCategory);
+
+// Update category ranking
+router.route("/:id/ranking").put(auth, adminOnly, updateCategoryRanking);
 
 // Delete category
 router.route("/:id").delete(auth, adminOnly, deleteCategory);

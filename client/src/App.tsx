@@ -47,12 +47,14 @@ const Cart = lazy(() => import("./pages/Cart"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const Payment = lazy(() => import("./pages/Payment"));
 const AdminOverview = lazy(() => import("./pages/AdminOverview"));
+const AdminSettings = lazy(() => import("./pages/AdminSettings"));
 const AdminCustomers = lazy(() => import("./pages/AdminCustomers"));
 const AdminSubscribers = lazy(() => import("./pages/AdminSubscribers"));
 const AdminReviews = lazy(() => import("./pages/AdminReviews"));
 const CouponAdmin = lazy(() => import("./pages/CouponAdmin"));
 const WelcomeGiftAdmin = lazy(() => import("./pages/WelcomeGiftAdmin"));
 const AdminHeroImages = lazy(() => import("./pages/AdminHeroImages"));
+const StoriesAdmin = lazy(() => import("./pages/StoriesAdmin"));
 const ContactUs = lazy(() => import("./pages/ContactUs"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const ShippingInfo = lazy(() => import("./pages/ShippingInfo"));
@@ -170,6 +172,7 @@ const AppContent = () => {
             }
           >
             <Route index element={<AdminOverview />} />
+            <Route path="settings" element={<AdminSettings />} />
             <Route path="category" element={<CategoryAdmin />} />
             <Route path="product" element={<ProductAdmin />} />
             <Route path="product/upload" element={<UploadProduct />} />
@@ -179,6 +182,7 @@ const AppContent = () => {
             <Route path="coupons" element={<CouponAdmin />} />
             <Route path="welcome-gifts" element={<WelcomeGiftAdmin />} />
             <Route path="hero-images" element={<AdminHeroImages />} />
+            <Route path="stories" element={<StoriesAdmin />} />
           </Route>
 
           <Route path="/not-authorized" element={<NotAuthorized />} />

@@ -289,22 +289,22 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <Card className="bg-card border-border">
+      <Card className="bg-admin-card border-admin-border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-foreground">Appearance</CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardTitle className="text-admin-text">Appearance</CardTitle>
+          <CardDescription className="text-admin-muted">
             How the gift will look to the user.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="title" className="text-foreground">
+            <Label htmlFor="title" className="text-admin-text">
               Title
             </Label>
             <Input
               id="title"
               {...register("title")}
-              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+              className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
             />
             {errors.title && (
               <p className="text-destructive text-xs mt-1">
@@ -314,13 +314,13 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="description" className="text-foreground">
+            <Label htmlFor="description" className="text-admin-text">
               Description
             </Label>
             <Textarea
               id="description"
               {...register("description")}
-              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+              className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
             />
             {errors.description && (
               <p className="text-destructive text-xs mt-1">
@@ -331,21 +331,21 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-foreground">Icon</Label>
+              <Label className="text-admin-text">Icon</Label>
               <Controller
                 name="icon"
                 control={control}
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className="bg-input border-border text-foreground focus:ring-ring">
+                    <SelectTrigger className="bg-admin-card border-admin-border text-admin-text focus:ring-primary shadow-sm">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
+                    <SelectContent className="bg-admin-card border-admin-border">
                       {iconOptions.map((option) => (
                         <SelectItem
                           key={option.value}
                           value={option.value}
-                          className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                          className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
                         >
                           <div className="flex items-center gap-2">
                             {option.icon}
@@ -359,13 +359,13 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
               />
             </div>
             <div>
-              <Label className="text-foreground">Color</Label>
+              <Label className="text-admin-text">Color</Label>
               <Controller
                 name="color"
                 control={control}
                 render={({ field }) => (
                   <Select onValueChange={handleColorChange} value={field.value}>
-                    <SelectTrigger className="bg-input border-border text-foreground focus:ring-ring">
+                    <SelectTrigger className="bg-admin-card border-admin-border text-admin-text focus:ring-primary shadow-sm">
                       <div className="flex items-center gap-2">
                         <div
                           className={`w-4 h-4 rounded-full ${
@@ -379,12 +379,12 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
                         }
                       </div>
                     </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
+                    <SelectContent className="bg-admin-card border-admin-border">
                       {colorOptions.map((option) => (
                         <SelectItem
                           key={option.value}
                           value={option.value}
-                          className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                          className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
                         >
                           <div className="flex items-center gap-2">
                             <div
@@ -403,23 +403,23 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
         </CardContent>
       </Card>
 
-      <Card className="bg-card border-border">
+      <Card className="bg-admin-card border-admin-border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-foreground">Reward Details</CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardTitle className="text-admin-text">Reward Details</CardTitle>
+          <CardDescription className="text-admin-muted">
             Define the reward and how it's redeemed.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="reward" className="text-foreground">
+            <Label htmlFor="reward" className="text-admin-text">
               Reward Text
             </Label>
             <Input
               id="reward"
               {...register("reward")}
               placeholder="e.g., 'Get 10% OFF your first order!'"
-              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+              className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
             />
             {errors.reward && (
               <p className="text-destructive text-xs mt-1">
@@ -428,14 +428,14 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
             )}
           </div>
           <div>
-            <Label htmlFor="couponCode" className="text-foreground">
+            <Label htmlFor="couponCode" className="text-admin-text">
               Coupon Code
             </Label>
             <Input
               id="couponCode"
               {...register("couponCode")}
               placeholder="e.g., WELCOME10"
-              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+              className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
             />
             {errors.couponCode && (
               <p className="text-destructive text-xs mt-1">
@@ -444,25 +444,25 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
             )}
           </div>
           <div>
-            <Label className="text-foreground">Reward Type</Label>
+            <Label className="text-admin-text">Reward Type</Label>
             <Controller
               name="rewardType"
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger className="bg-input border-border text-foreground focus:ring-ring">
+                  <SelectTrigger className="bg-admin-card border-admin-border text-admin-text focus:ring-primary shadow-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
+                  <SelectContent className="bg-admin-card border-admin-border">
                     {rewardTypeOptions.map((option) => (
                       <SelectItem
                         key={option.value}
                         value={option.value}
-                        className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                        className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
                       >
                         <div className="flex flex-col">
                           <span className="font-medium">{option.label}</span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-admin-muted">
                             {option.description}
                           </span>
                         </div>
@@ -477,22 +477,22 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
       </Card>
 
       {rewardType !== "buy_one_get_one" && (
-        <Card className="bg-card border-border">
+        <Card className="bg-admin-card border-admin-border shadow-sm">
           <CardHeader>
-            <CardTitle className="text-foreground">
+            <CardTitle className="text-admin-text">
               Discount Conditions
             </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="rewardValue" className="text-foreground">
+              <Label htmlFor="rewardValue" className="text-admin-text">
                 Reward Value ({rewardType === "percentage" ? "%" : "₹"})
               </Label>
               <Input
                 id="rewardValue"
                 type="number"
                 {...register("rewardValue", { valueAsNumber: true })}
-                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
               />
               {errors.rewardValue && (
                 <p className="text-destructive text-xs mt-1">
@@ -502,14 +502,14 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
             </div>
             {rewardType === "percentage" && (
               <div>
-                <Label htmlFor="maxDiscount" className="text-foreground">
+                <Label htmlFor="maxDiscount" className="text-admin-text">
                   Max Discount (₹) - Optional
                 </Label>
                 <Input
                   id="maxDiscount"
                   type="number"
                   {...register("maxDiscount", { valueAsNumber: true })}
-                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                  className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                 />
                 {errors.maxDiscount && (
                   <p className="text-destructive text-xs mt-1">
@@ -519,14 +519,14 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
               </div>
             )}
             <div>
-              <Label htmlFor="minOrderAmount" className="text-foreground">
+              <Label htmlFor="minOrderAmount" className="text-admin-text">
                 Min Order Amount (₹)
               </Label>
               <Input
                 id="minOrderAmount"
                 type="number"
                 {...register("minOrderAmount", { valueAsNumber: true })}
-                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
               />
               {errors.minOrderAmount && (
                 <p className="text-destructive text-xs mt-1">
@@ -539,24 +539,24 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
       )}
 
       {rewardType === "buy_one_get_one" && (
-        <Card className="bg-card border-border">
+        <Card className="bg-admin-card border-admin-border shadow-sm">
           <CardHeader>
-            <CardTitle className="text-foreground">BOGO Settings</CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardTitle className="text-admin-text">BOGO Settings</CardTitle>
+            <CardDescription className="text-admin-muted">
               Configure the rules for your Buy One Get One offer.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="buyQuantity" className="text-foreground">
+                <Label htmlFor="buyQuantity" className="text-admin-text">
                   Buy Quantity
                 </Label>
                 <Input
                   id="buyQuantity"
                   type="number"
                   {...register("buyQuantity", { valueAsNumber: true })}
-                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                  className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                 />
                 {errors.buyQuantity && (
                   <p className="text-destructive text-xs mt-1">
@@ -565,14 +565,14 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
                 )}
               </div>
               <div>
-                <Label htmlFor="getQuantity" className="text-foreground">
+                <Label htmlFor="getQuantity" className="text-admin-text">
                   Get Quantity (Free)
                 </Label>
                 <Input
                   id="getQuantity"
                   type="number"
                   {...register("getQuantity", { valueAsNumber: true })}
-                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                  className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                 />
                 {errors.getQuantity && (
                   <p className="text-destructive text-xs mt-1">
@@ -582,7 +582,7 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
               </div>
             </div>
             <div>
-              <Label className="text-foreground">
+              <Label className="text-admin-text">
                 Applicable Categories (optional)
               </Label>
               <Controller
@@ -617,7 +617,7 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
             />
           )}
         />
-        <Label htmlFor="isActive" className="text-foreground">
+        <Label htmlFor="isActive" className="text-admin-text">
           Active
         </Label>
       </div>
@@ -627,7 +627,7 @@ export const WelcomeGiftForm: React.FC<WelcomeGiftFormProps> = ({
           type="button"
           variant="outline"
           onClick={onCancel}
-          className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+          className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text"
         >
           Cancel
         </Button>

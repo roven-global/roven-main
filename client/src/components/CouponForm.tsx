@@ -137,24 +137,24 @@ export const CouponForm: React.FC<CouponFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <Card className="bg-card border-border">
+      <Card className="bg-admin-card border-admin-border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-foreground">Coupon Details</CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardTitle className="text-admin-text">Coupon Details</CardTitle>
+          <CardDescription className="text-admin-muted">
             Basic information for the coupon.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="code" className="text-foreground">
+              <Label htmlFor="code" className="text-admin-text">
                 Coupon Code
               </Label>
               <Input
                 id="code"
                 {...register("code")}
                 placeholder="e.g., WELCOME10"
-                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
               />
               {errors.code && (
                 <p className="text-destructive text-xs mt-1">
@@ -163,14 +163,14 @@ export const CouponForm: React.FC<CouponFormProps> = ({
               )}
             </div>
             <div>
-              <Label htmlFor="name" className="text-foreground">
+              <Label htmlFor="name" className="text-admin-text">
                 Coupon Name
               </Label>
               <Input
                 id="name"
                 {...register("name")}
                 placeholder="e.g., Welcome Discount"
-                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
               />
               {errors.name && (
                 <p className="text-destructive text-xs mt-1">
@@ -180,14 +180,14 @@ export const CouponForm: React.FC<CouponFormProps> = ({
             </div>
           </div>
           <div>
-            <Label htmlFor="description" className="text-foreground">
+            <Label htmlFor="description" className="text-admin-text">
               Description
             </Label>
             <Textarea
               id="description"
               {...register("description")}
               placeholder="Describe the coupon offer..."
-              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+              className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
             />
             {errors.description && (
               <p className="text-destructive text-xs mt-1">
@@ -198,34 +198,34 @@ export const CouponForm: React.FC<CouponFormProps> = ({
         </CardContent>
       </Card>
 
-      <Card className="bg-card border-border">
+      <Card className="bg-admin-card border-admin-border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-foreground">Discount</CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardTitle className="text-admin-text">Discount</CardTitle>
+          <CardDescription className="text-admin-muted">
             Configure the discount type and value.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="text-foreground">Discount Type</Label>
+            <Label className="text-admin-text">Discount Type</Label>
             <Controller
               name="type"
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger className="bg-input border-border text-foreground focus:ring-ring">
+                  <SelectTrigger className="bg-admin-card border-admin-border text-admin-text focus:ring-primary shadow-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
+                  <SelectContent className="bg-admin-card border-admin-border shadow-sm">
                     <SelectItem
                       value="percentage"
-                      className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                      className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
                     >
                       Percentage
                     </SelectItem>
                     <SelectItem
                       value="fixed"
-                      className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                      className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
                     >
                       Fixed Amount
                     </SelectItem>
@@ -235,14 +235,14 @@ export const CouponForm: React.FC<CouponFormProps> = ({
             />
           </div>
           <div>
-            <Label htmlFor="value" className="text-foreground">
+            <Label htmlFor="value" className="text-admin-text">
               Discount Value ({discountType === "percentage" ? "%" : "₹"})
             </Label>
             <Input
               id="value"
               type="number"
               {...register("value", { valueAsNumber: true })}
-              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+              className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
             />
             {errors.value && (
               <p className="text-destructive text-xs mt-1">
@@ -252,14 +252,14 @@ export const CouponForm: React.FC<CouponFormProps> = ({
           </div>
           {discountType === "percentage" && (
             <div>
-              <Label htmlFor="maxDiscount" className="text-foreground">
+              <Label htmlFor="maxDiscount" className="text-admin-text">
                 Max Discount (₹) - Optional
               </Label>
               <Input
                 id="maxDiscount"
                 type="number"
                 {...register("maxDiscount", { valueAsNumber: true })}
-                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
               />
               {errors.maxDiscount && (
                 <p className="text-destructive text-xs mt-1">
@@ -271,26 +271,26 @@ export const CouponForm: React.FC<CouponFormProps> = ({
         </CardContent>
       </Card>
 
-      <Card className="bg-card border-border">
+      <Card className="bg-admin-card border-admin-border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-foreground">
+          <CardTitle className="text-admin-text">
             Usage Rules & Conditions
           </CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardDescription className="text-admin-muted">
             Set the rules for how and when the coupon can be used.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="minOrderAmount" className="text-foreground">
+              <Label htmlFor="minOrderAmount" className="text-admin-text">
                 Min Order Amount (₹)
               </Label>
               <Input
                 id="minOrderAmount"
                 type="number"
                 {...register("minOrderAmount", { valueAsNumber: true })}
-                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
               />
               {errors.minOrderAmount && (
                 <p className="text-destructive text-xs mt-1">
@@ -299,14 +299,14 @@ export const CouponForm: React.FC<CouponFormProps> = ({
               )}
             </div>
             <div>
-              <Label htmlFor="maxOrderAmount" className="text-foreground">
+              <Label htmlFor="maxOrderAmount" className="text-admin-text">
                 Max Order Amount (₹) - Optional
               </Label>
               <Input
                 id="maxOrderAmount"
                 type="number"
                 {...register("maxOrderAmount", { valueAsNumber: true })}
-                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
               />
               {errors.maxOrderAmount && (
                 <p className="text-destructive text-xs mt-1">
@@ -315,14 +315,14 @@ export const CouponForm: React.FC<CouponFormProps> = ({
               )}
             </div>
             <div>
-              <Label htmlFor="usageLimit" className="text-foreground">
+              <Label htmlFor="usageLimit" className="text-admin-text">
                 Total Usage Limit
               </Label>
               <Input
                 id="usageLimit"
                 type="number"
                 {...register("usageLimit", { valueAsNumber: true })}
-                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
               />
               {errors.usageLimit && (
                 <p className="text-destructive text-xs mt-1">
@@ -331,14 +331,14 @@ export const CouponForm: React.FC<CouponFormProps> = ({
               )}
             </div>
             <div>
-              <Label htmlFor="perUserLimit" className="text-foreground">
+              <Label htmlFor="perUserLimit" className="text-admin-text">
                 Per User Limit
               </Label>
               <Input
                 id="perUserLimit"
                 type="number"
                 {...register("perUserLimit", { valueAsNumber: true })}
-                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
               />
               {errors.perUserLimit && (
                 <p className="text-destructive text-xs mt-1">
@@ -348,7 +348,7 @@ export const CouponForm: React.FC<CouponFormProps> = ({
             </div>
           </div>
           <div>
-            <Label className="text-foreground">
+            <Label className="text-admin-text">
               Applicable Categories (optional)
             </Label>
             <Controller
@@ -379,30 +379,30 @@ export const CouponForm: React.FC<CouponFormProps> = ({
                 />
               )}
             />
-            <Label htmlFor="firstTimeUserOnly" className="text-foreground">
+            <Label htmlFor="firstTimeUserOnly" className="text-admin-text">
               For first-time users only
             </Label>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-card border-border">
+      <Card className="bg-admin-card border-admin-border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-foreground">Validity</CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardTitle className="text-admin-text">Validity</CardTitle>
+          <CardDescription className="text-admin-muted">
             Set the dates the coupon is active.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="validFrom" className="text-foreground">
+            <Label htmlFor="validFrom" className="text-admin-text">
               Valid From
             </Label>
             <Input
               id="validFrom"
               type="date"
               {...register("validFrom")}
-              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+              className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
             />
             {errors.validFrom && (
               <p className="text-destructive text-xs mt-1">
@@ -411,14 +411,14 @@ export const CouponForm: React.FC<CouponFormProps> = ({
             )}
           </div>
           <div>
-            <Label htmlFor="validTo" className="text-foreground">
+            <Label htmlFor="validTo" className="text-admin-text">
               Valid To
             </Label>
             <Input
               id="validTo"
               type="date"
               {...register("validTo")}
-              className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+              className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
             />
             {errors.validTo && (
               <p className="text-destructive text-xs mt-1">
@@ -434,7 +434,7 @@ export const CouponForm: React.FC<CouponFormProps> = ({
           type="button"
           variant="outline"
           onClick={onCancel}
-          className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+          className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text"
         >
           Cancel
         </Button>

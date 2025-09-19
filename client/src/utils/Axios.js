@@ -62,14 +62,23 @@ const refreshAccessToken = async (refreshToken) => {
       },
     });
 
-    const accessToken = response.data.accessToken;
-    localStorage.setItem("accesstoken", accessToken);
-    return accessToken;
+    if (response.data.success && response.data.accessToken) {
+      const accessToken = response.data.accessToken;
+      localStorage.setItem("accesstoken", accessToken);
+      return accessToken;
+    } else {
+      throw new Error("Invalid response from refresh token endpoint");
+    }
   } catch (error) {
-    console.error('Refresh token error:', error);
+    console.error("Refresh token error:", error);
+    // Clear stored tokens on refresh failure
+    localStorage.removeItem("accesstoken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("isLoggedIn");
+
     // If refresh fails, the session is truly expired.
     // Dispatch an event that the App can listen to, to trigger a global logout.
-    window.dispatchEvent(new Event('sessionExpired'));
+    window.dispatchEvent(new Event("sessionExpired"));
     return null;
   }
 };

@@ -66,7 +66,7 @@ interface Product {
     skinType?: string | string[];
     hairType?: string | string[];
   };
-  benefits?: string[];
+  shortDescription?: string;
   isActive: boolean;
   isFeatured: boolean;
   createdAt: string;
@@ -77,6 +77,7 @@ interface Category {
   name: string;
   productsCount: number;
   slug: string;
+  categoryRanking?: number;
 }
 
 const Shop = () => {
@@ -110,7 +111,7 @@ const Shop = () => {
   const [activePriceRange, setActivePriceRange] = useState<string>("");
   const [activeCustomMin, setActiveCustomMin] = useState<string>("");
   const [activeCustomMax, setActiveCustomMax] = useState<string>("");
-  const [sortBy, setSortBy] = useState("createdAt-desc");
+  const [sortBy, setSortBy] = useState("products_ranking-asc");
   const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
 
   const perPage = 9;
@@ -129,6 +130,7 @@ const Shop = () => {
         const params = new URLSearchParams();
         params.append("page", String(page));
         params.append("limit", String(perPage));
+        params.append("shop", "true"); // Mark this as a Shop request
 
         if (activeCategory !== "all") {
           params.append("category", activeCategory);
@@ -194,7 +196,24 @@ const Shop = () => {
           categoriesRes.data.success &&
           Array.isArray(categoriesRes.data.data)
         ) {
-          setCategories(categoriesRes.data.data);
+          // Sort categories by ranking (ranked first, then unranked)
+          const sortedCategories = categoriesRes.data.data.sort(
+            (a: Category, b: Category) => {
+              const rankA = a.categoryRanking || 0;
+              const rankB = b.categoryRanking || 0;
+
+              // If both have ranks > 0, sort by rank ascending
+              if (rankA > 0 && rankB > 0) {
+                return rankA - rankB;
+              }
+              // If only one has rank > 0, prioritize it
+              if (rankA > 0 && rankB === 0) return -1;
+              if (rankA === 0 && rankB > 0) return 1;
+              // If both are rank 0, sort by name
+              return a.name.localeCompare(b.name);
+            }
+          );
+          setCategories(sortedCategories);
         }
       } catch (err) {
         console.error("Failed to fetch categories:", err);
@@ -215,6 +234,20 @@ const Shop = () => {
     activeCustomMax,
     sortBy,
   ]);
+
+  // Listen for product updates from admin panel
+  useEffect(() => {
+    const handleProductUpdate = () => {
+      // Refresh products when updated from admin panel
+      fetchProducts(pagination.currentPage);
+    };
+
+    window.addEventListener("productUpdated", handleProductUpdate);
+
+    return () => {
+      window.removeEventListener("productUpdated", handleProductUpdate);
+    };
+  }, [pagination.currentPage]);
 
   const handleLoadMore = () => {
     if (pagination.hasNext && !loadingMore) {
@@ -544,6 +577,12 @@ const Shop = () => {
                         Featured
                       </SelectItem>
                       <SelectItem
+                        value="products_ranking-asc"
+                        className="text-muted-brown hover:bg-primary/20"
+                      >
+                        Products Ranking
+                      </SelectItem>
+                      <SelectItem
                         value="price-asc"
                         className="text-muted-brown hover:bg-primary/20"
                       >
@@ -596,7 +635,7 @@ const Shop = () => {
                   </p>
                 </div>
               ) : (
-                <div className="grid gap-2 sm:gap-2 lg:gap-3 grid-cols-2 lg:grid-cols-3">
+                <div className="product-grid-centered">
                   {products.map((product) => {
                     const thirtyDaysAgo = new Date();
                     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -623,7 +662,7 @@ const Shop = () => {
                           )
                         }
                         isNew={isNew}
-                        benefits={product.benefits}
+                        shortDescription={product.shortDescription}
                       />
                     );
                   })}

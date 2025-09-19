@@ -88,6 +88,10 @@ const SummaryApi = {
     url: "/api/category",
     method: "put",
   },
+  updateCategoryRanking: {
+    url: "/api/category",
+    method: "put",
+  },
   deleteCategory: {
     url: "/api/category",
     method: "delete",
@@ -144,6 +148,14 @@ const SummaryApi = {
   bulkDeleteProducts: {
     url: "/api/product/bulk-delete",
     method: "delete",
+  },
+  updateProductFeaturedRanking: {
+    url: "/api/product",
+    method: "put",
+  },
+  updateProductsRanking: {
+    url: "/api/product",
+    method: "put",
   },
   toggleWishlist: {
     url: "/api/user/wishlist",
@@ -294,6 +306,9 @@ const SummaryApi = {
     url: "/api/hero-images",
     method: "delete",
   },
+  // Stories endpoints
+  stories: "/api/stories",
+  storiesAdmin: "/api/stories/admin",
   // Welcome Gift endpoints
   getAllWelcomeGifts: {
     url: "/api/welcome-gifts",

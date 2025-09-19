@@ -18,6 +18,8 @@ const welcomeGiftRouter = require("./routes/welcomeGiftRoute");
 const reviewRouter = require("./routes/reviewRoute");
 const newsletterRouter = require("./routes/newsletterRoute");
 const heroImageRouter = require("./routes/heroImageRoute");
+const storyRouter = require("./routes/storyRoute");
+const highlightRouter = require("./routes/highlightRoute");
 const session = require("express-session");
 const passport = require("passport");
 require("./config/passport-setup");
@@ -36,13 +38,44 @@ const { getProductBySlugForSSR } = require("./controller/productController.js");
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const RATE_LIMIT_MAX_REQUESTS = 1000;
 const BODY_LIMIT = "10mb";
-const PORT = process.env.PORT || 5000;
+const DEFAULT_PORT = process.env.PORT || 5000;
 const isProduction = process.env.NODE_ENV === "production";
 const FRONTEND_URL =
   process.env.FRONTEND_URL || "https://roven-main.onrender.com";
 
+// Function to find an available port
+const findAvailablePort = (startPort) => {
+  return new Promise((resolve, reject) => {
+    const net = require("net");
+    const server = net.createServer();
+
+    server.listen(startPort, () => {
+      const port = server.address().port;
+      server.close(() => {
+        resolve(port);
+      });
+    });
+
+    server.on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        // Port is in use, try the next one
+        findAvailablePort(startPort + 1)
+          .then(resolve)
+          .catch(reject);
+      } else {
+        reject(err);
+      }
+    });
+  });
+};
+
 const app = express();
-app.set("trust proxy", true);
+// Only set trust proxy in production with proper configuration
+if (isProduction) {
+  app.set("trust proxy", 1); // Trust first proxy
+} else {
+  app.set("trust proxy", false); // Don't trust proxy in development
+}
 
 app.use(
   helmet({
@@ -70,16 +103,19 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        console.warn(`CORS blocked request from origin: ${origin}`);
         callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    optionsSuccessStatus: 200, // Some legacy browsers choke on 204
   })
 );
 
@@ -172,6 +208,8 @@ app.use("/api/welcome-gifts", welcomeGiftRouter);
 app.use("/api/reviews", reviewRouter);
 app.use("/api/newsletter", newsletterRouter);
 app.use("/api/hero-images", heroImageRouter);
+app.use("/api/stories", storyRouter);
+app.use("/api/highlights", highlightRouter);
 
 app.use(
   express.static(path.join(__dirname, "..", "client", "dist"), {
@@ -230,9 +268,47 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Initialize default admin settings
+const initializeDefaultSettings = async () => {
+  try {
+    const AdminSetting = require("./models/adminSettingsModel");
+
+    // Check if is_brand_category_enabled setting exists
+    const existingSetting = await AdminSetting.findOne({
+      key: "is_brand_category_enabled",
+    });
+
+    if (!existingSetting) {
+      await AdminSetting.create({
+        key: "is_brand_category_enabled",
+        value: true,
+        description:
+          "Enable or disable the brand category section on the homepage",
+      });
+      console.log(
+        "✅ Default setting 'is_brand_category_enabled' initialized with value: true"
+      );
+    } else {
+      console.log(
+        "✅ Setting 'is_brand_category_enabled' already exists with value:",
+        existingSetting.value
+      );
+    }
+  } catch (error) {
+    console.error("❌ Error initializing default settings:", error);
+  }
+};
+
 const startServer = async () => {
   try {
     await connectDb();
+
+    // Initialize default settings after database connection
+    await initializeDefaultSettings();
+
+    // Find an available port
+    const PORT = await findAvailablePort(DEFAULT_PORT);
+
     if (isProduction && process.env.SSL_KEY && process.env.SSL_CERT) {
       const sslOptions = {
         key: fs.readFileSync(process.env.SSL_KEY),
@@ -240,10 +316,20 @@ const startServer = async () => {
       };
       https.createServer(sslOptions, app).listen(PORT, () => {
         console.log(`HTTPS Server running on port ${PORT}`);
+        if (PORT !== DEFAULT_PORT) {
+          console.log(
+            `Note: Port ${DEFAULT_PORT} was busy, using port ${PORT} instead`
+          );
+        }
       });
     } else {
       app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
+        if (PORT !== DEFAULT_PORT) {
+          console.log(
+            `Note: Port ${DEFAULT_PORT} was busy, using port ${PORT} instead`
+          );
+        }
       });
     }
   } catch (err) {

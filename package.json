@@ -1,5 +1,19 @@
 {
+  "name": "roven-global",
+  "version": "1.0.0",
+  "description": "Roven Global E-commerce Platform",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "cd server && npm start",
+    "dev": "cd server && npm run dev",
+    "build": "cd client && npm run build",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "test": "cd server && npm test"
+  },
   "dependencies": {
     "twilio": "^5.8.2"
-  }
+  },
+  "keywords": ["ecommerce", "beauty", "roven"],
+  "author": "Roven Global",
+  "license": "ISC"
 }

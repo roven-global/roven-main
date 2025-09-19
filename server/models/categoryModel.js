@@ -35,6 +35,29 @@ const categorySchema = new mongoose.Schema(
       ref: "Category",
       default: null,
     },
+    categoryRanking: {
+      type: Number,
+      default: 0,
+      min: [0, "Category ranking cannot be negative"],
+      validate: {
+        validator: function (v) {
+          return Number.isInteger(v) && v >= 0;
+        },
+        message: "Category ranking must be a non-negative integer",
+      },
+    },
+    brandCategoryRanking: {
+      type: Number,
+      default: null,
+      min: [0, "Brand category ranking cannot be negative"],
+      validate: {
+        validator: function (v) {
+          return v === null || (Number.isInteger(v) && v >= 0);
+        },
+        message:
+          "Brand category ranking must be a non-negative integer or null",
+      },
+    },
   },
   {
     timestamps: true,

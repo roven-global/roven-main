@@ -61,14 +61,14 @@ export default {
           foreground: "#1D352D",
         },
         sidebar: {
-          DEFAULT: "#E5E9E2",
+          DEFAULT: "#FFFFFF",
           foreground: "#1D352D",
           primary: "#1D352D",
-          "primary-foreground": "#E6EAE3",
-          accent: "#a3b18a", // Updated to Sage Vibrant
+          "primary-foreground": "#FFFFFF",
+          accent: "#a3b18a",
           "accent-foreground": "#1D352D",
-          border: "#578466",
-          ring: "#a3b18a", // Updated to Sage Vibrant
+          border: "#E6EAE3",
+          ring: "#1D352D",
         },
 
         // Custom single colors
@@ -79,54 +79,62 @@ export default {
         "alert-error": "#cd1d00",
         "muted-green": "#6f8160",
 
+        // Admin-specific modern colors
+        "admin-bg": "#FAFBFC",
+        "admin-card": "#FFFFFF",
+        "admin-border": "#E6EAE3",
+        "admin-text": "#1D352D",
+        "admin-muted": "#6B7280",
+        "admin-accent": "#F3F4F6",
+
         // Category theme colors for easy access
         category: {
           // Primary theme - Blue tones
           primary: {
-            bg: "#eff6ff",      // Light blue background
-            text: "#1e40af",    // Dark blue text
-            border: "#93c5fd",  // Medium blue border
-            button: "#dbeafe",  // Light blue button background
+            bg: "#eff6ff", // Light blue background
+            text: "#1e40af", // Dark blue text
+            border: "#93c5fd", // Medium blue border
+            button: "#dbeafe", // Light blue button background
             "button-hover": "#bfdbfe", // Button hover state
           },
           // Secondary theme - Purple tones
           secondary: {
-            bg: "#faf5ff",      // Light purple background
-            text: "#6b21a8",    // Dark purple text
-            border: "#c4b5fd",  // Medium purple border
-            button: "#ede9fe",  // Light purple button background
+            bg: "#faf5ff", // Light purple background
+            text: "#6b21a8", // Dark purple text
+            border: "#c4b5fd", // Medium purple border
+            button: "#ede9fe", // Light purple button background
             "button-hover": "#ddd6fe", // Button hover state
           },
           // Accent theme - Orange tones
           accent: {
-            bg: "#fff7ed",      // Light orange background
-            text: "#c2410c",    // Dark orange text
-            border: "#fdba74",  // Medium orange border
-            button: "#fed7aa",  // Light orange button background
+            bg: "#fff7ed", // Light orange background
+            text: "#c2410c", // Dark orange text
+            border: "#fdba74", // Medium orange border
+            button: "#fed7aa", // Light orange button background
             "button-hover": "#fdba74", // Button hover state
           },
           // Warm theme - Rose/Pink tones
           warm: {
-            bg: "#fff1f2",      // Light rose background
-            text: "#be123c",    // Dark rose text
-            border: "#fda4af",  // Medium rose border
-            button: "#fecdd3",  // Light rose button background
+            bg: "#fff1f2", // Light rose background
+            text: "#be123c", // Dark rose text
+            border: "#fda4af", // Medium rose border
+            button: "#fecdd3", // Light rose button background
             "button-hover": "#fda4af", // Button hover state
           },
           // Cool theme - Teal tones
           cool: {
-            bg: "#f0fdfa",      // Light teal background
-            text: "#0f766e",    // Dark teal text
-            border: "#5eead4",  // Medium teal border
-            button: "#ccfbf1",  // Light teal button background
+            bg: "#f0fdfa", // Light teal background
+            text: "#0f766e", // Dark teal text
+            border: "#5eead4", // Medium teal border
+            button: "#ccfbf1", // Light teal button background
             "button-hover": "#99f6e4", // Button hover state
           },
           // Neutral theme - Gray tones
           neutral: {
-            bg: "#f9fafb",      // Light gray background
-            text: "#374151",    // Dark gray text
-            border: "#d1d5db",  // Medium gray border
-            button: "#f3f4f6",  // Light gray button background
+            bg: "#f9fafb", // Light gray background
+            text: "#374151", // Dark gray text
+            border: "#d1d5db", // Medium gray border
+            button: "#f3f4f6", // Light gray button background
             "button-hover": "#e5e7eb", // Button hover state
           },
         },

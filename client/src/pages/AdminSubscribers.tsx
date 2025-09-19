@@ -86,28 +86,39 @@ const AdminSubscribers = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-sans font-bold text-foreground">
-          Newsletter Subscribers
-        </h1>
-        <Button
-          onClick={handleExport}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground"
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Export as CSV
-        </Button>
+    <div className="p-4 bg-admin-bg min-h-screen admin-panel-container">
+      {/* Admin Panel Header */}
+      <div className="flex items-center justify-between mb-4 bg-white border-b border-gray-200 px-6 py-3 -mx-6 admin-panel-header">
+        <div>
+          <h1 className="font-sans text-2xl font-bold text-gray-900">
+            Newsletter Subscribers
+          </h1>
+        </div>
+        <div className="flex items-center space-x-4">
+          <Button
+            onClick={handleExport}
+            className="bg-primary hover:bg-primary/90 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export as CSV
+          </Button>
+        </div>
       </div>
 
-      {error && <p className="text-destructive mb-4">{error}</p>}
+      {error && (
+        <p className="text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
+          {error}
+        </p>
+      )}
 
-      <div className="rounded-lg border border-border bg-card">
+      <div className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="text-foreground">Email Address</TableHead>
-              <TableHead className="w-[250px] text-foreground">
+            <TableRow className="border-admin-border bg-admin-accent/50">
+              <TableHead className="text-admin-text font-semibold">
+                Email Address
+              </TableHead>
+              <TableHead className="w-[250px] text-admin-text font-semibold">
                 Subscription Date
               </TableHead>
             </TableRow>

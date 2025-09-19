@@ -277,120 +277,119 @@ const WelcomeGiftAdmin = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="p-4 bg-admin-bg min-h-screen admin-panel-container">
+      {/* Admin Panel Header */}
+      <div className="flex items-center justify-between mb-4 bg-white border-b border-gray-200 px-6 py-3 -mx-6 admin-panel-header">
         <div>
-          <h1 className="font-sans text-2xl font-bold text-foreground">
+          <h1 className="font-sans text-2xl font-bold text-gray-900">
             Welcome Gift Management
           </h1>
-          <p className="text-muted-foreground">
-            Manage welcome gift options for first-time visitors.
-          </p>
         </div>
-        <div className="flex gap-2">
-          {/* Analytics Dialog */}
-          <Dialog open={isAnalyticsOpen} onOpenChange={setIsAnalyticsOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Analytics
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Welcome Gifts Analytics</DialogTitle>
-              </DialogHeader>
-              {analytics ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold">
-                        {analytics.totalGifts}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Total Gifts
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold">
-                        {analytics.activeGifts}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Active Gifts
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold">
-                        {analytics.totalUsage}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Total Claims
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-2 pt-4">
-                    <h3 className="font-medium">Gift Performance</h3>
-                    {analytics.gifts.map((gift) => (
-                      <div
-                        key={gift.id}
-                        className="flex items-center justify-between p-2 bg-muted/10 rounded"
-                      >
-                        <span className="font-medium">{gift.title}</span>
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm text-muted-foreground">
-                            {gift.usageCount} claims
-                          </span>
-                          <Badge
-                            variant={gift.isActive ? "default" : "secondary"}
-                          >
-                            {gift.isActive ? "Active" : "Inactive"}
-                          </Badge>
+        <div className="flex items-center space-x-4">
+          <div className="flex gap-2">
+            {/* Analytics Dialog */}
+            <Dialog open={isAnalyticsOpen} onOpenChange={setIsAnalyticsOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Analytics
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Welcome Gifts Analytics</DialogTitle>
+                </DialogHeader>
+                {analytics ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <div className="text-2xl font-bold">
+                          {analytics.totalGifts}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Total Gifts
                         </div>
                       </div>
-                    ))}
+                      <div>
+                        <div className="text-2xl font-bold">
+                          {analytics.activeGifts}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Active Gifts
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold">
+                          {analytics.totalUsage}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Total Claims
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2 pt-4">
+                      <h3 className="font-medium">Gift Performance</h3>
+                      {analytics.gifts.map((gift) => (
+                        <div
+                          key={gift.id}
+                          className="flex items-center justify-between p-2 bg-muted/10 rounded"
+                        >
+                          <span className="font-medium">{gift.title}</span>
+                          <div className="flex items-center gap-4">
+                            <span className="text-sm text-muted-foreground">
+                              {gift.usageCount} claims
+                            </span>
+                            <Badge
+                              variant={gift.isActive ? "default" : "secondary"}
+                            >
+                              {gift.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">Loading analytics...</div>
-              )}
-            </DialogContent>
-          </Dialog>
+                ) : (
+                  <div className="text-center py-8">Loading analytics...</div>
+                )}
+              </DialogContent>
+            </Dialog>
 
-          {/* Add Gift Dialog */}
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openCreateForm}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Gift
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border">
-              <DialogHeader>
-                <DialogTitle className="text-foreground">
-                  {editingGift ? "Edit Welcome Gift" : "Add New Welcome Gift"}
-                </DialogTitle>
-                <DialogDescription className="text-muted-foreground">
-                  {editingGift
-                    ? "Update the details of this welcome gift."
-                    : "Create a new welcome gift for users. Fill in the details below."}
-                </DialogDescription>
-              </DialogHeader>
-              <WelcomeGiftForm
-                onSubmit={onSubmit}
-                onCancel={() => setIsDialogOpen(false)}
-                editingGift={editingGift}
-                categories={categories}
-              />
-            </DialogContent>
-          </Dialog>
+            {/* Add Gift Dialog */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={openCreateForm}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Gift
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-admin-card border-admin-border">
+                <DialogHeader>
+                  <DialogTitle className="text-admin-text">
+                    {editingGift ? "Edit Welcome Gift" : "Add New Welcome Gift"}
+                  </DialogTitle>
+                  <DialogDescription className="text-admin-muted">
+                    {editingGift
+                      ? "Update the details of this welcome gift."
+                      : "Create a new welcome gift for users. Fill in the details below."}
+                  </DialogDescription>
+                </DialogHeader>
+                <WelcomeGiftForm
+                  onSubmit={onSubmit}
+                  onCancel={() => setIsDialogOpen(false)}
+                  editingGift={editingGift}
+                  categories={categories}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
 
       {/* Settings Card */}
-      <Card>
+      <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
         <CardHeader>
-          <CardTitle>Settings</CardTitle>
+          <CardTitle className="text-admin-text">Settings</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center gap-4">
           <Label htmlFor="activeGiftLimit">Active Gift Limit</Label>
@@ -419,7 +418,10 @@ const WelcomeGiftAdmin = () => {
       {/* Gifts List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {gifts.map((gift) => (
-          <Card key={gift._id} className="relative">
+          <Card
+            key={gift._id}
+            className="relative rounded-xl border border-admin-border bg-admin-card shadow-sm"
+          >
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -444,13 +446,11 @@ const WelcomeGiftAdmin = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                {gift.description}
-              </p>
-              <div className="p-2 bg-white rounded text-sm font-mono">
+              <p className="text-sm text-admin-muted">{gift.description}</p>
+              <div className="p-2 bg-admin-accent/10 rounded text-sm font-mono text-admin-text">
                 {gift.reward}
               </div>
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <div className="flex items-center justify-between text-sm text-admin-muted">
                 <span>{gift.usageCount} claims</span>
                 {gift.lastUsed && (
                   <span>
@@ -474,16 +474,20 @@ const WelcomeGiftAdmin = () => {
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="bg-admin-card border-admin-border">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Welcome Gift</AlertDialogTitle>
-                      <AlertDialogDescription>
+                      <AlertDialogTitle className="text-admin-text">
+                        Delete Welcome Gift
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-admin-muted">
                         Are you sure you want to delete "{gift.title}"? This
                         action cannot be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text">
+                        Cancel
+                      </AlertDialogCancel>
                       <AlertDialogAction onClick={() => handleDelete(gift._id)}>
                         Delete
                       </AlertDialogAction>
@@ -497,9 +501,9 @@ const WelcomeGiftAdmin = () => {
       </div>
 
       {gifts.length === 0 && (
-        <Card>
+        <Card className="bg-admin-card border-admin-border shadow-sm">
           <CardContent className="text-center py-8">
-            <p className="text-gray-500">
+            <p className="text-admin-muted">
               No welcome gifts found. Create your first gift to get started.
             </p>
           </CardContent>

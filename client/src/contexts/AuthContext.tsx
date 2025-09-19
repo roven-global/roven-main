@@ -170,14 +170,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await Axios.post(SummaryApi.login.url, credentials);
       if (response.data.success) {
+        // Store tokens in localStorage as backup
         localStorage.setItem("accesstoken", response.data.data.accessToken);
         localStorage.setItem("refreshToken", response.data.data.refreshToken);
         localStorage.setItem("isLoggedIn", "true");
+
+        // Update user state immediately if user data is provided
+        if (response.data.data.user) {
+          setUser(response.data.data.user);
+          setIsAuthenticated(true);
+        }
+
         await checkAuthStatus(true);
         return true;
       }
       return false;
     } catch (err: any) {
+      console.error("Login error:", err);
       setError(
         err.response?.data?.message || "Login failed. Please try again."
       );
@@ -214,7 +223,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     checkAuthStatus();
-  }, [checkAuthStatus]);
+
+    // Listen for session expired events
+    const handleSessionExpired = () => {
+      console.log("Session expired, logging out user");
+      logout();
+    };
+
+    window.addEventListener("sessionExpired", handleSessionExpired);
+
+    return () => {
+      window.removeEventListener("sessionExpired", handleSessionExpired);
+    };
+  }, [checkAuthStatus, logout]);
 
   const value: AuthContextType = {
     isAuthenticated,

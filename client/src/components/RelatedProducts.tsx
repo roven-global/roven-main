@@ -119,7 +119,7 @@ const RelatedProducts: React.FC<RelatedProductsProps> = ({
                 variants={product.variants}
                 isNew={product.isNew}
                 isSale={product.isSale}
-                benefits={product.benefits}
+                shortDescription={product.shortDescription}
               />
             </CarouselItem>
           ))}

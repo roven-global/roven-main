@@ -209,16 +209,17 @@ const AdminReviews = () => {
   };
 
   return (
-    <>
-      <div className="flex items-center justify-between space-y-2">
+    <div className="p-4 bg-admin-bg min-h-screen admin-panel-container">
+      {/* Admin Panel Header */}
+      <div className="flex items-center justify-between mb-4 bg-white border-b border-gray-200 px-6 py-3 -mx-6 admin-panel-header">
         <div>
-          <h2 className="font-sans text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="font-sans text-2xl font-bold text-gray-900">
             Review Management
-          </h2>
-          <p className="text-muted-foreground">Manage all customer reviews.</p>
+          </h1>
         </div>
+        <div className="flex items-center space-x-4"></div>
       </div>
-      <Card className="bg-card border-border">
+      <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
@@ -239,7 +240,7 @@ const AdminReviews = () => {
                 placeholder="Search reviews..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                className="pl-10 bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
               />
             </form>
           </div>
@@ -255,13 +256,25 @@ const AdminReviews = () => {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Rating</TableHead>
-                      <TableHead>Review</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead>Actions</TableHead>
+                    <TableRow className="border-admin-border bg-admin-accent/50">
+                      <TableHead className="text-admin-text font-semibold">
+                        User
+                      </TableHead>
+                      <TableHead className="text-admin-text font-semibold">
+                        Product
+                      </TableHead>
+                      <TableHead className="text-admin-text font-semibold">
+                        Rating
+                      </TableHead>
+                      <TableHead className="text-admin-text font-semibold">
+                        Review
+                      </TableHead>
+                      <TableHead className="text-admin-text font-semibold">
+                        Created
+                      </TableHead>
+                      <TableHead className="text-admin-text font-semibold">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -443,7 +456,7 @@ const AdminReviews = () => {
           </form>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 };
 

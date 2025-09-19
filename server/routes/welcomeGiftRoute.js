@@ -29,7 +29,7 @@ const {
 } = require("../controller/welcomeGiftController");
 
 const auth = require("../middleware/auth");
-const adminOnly = require("../middleware/adminOnly");
+const { adminOnly } = require("../middleware/adminOnly");
 
 /**
  * Custom key generator for rate limiting that uses user ID when available

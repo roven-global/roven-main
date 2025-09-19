@@ -34,7 +34,7 @@ interface Product {
     skinType?: string | string[];
     hairType?: string | string[];
   };
-  benefits?: string[];
+  shortDescription?: string;
   isActive: boolean;
   isFeatured: boolean;
   createdAt: string;
@@ -153,7 +153,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
                         )
                       }
                       isNew={isNew}
-                      benefits={product.benefits}
+                      shortDescription={product.shortDescription}
                     />
                   </CarouselItem>
                 );
@@ -209,7 +209,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
                         )
                       }
                       isNew={isNew}
-                      benefits={product.benefits}
+                      shortDescription={product.shortDescription}
                     />
                   </CarouselItem>
                 );

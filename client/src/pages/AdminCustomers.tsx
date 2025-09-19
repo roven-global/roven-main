@@ -116,16 +116,16 @@ const CustomerRow = ({ customer }: { customer: Customer }) => {
               </Button>
             </CollapsibleTrigger>
           </TableCell>
-          <TableCell className="font-medium text-foreground">
+          <TableCell className="font-medium text-admin-text">
             {customer.name}
           </TableCell>
-          <TableCell className="text-foreground">
+          <TableCell className="text-admin-text">
             {customer.email || customer.mobile}
           </TableCell>
-          <TableCell className="text-center text-foreground">
+          <TableCell className="text-center text-admin-text">
             {customer.totalOrders}
           </TableCell>
-          <TableCell className="text-foreground">
+          <TableCell className="text-admin-text">
             {customer.lastOrderDate
               ? format(new Date(customer.lastOrderDate), "PP")
               : "N/A"}
@@ -139,23 +139,23 @@ const CustomerRow = ({ customer }: { customer: Customer }) => {
         <CollapsibleContent asChild>
           <TableRow>
             <TableCell colSpan={6} className="p-0">
-              <div className="p-4 bg-muted/20">
-                <h4 className="font-bold mb-2 text-foreground">
+              <div className="p-4 bg-admin-accent/20">
+                <h4 className="font-bold mb-2 text-admin-text">
                   Order History
                 </h4>
                 {customer.orders.length > 0 ? (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-foreground">
+                        <TableHead className="text-admin-text">
                           Order ID
                         </TableHead>
-                        <TableHead className="text-foreground">Date</TableHead>
-                        <TableHead className="text-foreground">Items</TableHead>
-                        <TableHead className="text-foreground">
+                        <TableHead className="text-admin-text">Date</TableHead>
+                        <TableHead className="text-admin-text">Items</TableHead>
+                        <TableHead className="text-admin-text">
                           Amount
                         </TableHead>
-                        <TableHead className="text-foreground">
+                        <TableHead className="text-admin-text">
                           Status
                         </TableHead>
                       </TableRow>
@@ -166,20 +166,20 @@ const CustomerRow = ({ customer }: { customer: Customer }) => {
                         .reverse()
                         .map((order) => (
                           <TableRow key={order._id}>
-                            <TableCell className="text-foreground">
+                            <TableCell className="text-admin-text">
                               {order.orderNumber}
                             </TableCell>
-                            <TableCell className="text-foreground">
+                            <TableCell className="text-admin-text">
                               {format(new Date(order.createdAt), "PP")}
                             </TableCell>
-                            <TableCell className="text-foreground">
+                            <TableCell className="text-admin-text">
                               {order.items
                                 .map(
                                   (item) => `${item.name} (x${item.quantity})`
                                 )
                                 .join(", ")}
                             </TableCell>
-                            <TableCell className="text-foreground">
+                            <TableCell className="text-admin-text">
                               ₹{order.total.toLocaleString()}
                             </TableCell>
                             <TableCell>
@@ -196,7 +196,7 @@ const CustomerRow = ({ customer }: { customer: Customer }) => {
                     </TableBody>
                   </Table>
                 ) : (
-                  <p className="text-muted-foreground">
+                  <p className="text-admin-muted">
                     No orders found for this customer.
                   </p>
                 )}
@@ -313,60 +313,66 @@ const AdminCustomers = () => {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-sans font-bold text-foreground mb-6">
-        Customers
-      </h1>
+    <div className="p-4 bg-admin-bg min-h-screen admin-panel-container">
+      {/* Admin Panel Header */}
+      <div className="flex items-center justify-between mb-4 bg-white border-b border-gray-200 px-6 py-3 -mx-6 admin-panel-header">
+        <div>
+          <h1 className="font-sans text-2xl font-bold text-gray-900">
+            Customer Management
+          </h1>
+        </div>
+        <div className="flex items-center space-x-4"></div>
+      </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
+      <div className="flex flex-col md:flex-row gap-4 mb-4">
         <Input
           placeholder="Search by name, email, order ID..."
           value={searchTerm}
           onChange={handleSearchChange}
-          className="max-w-sm bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+          className="max-w-sm bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
         />
         <div className="flex gap-4">
           <Select
             onValueChange={handleStatusChange}
             defaultValue={status || "all"}
           >
-            <SelectTrigger className="w-[180px] bg-input border-border text-foreground focus:ring-ring">
+            <SelectTrigger className="w-[180px] bg-admin-card border-admin-border text-admin-text focus:ring-primary shadow-sm">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
-            <SelectContent className="bg-card border-border">
+            <SelectContent className="bg-admin-card border-admin-border shadow-lg">
               <SelectItem
                 value="all"
-                className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
               >
                 All Statuses
               </SelectItem>
               <SelectItem
                 value="pending"
-                className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
               >
                 Pending
               </SelectItem>
               <SelectItem
                 value="processing"
-                className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
               >
                 Processing
               </SelectItem>
               <SelectItem
                 value="shipped"
-                className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
               >
                 Shipped
               </SelectItem>
               <SelectItem
                 value="delivered"
-                className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
               >
                 Delivered
               </SelectItem>
               <SelectItem
                 value="cancelled"
-                className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
               >
                 Cancelled
               </SelectItem>
@@ -377,13 +383,13 @@ const AdminCustomers = () => {
             onValueChange={handleSortChange}
             defaultValue={`${sortBy}:${sortOrder}`}
           >
-            <SelectTrigger className="w-[220px] bg-input border-border text-foreground focus:ring-ring">
+            <SelectTrigger className="w-[220px] bg-admin-card border-admin-border text-admin-text focus:ring-primary shadow-sm">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
-            <SelectContent className="bg-card border-border">
+            <SelectContent className="bg-admin-card border-admin-border shadow-lg">
               <SelectItem
                 value="lastOrderDate:desc"
-                className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
               >
                 Last Order: Newest
               </SelectItem>
@@ -410,20 +416,30 @@ const AdminCustomers = () => {
         </div>
       </div>
 
-      {error && <p className="text-destructive">{error}</p>}
+      {error && (
+        <p className="text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
+          {error}
+        </p>
+      )}
 
-      <div className="rounded-lg border border-border bg-card">
+      <div className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="border-admin-border bg-admin-accent/50">
               <TableHead className="w-[80px]"></TableHead>
-              <TableHead className="text-foreground">Customer</TableHead>
-              <TableHead className="text-foreground">Contact</TableHead>
-              <TableHead className="text-center text-foreground">
+              <TableHead className="text-admin-text font-semibold">
+                Customer
+              </TableHead>
+              <TableHead className="text-admin-text font-semibold">
+                Contact
+              </TableHead>
+              <TableHead className="text-center text-admin-text font-semibold">
                 Total Orders
               </TableHead>
-              <TableHead className="text-foreground">Last Order Date</TableHead>
-              <TableHead className="text-foreground">
+              <TableHead className="text-admin-text font-semibold">
+                Last Order Date
+              </TableHead>
+              <TableHead className="text-admin-text font-semibold">
                 Last Order Status
               </TableHead>
             </TableRow>
@@ -445,7 +461,7 @@ const AdminCustomers = () => {
               <TableRow>
                 <TableCell
                   colSpan={6}
-                  className="text-center h-24 text-muted-foreground"
+                  className="text-center h-24 text-admin-muted"
                 >
                   No customers found.
                 </TableCell>

@@ -1,6 +1,8 @@
+const auth = require("./auth");
+
 /**
  * Admin Authorization Middleware
- * Ensures only users with ADMIN role can access protected routes
+ * Ensures only authenticated users with ADMIN role can access protected routes
  */
 const adminOnly = (req, res, next) => {
   if (req.user && req.user.role === "ADMIN") {
@@ -12,4 +14,9 @@ const adminOnly = (req, res, next) => {
   });
 };
 
-module.exports = adminOnly;
+/**
+ * Combined middleware that first authenticates, then checks admin role
+ */
+const isAdmin = [auth, adminOnly];
+
+module.exports = { adminOnly, isAdmin };

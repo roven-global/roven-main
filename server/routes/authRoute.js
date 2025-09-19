@@ -15,7 +15,8 @@ const generateRefreshToken = require("../utils/generateRefreshToken");
 const cookiesOption = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "None",
+  sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+  maxAge: 5 * 60 * 60 * 1000, // 5 hours for access token
 };
 
 /**
@@ -41,8 +42,13 @@ router.get(
     const accessToken = await generateAccessToken(user._id);
     const refreshToken = await generateRefreshToken(user._id);
 
+    const refreshTokenOptions = {
+      ...cookiesOption,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for refresh token
+    };
+
     res.cookie("accessToken", accessToken, cookiesOption);
-    res.cookie("refreshToken", refreshToken, cookiesOption);
+    res.cookie("refreshToken", refreshToken, refreshTokenOptions);
 
     // Redirect to the frontend
     res.redirect(process.env.FRONTEND_URL);

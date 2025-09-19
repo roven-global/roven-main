@@ -176,13 +176,17 @@ const AdminHeroImages: React.FC = () => {
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="font-sans text-3xl font-bold tracking-tight text-foreground">
-          Manage Hero Images
-        </h2>
+      {/* Admin Panel Header */}
+      <div className="flex items-center justify-between mb-4 bg-white border-b border-gray-200 px-6 py-3 -mx-6 admin-panel-header">
+        <div>
+          <h1 className="font-sans text-2xl font-bold text-gray-900">
+            Manage Hero Images
+          </h1>
+        </div>
+        <div className="flex items-center space-x-4"></div>
       </div>
 
-      <Card className="mb-8 bg-card border-border">
+      <Card className="mb-4 rounded-xl border border-admin-border bg-admin-card shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-foreground">
             <ImageIcon className="h-5 w-5 text-primary" />
@@ -208,7 +212,7 @@ const AdminHeroImages: React.FC = () => {
                 type="file"
                 accept="image/*"
                 onChange={handleDesktopFileChange}
-                className="cursor-pointer bg-input border-border text-foreground focus:ring-ring"
+                className="cursor-pointer bg-admin-card border-admin-border text-admin-text focus:ring-primary shadow-sm"
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Recommended: High resolution image 1920x1080 or 16:9 aspect
@@ -237,7 +241,7 @@ const AdminHeroImages: React.FC = () => {
                 type="file"
                 accept="image/*"
                 onChange={handleMobileFileChange}
-                className="cursor-pointer bg-input border-border text-foreground focus:ring-ring"
+                className="cursor-pointer bg-admin-card border-admin-border text-admin-text focus:ring-primary shadow-sm"
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Recommended: Mobile-optimized image 768×400px, 4:3 aspect ratio,
@@ -265,7 +269,7 @@ const AdminHeroImages: React.FC = () => {
                 placeholder="Enter descriptive text for accessibility"
                 value={altText}
                 onChange={(e) => setAltText(e.target.value)}
-                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
               />
             </div>
 
@@ -293,7 +297,10 @@ const AdminHeroImages: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden bg-card border-border">
+            <Card
+              key={i}
+              className="overflow-hidden rounded-xl border border-admin-border bg-admin-card shadow-sm"
+            >
               <Skeleton className="w-full h-48" />
               <CardContent className="p-4">
                 <Skeleton className="h-4 w-3/4 mb-2" />
@@ -315,7 +322,7 @@ const AdminHeroImages: React.FC = () => {
           images.map((image) => (
             <Card
               key={image._id}
-              className="overflow-hidden group bg-card border-border"
+              className="overflow-hidden group rounded-xl border border-admin-border bg-admin-card shadow-sm"
             >
               <div className="relative">
                 {/* Desktop Preview */}

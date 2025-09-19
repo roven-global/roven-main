@@ -116,6 +116,8 @@ const Login = () => {
       const success = await loginUser(payload);
 
       if (success) {
+        // Clear any previous errors
+        setLoginError("");
         navigate(from, { replace: true });
       } else {
         // Error is now set in the AuthContext, so we can use it here.
@@ -125,7 +127,11 @@ const Login = () => {
         );
       }
     } catch (err: any) {
-      setLoginError("An unexpected error occurred during login.");
+      console.error("Login error:", err);
+      setLoginError(
+        err.response?.data?.message ||
+          "An unexpected error occurred during login."
+      );
     } finally {
       setLoginLoading(false);
     }

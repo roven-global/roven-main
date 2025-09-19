@@ -92,7 +92,6 @@ interface Product {
   tags: string[];
   benefits?: string[];
   isActive: boolean;
-  isFeatured: boolean;
   howToUse?: string[];
   relatedProducts?: any[];
 }
@@ -166,12 +165,16 @@ const UploadProduct = () => {
     sku: "",
     volume: "",
     isActive: true,
-    isFeatured: false,
     specifications: {
       skinType: [] as string[],
       hairType: [] as string[],
     },
   });
+
+  // Debug: Log form data changes
+  useEffect(() => {
+    console.log("Form data updated:", formData);
+  }, [formData]);
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -196,7 +199,12 @@ const UploadProduct = () => {
       });
       if (response.data.success) {
         const product: Product = response.data.data;
-        setFormData({
+
+        // Debug: Log the fetched product data
+        console.log("Fetched product for editing:", product);
+        console.log("Product category:", product.category);
+
+        const newFormData = {
           name: product.name,
           description: product.description,
           shortDescription: product.shortDescription || "",
@@ -207,7 +215,6 @@ const UploadProduct = () => {
           sku: product.sku,
           volume: product.specifications?.volume || "",
           isActive: product.isActive,
-          isFeatured: product.isFeatured,
           specifications: {
             skinType: Array.isArray(product.specifications?.skinType)
               ? product.specifications.skinType
@@ -220,7 +227,12 @@ const UploadProduct = () => {
               ? [product.specifications.hairType]
               : [],
           },
-        });
+        };
+
+        // Debug: Log the form data being set
+        console.log("Setting form data:", newFormData);
+
+        setFormData(newFormData);
 
         const existingImages: ImagePreview[] = product.images.map(
           (img, index) => ({
@@ -625,31 +637,57 @@ const UploadProduct = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic form validation
-    if (
-      !formData.name ||
-      !formData.description ||
-      !formData.category ||
-      !formData.brand ||
-      !formData.sku
-    ) {
+    // Debug: Log form data to help identify validation issues
+    console.log("Form submission - Current formData:", formData);
+    console.log("Form submission - useVariants:", useVariants);
+
+    // Basic form validation - check for empty or whitespace-only values
+    const requiredFields = {
+      name: formData.name?.trim(),
+      description: formData.description?.trim(),
+      category: formData.category?.trim(),
+      brand: formData.brand?.trim(),
+      sku: formData.sku?.trim(),
+    };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([key, value]) => !value || value.length === 0)
+      .map(([key]) => key);
+
+    // Debug: Log validation details
+    console.log("Validation - requiredFields:", requiredFields);
+    console.log("Validation - missingFields:", missingFields);
+
+    if (missingFields.length > 0) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: `Please fill in the following required fields: ${missingFields.join(
+          ", "
+        )}`,
         variant: "destructive",
       });
       return;
     }
 
     // Price validation based on variant usage
-    if (!useVariants && (!formData.price || parseFloat(formData.price) <= 0)) {
-      toast({
-        title: "Error",
-        description:
-          "Price is required and must be greater than 0 for single products.",
-        variant: "destructive",
-      });
-      return;
+    if (!useVariants) {
+      const priceValue = formData.price?.trim();
+      const parsedPrice = parseFloat(priceValue || "0");
+
+      if (
+        !priceValue ||
+        priceValue.length === 0 ||
+        isNaN(parsedPrice) ||
+        parsedPrice <= 0
+      ) {
+        toast({
+          title: "Error",
+          description:
+            "Price is required and must be greater than 0 for single products.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     // Validate variants if using variants
@@ -691,7 +729,6 @@ const UploadProduct = () => {
       formDataToSend.append("brand", formData.brand);
       formDataToSend.append("sku", formData.sku);
       formDataToSend.append("isActive", formData.isActive.toString());
-      formDataToSend.append("isFeatured", formData.isFeatured.toString());
 
       // Handle price, original price, and volume based on variant usage
       if (isUsingVariants) {
@@ -833,13 +870,23 @@ const UploadProduct = () => {
       }
 
       if (response.data.success) {
+        let description = isEditing
+          ? "Product updated successfully"
+          : "Product created successfully";
+
         toast({
           title: "Success",
-          description: isEditing
-            ? "Product updated successfully"
-            : "Product created successfully",
+          description,
         });
-        navigate("/admin/product");
+
+        // Dispatch event to refresh Shop page when product is created/updated
+        console.log("Dispatching productUpdated event...");
+        window.dispatchEvent(new CustomEvent("productUpdated"));
+
+        // Small delay to ensure event is processed before navigation
+        setTimeout(() => {
+          navigate("/admin/product");
+        }, 100);
       }
     } catch (error: any) {
       console.error("Error saving product:", error);
@@ -854,13 +901,13 @@ const UploadProduct = () => {
   };
 
   return (
-    <>
-      <div className="flex items-center justify-between">
+    <div className="p-4 bg-admin-bg min-h-screen admin-panel-container">
+      <div className="flex items-center justify-between mb-4">
         <div className="space-y-2">
-          <h2 className="font-sans text-3xl font-bold tracking-tight text-foreground">
+          <h2 className="text-4xl font-bold tracking-tight text-admin-text">
             {isEditing ? "Edit Product" : "Add New Product"}
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-admin-muted text-lg">
             {isEditing
               ? "Update the product details below."
               : "Fill in the form to add a new product."}
@@ -870,7 +917,7 @@ const UploadProduct = () => {
           <Link to="/admin/product">
             <Button
               variant="outline"
-              className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+              className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
@@ -881,20 +928,20 @@ const UploadProduct = () => {
       <div className="mt-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
-          <Card className="bg-card border-border">
+          <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
+              <CardTitle className="flex items-center gap-2 text-admin-text">
                 <Package className="h-5 w-5" />
                 Basic Information
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-admin-muted">
                 Enter the basic details of your product
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-foreground">
+                  <Label htmlFor="name" className="text-admin-text">
                     Product Name *
                   </Label>
                   <Input
@@ -905,11 +952,11 @@ const UploadProduct = () => {
                     }
                     placeholder="Enter product name"
                     required
-                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                    className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="brand" className="text-foreground">
+                  <Label htmlFor="brand" className="text-admin-text">
                     Brand *
                   </Label>
                   <Input
@@ -920,13 +967,13 @@ const UploadProduct = () => {
                     }
                     placeholder="Enter brand name"
                     required
-                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                    className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="shortDescription" className="text-foreground">
+                <Label htmlFor="shortDescription" className="text-admin-text">
                   Short Description
                 </Label>
                 <Input
@@ -939,12 +986,12 @@ const UploadProduct = () => {
                     })
                   }
                   placeholder="Brief description for product listings"
-                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                  className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-foreground">
+                <Label htmlFor="description" className="text-admin-text">
                   Description *
                 </Label>
                 <Textarea
@@ -956,13 +1003,13 @@ const UploadProduct = () => {
                   placeholder="Detailed product description"
                   rows={4}
                   required
-                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                  className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="category" className="text-foreground">
+                  <Label htmlFor="category" className="text-admin-text">
                     Category *
                   </Label>
                   <Select
@@ -971,15 +1018,15 @@ const UploadProduct = () => {
                       setFormData({ ...formData, category: value })
                     }
                   >
-                    <SelectTrigger className="bg-input border-border text-foreground focus:ring-ring">
+                    <SelectTrigger className="bg-admin-card border-admin-border text-admin-text focus:ring-primary shadow-sm">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
+                    <SelectContent className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
                       {categories.map((category) => (
                         <SelectItem
                           key={category._id}
                           value={category._id}
-                          className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                          className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
                         >
                           {category.parentCategory
                             ? `${category.parentCategory.name} > ${category.name}`
@@ -990,7 +1037,7 @@ const UploadProduct = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sku" className="text-foreground">
+                  <Label htmlFor="sku" className="text-admin-text">
                     SKU *
                   </Label>
                   <Input
@@ -1001,12 +1048,12 @@ const UploadProduct = () => {
                     }
                     placeholder="Enter SKU"
                     required
-                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                    className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                   />
                 </div>
                 {!useVariants && (
                   <div className="space-y-2">
-                    <Label htmlFor="volume" className="text-foreground">
+                    <Label htmlFor="volume" className="text-admin-text">
                       Volume
                     </Label>
                     <Input
@@ -1016,7 +1063,7 @@ const UploadProduct = () => {
                         setFormData({ ...formData, volume: e.target.value })
                       }
                       placeholder="e.g., 100ml, 250ml, 1L"
-                      className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                      className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                     />
                   </div>
                 )}
@@ -1025,20 +1072,20 @@ const UploadProduct = () => {
           </Card>
 
           {!useVariants && (
-            <Card className="bg-card border-border">
+            <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-foreground">
                   <span className="font-bold text-xl">₹</span>
                   Pricing (INR)
                 </CardTitle>
-                <CardDescription className="text-muted-foreground">
+                <CardDescription className="text-admin-muted">
                   Set the pricing for your product in Indian Rupees (₹)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price" className="text-foreground">
+                    <Label htmlFor="price" className="text-admin-text">
                       Price (₹) *
                     </Label>
                     <div className="relative">
@@ -1061,7 +1108,7 @@ const UploadProduct = () => {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="originalPrice" className="text-foreground">
+                    <Label htmlFor="originalPrice" className="text-admin-text">
                       Original Price (₹) (Optional)
                     </Label>
                     <div className="relative">
@@ -1091,13 +1138,13 @@ const UploadProduct = () => {
           )}
 
           {/* Variants Management */}
-          <Card className="bg-card border-border">
+          <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground">
                 <Package className="h-5 w-5" />
                 Product Variants
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-admin-muted">
                 Add multiple sizes/volumes for this product (optional)
               </CardDescription>
             </CardHeader>
@@ -1108,7 +1155,7 @@ const UploadProduct = () => {
                   checked={useVariants}
                   onCheckedChange={setUseVariants}
                 />
-                <Label htmlFor="use-variants" className="text-foreground">
+                <Label htmlFor="use-variants" className="text-admin-text">
                   Enable product variants
                 </Label>
               </div>
@@ -1147,7 +1194,7 @@ const UploadProduct = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => removeVariant(index)}
-                          className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                          className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text"
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -1155,19 +1202,19 @@ const UploadProduct = () => {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div className="space-y-2">
-                          <Label className="text-foreground">Volume *</Label>
+                          <Label className="text-admin-text">Volume *</Label>
                           <Input
                             placeholder="e.g., 100ml, 200ml"
                             value={variant.volume}
                             onChange={(e) =>
                               updateVariant(index, "volume", e.target.value)
                             }
-                            className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                            className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-foreground">Price (₹) *</Label>
+                          <Label className="text-admin-text">Price (₹) *</Label>
                           <Input
                             type="number"
                             step="0.01"
@@ -1180,12 +1227,12 @@ const UploadProduct = () => {
                                 parseFloat(e.target.value) || 0
                               )
                             }
-                            className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                            className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-foreground">
+                          <Label className="text-admin-text">
                             Original Price (₹)
                           </Label>
                           <Input
@@ -1200,12 +1247,12 @@ const UploadProduct = () => {
                                 parseFloat(e.target.value) || 0
                               )
                             }
-                            className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                            className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-foreground">
+                          <Label className="text-admin-text">
                             Stock Quantity *
                           </Label>
                           <Input
@@ -1219,24 +1266,24 @@ const UploadProduct = () => {
                                 parseInt(e.target.value) || 0
                               )
                             }
-                            className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                            className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-foreground">SKU *</Label>
+                          <Label className="text-admin-text">SKU *</Label>
                           <Input
                             placeholder="Unique SKU"
                             value={variant.sku}
                             onChange={(e) =>
                               updateVariant(index, "sku", e.target.value)
                             }
-                            className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                            className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-foreground">
+                          <Label className="text-admin-text">
                             Low Stock Threshold
                           </Label>
                           <Input
@@ -1250,7 +1297,7 @@ const UploadProduct = () => {
                                 parseInt(e.target.value) || 5
                               )
                             }
-                            className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                            className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                           />
                         </div>
                       </div>
@@ -1265,7 +1312,7 @@ const UploadProduct = () => {
                         />
                         <Label
                           htmlFor={`variant-active-${index}`}
-                          className="text-foreground"
+                          className="text-admin-text"
                         >
                           Active
                         </Label>
@@ -1277,7 +1324,7 @@ const UploadProduct = () => {
                     type="button"
                     variant="outline"
                     onClick={addVariant}
-                    className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                    className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text"
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Add Variant
@@ -1288,13 +1335,13 @@ const UploadProduct = () => {
           </Card>
 
           {/* Images */}
-          <Card className="bg-card border-border">
+          <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground">
                 <ImageIcon className="h-5 w-5" />
                 Product Images
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-admin-muted">
                 Upload product images (max 10MB each)
               </CardDescription>
             </CardHeader>
@@ -1343,19 +1390,19 @@ const UploadProduct = () => {
           </Card>
 
           {/* Specifications */}
-          <Card className="bg-card border-border">
+          <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground">
                 <Package className="h-5 w-5" />
                 Specifications
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-admin-muted">
                 Add product specifications and features
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-foreground">Skin Type</Label>
+                <Label className="text-admin-text">Skin Type</Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     "Normal",
@@ -1409,7 +1456,7 @@ const UploadProduct = () => {
 
               {/* Hair Type */}
               <div className="space-y-2">
-                <Label className="text-foreground">Hair Type</Label>
+                <Label className="text-admin-text">Hair Type</Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     "Normal",
@@ -1469,7 +1516,7 @@ const UploadProduct = () => {
                     onChange={(e) =>
                       updateSpecification(index, "key", e.target.value)
                     }
-                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                    className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                   />
                   <Input
                     placeholder="Specification value"
@@ -1477,14 +1524,14 @@ const UploadProduct = () => {
                     onChange={(e) =>
                       updateSpecification(index, "value", e.target.value)
                     }
-                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                    className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
                     onClick={() => removeSpecification(index)}
-                    className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                    className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -1494,7 +1541,7 @@ const UploadProduct = () => {
                 type="button"
                 variant="outline"
                 onClick={addSpecification}
-                className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Specification
@@ -1503,13 +1550,13 @@ const UploadProduct = () => {
           </Card>
 
           {/* Tags */}
-          <Card className="bg-card border-border">
+          <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground">
                 <Tag className="h-5 w-5" />
                 Tags
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-admin-muted">
                 Add tags to help customers find your product
               </CardDescription>
             </CardHeader>
@@ -1542,13 +1589,13 @@ const UploadProduct = () => {
                   onKeyPress={(e) =>
                     e.key === "Enter" && (e.preventDefault(), addTag())
                   }
-                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                  className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   onClick={addTag}
-                  className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                  className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text"
                 >
                   Add
                 </Button>
@@ -1557,13 +1604,13 @@ const UploadProduct = () => {
           </Card>
 
           {/* Benefits */}
-          <Card className="bg-card border-border">
+          <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground">
                 <Package className="h-5 w-5" />
                 Benefits
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-admin-muted">
                 Add key benefits of your product
               </CardDescription>
             </CardHeader>
@@ -1596,13 +1643,13 @@ const UploadProduct = () => {
                   onKeyPress={(e) =>
                     e.key === "Enter" && (e.preventDefault(), addBenefit())
                   }
-                  className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                  className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   onClick={addBenefit}
-                  className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                  className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text"
                 >
                   Add
                 </Button>
@@ -1611,13 +1658,13 @@ const UploadProduct = () => {
           </Card>
 
           {/* Hero Ingredients */}
-          <Card className="bg-card border-border">
+          <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground">
                 <Package className="h-5 w-5" />
                 Hero Ingredients
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-admin-muted">
                 Add key ingredients with description and image
               </CardDescription>
             </CardHeader>
@@ -1634,7 +1681,7 @@ const UploadProduct = () => {
                       onChange={(e) =>
                         updateIngredient(index, "name", e.target.value)
                       }
-                      className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                      className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                     />
                     <Button
                       type="button"
@@ -1651,7 +1698,7 @@ const UploadProduct = () => {
                     onChange={(e) =>
                       updateIngredient(index, "description", e.target.value)
                     }
-                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                    className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                   />
                   <div>
                     {ing.imageUrl && (
@@ -1693,7 +1740,7 @@ const UploadProduct = () => {
                             );
                           }
                         }}
-                        className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                        className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                       />
                       <p className="text-xs text-muted-foreground">
                         Supported formats: JPG, PNG, GIF. Max size: 10MB
@@ -1706,7 +1753,7 @@ const UploadProduct = () => {
                 type="button"
                 variant="outline"
                 onClick={addIngredient}
-                className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text"
               >
                 <Plus className="mr-2 h-4 w-4" /> Add Ingredient
               </Button>
@@ -1714,13 +1761,13 @@ const UploadProduct = () => {
           </Card>
 
           {/* Suitable For */}
-          <Card className="bg-card border-border">
+          <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground">
                 <Package className="h-5 w-5" />
                 Suitable For
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-admin-muted">
                 Select the demographics this product is suitable for.
               </CardDescription>
             </CardHeader>
@@ -1748,13 +1795,13 @@ const UploadProduct = () => {
           </Card>
 
           {/* How to Use */}
-          <Card className="bg-card border-border">
+          <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground">
                 <Package className="h-5 w-5" />
                 How to Use
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-admin-muted">
                 Add step-by-step instructions for using your product
               </CardDescription>
             </CardHeader>
@@ -1801,7 +1848,7 @@ const UploadProduct = () => {
                       setNewHowToUse(""))
                     }
                     maxLength={300}
-                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                    className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                   />
                   <Button
                     type="button"
@@ -1811,7 +1858,7 @@ const UploadProduct = () => {
                       setNewHowToUse("");
                     }}
                     disabled={!newHowToUse.trim() || newHowToUse.length > 300}
-                    className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                    className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text"
                   >
                     Add
                   </Button>
@@ -1825,20 +1872,20 @@ const UploadProduct = () => {
           </Card>
 
           {/* Related Products */}
-          <Card className="bg-card border-border">
+          <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground">
                 <Package className="h-5 w-5" />
                 Related Products
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-admin-muted">
                 Manually select products to show in the "You May Also Like"
                 section.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-foreground">
+                <Label className="text-admin-text">
                   Search for products to add
                 </Label>
                 <div className="flex gap-2">
@@ -1850,7 +1897,7 @@ const UploadProduct = () => {
                       e.key === "Enter" &&
                       (e.preventDefault(), handleRelatedProductSearch())
                     }
-                    className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                    className="bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
                   />
                   <Button
                     type="button"
@@ -1894,7 +1941,7 @@ const UploadProduct = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => addRelatedProduct(product)}
-                        className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                        className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text"
                       >
                         Add
                       </Button>
@@ -1906,7 +1953,7 @@ const UploadProduct = () => {
               <Separator />
 
               <div className="space-y-2">
-                <Label className="text-foreground">
+                <Label className="text-admin-text">
                   Current Related Products
                 </Label>
                 {relatedProducts.length > 0 ? (
@@ -1953,17 +2000,17 @@ const UploadProduct = () => {
           </Card>
 
           {/* Settings */}
-          <Card className="bg-card border-border">
+          <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
             <CardHeader>
-              <CardTitle className="text-foreground">Settings</CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardTitle className="text-admin-text">Settings</CardTitle>
+              <CardDescription className="text-admin-muted">
                 Configure product visibility and features
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="isActive" className="text-foreground">
+                  <Label htmlFor="isActive" className="text-admin-text">
                     Active
                   </Label>
                   <p className="text-sm text-muted-foreground">
@@ -1978,24 +2025,6 @@ const UploadProduct = () => {
                   }
                 />
               </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="isFeatured" className="text-foreground">
-                    Featured
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Show this product in featured sections
-                  </p>
-                </div>
-                <Switch
-                  id="isFeatured"
-                  checked={formData.isFeatured}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, isFeatured: checked })
-                  }
-                />
-              </div>
             </CardContent>
           </Card>
 
@@ -2005,7 +2034,7 @@ const UploadProduct = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                className="border-admin-border text-admin-text hover:bg-admin-accent hover:text-admin-text"
               >
                 Cancel
               </Button>
@@ -2027,7 +2056,7 @@ const UploadProduct = () => {
           </div>
         </form>
       </div>
-    </>
+    </div>
   );
 };
 

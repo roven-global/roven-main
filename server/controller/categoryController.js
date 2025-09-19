@@ -24,7 +24,8 @@ const createCategory = asyncHandler(async (req, res) => {
     });
   }
 
-  const { name, parentCategory } = req.body;
+  const { name, parentCategory, categoryRanking, brandCategoryRanking } =
+    req.body;
   const image = req.file; // Validate required fields
 
   if (!name) {
@@ -39,7 +40,37 @@ const createCategory = asyncHandler(async (req, res) => {
       success: false,
       message: "Category image is required.",
     });
-  } // Check if category already exists
+  }
+
+  // Validate categoryRanking if provided
+  if (categoryRanking !== undefined && categoryRanking !== null) {
+    const ranking = parseInt(categoryRanking);
+    if (isNaN(ranking) || ranking < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Category ranking must be a non-negative integer.",
+      });
+    }
+  }
+
+  // Validate brandCategoryRanking if provided
+  let processedBrandRanking = null;
+  if (
+    brandCategoryRanking !== undefined &&
+    brandCategoryRanking !== null &&
+    brandCategoryRanking !== ""
+  ) {
+    const brandRanking = parseInt(brandCategoryRanking);
+    if (isNaN(brandRanking) || brandRanking < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Brand category ranking must be a non-negative integer.",
+      });
+    }
+    processedBrandRanking = brandRanking;
+  }
+
+  // Check if category already exists
 
   const existingCategory = await CategoryModel.findOne({ name });
   if (existingCategory) {
@@ -71,6 +102,16 @@ const createCategory = asyncHandler(async (req, res) => {
   } // Create category
 
   const slug = generateSlug(name);
+  // Process categoryRanking with proper validation
+  let processedRanking = 0; // Default to 0 if not provided
+
+  if (categoryRanking !== undefined && categoryRanking !== null) {
+    const parsedRanking = parseInt(categoryRanking);
+    if (!isNaN(parsedRanking) && parsedRanking >= 0) {
+      processedRanking = parsedRanking;
+    }
+  }
+
   const categoryData = {
     name,
     slug,
@@ -79,6 +120,8 @@ const createCategory = asyncHandler(async (req, res) => {
       url: upload.url,
     },
     parentCategory: parentCategory || null,
+    categoryRanking: processedRanking,
+    brandCategoryRanking: processedBrandRanking,
   };
 
   const newCategory = new CategoryModel(categoryData);
@@ -96,7 +139,7 @@ const createCategory = asyncHandler(async (req, res) => {
  * @route GET /api/category/all
  */
 const getAllCategories = asyncHandler(async (req, res) => {
-  const { parent, active } = req.query;
+  const { parent, active, homepage, brandCategory } = req.query;
   let filter = {}; // Filter by parent category
   if (parent === "null" || parent === "main") {
     filter.parentCategory = null;
@@ -107,11 +150,46 @@ const getAllCategories = asyncHandler(async (req, res) => {
     filter.isActive = active === "true";
   }
 
+  // Filter for homepage: exclude categories with rank 0
+  if (homepage === "true") {
+    filter.categoryRanking = { $gt: 0 };
+  }
+
+  // Filter for brand category: exclude categories with brand_category_ranking = 0 or null
+  if (brandCategory === "true") {
+    filter.brandCategoryRanking = { $gt: 0 };
+  }
+
+  // Determine sorting based on request type
+  let sortCriteria = { categoryRanking: 1, createdAt: -1 };
+  if (brandCategory === "true") {
+    // For brand category section, sort by brandCategoryRanking ASC
+    // Categories with brand_category_ranking > 0 will be sorted by rank
+    sortCriteria = {
+      brandCategoryRanking: 1, // ASC order (1, 2, 3...)
+      createdAt: -1,
+    };
+  }
+
   const categories = await CategoryModel.find(filter)
     .populate("parentCategory", "name slug")
     .populate("subcategories")
     .populate("productsCount")
-    .sort({ createdAt: -1 });
+    .sort(sortCriteria);
+
+  // Log sorting information for debugging
+  if (brandCategory === "true") {
+    console.log(
+      "Brand Category API - Filtering brandCategoryRanking > 0 and sorting by brandCategoryRanking ASC"
+    );
+    console.log(
+      "Categories with rankings:",
+      categories.map((cat) => ({
+        name: cat.name,
+        brandCategoryRanking: cat.brandCategoryRanking,
+      }))
+    );
+  }
 
   return res.json({
     success: true,
@@ -158,7 +236,8 @@ const getCategoryById = asyncHandler(async (req, res) => {
  */
 const updateCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { name, parentCategory } = req.body;
+  const { name, parentCategory, categoryRanking, brandCategoryRanking } =
+    req.body;
   const image = req.file;
 
   if (!req.body || typeof req.body !== "object") {
@@ -212,7 +291,36 @@ const updateCategory = asyncHandler(async (req, res) => {
       }
     }
     updateFields.parentCategory = parentCategory || null;
-  } // Update image if provided
+  } // Update category ranking if provided
+
+  if (categoryRanking !== undefined && categoryRanking !== null) {
+    const ranking = parseInt(categoryRanking);
+    if (isNaN(ranking) || ranking < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Category ranking must be a non-negative integer.",
+      });
+    }
+    updateFields.categoryRanking = ranking;
+  }
+
+  // Update brand category ranking if provided
+  if (brandCategoryRanking !== undefined) {
+    if (brandCategoryRanking === null || brandCategoryRanking === "") {
+      updateFields.brandCategoryRanking = null;
+    } else {
+      const brandRanking = parseInt(brandCategoryRanking);
+      if (isNaN(brandRanking) || brandRanking < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Brand category ranking must be a non-negative integer.",
+        });
+      }
+      updateFields.brandCategoryRanking = brandRanking;
+    }
+  }
+
+  // Update image if provided
 
   if (image) {
     try {
@@ -359,13 +467,72 @@ const getCategoryHierarchy = asyncHandler(async (req, res) => {
         path: "subcategories", // For deeper nesting if needed
       },
     })
-    .sort({ createdAt: -1 });
+    .sort({ categoryRanking: 1, createdAt: -1 });
 
   return res.json({
     success: true,
     message: "Category hierarchy retrieved successfully.",
     data: parentCategories,
   });
+});
+
+/**
+ * Update category ranking (Admin only)
+ * @route PUT /api/category/:id/ranking
+ */
+const updateCategoryRanking = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { categoryRanking } = req.body;
+
+  if (!req.body || typeof req.body !== "object") {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid or missing request body.",
+    });
+  }
+
+  // Validate categoryRanking
+  if (categoryRanking === undefined || categoryRanking === null) {
+    return res.status(400).json({
+      success: false,
+      message: "Category ranking is required.",
+    });
+  }
+
+  const ranking = parseInt(categoryRanking);
+  if (isNaN(ranking) || ranking < 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Category ranking must be a non-negative integer.",
+    });
+  }
+
+  const category = await CategoryModel.findById(id);
+  if (!category) {
+    return res.status(404).json({
+      success: false,
+      message: "Category not found.",
+    });
+  }
+
+  // Update the ranking
+  category.categoryRanking = ranking;
+
+  try {
+    await category.save();
+
+    return res.json({
+      success: true,
+      message: "Category ranking updated successfully.",
+      data: category,
+    });
+  } catch (error) {
+    console.error("Error saving category ranking:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update category ranking. Please try again.",
+    });
+  }
 });
 
 /**
@@ -400,6 +567,7 @@ module.exports = {
   getAllCategories,
   getCategoryById,
   updateCategory,
+  updateCategoryRanking,
   deleteCategory,
   bulkDeleteCategories,
   getCategoryHierarchy,

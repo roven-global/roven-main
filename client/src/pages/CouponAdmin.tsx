@@ -241,100 +241,107 @@ const CouponAdmin = () => {
   };
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="font-sans text-3xl font-bold tracking-tight text-foreground">
-          Coupon Management
-        </h2>
-        <div className="flex items-center gap-2">
-          <Dialog open={isAnalyticsOpen} onOpenChange={setIsAnalyticsOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (!analytics) fetchAnalytics();
-                }}
-                className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
-              >
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Analytics
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl bg-card border-border">
-              <DialogHeader>
-                <DialogTitle className="text-foreground">
-                  Coupon Analytics
-                </DialogTitle>
-              </DialogHeader>
-              {analyticsLoading ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : analytics ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <h4 className="text-2xl font-bold">
-                        {analytics.totalCoupons}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Total Coupons
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="text-2xl font-bold">
-                        {analytics.activeCoupons}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Active Coupons
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="text-2xl font-bold">
-                        {formatRupees(analytics.totalDiscountGiven)}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Total Discount Given
-                      </p>
-                    </div>
+    <div className="flex-1 space-y-4 p-4 md:p-6 pt-4 admin-panel-container">
+      {/* Admin Panel Header */}
+      <div className="flex items-center justify-between mb-4 bg-white border-b border-gray-200 px-6 py-3 -mx-6 admin-panel-header">
+        <div>
+          <h1 className="font-sans text-2xl font-bold text-gray-900">
+            Coupon Management
+          </h1>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-2">
+            <Dialog open={isAnalyticsOpen} onOpenChange={setIsAnalyticsOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!analytics) fetchAnalytics();
+                  }}
+                  className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                >
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Analytics
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl bg-admin-card border-admin-border">
+                <DialogHeader>
+                  <DialogTitle className="text-admin-text">
+                    Coupon Analytics
+                  </DialogTitle>
+                </DialogHeader>
+                {analyticsLoading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
-                  <div className="space-y-2 pt-4">
-                    <h3 className="font-medium">Most Used Coupons</h3>
-                    {analytics.mostUsedCoupons.map((coupon: any) => (
-                      <div
-                        key={coupon.couponId}
-                        className="flex justify-between items-center bg-muted/10 p-2 rounded"
-                      >
-                        <span className="font-medium">
-                          {coupon.name} ({coupon.code})
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {coupon.totalUsage} uses
-                        </span>
+                ) : analytics ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <h4 className="text-2xl font-bold">
+                          {analytics.totalCoupons}
+                        </h4>
+                        <p className="text-sm text-admin-muted">
+                          Total Coupons
+                        </p>
                       </div>
-                    ))}
+                      <div>
+                        <h4 className="text-2xl font-bold">
+                          {analytics.activeCoupons}
+                        </h4>
+                        <p className="text-sm text-admin-muted">
+                          Active Coupons
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className="text-2xl font-bold">
+                          {formatRupees(analytics.totalDiscountGiven)}
+                        </h4>
+                        <p className="text-sm text-admin-muted">
+                          Total Discount Given
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 pt-4">
+                      <h3 className="font-medium text-admin-text">
+                        Most Used Coupons
+                      </h3>
+                      {analytics.mostUsedCoupons.map((coupon: any) => (
+                        <div
+                          key={coupon.couponId}
+                          className="flex justify-between items-center bg-admin-accent/10 p-2 rounded"
+                        >
+                          <span className="font-medium text-admin-text">
+                            {coupon.name} ({coupon.code})
+                          </span>
+                          <span className="text-sm text-admin-muted">
+                            {coupon.totalUsage} uses
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-12">
-                  Could not load analytics data.
-                </p>
-              )}
-            </DialogContent>
-          </Dialog>
+                ) : (
+                  <p className="text-center text-admin-muted py-12">
+                    Could not load analytics data.
+                  </p>
+                )}
+              </DialogContent>
+            </Dialog>
 
-          <Button
-            onClick={openCreateDialog}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Coupon
-          </Button>
+            <Button
+              onClick={openCreateDialog}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Coupon
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Filters */}
-      <Card className="bg-card border-border">
+      <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
         <CardContent className="pt-6">
           <div className="flex gap-4 items-center">
             <div className="flex-1 relative">
@@ -343,29 +350,29 @@ const CouponAdmin = () => {
                 placeholder="Search coupons..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-ring"
+                className="pl-10 bg-admin-card border-admin-border text-admin-text placeholder:text-admin-muted focus:ring-primary shadow-sm"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48 bg-input border-border text-foreground focus:ring-ring">
+              <SelectTrigger className="w-48 bg-admin-card border-admin-border text-admin-text focus:ring-primary shadow-sm">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
-              <SelectContent className="bg-card border-border">
+              <SelectContent className="bg-admin-card border-admin-border">
                 <SelectItem
                   value="all"
-                  className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                  className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
                 >
                   All Status
                 </SelectItem>
                 <SelectItem
                   value="active"
-                  className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                  className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
                 >
                   Active
                 </SelectItem>
                 <SelectItem
                   value="inactive"
-                  className="text-foreground focus:bg-accent focus:text-accent-foreground"
+                  className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
                 >
                   Inactive
                 </SelectItem>
@@ -383,24 +390,24 @@ const CouponAdmin = () => {
       ) : (
         <div>
           {coupons.length === 0 ? (
-            <Card className="bg-card border-border">
+            <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
               <CardContent className="p-8 text-center">
-                <p className="text-muted-foreground">
+                <p className="text-admin-muted">
                   No coupons found. Create your first coupon to get started.
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <Card className="bg-card border-border">
+            <Card className="rounded-xl border border-admin-border bg-admin-card shadow-sm">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-foreground">Coupon</TableHead>
-                    <TableHead className="text-foreground">Discount</TableHead>
-                    <TableHead className="text-foreground">Status</TableHead>
-                    <TableHead className="text-foreground">Usage</TableHead>
-                    <TableHead className="text-foreground">Validity</TableHead>
-                    <TableHead className="text-right text-foreground">
+                    <TableHead className="text-admin-text">Coupon</TableHead>
+                    <TableHead className="text-admin-text">Discount</TableHead>
+                    <TableHead className="text-admin-text">Status</TableHead>
+                    <TableHead className="text-admin-text">Usage</TableHead>
+                    <TableHead className="text-admin-text">Validity</TableHead>
+                    <TableHead className="text-right text-admin-text">
                       Actions
                     </TableHead>
                   </TableRow>
@@ -475,7 +482,7 @@ const CouponAdmin = () => {
           >
             Previous
           </Button>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-admin-muted">
             Page {currentPage} of {totalPages} ({totalItems} total)
           </span>
           <Button
@@ -493,12 +500,12 @@ const CouponAdmin = () => {
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-admin-card border-admin-border">
           <DialogHeader>
-            <DialogTitle className="text-foreground">
+            <DialogTitle className="text-admin-text">
               {editingCoupon ? "Edit Coupon" : "Create New Coupon"}
             </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
+            <DialogDescription className="text-admin-muted">
               {editingCoupon
                 ? "Update the coupon details."
                 : "Add a new promotional coupon to your system."}

@@ -12,9 +12,11 @@ const {
   getProductVariants,
   updateVariantStock,
   getRelatedProducts,
+  updateProductFeaturedRanking,
+  updateProductsRanking,
 } = require("../controller/productController");
 const auth = require("../middleware/auth");
-const adminOnly = require("../middleware/adminOnly");
+const { adminOnly } = require("../middleware/adminOnly");
 const productUpload = require("../middleware/multer").productUpload;
 const router = express.Router();
 
@@ -59,5 +61,15 @@ router.route("/:id").delete(auth, adminOnly, deleteProduct);
 router
   .route("/:id/variant/:variantSku/stock")
   .put(auth, adminOnly, updateVariantStock);
+
+// Update product featured ranking
+router
+  .route("/:productId/featured-ranking")
+  .put(auth, adminOnly, updateProductFeaturedRanking);
+
+// Update products ranking
+router
+  .route("/:productId/products-ranking")
+  .put(auth, adminOnly, updateProductsRanking);
 
 module.exports = router;

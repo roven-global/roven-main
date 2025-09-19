@@ -17,6 +17,7 @@ interface Category {
   _id: string;
   name: string;
   slug: string;
+  categoryRanking?: number;
 }
 
 interface Product {
@@ -65,15 +66,35 @@ const Categories = () => {
   >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEnabled, setIsEnabled] = useState(true); // New state for toggle status
 
   useEffect(() => {
     const fetchCategoriesAndProducts = async () => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch top-level categories
+        // First check if category section is enabled
+        const categorySettingResponse = await Axios.get(
+          SummaryApi.getAdminSetting.url.replace(":key", "is_category_enabled")
+        );
+
+        if (categorySettingResponse.data.success) {
+          const isCategoryEnabled = categorySettingResponse.data.data.value;
+          setIsEnabled(isCategoryEnabled);
+
+          // If category section is disabled, don't fetch data
+          if (!isCategoryEnabled) {
+            setLoading(false);
+            return;
+          }
+        } else {
+          // Default to enabled if setting not found
+          setIsEnabled(true);
+        }
+
+        // Fetch top-level categories for homepage (exclude rank 0)
         const categoriesResponse = await Axios.get(
-          `${SummaryApi.getAllCategories.url}?parent=main&limit=3`
+          `${SummaryApi.getAllCategories.url}?parent=main&homepage=true&limit=3`
         );
         if (!categoriesResponse.data.success) {
           throw new Error("Failed to fetch categories");
@@ -84,7 +105,7 @@ const Categories = () => {
         const categoriesData = await Promise.all(
           categories.map(async (category) => {
             const productsResponse = await Axios.get(
-              `${SummaryApi.getAllProducts.url}?category=${category._id}&limit=4`
+              `${SummaryApi.getAllProducts.url}?category=${category._id}&limit=4&sortBy=createdAt&sortOrder=desc`
             );
             const products = productsResponse.data.success
               ? productsResponse.data.data.products
@@ -93,17 +114,49 @@ const Categories = () => {
           })
         );
 
+        // Categories are already sorted by backend (categoryRanking ascending)
         setCategoriesWithProducts(categoriesData);
       } catch (err) {
         setError("Could not load categories or products.");
         console.error("Error fetching data:", err);
+        // Default to enabled on error
+        setIsEnabled(true);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCategoriesAndProducts();
+
+    // Listen for category updates from admin panel
+    const handleCategoriesUpdate = () => {
+      console.log(
+        "Categories update event received, refreshing categories and products..."
+      );
+      fetchCategoriesAndProducts();
+    };
+
+    // Listen for product updates from admin panel
+    const handleProductUpdate = () => {
+      console.log(
+        "Product update event received in Categories, refreshing categories and products..."
+      );
+      fetchCategoriesAndProducts();
+    };
+
+    window.addEventListener("categoriesUpdated", handleCategoriesUpdate);
+    window.addEventListener("productUpdated", handleProductUpdate);
+
+    return () => {
+      window.removeEventListener("categoriesUpdated", handleCategoriesUpdate);
+      window.removeEventListener("productUpdated", handleProductUpdate);
+    };
   }, []);
+
+  // If the category section is disabled, don't render anything
+  if (!isEnabled) {
+    return null;
+  }
 
   return (
     <section id="categories" className="py-20 bg-gray-50">

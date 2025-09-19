@@ -45,7 +45,7 @@ interface ProductCardProps {
   }>;
   isNew?: boolean;
   isSale?: boolean;
-  benefits?: string[];
+  shortDescription?: string;
   hideAddToCart?: boolean; // New prop to hide the Add to Cart button
 }
 
@@ -63,7 +63,7 @@ const ProductCard = ({
   variants,
   isNew,
   isSale,
-  benefits,
+  shortDescription,
   hideAddToCart = false,
 }: ProductCardProps) => {
   const { isAuthenticated, user, updateUser } = useAuth();
@@ -352,23 +352,15 @@ const ProductCard = ({
   const discount = calculateDiscount();
 
   return (
-    <Card className="group relative w-full h-full sm:h-full min-h-[400px] sm:min-h-0 flex flex-col bg-white border border-border/20 hover:border-primary/30 rounded-lg shadow-sm hover:shadow-elegant transition-all duration-300 overflow-hidden touch-manipulation">
+    <Card className="product-card-uniform">
       <Link to={`/product/${slug}`} className="flex flex-col h-full">
-        {/* Large Product Image */}
-        <div className="relative overflow-hidden bg-white">
-          <div className="aspect-[3/4] w-full sm:aspect-square">
-            <div className="w-full h-full bg-gray-50 rounded-lg overflow-hidden">
-              <img
-                src={image}
-                alt={name}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            </div>
-          </div>
+        {/* Perfect 1:1 Square Image Container */}
+        <div className="product-image-square-container">
+          <img src={image} alt={name} />
 
           {/* Discount Badge - Top Left */}
           {discount > 0 && (
-            <div className="absolute top-2 left-2">
+            <div className="absolute top-2 left-2 z-10">
               <Badge className="bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full font-semibold shadow-sm border-0">
                 {discount}% OFF
               </Badge>
@@ -377,7 +369,7 @@ const ProductCard = ({
 
           {/* NEW Badge - Top Left (if no discount) */}
           {isNew && !discount && (
-            <div className="absolute top-2 left-2">
+            <div className="absolute top-2 left-2 z-10">
               <Badge className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-semibold shadow-sm border-0">
                 <Sparkles className="w-3 h-3 mr-1" />
                 NEW
@@ -389,7 +381,7 @@ const ProductCard = ({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full shadow-sm w-7 h-7 backdrop-blur-sm transition-all duration-300 hover:scale-110"
+            className="absolute top-2 right-2 z-10 bg-white/80 hover:bg-white rounded-full shadow-sm w-7 h-7 backdrop-blur-sm transition-all duration-300 hover:scale-110"
             onClick={handleLikeClick}
             aria-label={isLiked ? "Remove from Wishlist" : "Add to Wishlist"}
           >
@@ -402,156 +394,140 @@ const ProductCard = ({
           </Button>
         </div>
 
-        {/* Compact Content Layout */}
-        <CardContent className="p-2 flex flex-col flex-grow bg-white text-center">
-          {/* Product Title */}
-          <h3 className="font-sans font-bold text-xs sm:text-sm text-foreground mb-1 sm:mb-0.5 line-clamp-2 leading-tight">
-            {name}
-          </h3>
-
-          {/* Benefits - Show first 2 benefits in green text */}
-          {benefits && benefits.length > 0 && (
-            <div className="mb-1 sm:mb-0.5">
-              <p className="text-xs text-muted-green font-medium line-clamp-2 leading-tight">
-                {benefits.slice(0, 2).join(" | ")}
-              </p>
-            </div>
-          )}
-
-          {/* Product Quantity/Volume */}
-          {getDisplayVolume() && (
-            <div className="mb-1 sm:mb-0.5">
-              <span className="text-xs text-muted-foreground font-medium">
-                {getDisplayVolume()}
-              </span>
-            </div>
-          )}
-
-          {/* Rating and Reviews */}
-          <div className="flex items-center justify-center gap-2 mb-2 sm:mb-1">
-            <div className="flex items-center gap-1">
-              <Star className="w-3 h-3 fill-accent text-accent" />
-              <span className="text-xs font-medium text-muted-foreground">
-                {rating.toFixed(1)}
-              </span>
-            </div>
-            <span className="text-xs text-muted-foreground">
-              ({reviews} Reviews)
-            </span>
+        {/* Content Section - Consistent Spacing */}
+        <CardContent className="product-content-uniform">
+          {/* Product Title and Description - Flexible Top Section */}
+          <div className="product-card-content">
+            <h3 className="product-title">{name}</h3>
+            {shortDescription && (
+              <p className="product-description">{shortDescription}</p>
+            )}
           </div>
 
-          {/* Price Section */}
-          <div className="mt-auto">
-            <div className="flex items-center justify-center gap-2">
-              {variants && variants.length > 1 && (
-                <span className="text-xs text-muted-foreground">From</span>
-              )}
-              <span className="font-sans font-bold text-xs sm:text-sm text-foreground">
-                {formatRupees(getDisplayPrice())}
-              </span>
-              {getDisplayOriginalPrice() && (
-                <span className="text-xs text-muted-foreground line-through">
-                  {formatRupees(getDisplayOriginalPrice())}
+          {/* Footer: Rating, Price, Button - Always at Bottom */}
+          <div className="product-card-footer">
+            {/* Rating Section */}
+            <div className="product-card-rating">
+              <div className="flex items-center gap-1">
+                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <span className="text-sm font-medium text-gray-700">
+                  {rating.toFixed(1)}
                 </span>
-              )}
+                <span className="text-sm text-gray-500">({reviews})</span>
+              </div>
             </div>
-          </div>
 
-          {/* Dynamic Cart Section - Hidden when hideAddToCart is true */}
-          {!hideAddToCart && (
-            <div className="mt-auto">
-              {cartItemInfo.isInCart ? (
-                // Quantity Selector (Cart.tsx style)
-                <div className="w-full">
-                  <div className="flex items-center justify-center">
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 w-8 p-0 rounded border"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleQuantityChange(quantity - 1);
-                        }}
-                        disabled={
-                          (variants &&
-                            variants.length === 1 &&
-                            variants[0].stock === 0) ||
-                          isUpdatingQuantity
-                        }
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="text-xs sm:text-sm font-medium w-8 text-center border-t border-b py-1">
-                        {isUpdatingQuantity ? (
-                          <div className="flex items-center justify-center gap-1">
-                            <div className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse"></div>
-                            <div
-                              className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse"
-                              style={{ animationDelay: "0.2s" }}
-                            ></div>
-                            <div
-                              className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse"
-                              style={{ animationDelay: "0.4s" }}
-                            ></div>
-                          </div>
-                        ) : (
-                          quantity
-                        )}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 w-8 p-0 rounded border"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleQuantityChange(quantity + 1);
-                        }}
-                        disabled={
-                          (variants &&
-                            variants.length === 1 &&
-                            variants[0].stock === 0) ||
-                          quantity >=
-                            (variants && variants.length === 1
-                              ? variants[0].stock
-                              : 10) ||
-                          isUpdatingQuantity
-                        }
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                // Add to Cart Button
-                <Button
-                  variant="default"
-                  className="w-full bg-foreground hover:bg-foreground/90 text-background font-semibold py-1.5 px-3 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-[10px] sm:text-xs"
-                  onClick={handleAddToCart}
-                  disabled={getTotalStock() === 0 || isAdded}
-                >
-                  {isAdded ? (
-                    <>
-                      <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
-                      Added
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
-                      {getTotalStock() === 0
-                        ? "OUT OF STOCK"
-                        : variants && variants.length > 1
-                        ? "SELECT OPTIONS"
-                        : "ADD TO CART"}
-                    </>
-                  )}
-                </Button>
-              )}
+            {/* Price Section */}
+            <div className="product-card-price">
+              <div className="flex items-center justify-center gap-2">
+                {variants && variants.length > 1 && (
+                  <span className="text-sm text-gray-500">From</span>
+                )}
+                <span className="text-xl font-bold text-gray-900">
+                  {formatRupees(getDisplayPrice())}
+                </span>
+                {getDisplayOriginalPrice() && (
+                  <span className="text-sm text-gray-500 line-through">
+                    {formatRupees(getDisplayOriginalPrice())}
+                  </span>
+                )}
+              </div>
             </div>
-          )}
+
+            {/* Product Card Action Area */}
+            {!hideAddToCart && (
+              <div className="product-card-action-area">
+                {cartItemInfo.isInCart ? (
+                  // Quantity Selector - Same position as Add to Cart button
+                  <div className="product-card-quantity-selector">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="quantity-btn"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleQuantityChange(quantity - 1);
+                      }}
+                      disabled={
+                        (variants &&
+                          variants.length === 1 &&
+                          variants[0].stock === 0) ||
+                        isUpdatingQuantity
+                      }
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="quantity-value-box">
+                      {isUpdatingQuantity ? (
+                        <div className="flex items-center justify-center gap-1">
+                          <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse"></div>
+                          <div
+                            className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse"
+                            style={{ animationDelay: "0.2s" }}
+                          ></div>
+                          <div
+                            className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse"
+                            style={{ animationDelay: "0.4s" }}
+                          ></div>
+                        </div>
+                      ) : (
+                        quantity
+                      )}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="quantity-btn"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleQuantityChange(quantity + 1);
+                      }}
+                      disabled={
+                        (variants &&
+                          variants.length === 1 &&
+                          variants[0].stock === 0) ||
+                        quantity >=
+                          (variants && variants.length === 1
+                            ? variants[0].stock
+                            : 10) ||
+                        isUpdatingQuantity
+                      }
+                      aria-label="Increase quantity"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  // Add to Cart Button - Uniform Style
+                  <Button
+                    variant="default"
+                    className="add-to-cart-btn"
+                    onClick={handleAddToCart}
+                    disabled={getTotalStock() === 0 || isAdded}
+                  >
+                    {isAdded ? (
+                      <>
+                        <CheckCircle className="w-4 h-4" />
+                        Added
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag className="w-4 h-4" />
+                        {getTotalStock() === 0
+                          ? "Out of Stock"
+                          : variants && variants.length > 1
+                          ? "Select Options"
+                          : "Add to Cart"}
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Link>
     </Card>

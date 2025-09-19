@@ -4,7 +4,7 @@ const {
   getCustomers,
 } = require("../controller/adminController");
 const auth = require("../middleware/auth");
-const adminOnly = require("../middleware/adminOnly");
+const { adminOnly } = require("../middleware/adminOnly");
 
 const router = express.Router();
 

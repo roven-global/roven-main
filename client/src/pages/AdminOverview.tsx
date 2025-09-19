@@ -168,55 +168,66 @@ const AdminOverview = () => {
   ];
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="flex items-center justify-between space-y-2 mb-8">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground font-sans">
-          Overview
-        </h2>
+    <div className="min-h-screen p-4 bg-admin-bg">
+      {/* Admin Panel Header */}
+      <div className="flex items-center justify-between mb-4 bg-white border-b border-gray-200 px-6 py-3 -mx-6 admin-panel-header">
+        <div>
+          <h1 className="font-sans text-2xl font-bold text-gray-900">
+            Dashboard Overview
+          </h1>
+        </div>
+        <div className="flex items-center space-x-4"></div>
+      </div>
+
+      <div className="mb-4">
         <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="w-48 bg-input border-border text-foreground focus:ring-ring">
+          <SelectTrigger className="w-48 bg-admin-card border-admin-border text-admin-text focus:ring-primary shadow-sm">
             <SelectValue placeholder="Select time range" />
           </SelectTrigger>
-          <SelectContent className="bg-card border-border">
+          <SelectContent className="bg-admin-card border-admin-border shadow-lg">
             <SelectItem
               value="last7days"
-              className="text-foreground focus:bg-accent focus:text-accent-foreground"
+              className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
             >
               Last 7 Days
             </SelectItem>
             <SelectItem
               value="last30days"
-              className="text-foreground focus:bg-accent focus:text-accent-foreground"
+              className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
             >
               Last 30 Days
             </SelectItem>
             <SelectItem
               value="last90days"
-              className="text-foreground focus:bg-accent focus:text-accent-foreground"
+              className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
             >
               Last 90 Days
             </SelectItem>
             <SelectItem
               value="alltime"
-              className="text-foreground focus:bg-accent focus:text-accent-foreground"
+              className="text-admin-text focus:bg-admin-accent focus:text-admin-text"
             >
               All Time
             </SelectItem>
           </SelectContent>
         </Select>
       </div>
+
       <div className="container mx-auto">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
             {Array(10)
               .fill(0)
               .map((_, i) => (
-                <Card key={i} className="bg-card border-border">
+                <Card
+                  key={i}
+                  className="bg-admin-card border-admin-border shadow-sm"
+                >
                   <CardHeader>
-                    <Skeleton className="h-6 w-3/4 bg-border/20" />
+                    <Skeleton className="h-6 w-3/4 bg-admin-accent/50" />
                   </CardHeader>
                   <CardContent>
-                    <Skeleton className="h-8 w-1/2 bg-border/20" />
+                    <Skeleton className="h-8 w-1/2 bg-admin-accent/50" />
                   </CardContent>
                 </Card>
               ))}
@@ -228,20 +239,22 @@ const AdminOverview = () => {
               const cardComponent = (
                 <Card
                   key={index}
-                  className={`bg-card border-border hover:shadow-lg transition-all duration-300 hover:scale-105 ${
+                  className={`bg-admin-card border-admin-border hover:shadow-xl transition-all duration-300 hover:scale-105 hover:border-primary/30 ${
                     link ? "cursor-pointer" : ""
                   }`}
                 >
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-semibold text-admin-muted">
                       {card.title}
                     </CardTitle>
-                    <div className={`p-2 rounded-full border ${card.color}`}>
-                      <card.icon className="h-4 w-4" />
+                    <div
+                      className={`p-3 rounded-xl border-2 ${card.color} shadow-sm`}
+                    >
+                      <card.icon className="h-5 w-5" />
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-foreground">
+                    <div className="text-3xl font-bold text-admin-text">
                       {card.value}
                     </div>
                   </CardContent>

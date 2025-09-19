@@ -30,7 +30,7 @@ interface Product {
     name: string;
   };
   volume?: string;
-  benefits?: string[];
+  shortDescription?: string;
   createdAt?: string;
   variants?: any[];
 }
@@ -147,7 +147,7 @@ const Wishlist = () => {
                       specifications={
                         product.volume ? { volume: product.volume } : undefined
                       }
-                      benefits={product.benefits}
+                      shortDescription={product.shortDescription}
                       isSale={
                         !!(
                           product.originalPrice &&

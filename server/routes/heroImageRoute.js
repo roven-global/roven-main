@@ -6,7 +6,7 @@ const {
   deleteHeroImage,
 } = require("../controller/heroImageController");
 const auth = require("../middleware/auth");
-const adminOnly = require("../middleware/adminOnly");
+const { adminOnly } = require("../middleware/adminOnly");
 const upload = require("../middleware/multer");
 
 // Get all hero images

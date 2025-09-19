@@ -12,6 +12,37 @@ const upload = multer({
 });
 
 /**
+ * Story-specific upload middleware
+ * Handles story media uploads with file type validation
+ */
+const storyUpload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit for videos
+    files: 1, // Only one file at a time
+  },
+  fileFilter: (req, file, cb) => {
+    // Define allowed file types
+    const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png"];
+    const allowedVideoTypes = ["video/mp4", "video/webm"];
+    const allowedTypes = [...allowedImageTypes, ...allowedVideoTypes];
+
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(
+        new Error(
+          `Invalid file type. Only ${allowedImageTypes.join(
+            ", "
+          )} and ${allowedVideoTypes.join(", ")} are allowed.`
+        ),
+        false
+      );
+    }
+  },
+});
+
+/**
  * Product-specific upload middleware
  * Handles multiple product images and ingredient images with field validation
  */
@@ -34,3 +65,4 @@ const productUpload = multer({
 
 module.exports = upload;
 module.exports.productUpload = productUpload;
+module.exports.storyUpload = storyUpload;

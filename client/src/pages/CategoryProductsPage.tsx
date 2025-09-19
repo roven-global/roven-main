@@ -26,7 +26,7 @@ interface Product {
     name: string;
   };
   volume?: string;
-  benefits?: string[];
+  shortDescription?: string;
   isActive: boolean;
   isFeatured: boolean;
   createdAt: string;
@@ -167,7 +167,7 @@ const CategoryProductsPage = () => {
                         )
                       }
                       isNew={isNew}
-                      benefits={product.benefits}
+                      shortDescription={product.shortDescription}
                     />
                   );
                 })}

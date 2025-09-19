@@ -114,8 +114,9 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const cookiesOption = {
   httpOnly: true,
-  secure: true,
-  sameSite: "None",
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+  maxAge: 5 * 60 * 60 * 1000, // 5 hours for access token
 };
 
 /**
@@ -178,13 +179,32 @@ const login = asyncHandler(async (req, res) => {
   const accessToken = await generateAccessToken(user._id);
   const refreshToken = await generateRefreshToken(user._id);
 
+  // Set cookies with proper configuration
+  const refreshTokenOptions = {
+    ...cookiesOption,
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for refresh token
+  };
+
   res.cookie("accessToken", accessToken, cookiesOption);
-  res.cookie("refreshToken", refreshToken, cookiesOption);
+  res.cookie("refreshToken", refreshToken, refreshTokenOptions);
 
   return res.json({
     success: true,
     message: "Login successful.",
-    data: { accessToken, refreshToken, userId: user._id },
+    data: {
+      accessToken,
+      refreshToken,
+      userId: user._id,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        mobile: user.mobile,
+        avatar: user.avatar,
+        status: user.status,
+        verify_email: user.verify_email,
+      },
+    },
   });
 });
 
@@ -193,8 +213,14 @@ const login = asyncHandler(async (req, res) => {
  * @route POST /api/user/logout
  */
 const logout = asyncHandler(async (req, res) => {
-  res.clearCookie("accessToken", cookiesOption);
-  res.clearCookie("refreshToken", cookiesOption);
+  const clearCookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+  };
+
+  res.clearCookie("accessToken", clearCookieOptions);
+  res.clearCookie("refreshToken", clearCookieOptions);
   return res.json({ success: true, message: "Logged out successfully." });
 });
 
@@ -484,9 +510,18 @@ const refreshToken = asyncHandler(async (req, res) => {
 
   try {
     const payload = jwt.verify(token, process.env.SECRET_KEY_REFRESH_TOKEN);
-    const newAccessToken = await generateAccessToken(
-      payload.userId || payload._id || payload.id
-    );
+    const userId = payload.userId || payload._id || payload.id;
+
+    // Verify the refresh token exists in the database
+    const user = await UserModel.findById(userId);
+    if (!user || user.refresh_token !== token) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid refresh token.",
+      });
+    }
+
+    const newAccessToken = await generateAccessToken(userId);
     res.cookie("accessToken", newAccessToken, cookiesOption);
     return res.json({
       success: true,

@@ -14,13 +14,23 @@ const getSetting = asyncHandler(async (req, res) => {
       data: { key: setting.key, value: setting.value },
     });
   } else {
-    // If the setting is not found, it's not necessarily an error.
-    // We can return a default value or a specific status.
-    // For the activeWelcomeGiftLimit, we'll handle a default in the welcome gift controller.
-    res.status(404).json({
-      success: false,
-      message: `Setting with key '${key}' not found.`,
-    });
+    // Handle default values for specific settings
+    let defaultValue = null;
+    if (key === "is_brand_category_enabled") {
+      defaultValue = true;
+    }
+
+    if (defaultValue !== null) {
+      res.status(200).json({
+        success: true,
+        data: { key, value: defaultValue },
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: `Setting with key '${key}' not found.`,
+      });
+    }
   }
 });
 
@@ -37,7 +47,11 @@ const updateSetting = asyncHandler(async (req, res) => {
   }
 
   // Use the static method from the model to handle upsert logic
-  const updatedSetting = await AdminSetting.updateSetting(key, value, description);
+  const updatedSetting = await AdminSetting.updateSetting(
+    key,
+    value,
+    description
+  );
 
   res.status(200).json({
     success: true,
@@ -46,7 +60,51 @@ const updateSetting = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Initialize default settings
+// @route   POST /api/admin/settings/initialize
+// @access  Private/Admin
+const initializeDefaultSettings = asyncHandler(async (req, res) => {
+  const defaultSettings = [
+    {
+      key: "is_brand_category_enabled",
+      value: true,
+      description:
+        "Enable or disable the brand category section on the homepage",
+    },
+  ];
+
+  const results = [];
+  for (const setting of defaultSettings) {
+    try {
+      const existingSetting = await AdminSetting.findOne({ key: setting.key });
+      if (!existingSetting) {
+        const newSetting = await AdminSetting.create(setting);
+        results.push({
+          key: setting.key,
+          value: newSetting.value,
+          created: true,
+        });
+      } else {
+        results.push({
+          key: setting.key,
+          value: existingSetting.value,
+          created: false,
+        });
+      }
+    } catch (error) {
+      results.push({ key: setting.key, error: error.message });
+    }
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Default settings initialized",
+    data: results,
+  });
+});
+
 module.exports = {
   getSetting,
   updateSetting,
+  initializeDefaultSettings,
 };

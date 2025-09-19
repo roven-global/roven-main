@@ -22,6 +22,7 @@ interface Category {
   _id: string;
   name: string;
   slug: string;
+  categoryRanking?: number;
 }
 interface NavItem {
   name: string;
@@ -48,7 +49,24 @@ const Navigation = () => {
           `${SummaryApi.getAllCategories.url}?parent=main`
         );
         if (response.data.success && Array.isArray(response.data.data)) {
-          setCategories(response.data.data);
+          // Sort categories by ranking (ranked first, then unranked)
+          const sortedCategories = response.data.data.sort(
+            (a: Category, b: Category) => {
+              const rankA = a.categoryRanking || 0;
+              const rankB = b.categoryRanking || 0;
+
+              // If both have ranks > 0, sort by rank ascending
+              if (rankA > 0 && rankB > 0) {
+                return rankA - rankB;
+              }
+              // If only one has rank > 0, prioritize it
+              if (rankA > 0 && rankB === 0) return -1;
+              if (rankA === 0 && rankB > 0) return 1;
+              // If both are rank 0, sort by name
+              return a.name.localeCompare(b.name);
+            }
+          );
+          setCategories(sortedCategories);
           setNavItems([
             { name: "Home", href: "/" },
             { name: "Shop", href: "/shop" },
@@ -132,23 +150,33 @@ const Navigation = () => {
                     to={item.href}
                     className={({ isActive }) =>
                       cn(
-                        "font-medium text-muted-brown transition-colors hover:text-primary relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all after:duration-300",
-                        isActive ? "text-primary after:w-full" : ""
+                        "font-medium transition-all duration-300 ease-in-out relative px-3 py-2 group",
+                        isActive
+                          ? "text-[#00695C]"
+                          : "text-muted-brown hover:text-[#00695C]"
                       )
                     }
                   >
-                    {item.name}
+                    {({ isActive }) => (
+                      <>
+                        {item.name}
+                        {!isActive && (
+                          <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#00695C] transition-all duration-300 ease-in-out group-hover:w-full"></span>
+                        )}
+                      </>
+                    )}
                   </NavLink>
                 ))}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="font-medium text-muted-brown transition-colors hover:text-primary hover:bg-transparent flex items-center gap-1 p-0"
+                      className="font-medium text-muted-brown transition-all duration-300 ease-in-out hover:text-[#00695C] focus:text-[#00695C] hover:bg-transparent focus:bg-transparent relative group flex items-center gap-1 px-3 py-2"
                       aria-label="Product categories"
                     >
-                      Categories
+                      CATEGORIES
                       <ChevronDown className="h-4 w-4" />
+                      <span className="absolute bottom-0.5 left-0 w-0 h-0.5 bg-[#00695C] transition-all duration-300 ease-in-out group-hover:w-full"></span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
@@ -157,12 +185,26 @@ const Navigation = () => {
                   >
                     {categories.map((category) => (
                       <DropdownMenuItem key={category._id} asChild>
-                        <Link
+                        <NavLink
                           to={`/category/${category.slug}`}
-                          className="cursor-pointer text-muted-brown hover:bg-warm-cream"
+                          className={({ isActive }) =>
+                            cn(
+                              "cursor-pointer block px-2 py-1 transition-all duration-300 ease-in-out relative group",
+                              isActive
+                                ? "text-[#00695C] font-medium"
+                                : "text-muted-brown hover:text-[#00695C]"
+                            )
+                          }
                         >
-                          {category.name}
-                        </Link>
+                          {({ isActive }) => (
+                            <>
+                              {category.name}
+                              {!isActive && (
+                                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#00695C] transition-all duration-300 ease-in-out group-hover:w-full"></span>
+                              )}
+                            </>
+                          )}
+                        </NavLink>
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
@@ -262,14 +304,28 @@ const Navigation = () => {
         <div className="px-4 pt-2 pb-6 space-y-2 max-h-[80vh] overflow-y-auto">
           {/* Main Navigation Links */}
           {navItems.map((item) => (
-            <Link
+            <NavLink
               key={item.href}
               to={item.href}
-              className="block px-4 py-3 rounded-lg text-base font-medium text-muted-brown hover:bg-warm-cream transition-colors duration-200 active:bg-primary/20"
+              className={({ isActive }) =>
+                cn(
+                  "block px-4 py-3 text-base font-medium transition-all duration-300 ease-in-out relative group",
+                  isActive
+                    ? "text-[#00695C]"
+                    : "text-muted-brown hover:text-[#00695C]"
+                )
+              }
               onClick={() => setIsMenuOpen(false)}
             >
-              {item.name}
-            </Link>
+              {({ isActive }) => (
+                <>
+                  {item.name}
+                  {!isActive && (
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#00695C] transition-all duration-300 ease-in-out group-hover:w-full"></span>
+                  )}
+                </>
+              )}
+            </NavLink>
           ))}
 
           {/* Categories Section */}
@@ -279,14 +335,21 @@ const Navigation = () => {
             </h3>
             <div className="space-y-1">
               {categories.map((category) => (
-                <Link
+                <NavLink
                   key={category._id}
                   to={`/category/${category.slug}`}
-                  className="block px-4 py-3 rounded-lg text-base font-medium text-muted-brown hover:bg-warm-cream transition-colors duration-200 active:bg-primary/20"
+                  className={({ isActive }) =>
+                    cn(
+                      "block px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 active:bg-primary/20",
+                      isActive
+                        ? "bg-primary/10 text-primary font-semibold border-l-4 border-primary"
+                        : "text-muted-brown hover:bg-warm-cream"
+                    )
+                  }
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {category.name}
-                </Link>
+                </NavLink>
               ))}
             </div>
           </div>

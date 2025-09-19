@@ -194,6 +194,16 @@ const productSchema = new mongoose.Schema(
     ],
     isActive: { type: Boolean, default: true },
     isFeatured: { type: Boolean, default: false },
+    ranking_featured: {
+      type: Number,
+      default: 0,
+      min: [0, "Featured ranking cannot be negative"],
+    },
+    products_ranking: {
+      type: Number,
+      default: 0,
+      min: [0, "Products ranking cannot be negative"],
+    },
     ratings: {
       average: {
         type: Number,
@@ -295,5 +305,7 @@ productSchema.index({ brand: 1, isActive: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ ratings: 1 });
 productSchema.index({ name: 1, brand: 1, category: 1 });
+productSchema.index({ ranking_featured: 1, isFeatured: 1, isActive: 1 });
+productSchema.index({ products_ranking: 1, isActive: 1 });
 
 module.exports = mongoose.model("Product", productSchema);
