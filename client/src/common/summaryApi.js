@@ -307,8 +307,14 @@ const SummaryApi = {
     method: "delete",
   },
   // Stories endpoints
-  stories: "/api/stories",
-  storiesAdmin: "/api/stories/admin",
+  stories: {
+    url: "/api/stories",
+    method: "get",
+  },
+  storiesAdmin: {
+    url: "/api/stories/admin",
+    method: "get",
+  },
   // Welcome Gift endpoints
   getAllWelcomeGifts: {
     url: "/api/welcome-gifts",

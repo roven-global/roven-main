@@ -129,7 +129,7 @@ const Stories: React.FC = () => {
     const fetchStories = async () => {
       try {
         setLoading(true);
-        const response = await Axios.get(SummaryApi.stories);
+        const response = await Axios.get(SummaryApi.stories.url);
 
         if (response.data.success) {
           const fetchedStories = response.data.stories;
@@ -167,7 +167,7 @@ const Stories: React.FC = () => {
       // Increment clicks for the first story in the group
       if (group.stories.length > 0) {
         await Axios.patch(
-          `${SummaryApi.stories}/${group.stories[0]._id}/clicks`
+          `${SummaryApi.stories.url}/${group.stories[0]._id}/clicks`
         );
       }
 
@@ -183,7 +183,7 @@ const Stories: React.FC = () => {
   // Handle story view tracking
   const handleStoryView = async (storyId: string) => {
     try {
-      await Axios.patch(`${SummaryApi.stories}/${storyId}/views`);
+      await Axios.patch(`${SummaryApi.stories.url}/${storyId}/views`);
     } catch (error) {
       console.error("Error incrementing story views:", error);
     }

@@ -172,7 +172,7 @@ const StoriesAdmin: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await Axios.get(`${SummaryApi.storiesAdmin}/all`);
+      const response = await Axios.get(`${SummaryApi.storiesAdmin.url}/all`);
 
       if (response.data.success) {
         setStories(response.data.stories || []);
@@ -371,7 +371,7 @@ const StoriesAdmin: React.FC = () => {
       let response;
       if (editingStory) {
         response = await Axios.put(
-          `${SummaryApi.storiesAdmin}/${editingStory._id}`,
+          `${SummaryApi.storiesAdmin.url}/${editingStory._id}`,
           submitData,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -379,7 +379,7 @@ const StoriesAdmin: React.FC = () => {
         );
       } else {
         response = await Axios.post(
-          `${SummaryApi.storiesAdmin}/create`,
+          `${SummaryApi.storiesAdmin.url}/create`,
           submitData,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -459,7 +459,7 @@ const StoriesAdmin: React.FC = () => {
       if (editingStory && storyData.id) {
         // Update existing story
         response = await Axios.put(
-          `${SummaryApi.storiesAdmin}/${editingStory._id}`,
+          `${SummaryApi.storiesAdmin.url}/${editingStory._id}`,
           submitData,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -468,7 +468,7 @@ const StoriesAdmin: React.FC = () => {
       } else {
         // Create new story
         response = await Axios.post(
-          `${SummaryApi.storiesAdmin}/create`,
+          `${SummaryApi.storiesAdmin.url}/create`,
           submitData,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -514,7 +514,7 @@ const StoriesAdmin: React.FC = () => {
 
     try {
       const response = await Axios.delete(
-        `${SummaryApi.storiesAdmin}/${storyToDelete}`
+        `${SummaryApi.storiesAdmin.url}/${storyToDelete}`
       );
 
       if (response.data.success) {

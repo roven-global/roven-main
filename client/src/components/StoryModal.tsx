@@ -162,7 +162,7 @@ const StoryModal: React.FC<StoryModalProps> = ({
     if (!currentStory.link) return;
 
     try {
-      await Axios.patch(`${SummaryApi.stories}/${currentStory._id}/clicks`);
+      await Axios.patch(`${SummaryApi.stories.url}/${currentStory._id}/clicks`);
       window.open(currentStory.link, "_blank");
     } catch (error) {
       console.error("Error handling link click:", error);
